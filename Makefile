@@ -1,0 +1,43 @@
+.PHONY: help setup dev start test ping health stats clean freeze
+
+VENV   := .venv
+PY     := $(VENV)/bin/python
+PIP    := $(VENV)/bin/pip
+UVI    := $(VENV)/bin/uvicorn
+PORT   ?= 8000
+
+help:            ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	 awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+
+setup:           ## Create the virtualenv, install deps, create .env
+	python3 -m venv $(VENV)
+	$(PIP) install --upgrade pip
+	$(PIP) install -r requirements.txt
+	@test -f .env || (cp .env.example .env && echo "\n→ Created .env — add TELEGRAM_API_ID, TELEGRAM_API_HASH and SECRET_KEY\n")
+	@echo "Setup complete. Next: make dev"
+
+dev:             ## Run with auto-reload (development)
+	$(UVI) app.main:app --reload --port $(PORT)
+
+start:           ## Run without reload (production-style)
+	$(UVI) app.main:app --host 0.0.0.0 --port $(PORT) --workers 1
+
+test:            ## Run the pipeline test suite (no Telegram needed)
+	$(PY) -m tests.test_pipeline
+
+ping:            ## Hit the ping endpoint on a running server
+	@curl -s http://localhost:$(PORT)/api/ping && echo
+
+health:          ## Deep health check on a running server
+	@curl -s http://localhost:$(PORT)/api/health && echo
+
+stats:           ## Deal + ingest stats from a running server
+	@curl -s http://localhost:$(PORT)/api/stats && echo
+
+secret:          ## Generate a SECRET_KEY
+	@$(PY) -c "import secrets; print(secrets.token_urlsafe(48))"
+
+clean:           ## Remove the local cache DB and __pycache__
+	rm -rf data __pycache__ */__pycache__ */*/__pycache__ .pytest_cache
+	@echo "Cleaned. Sheets data (if configured) is untouched."

@@ -1,0 +1,12 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+telethon==1.38.1
+cryptg==0.5.0.post0
+gspread==6.1.4
+google-auth==2.37.0
+cryptography==44.0.0
+httpx==0.28.1
+python-dotenv==1.0.1
+pydantic==2.10.4
+rapidfuzz==3.11.0
+python-multipart==0.0.20

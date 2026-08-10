@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DealRadar — Telegram deals, searchable</title>
+  <meta name="description" content="Aggregates marketplace deals from your Telegram channels into one searchable, de-duplicated catalog." />
+  <meta name="theme-color" content="#0b0f17" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>" />
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<section id="view-login" class="view login-view">
+  <div class="login-grid">
+    <div class="login-pitch">
+      <div class="brand brand-lg">
+        <span class="brand-mark">📡</span>
+        <span class="brand-name">Deal<span>Radar</span></span>
+      </div>
+      <h1>Every deal from your Telegram channels.<br />Searchable, de-duplicated, ranked.</h1>
+      <p class="lede">
+        Deal channels fire hundreds of posts a day. DealRadar reads the channels you already
+        follow, parses each post into a structured deal, collapses the same product posted
+        across a dozen channels into one entry, and lets you just search for what you want.
+      </p>
+      <ul class="pitch-list">
+        <li><b>Search in plain words</b> — “women kurta” finds kurti, anarkali, ethnic sets.</li>
+        <li><b>Cross-channel dedup</b> — one product, one card, with a “seen in N channels” badge.</li>
+        <li><b>Price history</b> — flags a genuine all-time low and catches inflated MRPs.</li>
+        <li><b>Live-link checks</b> — dead and out-of-stock deals drop out automatically.</li>
+        <li><b>Alerts</b> — saved searches ping you in your own Telegram Saved Messages.</li>
+      </ul>
+      <div class="pitch-foot">
+        Stored in Google Sheets · deals kept 4 days or until they go dead
+      </div>
+    </div>
+
+    <div class="login-panel">
+      <div class="card auth-card">
+        <div id="auth-warning" class="alert alert-warn hidden"></div>
+
+        <!-- Step 1: phone -->
+        <form id="step-phone" class="auth-step">
+          <h2>Sign in with Telegram</h2>
+          <p class="muted">We send a login code to your Telegram app — the same one you use to log in on a new device.</p>
+          <label class="field">
+            <span>Phone number</span>
+            <input id="input-phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel" required />
+          </label>
+          <button class="btn btn-primary btn-block" type="submit">
+            <span class="btn-label">Send login code</span>
+          </button>
+          <p class="fineprint">
+            Your Telegram session is encrypted before storage and is used only to read the
+            channels you choose. Your code and 2FA password are never stored.
+          </p>
+        </form>
+
+        <!-- Step 2: code -->
+        <form id="step-code" class="auth-step hidden">
+          <h2>Enter your code</h2>
+          <p class="muted">Telegram sent a code to <b id="code-phone"></b>. Check your Telegram app, not SMS.</p>
+          <label class="field">
+            <span>Login code</span>
+            <input id="input-code" inputmode="numeric" placeholder="12345" autocomplete="one-time-code" required />
+          </label>
+          <button class="btn btn-primary btn-block" type="submit"><span class="btn-label">Verify</span></button>
+          <button class="btn btn-ghost btn-block" type="button" data-back="phone">Use a different number</button>
+        </form>
+
+        <!-- Step 3: 2FA -->
+        <form id="step-password" class="auth-step hidden">
+          <h2>Two-step verification</h2>
+          <p class="muted">Your account has a cloud password. Enter it to finish signing in.</p>
+          <label class="field">
+            <span>Password</span>
+            <input id="input-password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="btn btn-primary btn-block" type="submit"><span class="btn-label">Sign in</span></button>
+        </form>
+
+        <div id="auth-error" class="alert alert-error hidden"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APP ================= -->
+<section id="view-app" class="view hidden">
+  <header class="topbar">
+    <div class="brand" data-nav="deals">
+      <span class="brand-mark">📡</span>
+      <span class="brand-name">Deal<span>Radar</span></span>
+    </div>
+
+    <form id="search-form" class="search">
+      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+      <input id="search-input" type="search" placeholder="What are you looking for?  charger, women kurta, running shoes…" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    </form>
+
+    <nav class="topnav">
+      <button class="navlink active" data-nav="deals">Deals</button>
+      <button class="navlink" data-nav="channels">Channels</button>
+      <button class="navlink" data-nav="alerts">Alerts</button>
+      <button id="btn-sync" class="btn btn-soft btn-sm" title="Fetch new deals from Telegram now">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"/></svg>
+        <span>Sync</span>
+      </button>
+      <div class="usermenu">
+        <button id="user-btn" class="avatar" title="Account"></button>
+        <div id="user-drop" class="dropdown hidden">
+          <div class="drop-head">
+            <div id="drop-name" class="drop-name"></div>
+            <div id="drop-handle" class="muted small"></div>
+          </div>
+          <button class="drop-item" data-action="theme">Toggle theme</button>
+          <button class="drop-item" data-action="status">System status</button>
+          <button class="drop-item danger" data-action="logout">Sign out</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ---------- DEALS ---------- -->
+  <main id="page-deals" class="page">
+    <div class="statstrip" id="statstrip"></div>
+
+    <div class="chiprow" id="category-chips"></div>
+
+    <div class="layout">
+      <aside class="filters" id="filters">
+        <div class="filter-head">
+          <h3>Filters</h3>
+          <button class="btn btn-ghost btn-xs" id="btn-clear-filters">Clear</button>
+        </div>
+
+        <div class="filter-block">
+          <label class="filter-label">Sort by</label>
+          <select id="f-sort" class="input">
+            <option value="relevance">Best match</option>
+            <option value="best">Top deals</option>
+            <option value="newest">Newest first</option>
+            <option value="discount">Biggest discount</option>
+            <option value="price_low">Price: low to high</option>
+            <option value="price_high">Price: high to low</option>
+          </select>
+        </div>
+
+        <div class="filter-block">
+          <label class="filter-label">Max price (₹)</label>
+          <input id="f-max-price" type="number" min="0" step="50" class="input" placeholder="Any" />
+        </div>
+
+        <div class="filter-block">
+          <label class="filter-label">Minimum discount — <span id="f-discount-out">any</span></label>
+          <input id="f-discount" type="range" min="0" max="90" step="5" value="0" class="range" />
+        </div>
+
+        <div class="filter-block">
+          <label class="filter-label">Store</label>
+          <div id="f-stores" class="facet-list"></div>
+        </div>
+
+        <div class="filter-block">
+          <label class="filter-label">Brand</label>
+          <div id="f-brands" class="facet-list"></div>
+        </div>
+
+        <div class="filter-block">
+          <label class="check">
+            <input type="checkbox" id="f-lowest" />
+            <span>Only all-time lows</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="f-all-channels" />
+            <span>Include untracked channels</span>
+          </label>
+        </div>
+      </aside>
+
+      <div class="results">
+        <div class="results-head">
+          <div id="results-summary" class="muted"></div>
+          <button class="btn btn-soft btn-sm" id="btn-save-search">
+            <svg viewBox="0 0 24 24" class="ico"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            Alert me about this search
+          </button>
+        </div>
+
+        <section id="trending-wrap" class="trending hidden">
+          <h3 class="section-title">🔥 Reposted across your channels right now</h3>
+          <div id="trending-row" class="trending-row"></div>
+        </section>
+
+        <div id="deal-grid" class="grid"></div>
+        <div id="empty-state" class="empty hidden"></div>
+        <div class="loadmore">
+          <button id="btn-more" class="btn btn-soft hidden">Load more deals</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ---------- CHANNELS ---------- -->
+  <main id="page-channels" class="page hidden">
+    <div class="page-head">
+      <div>
+        <h2>Channels</h2>
+        <p class="muted">Pick the deal channels DealRadar should read. Only channels you already follow are listed — plus any public channel you add by username.</p>
+      </div>
+      <div class="page-head-actions">
+        <button class="btn btn-soft" id="btn-refresh-channels">Refresh list</button>
+        <button class="btn btn-primary" id="btn-save-channels">Save selection</button>
+      </div>
+    </div>
+
+    <div class="addpublic card">
+      <label class="field row">
+        <span>Add a public channel by username</span>
+        <div class="row-inputs">
+          <input id="input-public" class="input" placeholder="@dealschannel or t.me/dealschannel" />
+          <button class="btn btn-soft" id="btn-add-public">Add &amp; join</button>
+        </div>
+      </label>
+    </div>
+
+    <div class="channel-toolbar">
+      <input id="channel-filter" class="input" placeholder="Filter channels…" />
+      <span class="muted small" id="channel-count"></span>
+    </div>
+    <div id="channel-list" class="channel-list"></div>
+  </main>
+
+  <!-- ---------- ALERTS ---------- -->
+  <main id="page-alerts" class="page hidden">
+    <div class="page-head">
+      <div>
+        <h2>Deal alerts</h2>
+        <p class="muted">Saved searches. When a new matching deal appears, DealRadar messages you in your own Telegram <b>Saved Messages</b>.</p>
+      </div>
+    </div>
+
+    <form id="alert-form" class="card alert-form">
+      <div class="alert-form-grid">
+        <label class="field">
+          <span>What to watch for</span>
+          <input id="a-query" class="input" placeholder="e.g. 65w gan charger" required />
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select id="a-category" class="input"><option value="">Any</option></select>
+        </label>
+        <label class="field">
+          <span>Max price (₹)</span>
+          <input id="a-max-price" type="number" min="0" class="input" placeholder="Any" />
+        </label>
+        <label class="field">
+          <span>Min discount (%)</span>
+          <input id="a-discount" type="number" min="0" max="95" class="input" placeholder="0" />
+        </label>
+      </div>
+      <button class="btn btn-primary" type="submit">Create alert</button>
+    </form>
+
+    <div id="alert-list" class="alert-list"></div>
+  </main>
+
+  <footer class="footer">
+    <span id="footer-status" class="muted small"></span>
+  </footer>
+</section>
+
+<!-- ================= MODALS / TOASTS ================= -->
+<div id="modal" class="modal hidden">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-body card" id="modal-body"></div>
+</div>
+<div id="toasts" class="toasts"></div>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>
