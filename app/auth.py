@@ -1,6 +1,19 @@
-"""Web session handling (separate from the Telegram session)."""
+"""Web session handling (separate from the Telegram session).
+
+Sessions are a self-verifying signed cookie — telegram_id + expiry, HMAC'd
+with SECRET_KEY — rather than a token row in SQLite. Render's free tier disk
+is ephemeral and gets wiped on every redeploy/restart, so a DB-backed session
+used to log everyone out on every deploy even though their cookie was still
+"valid" for its full TTL. A signed cookie needs no DB lookup to trust, so it
+survives restarts as long as SECRET_KEY is stable (Render generates it once
+at service creation and keeps it — see render.yaml). The tradeoff: unlike a
+DB-backed token, an issued cookie can't be revoked before it expires, so
+`destroy_session` is just a client-side cookie clear.
+"""
 from __future__ import annotations
 
+import hashlib
+import hmac
 import secrets
 import time
 from typing import Any, Dict, Optional
@@ -11,15 +24,32 @@ from . import db
 from .config import settings
 
 
-def create_session(user_id: int) -> str:
-    token = secrets.token_urlsafe(32)
-    now = time.time()
-    db.execute(
-        "INSERT INTO app_sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
-        (token, user_id, now, now + settings.session_ttl_days * 86400),
-    )
-    db.execute("DELETE FROM app_sessions WHERE expires_at < ?", (now,))
-    return token
+def _sign(telegram_id: int, expires_at: int) -> str:
+    msg = f"{telegram_id}.{expires_at}".encode()
+    return hmac.new(settings.secret_key.encode(), msg, hashlib.sha256).hexdigest()
+
+
+def create_session(telegram_id: int) -> str:
+    expires_at = int(time.time()) + settings.session_ttl_days * 86400
+    return f"{telegram_id}.{expires_at}.{_sign(telegram_id, expires_at)}"
+
+
+def _verify_token(token: str) -> Optional[int]:
+    """Return the telegram_id embedded in a valid, unexpired token."""
+    parts = token.split(".")
+    if len(parts) != 3:
+        return None
+    tid_str, exp_str, sig = parts
+    try:
+        telegram_id = int(tid_str)
+        expires_at = int(exp_str)
+    except ValueError:
+        return None
+    if not hmac.compare_digest(_sign(telegram_id, expires_at), sig):
+        return None
+    if expires_at < time.time():
+        return None
+    return telegram_id
 
 
 def set_session_cookie(response: Response, token: str) -> None:
@@ -42,11 +72,10 @@ def resolve_user(request: Request) -> Optional[Dict[str, Any]]:
     token = request.cookies.get(settings.session_cookie)
     if not token:
         return None
-    row = db.query_one(
-        "SELECT u.* FROM app_sessions s JOIN users u ON u.id = s.user_id "
-        "WHERE s.token = ? AND s.expires_at > ?",
-        (token, time.time()),
-    )
+    telegram_id = _verify_token(token)
+    if telegram_id is None:
+        return None
+    row = db.query_one("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
     if not row:
         return None
     user = db.row_to_dict(row) or {}
@@ -55,9 +84,10 @@ def resolve_user(request: Request) -> Optional[Dict[str, Any]]:
 
 
 def destroy_session(request: Request) -> None:
-    token = request.cookies.get(settings.session_cookie)
-    if token:
-        db.execute("DELETE FROM app_sessions WHERE token = ?", (token,))
+    """No-op: stateless tokens can't be revoked server-side before they expire.
+
+    The actual logout is clear_session_cookie removing the browser's copy.
+    """
 
 
 async def current_user(request: Request) -> Dict[str, Any]:

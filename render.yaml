@@ -16,7 +16,7 @@ services:
     envVars:
       # --- generated for you ---
       - key: SECRET_KEY
-        generateValue: true     # rotating this invalidates stored Telegram sessions
+        generateValue: true     # rotating this invalidates stored Telegram sessions AND all web logins
       - key: ADMIN_TOKEN
         generateValue: true
 
@@ -55,5 +55,7 @@ services:
         value: "120"
       - key: DB_PATH
         value: "data/deals.db"
+      - key: SESSION_TTL_DAYS
+        value: "180"
       - key: LOG_LEVEL
         value: "INFO"

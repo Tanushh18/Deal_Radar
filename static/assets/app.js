@@ -14,7 +14,7 @@
     filters: {
       q: '', category: '', subcategory: '', store: '', brand: '',
       max_price: null, min_discount: 0, only_lowest: false,
-      all_channels: false, sort: 'relevance',
+      all_channels: false, sort: 'newest',
     },
     offset: 0,
     limit: 48,
@@ -206,6 +206,7 @@
     });
     $$('.navlink').forEach((n) => n.classList.toggle('active', n.dataset.nav === page));
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    closeFilters();
     if (page === 'alerts') loadAlerts();
     if (page === 'channels' && !state.availableChannels.length) loadAvailableChannels();
   }
@@ -232,6 +233,8 @@
       localStorage.setItem('dr-theme', next);
     } else if (action === 'status') {
       showStatus();
+    } else if (action === 'install') {
+      promptInstall();
     }
   }));
 
@@ -314,6 +317,28 @@
     block.classList.remove('hidden');
   }
 
+  function updateFiltersBadge() {
+    const f = state.filters;
+    const count = [
+      f.category, f.subcategory, f.store, f.brand,
+      f.max_price ? 1 : 0, f.min_discount ? 1 : 0, f.only_lowest ? 1 : 0, f.all_channels ? 1 : 0,
+    ].filter(Boolean).length;
+    const badge = $('#filters-badge');
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+  }
+
+  function openFilters() {
+    $('#filters').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeFilters() {
+    $('#filters').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  $('#btn-filters-toggle').addEventListener('click', openFilters);
+  $('#btn-filters-close').addEventListener('click', closeFilters);
+
   function buildQuery() {
     const f = state.filters;
     const params = new URLSearchParams();
@@ -326,7 +351,9 @@
     if (f.min_discount) params.set('min_discount', f.min_discount);
     if (f.only_lowest) params.set('only_lowest', 'true');
     if (f.all_channels) params.set('all_channels', 'true');
-    params.set('sort', f.q ? f.sort : (f.sort === 'relevance' ? 'best' : f.sort));
+    // Sent as-is: the backend already degrades "relevance" to score-order
+    // by itself when there's no query to rank against (see search.py).
+    params.set('sort', f.sort);
     params.set('limit', state.limit);
     params.set('offset', state.offset);
     return params.toString();
@@ -337,6 +364,7 @@
   }
 
   async function refreshDeals(reset = false) {
+    updateFiltersBadge();
     if (!reset) {
       // Pagination ("Load more"): duplicate clicks should be dropped, not raced.
       if (state.loading) return;
@@ -461,7 +489,10 @@
   async function showDealDetail(id) {
     openModal('<p class="muted">Loading…</p>');
     try {
-      const deal = await api(`/api/deals/${encodeURIComponent(id)}`);
+      const [deal, fullHistory] = await Promise.all([
+        api(`/api/deals/${encodeURIComponent(id)}`),
+        api(`/api/deals/${encodeURIComponent(id)}/history`).catch(() => ({ points: [] })),
+      ]);
       const history = deal.price_history || {};
       openModal(`
         <div class="modal-head">
@@ -475,6 +506,10 @@
         </div>
         ${deal.is_lowest ? '<p class="small" style="color:var(--gold);font-weight:700">📉 Lowest price we have recorded for this product</p>' : ''}
         ${(deal.flags || []).includes('suspicious_mrp') ? '<p class="small" style="color:var(--warn);font-weight:700">⚠️ The quoted MRP looks inflated versus this product’s price history</p>' : ''}
+        <div class="price-chart-wrap">
+          <div class="price-chart-title">Price history</div>
+          <div class="price-chart" id="price-chart-${escapeHtml(id)}"></div>
+        </div>
         <dl class="kv">
           <dt>Store</dt><dd>${escapeHtml(deal.store || '—')}</dd>
           <dt>Category</dt><dd>${escapeHtml(deal.category || '—')} › ${escapeHtml(deal.subcategory || '—')}</dd>
@@ -484,7 +519,7 @@
           <dt>Posted</dt><dd>${timeAgo(deal.posted_at)} in ${escapeHtml(deal.channel_title || 'a channel')}</dd>
           <dt>Reposted</dt><dd>${deal.repost_count} channel${deal.repost_count === 1 ? '' : 's'}</dd>
           <dt>Expires</dt><dd>${deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString() : '—'}</dd>
-          ${history.points ? `<dt>Price history</dt><dd>${history.points} points · low ${money(history.min)} · high ${money(history.max)}</dd>` : ''}
+          ${history.points ? `<dt>History</dt><dd>${history.points} points · low ${money(history.min)} · high ${money(history.max)}</dd>` : ''}
           <dt>Deal score</dt><dd>${deal.score ?? 0} / 100</dd>
         </dl>
         <details style="margin:14px 0">
@@ -493,9 +528,176 @@
         </details>
         ${deal.url ? `<a class="btn btn-primary btn-block" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">Open on ${escapeHtml(deal.store || 'store')}</a>` : ''}
       `);
+      const chartHost = document.getElementById(`price-chart-${id}`);
+      if (chartHost) renderPriceChart(chartHost, fullHistory.points || []);
     } catch (err) {
       openModal(`<p class="alert alert-error">${escapeHtml(err.message)}</p>`);
     }
+  }
+
+  /* ---------------- price history chart ---------------- */
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function svgEl(tag, attrs = {}) {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const key in attrs) el.setAttribute(key, attrs[key]);
+    return el;
+  }
+
+  function renderPriceChart(container, rawPoints) {
+    const points = (rawPoints || []).filter((p) => p && p.price != null && p.at);
+    if (points.length < 2) {
+      container.innerHTML = '<div class="price-chart-empty">Not enough price history yet — '
+        + 'check back once this deal has been seen a few more times.</div>';
+      return;
+    }
+
+    const sorted = [...points].sort((a, b) => a.at - b.at);
+    const times = sorted.map((p) => p.at);
+    const prices = sorted.map((p) => p.price);
+
+    const W = 600, H = 170;
+    const padTop = 16, padBottom = 30, padLeft = 50, padRight = 12;
+    const x0 = padLeft, x1 = W - padRight, y0 = padTop, y1 = H - padBottom;
+
+    const tMin = times[0], tMax = times[times.length - 1];
+    const rawMin = Math.min(...prices), rawMax = Math.max(...prices);
+    let pMin = rawMin, pMax = rawMax;
+    if (pMin === pMax) { pMin -= 1; pMax += 1; }
+    const pad = (pMax - pMin) * 0.12;
+    pMin -= pad; pMax += pad;
+
+    const xScale = (t) => (tMax === tMin ? (x0 + x1) / 2 : x0 + ((t - tMin) / (tMax - tMin)) * (x1 - x0));
+    const yScale = (p) => y1 - ((p - pMin) / (pMax - pMin)) * (y1 - y0);
+    const fmtPrice = (p) => '₹' + Math.round(p).toLocaleString('en-IN');
+    const fmtDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+    const svg = svgEl('svg', {
+      viewBox: `0 0 ${W} ${H}`, role: 'img',
+      'aria-label': `Price history from ${fmtPrice(rawMin)} to ${fmtPrice(rawMax)}`,
+    });
+
+    // gridlines at the low/mid/high of the actual (unpadded) price range
+    const gridVals = rawMin === rawMax ? [rawMin] : [rawMin, (rawMin + rawMax) / 2, rawMax];
+    gridVals.forEach((v) => {
+      const y = yScale(v);
+      svg.appendChild(svgEl('line', { x1: x0, x2: x1, y1: y, y2: y, stroke: 'var(--border)', 'stroke-width': 1 }));
+      const label = svgEl('text', { x: x0 - 8, y: y + 3, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--text-3)' });
+      label.textContent = fmtPrice(v);
+      svg.appendChild(label);
+    });
+
+    // step-after path: price holds flat, then jumps at the next observed change —
+    // a straight diagonal would imply a gradual change that never actually happened.
+    let linePath = `M ${xScale(times[0])} ${yScale(prices[0])}`;
+    for (let i = 1; i < sorted.length; i++) {
+      linePath += ` H ${xScale(times[i])} V ${yScale(prices[i])}`;
+    }
+    const areaPath = `${linePath} L ${x1} ${y1} L ${x0} ${y1} Z`;
+
+    svg.appendChild(svgEl('path', { d: areaPath, fill: 'var(--accent)', 'fill-opacity': 0.1, stroke: 'none' }));
+    svg.appendChild(svgEl('path', {
+      d: linePath, fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2,
+      'stroke-linejoin': 'round', 'stroke-linecap': 'round',
+    }));
+
+    const xStart = svgEl('text', { x: x0, y: H - 8, 'text-anchor': 'start', 'font-size': 10, fill: 'var(--text-3)' });
+    xStart.textContent = fmtDate(times[0]);
+    const xEnd = svgEl('text', { x: x1, y: H - 8, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--text-3)' });
+    xEnd.textContent = fmtDate(times[times.length - 1]);
+    svg.appendChild(xStart);
+    svg.appendChild(xEnd);
+
+    // the extreme (lowest price) is worth a direct label even without hovering
+    const lastIdx = sorted.length - 1;
+    const lowIdx = prices.indexOf(rawMin);
+    if (lowIdx !== lastIdx) {
+      const lx = xScale(times[lowIdx]), ly = yScale(prices[lowIdx]);
+      svg.appendChild(svgEl('circle', { cx: lx, cy: ly, r: 5, fill: 'var(--gold)', stroke: 'var(--surface)', 'stroke-width': 2 }));
+      const lowLabel = svgEl('text', {
+        x: lx, y: ly - 10, 'text-anchor': lowIdx < sorted.length / 2 ? 'start' : 'end',
+        'font-size': 10, 'font-weight': 700, fill: 'var(--gold)',
+      });
+      lowLabel.textContent = 'Lowest ' + fmtPrice(rawMin);
+      svg.appendChild(lowLabel);
+    }
+
+    // current price — the endpoint always gets a direct label
+    const endX = xScale(times[lastIdx]), endY = yScale(prices[lastIdx]);
+    const endIsLow = lowIdx === lastIdx;
+    svg.appendChild(svgEl('circle', {
+      cx: endX, cy: endY, r: 5, fill: endIsLow ? 'var(--gold)' : 'var(--accent)',
+      stroke: 'var(--surface)', 'stroke-width': 2,
+    }));
+    const endLabel = svgEl('text', {
+      x: endX - 8, y: endY - 10, 'text-anchor': 'end', 'font-size': 10, 'font-weight': 700,
+      fill: endIsLow ? 'var(--gold)' : 'var(--text)',
+    });
+    endLabel.textContent = (endIsLow ? 'Lowest · ' : '') + fmtPrice(prices[lastIdx]);
+    svg.appendChild(endLabel);
+
+    // hover layer: crosshair snaps to the nearest observed point, per the skill's
+    // "readers aim at a date, never at a 2px line" guidance
+    const crosshair = svgEl('line', { x1: 0, x2: 0, y1: y0, y2: y1, stroke: 'var(--text-3)', 'stroke-width': 1, opacity: 0 });
+    const hoverDot = svgEl('circle', { r: 5, fill: 'var(--accent)', stroke: 'var(--surface)', 'stroke-width': 2, opacity: 0 });
+    const overlay = svgEl('rect', { x: x0, y: 0, width: Math.max(x1 - x0, 1), height: H, fill: 'transparent' });
+    svg.appendChild(crosshair);
+    svg.appendChild(hoverDot);
+    svg.appendChild(overlay);
+
+    container.innerHTML = '';
+    container.appendChild(svg);
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'chart-tooltip';
+    const ctValue = document.createElement('div');
+    ctValue.className = 'ct-value';
+    const ctDate = document.createElement('div');
+    ctDate.className = 'ct-date';
+    tooltip.appendChild(ctValue);
+    tooltip.appendChild(ctDate);
+    container.appendChild(tooltip);
+
+    function nearestIndex(clientX) {
+      const rect = svg.getBoundingClientRect();
+      const svgX = ((clientX - rect.left) / rect.width) * W;
+      let best = 0, bestDist = Infinity;
+      times.forEach((t, i) => {
+        const dist = Math.abs(xScale(t) - svgX);
+        if (dist < bestDist) { bestDist = dist; best = i; }
+      });
+      return best;
+    }
+
+    function showAt(i) {
+      const x = xScale(times[i]), y = yScale(prices[i]);
+      crosshair.setAttribute('x1', x);
+      crosshair.setAttribute('x2', x);
+      crosshair.setAttribute('opacity', 1);
+      hoverDot.setAttribute('cx', x);
+      hoverDot.setAttribute('cy', y);
+      hoverDot.setAttribute('opacity', 1);
+
+      ctValue.textContent = fmtPrice(prices[i]);
+      ctDate.textContent = new Date(times[i] * 1000).toLocaleDateString('en-IN', {
+        day: 'numeric', month: 'short', year: 'numeric',
+      });
+
+      const rect = container.getBoundingClientRect();
+      tooltip.style.left = (x / W) * rect.width + 'px';
+      tooltip.style.top = Math.max((y / H) * rect.height - 10, 20) + 'px';
+      tooltip.classList.add('visible');
+    }
+
+    function hide() {
+      crosshair.setAttribute('opacity', 0);
+      hoverDot.setAttribute('opacity', 0);
+      tooltip.classList.remove('visible');
+    }
+
+    overlay.addEventListener('pointermove', (e) => showAt(nearestIndex(e.clientX)));
+    overlay.addEventListener('pointerdown', (e) => showAt(nearestIndex(e.clientX)));
+    overlay.addEventListener('pointerleave', hide);
   }
 
   async function loadTrending() {
@@ -825,16 +1027,72 @@
     if (e.target.dataset.close !== undefined || e.target.closest('[data-close]')) closeModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') { closeModal(); closeFilters(); }
     if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && state.user) {
       e.preventDefault();
       $('#search-input').focus();
     }
   });
 
+  /* ---------------- PWA: install + offline shell ---------------- */
+  let deferredInstallPrompt = null;
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  function initInstall() {
+    if (isStandalone()) return; // already installed — nothing to offer
+    if (isIOS()) {
+      // iOS never fires beforeinstallprompt; "Add to Home Screen" is manual-only.
+      $('#install-item').classList.remove('hidden');
+      return;
+    }
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      $('#install-item').classList.remove('hidden');
+    });
+    window.addEventListener('appinstalled', () => {
+      $('#install-item').classList.add('hidden');
+      deferredInstallPrompt = null;
+    });
+  }
+
+  async function promptInstall() {
+    if (isIOS()) {
+      openModal(`
+        <div class="modal-head"><h2>Install DealRadar</h2><button class="btn btn-ghost btn-xs" data-close>Close</button></div>
+        <p class="muted" style="margin-bottom:10px">iOS doesn't let apps trigger this automatically — three taps:</p>
+        <ol style="padding-left:20px; display:grid; gap:8px; font-size:.9rem;">
+          <li>Tap the <b>Share</b> button in Safari's toolbar</li>
+          <li>Scroll down and tap <b>Add to Home Screen</b></li>
+          <li>Tap <b>Add</b> — DealRadar opens full-screen from your home screen next time</li>
+        </ol>
+      `);
+      return;
+    }
+    if (!deferredInstallPrompt) {
+      toast('Your browser doesn’t support an install prompt here — look for an install icon in the address bar.', 'info');
+      return;
+    }
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    $('#install-item').classList.add('hidden');
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => { /* offline shell is a nicety, not required */ });
+    });
+  }
+
   (async function boot() {
     const saved = localStorage.getItem('dr-theme');
     if (saved) document.documentElement.dataset.theme = saved;
+    initInstall();
 
     try {
       const me = await api('/api/auth/me');

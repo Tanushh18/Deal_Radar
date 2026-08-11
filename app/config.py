@@ -29,7 +29,7 @@ class Settings:
         # each user's Telethon session string at rest.
         self.secret_key: str = os.getenv("SECRET_KEY", "dev-insecure-change-me")
         self.session_cookie: str = os.getenv("SESSION_COOKIE", "tgdeals_session")
-        self.session_ttl_days: int = int(os.getenv("SESSION_TTL_DAYS", "30"))
+        self.session_ttl_days: int = int(os.getenv("SESSION_TTL_DAYS", "180"))
 
         # --- Google Sheets ---
         # Either paste the service-account JSON into GOOGLE_SERVICE_ACCOUNT_JSON

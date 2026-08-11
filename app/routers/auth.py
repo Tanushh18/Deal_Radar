@@ -71,7 +71,7 @@ async def verify_password(payload: PasswordPayload, response: Response):
 
 def _complete(result: dict, response: Response) -> dict:
     user = result["user"]
-    token = auth.create_session(user["id"])
+    token = auth.create_session(user["telegram_id"])
     auth.set_session_cookie(response, token)
     if sheets.is_enabled():
         try:
@@ -116,7 +116,6 @@ async def delete_account(request: Request, response: Response, user=Depends(auth
     """Full erasure: Telegram session, web sessions, tracked channels, watchlists."""
     user_id = user["id"]
     await telegram.drop_client(user_id)
-    db.execute("DELETE FROM app_sessions WHERE user_id = ?", (user_id,))
     db.execute("DELETE FROM user_channels WHERE user_id = ?", (user_id,))
     db.execute(
         "DELETE FROM notified WHERE watchlist_id IN (SELECT id FROM watchlists WHERE user_id = ?)",

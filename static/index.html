@@ -6,8 +6,14 @@
   <title>DealRadar — Telegram deals, searchable</title>
   <meta name="description" content="Aggregates marketplace deals from your Telegram channels into one searchable, de-duplicated catalog." />
   <meta name="theme-color" content="#0b0f17" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="/assets/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>" />
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png" />
+  <!-- iOS ignores the manifest for "Add to Home Screen"; these are the equivalent it does read -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DealRadar" />
 </head>
 <body>
 
@@ -116,6 +122,7 @@
             <div id="drop-name" class="drop-name"></div>
             <div id="drop-handle" class="muted small"></div>
           </div>
+          <button class="drop-item hidden" id="install-item" data-action="install">Install app</button>
           <button class="drop-item" data-action="theme">Toggle theme</button>
           <button class="drop-item" data-action="status">System status</button>
           <button class="drop-item danger" data-action="logout">Sign out</button>
@@ -128,21 +135,31 @@
   <main id="page-deals" class="page">
     <div class="statstrip" id="statstrip"></div>
 
-    <div class="chiprow" id="category-chips"></div>
+    <div class="chiprow-row">
+      <div class="chiprow" id="category-chips"></div>
+      <button class="btn btn-soft btn-sm filters-toggle" id="btn-filters-toggle">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filters
+        <span class="filters-badge hidden" id="filters-badge">0</span>
+      </button>
+    </div>
 
     <div class="layout">
       <aside class="filters" id="filters">
         <div class="filter-head">
           <h3>Filters</h3>
-          <button class="btn btn-ghost btn-xs" id="btn-clear-filters">Clear</button>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-ghost btn-xs" id="btn-clear-filters">Clear</button>
+            <button class="btn btn-ghost btn-xs filters-close" id="btn-filters-close">Done</button>
+          </div>
         </div>
 
         <div class="filter-block">
           <label class="filter-label">Sort by</label>
           <select id="f-sort" class="input">
+            <option value="newest" selected>Newest first</option>
             <option value="relevance">Best match</option>
             <option value="best">Top deals</option>
-            <option value="newest">Newest first</option>
             <option value="discount">Biggest discount</option>
             <option value="price_low">Price: low to high</option>
             <option value="price_high">Price: high to low</option>

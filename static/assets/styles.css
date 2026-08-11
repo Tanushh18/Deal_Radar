@@ -229,13 +229,21 @@ select.input { appearance: none; cursor: pointer;
 .stat-label { font-size: .78rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
 
 /* category chips */
-.chiprow { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 14px; scrollbar-width: thin; }
+.chiprow-row { display: flex; align-items: center; gap: 10px; }
+.chiprow { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 14px; scrollbar-width: thin; flex: 1; min-width: 0; }
 .chiprow::-webkit-scrollbar { height: 5px; }
 .chiprow::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 .chip { flex: none; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text-2); font-size: .85rem; font-weight: 600; transition: all .15s; }
 .chip:hover { border-color: var(--border-strong); color: var(--text); }
 .chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+/* mobile filter toggle — hidden on desktop, where the sidebar is always visible */
+.filters-toggle { flex: none; margin-bottom: 12px; display: none; position: relative; }
+.filters-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px;
+  padding: 0 4px; border-radius: 999px; background: var(--accent); color: var(--accent-text);
+  font-size: .68rem; font-weight: 800; }
+.filters-close { display: none; }
 
 /* layout */
 .layout { display: grid; grid-template-columns: 250px 1fr; gap: 26px; align-items: start; }
@@ -362,6 +370,22 @@ select.input { appearance: none; cursor: pointer;
 .kv dt { color: var(--text-3); }
 .kv dd { margin: 0; word-break: break-word; }
 
+/* price history chart */
+.price-chart-wrap { margin: 16px 0; }
+.price-chart-title { font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--text-3); margin-bottom: 8px; }
+.price-chart { position: relative; width: 100%; touch-action: pan-y; }
+.price-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.price-chart-empty { padding: 22px 14px; text-align: center; color: var(--text-3);
+  font-size: .84rem; background: var(--surface-2); border-radius: var(--radius-sm); }
+.chart-tooltip { position: absolute; pointer-events: none; z-index: 5; padding: 7px 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow); font-size: .78rem; white-space: nowrap; opacity: 0;
+  transition: opacity .1s; transform: translate(-50%, -100%); top: 0; left: 0; }
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip .ct-value { font-weight: 800; font-size: .9rem; color: var(--text); }
+.chart-tooltip .ct-date { color: var(--text-3); margin-top: 1px; }
+
 /* skeletons */
 .skel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); height: 300px; overflow: hidden; position: relative; }
 .skel::after { content: ""; position: absolute; inset: 0;
@@ -376,8 +400,21 @@ select.input { appearance: none; cursor: pointer;
   .login-grid { grid-template-columns: 1fr; gap: 36px; max-width: 560px; }
   .login-pitch { text-align: left; }
   .layout { grid-template-columns: 1fr; }
-  .filters { position: static; max-height: none; }
   .alert-form-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Filters become a full-screen slide-up drawer instead of pushing the deal
+     grid down the page behind a wall of controls. */
+  .filters-toggle { display: inline-flex; }
+  .filters-close { display: inline-flex; }
+  .filters {
+    position: fixed; inset: 0; z-index: 140; max-height: none;
+    border-radius: 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform .25s ease;
+    display: flex; flex-direction: column;
+  }
+  .filters.open { transform: translateY(0); }
+  .filter-head { flex: none; }
+  .facet-list { max-height: none; }
 }
 @media (max-width: 760px) {
   .topbar { grid-template-columns: auto 1fr; gap: 12px; height: auto; padding: 11px 14px; row-gap: 10px; }
@@ -392,6 +429,17 @@ select.input { appearance: none; cursor: pointer;
   .alert-row { flex-wrap: wrap; }
   .toasts { left: 14px; right: 14px; bottom: 14px; }
   .toast { max-width: none; }
+
+  /* Comfortable tap targets (~44px) on the actions people actually tap on a phone. */
+  .deal-actions .btn, .btn-block, .channel, .chip, .navlink { min-height: 42px; }
+  .deal-actions { padding: 0 10px 10px; }
+  .facet, .drop-item { min-height: 40px; }
+  .check { min-height: 38px; }
+
+  /* Modal uses more of a small screen instead of floating with heavy padding. */
+  .modal { padding: 0; align-items: flex-end; }
+  .modal-body { max-width: none; width: 100%; max-height: 92vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }

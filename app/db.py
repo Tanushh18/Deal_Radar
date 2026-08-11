@@ -30,13 +30,6 @@ CREATE TABLE IF NOT EXISTS users (
     last_login_at   REAL
 );
 
-CREATE TABLE IF NOT EXISTS app_sessions (
-    token       TEXT PRIMARY KEY,
-    user_id     INTEGER,
-    created_at  REAL,
-    expires_at  REAL
-);
-
 CREATE TABLE IF NOT EXISTS channels (
     id                INTEGER PRIMARY KEY,
     tg_id             INTEGER UNIQUE,
