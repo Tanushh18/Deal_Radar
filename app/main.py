@@ -98,10 +98,16 @@ app = FastAPI(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+# allow_origins=["*"] + allow_credentials=True is an invalid combination per
+# the CORS spec — browsers refuse to honor a wildcard origin on a credentialed
+# request. It's silent today because the bundled frontend is same-origin and
+# never goes through CORS at all; it only bites a future separate client. So:
+# credentials are only enabled once real origins are configured explicitly.
+_cors_wildcard = "*" in settings.allowed_origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
-    allow_credentials=True,
+    allow_credentials=not _cors_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )

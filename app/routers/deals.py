@@ -6,10 +6,10 @@ import time
 from collections import OrderedDict
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from .. import auth, db
-from ..services import ingest, search, store, taxonomy, telegram
+from ..services import ingest, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -17,6 +17,12 @@ router = APIRouter(prefix="/api/deals", tags=["deals"])
 # doesn't re-download the same thumbnail. Bounded to protect a 512MB dyno.
 _image_cache: "OrderedDict[str, bytes]" = OrderedDict()
 _IMAGE_CACHE_MAX = 120
+
+# The deal catalog is intentionally browsable without signing in, so this
+# can't require auth without breaking anonymous browsing — but each miss
+# triggers a real Telegram API call under a tracking user's session, so it
+# still needs a cap to stop that being an open door to abuse that session.
+_limit_image = ratelimit.limit("deal-image", max_requests=90, window_seconds=60)
 
 
 def _scope(user: Optional[dict]) -> Optional[list]:
@@ -109,12 +115,16 @@ async def deal_history(deal_id: str):
 
 
 @router.get("/{deal_id}/image")
-async def deal_image(deal_id: str):
+async def deal_image(deal_id: str, request: Request):
     """Proxy the original Telegram photo, cached in memory."""
     if deal_id in _image_cache:
         _image_cache.move_to_end(deal_id)
         return Response(content=_image_cache[deal_id], media_type="image/jpeg",
                         headers={"Cache-Control": "public, max-age=86400"})
+
+    # Only the cache-miss path spends a real Telegram API call, so only it
+    # needs throttling — a popular cached image shouldn't count against it.
+    await _limit_image(request)
 
     row = db.query_one("SELECT channel_id, message_id FROM deals WHERE id = ?", (deal_id,))
     if not row or not row["channel_id"]:

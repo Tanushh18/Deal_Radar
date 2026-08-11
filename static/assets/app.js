@@ -19,11 +19,17 @@
     offset: 0,
     limit: 48,
     total: 0,
-    loading: false,
+    loading: false,       // guards "Load more" only — see searchAbortController for search
     availableChannels: [],
     selectedChannels: new Set(),
     categories: [],
   };
+
+  // Fast typing can fire a new search before the previous one resolves. Rather
+  // than drop the newer request (the old `state.loading` guard did this, and
+  // could leave the grid showing results for a stale query), cancel the old
+  // one so only the latest ever gets to render.
+  let searchAbortController = null;
 
   /* ---------------- API ---------------- */
   async function api(path, options = {}) {
@@ -287,8 +293,25 @@
       state.filters.category = chip.dataset.cat;
       state.filters.subcategory = '';
       renderCategoryChips();
+      renderSubcategoryFilter();
       refreshDeals(true);
     }));
+  }
+
+  function renderSubcategoryFilter() {
+    const block = $('#f-subcategory-block');
+    const select = $('#f-subcategory');
+    const category = state.categories.find((c) => c.name === state.filters.category);
+
+    if (!category) {
+      block.classList.add('hidden');
+      select.innerHTML = '<option value="">All</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">All</option>' + category.subcategories.map((s) => (
+      `<option value="${escapeHtml(s)}" ${state.filters.subcategory === s ? 'selected' : ''}>${escapeHtml(s)}</option>`
+    )).join('');
+    block.classList.remove('hidden');
   }
 
   function buildQuery() {
@@ -314,15 +337,26 @@
   }
 
   async function refreshDeals(reset = false) {
-    if (state.loading) return;
-    state.loading = true;
+    if (!reset) {
+      // Pagination ("Load more"): duplicate clicks should be dropped, not raced.
+      if (state.loading) return;
+      state.loading = true;
+    }
+
+    let signal;
     if (reset) {
+      // New search supersedes whatever was in flight — cancel it outright.
+      searchAbortController?.abort();
+      const controller = new AbortController();
+      searchAbortController = controller;
+      signal = controller.signal;
       state.offset = 0;
       $('#deal-grid').innerHTML = skeletons();
       $('#empty-state').classList.add('hidden');
     }
+
     try {
-      const res = await api('/api/deals?' + buildQuery());
+      const res = await api('/api/deals?' + buildQuery(), signal ? { signal } : {});
       state.total = res.total;
       renderDeals(res.results, reset);
 
@@ -339,11 +373,12 @@
       $('#btn-more').classList.toggle('hidden', state.offset + res.count >= res.total);
       if (!res.total) showEmpty();
     } catch (err) {
+      if (err.name === 'AbortError') return; // superseded by a newer search — ignore
       if (err.status === 401) { window.location.reload(); return; }
       toast(err.message, 'err');
       $('#deal-grid').innerHTML = '';
     } finally {
-      state.loading = false;
+      if (!reset) state.loading = false;
     }
   }
 
@@ -542,6 +577,10 @@
     state.filters.sort = e.target.value;
     refreshDeals(true);
   });
+  $('#f-subcategory').addEventListener('change', (e) => {
+    state.filters.subcategory = e.target.value;
+    refreshDeals(true);
+  });
   $('#f-max-price').addEventListener('change', (e) => {
     state.filters.max_price = e.target.value ? Number(e.target.value) : null;
     refreshDeals(true);
@@ -573,6 +612,7 @@
     $('#f-lowest').checked = false;
     $('#f-all-channels').checked = false;
     renderCategoryChips();
+    renderSubcategoryFilter();
     loadFacets();
     refreshDeals(true);
   });

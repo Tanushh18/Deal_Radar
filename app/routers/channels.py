@@ -9,9 +9,15 @@ from pydantic import BaseModel
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, sheets, telegram
+from ..services import ingest, ratelimit, sheets, telegram
 
 router = APIRouter(prefix="/api/channels", tags=["channels"])
+
+# Resolving/joining a public channel is a real Telegram call under the
+# signed-in user's own session. Being authenticated already raises the bar,
+# but a compromised or careless account could still hammer this and risk a
+# flood-wait on that session, so it gets a modest cap too.
+_limit_add_public = ratelimit.limit("add-public-channel", max_requests=20, window_seconds=600)
 
 
 class TrackPayload(BaseModel):
@@ -156,7 +162,7 @@ def _sync_meta_safely() -> None:
         pass
 
 
-@router.post("/add-public")
+@router.post("/add-public", dependencies=[Depends(_limit_add_public)])
 async def add_public_channel(payload: PublicChannelPayload, user=Depends(auth.current_user)):
     """Track a public channel by @username, joining it if needed."""
     try:

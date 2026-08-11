@@ -6,9 +6,15 @@ from pydantic import BaseModel, Field
 
 from .. import auth, db
 from ..config import settings
-from ..services import sheets, telegram
+from ..services import ratelimit, sheets, telegram
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+# Every one of these triggers a real Telegram API call under this app's own
+# credentials. Without a limit, /send-code in particular is free abuse: any
+# caller can spam a login code to an arbitrary phone number at no cost to them.
+_limit_send_code = ratelimit.limit("auth-send-code", max_requests=5, window_seconds=900)
+_limit_verify = ratelimit.limit("auth-verify", max_requests=15, window_seconds=900)
 
 
 class PhonePayload(BaseModel):
@@ -34,7 +40,7 @@ async def auth_config():
     }
 
 
-@router.post("/send-code")
+@router.post("/send-code", dependencies=[Depends(_limit_send_code)])
 async def send_code(payload: PhonePayload):
     try:
         return await telegram.start_login(payload.phone)
@@ -42,7 +48,7 @@ async def send_code(payload: PhonePayload):
         raise HTTPException(status_code=400, detail=str(exc))
 
 
-@router.post("/verify-code")
+@router.post("/verify-code", dependencies=[Depends(_limit_verify)])
 async def verify_code(payload: CodePayload, response: Response):
     try:
         result = await telegram.verify_code(payload.login_id, payload.code)
@@ -54,7 +60,7 @@ async def verify_code(payload: CodePayload, response: Response):
     return _complete(result, response)
 
 
-@router.post("/verify-password")
+@router.post("/verify-password", dependencies=[Depends(_limit_verify)])
 async def verify_password(payload: PasswordPayload, response: Response):
     try:
         result = await telegram.verify_password(payload.login_id, payload.password)

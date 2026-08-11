@@ -17,16 +17,19 @@ channel instead of re-reading history.
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
 import logging
+import socket
 import time
 from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin, urlparse
 
 import httpx
 
 from .. import db
 from ..config import settings
-from . import parser, search, sheets, store, telegram
+from . import parser, ratelimit, search, sheets, store, telegram
 
 log = logging.getLogger(__name__)
 
@@ -155,6 +158,49 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
     return result
 
 
+MAX_PROBE_BYTES = 200_000   # enough to see the out-of-stock markers, not a whole page
+MAX_REDIRECT_HOPS = 4
+
+
+async def _resolve_is_safe(url: str) -> bool:
+    """SSRF guard: reject URLs that resolve to a non-public address.
+
+    Deal links come from channel posts we don't control — a malicious or
+    compromised channel could point a domain at an internal address and have
+    this server fetch it. This blocks the direct case (a domain resolving to
+    a private/loopback/link-local/reserved address). It does not defend
+    against DNS rebinding (resolve-safe, then reconnect-elsewhere), which
+    would require pinning the connection to the resolved IP; that's more than
+    a deal-liveness prober warrants — its worst case here is bad ranking
+    data, not remote code execution.
+    """
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return False
+    try:
+        loop = asyncio.get_event_loop()
+        infos = await loop.getaddrinfo(parsed.hostname, None)
+    except (socket.gaierror, UnicodeError, OSError):
+        return False
+    if not infos:
+        return False
+    for info in infos:
+        raw_addr = info[4][0].split("%")[0]  # strip an IPv6 zone id if present
+        try:
+            addr = ipaddress.ip_address(raw_addr)
+        except ValueError:
+            return False
+        if (
+            addr.is_private or addr.is_loopback or addr.is_link_local
+            or addr.is_reserved or addr.is_multicast or addr.is_unspecified
+        ):
+            return False
+    return True
+
+
 # --- step 5: link liveness ---------------------------------------------
 async def verify_links(batch: int = 40) -> Dict[str, int]:
     """Probe the least-recently-checked live deals; retire dead links.
@@ -180,36 +226,58 @@ async def verify_links(batch: int = 40) -> Dict[str, int]:
             "(KHTML, like Gecko) Chrome/122.0 Safari/537.36"
         )
     }
-    async with httpx.AsyncClient(
-        follow_redirects=True, timeout=8.0, headers=headers
-    ) as client:
+    # Redirects are followed manually (not via follow_redirects=True) so each
+    # hop can be re-validated by _resolve_is_safe before it's fetched.
+    async with httpx.AsyncClient(follow_redirects=False, timeout=8.0, headers=headers) as client:
 
         async def probe(row) -> None:
             nonlocal checked, dead
             url = row["url"] or row["clean_url"]
             if not url:
                 return
-            try:
-                resp = await client.get(url)
-                checked += 1
-                if resp.status_code in (404, 410):
-                    store.mark_dead(row["id"], "dead_link")
-                    dead += 1
+
+            for _ in range(MAX_REDIRECT_HOPS):
+                if not await _resolve_is_safe(url):
                     return
-                if resp.status_code < 400:
-                    body = resp.text[:60000].lower()
-                    if any(marker in body for marker in DEAD_MARKERS):
-                        store.mark_dead(row["id"], "out_of_stock")
-                        dead += 1
+                try:
+                    # client.stream(), not client.get(): get() buffers the
+                    # full body before we ever see it, which would make the
+                    # MAX_PROBE_BYTES cap below pointless — the download
+                    # already happened. stream() lets us stop mid-download.
+                    async with client.stream("GET", url) as resp:
+                        if (
+                            resp.status_code in (301, 302, 303, 307, 308)
+                            and resp.headers.get("location")
+                        ):
+                            url = urljoin(url, resp.headers["location"])
+                            continue
+
+                        checked += 1
+                        if resp.status_code in (404, 410):
+                            store.mark_dead(row["id"], "dead_link")
+                            dead += 1
+                            return
+                        if resp.status_code < 400:
+                            body = b""
+                            async for chunk in resp.aiter_bytes():
+                                body += chunk
+                                if len(body) >= MAX_PROBE_BYTES:
+                                    break
+                            text = body.decode("utf-8", errors="ignore").lower()
+                            if any(marker in text for marker in DEAD_MARKERS):
+                                store.mark_dead(row["id"], "out_of_stock")
+                                dead += 1
+                                return
+                            # Alive and still selling — extend past the base TTL.
+                            db.execute(
+                                "UPDATE deals SET last_seen_at = ?, "
+                                "expires_at = MAX(expires_at, ?), dirty = 1 WHERE id = ?",
+                                (time.time(), time.time() + 86400, row["id"]),
+                            )
                         return
-                    # Alive and still selling — extend its life past the base TTL.
-                    db.execute(
-                        "UPDATE deals SET last_seen_at = ?, expires_at = MAX(expires_at, ?), "
-                        "dirty = 1 WHERE id = ?",
-                        (time.time(), time.time() + 86400, row["id"]),
-                    )
-            except (httpx.HTTPError, asyncio.TimeoutError):
-                pass  # a transient network error is not evidence the deal is dead
+                except (httpx.HTTPError, asyncio.TimeoutError):
+                    return  # a transient network error is not evidence the deal is dead
+            # too many redirect hops — give up quietly, not evidence of anything
 
         # Bounded concurrency — free tier has one small CPU.
         semaphore = asyncio.Semaphore(8)
@@ -332,6 +400,8 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             liveness = await verify_links(settings.liveness_batch)
             alerts = await run_watchlist_alerts()
             store.purge_ancient()
+            store.purge_housekeeping()
+            ratelimit.prune()
 
             flushed = {"updated": 0, "appended": 0}
             if sheets.is_enabled():

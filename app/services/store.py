@@ -308,6 +308,27 @@ def purge_ancient(days: int = 14) -> int:
     return cur.rowcount or 0
 
 
+def purge_housekeeping(notified_days: int = 30) -> Dict[str, int]:
+    """Clear tables that otherwise grow forever on a long-running deployment.
+
+    Neither of these has any other cleanup path: a sent-alert record in
+    `notified` exists purely to dedupe future alerts and is worthless once
+    old enough that the same deal would have expired anyway; an expired web
+    session in `app_sessions` is only ever pruned opportunistically when
+    *someone* happens to log in (see auth.create_session), which never
+    triggers on a quiet, unattended, always-on deployment.
+    """
+    now = time.time()
+    notified_cutoff = now - notified_days * 86400
+    notified = db.execute(
+        "DELETE FROM notified WHERE sent_at < ?", (notified_cutoff,)
+    ).rowcount or 0
+    sessions = db.execute(
+        "DELETE FROM app_sessions WHERE expires_at < ?", (now,)
+    ).rowcount or 0
+    return {"notified": notified, "sessions": sessions}
+
+
 def rescore_all() -> int:
     """Recompute scores so recency decay stays honest between polls."""
     rows = db.query("SELECT * FROM deals WHERE status = 'live'")

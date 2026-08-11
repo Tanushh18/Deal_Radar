@@ -473,6 +473,24 @@ and skips affected channels rather than crashing.
   is https.
 - `DELETE /api/auth/account` fully erases your account and session.
 - Outbound deal links carry `rel="noopener noreferrer nofollow"`.
+- **Rate limiting** on everything that spends a real Telegram API call under
+  the app's credentials: `/api/auth/send-code` (5 / 15 min per IP — without
+  this, anyone could spam a login code to an arbitrary phone number at no
+  cost to them), code/2FA verification (15 / 15 min), adding a public channel
+  (20 / 10 min), and the deal-image proxy on cache misses (90 / min). In-memory,
+  per-process — matches the single-worker requirement above.
+- **CORS**: `allow_origins=["*"]` and credentialed requests are mutually
+  exclusive per spec; the app disables credentials automatically when origins
+  are wildcarded, rather than sending an invalid combination. Only matters if
+  you build a separate client against this API — the bundled frontend is
+  same-origin and never goes through CORS at all.
+- **Link-liveness probing is SSRF-guarded**: deal links come from channel
+  posts DealRadar doesn't control, so before fetching one to check it's still
+  live, the destination is resolved and rejected if it's private, loopback,
+  link-local, or reserved (blocks a channel post pointing a link at an
+  internal address or a cloud metadata endpoint). Redirects are followed
+  manually, one hop at a time, re-checked at each hop. Response bodies are
+  capped at 200KB read via streaming, not truncated after a full download.
 
 **Be aware:** automating a *user* account is against a strict reading of
 Telegram's ToS if abused. Polling a handful of channels every few minutes for
