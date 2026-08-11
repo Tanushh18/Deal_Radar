@@ -1,4 +1,4 @@
-.PHONY: help setup dev start test ping health stats clean freeze
+.PHONY: help setup dev start test ping health stats status sync clean freeze
 
 VENV   := .venv
 PY     := $(VENV)/bin/python
@@ -34,6 +34,13 @@ health:          ## Deep health check on a running server
 
 stats:           ## Deal + ingest stats from a running server
 	@curl -s http://localhost:$(PORT)/api/stats && echo
+
+status:          ## Is it actually fetching deals? Full pipeline diagnostic
+	@$(PY) tools/status.py
+
+sync:            ## Force an ingest cycle now (needs ADMIN_TOKEN in .env)
+	@curl -s -X POST http://localhost:$(PORT)/api/admin/ingest \
+	  -H "X-Admin-Token: $$(grep -E '^ADMIN_TOKEN=' .env | cut -d= -f2-)" && echo
 
 secret:          ## Generate a SECRET_KEY
 	@$(PY) -c "import secrets; print(secrets.token_urlsafe(48))"
