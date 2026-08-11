@@ -79,6 +79,7 @@ These are the parts that separate this from "dump messages into a spreadsheet":
 | 12 | **Alerts via your own Saved Messages** | We already hold your session, so alerts arrive in Telegram itself — no email service, no push infra, no extra cost. |
 | 13 | **Batched Sheets writes** | One `batch_update` + one `append_rows` per cycle using an in-memory row map, instead of one API call per deal. |
 | 14 | **Single-source channel reads** | If five users track the same channel, it's still fetched once globally. |
+| 15 | **Sheets retention mirrors the local cache** | Deals older than 14 days with no repost activity are dropped from the local cache *and* the same rows are removed from the Deals tab in Sheets — so the two never quietly drift apart, and Sheets doesn't grow forever. |
 
 ---
 

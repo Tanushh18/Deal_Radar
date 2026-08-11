@@ -237,6 +237,49 @@ def flush_deals(limit: int = 400) -> Dict[str, int]:
     return {"updated": len(updates), "appended": len(appends), "skipped": 0}
 
 
+def delete_deals(ids: List[str]) -> int:
+    """Remove specific rows from the Deals tab — mirrors a local purge.
+
+    Every other write to this tab is additive (new deal) or in-place
+    (status flips to expired/dead), so without this Sheets keeps every deal
+    forever while the local cache quietly forgets old ones via
+    store.purge_ancient, and the two drift apart. This keeps them in sync.
+
+    Deleting spreadsheet rows shifts every row below them, which would
+    silently corrupt _row_map for every other deal if done carelessly. The
+    fix: issue all deletions as one batch, ordered highest row-number first,
+    so each deleteDimension request lands before any row above it moves —
+    then reload the row map from scratch rather than trying to patch offsets.
+    """
+    if not ids or not connect():
+        return 0
+    with _lock:
+        target_rows = sorted({_row_map[i] for i in ids if i in _row_map}, reverse=True)
+        if not target_rows:
+            return 0
+        try:
+            ws = _spreadsheet.worksheet("Deals")
+            requests = [
+                {
+                    "deleteDimension": {
+                        "range": {
+                            "sheetId": ws.id,
+                            "dimension": "ROWS",
+                            "startIndex": row - 1,  # 0-indexed, inclusive
+                            "endIndex": row,          # 0-indexed, exclusive
+                        }
+                    }
+                }
+                for row in target_rows
+            ]
+            _spreadsheet.batch_update({"requests": requests})
+            _load_row_map()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Sheets delete failed (will retry next cycle): %s", exc)
+            return 0
+    return len(target_rows)
+
+
 def restore_deals() -> int:
     """Rebuild the SQLite cache from Sheets after a cold start."""
     if not connect():
