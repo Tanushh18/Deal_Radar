@@ -1,4 +1,4 @@
-.PHONY: help setup dev start test ping health stats status sync clean freeze
+.PHONY: help setup dev start test ping health stats status sync clean clean-data freeze
 
 VENV   := .venv
 PY     := $(VENV)/bin/python
@@ -45,6 +45,14 @@ sync:            ## Force an ingest cycle now (needs ADMIN_TOKEN in .env)
 secret:          ## Generate a SECRET_KEY
 	@$(PY) -c "import secrets; print(secrets.token_urlsafe(48))"
 
-clean:           ## Remove the local cache DB and __pycache__
-	rm -rf data __pycache__ */__pycache__ */*/__pycache__ .pytest_cache
-	@echo "Cleaned. Sheets data (if configured) is untouched."
+clean:           ## Remove __pycache__ only — never touches data/ (see clean-data)
+	rm -rf __pycache__ */__pycache__ */*/__pycache__ .pytest_cache
+	@echo "Cleaned pycache. data/ was left alone — see 'make clean-data' if you really want that gone."
+
+clean-data:      ## Danger: delete the local deals cache. Confirms first; Sheets (if configured) is unaffected.
+	@if [ -f data/deals.db ]; then \
+	  read -p "This deletes data/deals.db (local cache only — Sheets is untouched if configured). Continue? [y/N] " ok; \
+	  if [ "$$ok" = "y" ] || [ "$$ok" = "Y" ]; then rm -rf data && echo "Removed data/."; else echo "Cancelled."; fi; \
+	else \
+	  echo "No data/deals.db present — nothing to do."; \
+	fi

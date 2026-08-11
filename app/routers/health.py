@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Response
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, sheets
+from ..services import ingest, sheets, store
 
 router = APIRouter(prefix="/api", tags=["system"])
 
@@ -94,6 +94,16 @@ async def admin_flush():
 @router.post("/admin/sheets/restore", dependencies=[Depends(auth.require_admin)])
 async def admin_restore():
     return {"restored": sheets.restore_deals()}
+
+
+@router.post("/admin/backfill-channel-ids", dependencies=[Depends(auth.require_admin)])
+async def admin_backfill_channel_ids():
+    """Repairs deals restored before the Deals sheet tracked channel_tg_id —
+    those came back as channel_id=0, invisible to any signed-in user's own
+    channel-scoped view. Safe to call repeatedly."""
+    fixed = store.backfill_channel_ids()
+    flushed = sheets.flush_deals() if fixed else {"updated": 0, "appended": 0}
+    return {"fixed": fixed, "flushed": flushed}
 
 
 @router.post("/admin/sheets/sync-meta", dependencies=[Depends(auth.require_admin)])

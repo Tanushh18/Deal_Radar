@@ -23,7 +23,7 @@ from .routers import channels as channels_router
 from .routers import deals as deals_router
 from .routers import health as health_router
 from .routers import watchlists as watchlists_router
-from .services import ingest, sheets, telegram
+from .services import ingest, sheets, store, telegram
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -48,23 +48,49 @@ async def lifespan(app: FastAPI):
         log.warning("SECRET_KEY is the insecure default — set a real one before deploying.")
 
     # Render's disk is ephemeral: rebuild the cache from Sheets on cold start.
-    # Order matters — users before channels before user_channels/watchlists,
-    # since the latter are resolved by looking up the former's local ids.
+    # Each step gets its own try/except — restore_deals() is independently
+    # resilient to a single bad row now, but a step here failing for some
+    # other reason (a transient Sheets error, a quota blip) must not also
+    # cost every step after it in the same sequence.
     if sheets.is_enabled():
+        loop = asyncio.get_event_loop()
+        restored = 0
         try:
-            loop = asyncio.get_event_loop()
             restored = await loop.run_in_executor(None, sheets.restore_deals)
-            meta = await loop.run_in_executor(None, sheets.restore_all_meta)
-            log.info(
-                "Restored from Google Sheets: %d deals, %d users, %d channels, "
-                "%d tracking links, %d watchlists",
-                restored, meta["users"], meta["channels"],
-                meta["user_channels"], meta["watchlists"],
-            )
-            if meta["users"]:
-                log.info("Restored users hold no session — each needs to sign in again.")
         except Exception as exc:  # noqa: BLE001
-            log.warning("Sheets restore skipped: %s", exc)
+            log.warning("Deal restore failed: %s", exc)
+
+        meta = {"users": 0, "channels": 0, "user_channels": 0, "watchlists": 0}
+        try:
+            # Order matters — users before channels before user_channels/
+            # watchlists, since the latter are resolved by looking up the
+            # former's local ids.
+            meta = await loop.run_in_executor(None, sheets.restore_all_meta)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Meta restore failed: %s", exc)
+
+        log.info(
+            "Restored from Google Sheets: %d deals, %d users, %d channels, "
+            "%d tracking links, %d watchlists",
+            restored, meta["users"], meta["channels"],
+            meta["user_channels"], meta["watchlists"],
+        )
+        if meta["users"]:
+            log.info("Restored users hold no session — each needs to sign in again.")
+
+        try:
+            # Deals restored above ran before channels existed locally to
+            # match against, and rows written before the Deals tab tracked
+            # channel_tg_id (anything from before this fix shipped) came back
+            # as channel_id=0 — invisible to a signed-in user's own
+            # channel-scoped view. Runs after meta so the channels table is
+            # actually populated to resolve against.
+            fixed = store.backfill_channel_ids()
+            if fixed:
+                log.info("Backfilled channel_id on %d deals restored from Sheets", fixed)
+                await loop.run_in_executor(None, sheets.flush_deals)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("channel_id backfill failed: %s", exc)
     else:
         log.info("Google Sheets not configured — running in SQLite-only mode.")
 

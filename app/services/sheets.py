@@ -26,14 +26,14 @@ log = logging.getLogger(__name__)
 DEALS_HEADER = [
     "id", "title", "price", "mrp", "discount_pct", "store", "category", "subcategory",
     "brand", "url", "clean_url", "image_url", "coupon", "sizes", "channel_title",
-    "message_id", "posted_at_iso", "expires_at_iso", "repost_count", "status",
-    "score", "is_lowest", "flags", "product_key", "raw_text",
+    "channel_tg_id", "message_id", "posted_at_iso", "expires_at_iso", "repost_count",
+    "status", "score", "is_lowest", "flags", "product_key", "raw_text",
 ]
 CHANNELS_HEADER = [
     "tg_id", "username", "title", "participants", "last_message_id", "last_fetched_iso",
     "active", "source_user_telegram_id",
 ]
-USERS_HEADER = ["telegram_id", "username", "first_name", "created_iso", "last_login_iso"]
+USERS_HEADER = ["telegram_id", "phone", "username", "first_name", "created_iso", "last_login_iso"]
 WATCH_HEADER = ["user_telegram_id", "query", "category", "store", "max_price", "min_discount", "notify", "created_iso"]
 # Which user tracks which channel. Keyed by stable Telegram ids (not local
 # autoincrement ids) so it survives a full cold start, where every local id
@@ -169,6 +169,7 @@ def _deal_to_row(deal: Dict[str, Any]) -> List[Any]:
         deal.get("coupon") or "",
         deal.get("sizes") or "",
         deal.get("channel_title") or "",
+        deal.get("channel_id") or "",
         deal.get("message_id") or "",
         _iso(deal.get("posted_at")),
         _iso(deal.get("expires_at")),
@@ -301,54 +302,78 @@ def restore_deals() -> int:
         except (ValueError, TypeError):
             return 0.0
 
+    def _int(value: Any, default: int = 0) -> int:
+        try:
+            return int(str(value).strip())
+        except (ValueError, TypeError):
+            return default
+
+    def _float(value: Any) -> Optional[float]:
+        try:
+            return float(str(value).strip()) if str(value or "").strip() else None
+        except (ValueError, TypeError):
+            return None
+
     restored = 0
+    skipped = 0
     for rec in records:
-        deal_id = str(rec.get("id") or "").strip()
-        if not deal_id:
-            continue
-        title = str(rec.get("title") or "")
-        flags = [f.strip() for f in str(rec.get("flags") or "").split(",") if f.strip()]
-        row = {
-            "id": deal_id,
-            "title": title,
-            "norm_title": normalize_title(title),
-            "product_key": str(rec.get("product_key") or ""),
-            "price": float(rec["price"]) if str(rec.get("price") or "").strip() else None,
-            "mrp": float(rec["mrp"]) if str(rec.get("mrp") or "").strip() else None,
-            "discount_pct": int(rec.get("discount_pct") or 0),
-            "currency": "INR",
-            "store": str(rec.get("store") or ""),
-            "url": str(rec.get("url") or ""),
-            "clean_url": str(rec.get("clean_url") or ""),
-            "image_url": str(rec.get("image_url") or ""),
-            "coupon": str(rec.get("coupon") or ""),
-            "category": str(rec.get("category") or "Other"),
-            "subcategory": str(rec.get("subcategory") or "General"),
-            "brand": str(rec.get("brand") or ""),
-            "sizes": str(rec.get("sizes") or ""),
-            "channel_id": 0,
-            "channel_title": str(rec.get("channel_title") or ""),
-            "message_id": int(rec.get("message_id") or 0),
-            "posted_at": _ts(rec.get("posted_at_iso")),
-            "first_seen_at": _ts(rec.get("posted_at_iso")),
-            "last_seen_at": _ts(rec.get("posted_at_iso")),
-            "expires_at": _ts(rec.get("expires_at_iso")),
-            "repost_count": int(rec.get("repost_count") or 1),
-            "channels_seen": "[]",
-            "status": str(rec.get("status") or "live"),
-            "score": float(rec.get("score") or 0),
-            "is_lowest": 1 if str(rec.get("is_lowest")).lower() in {"yes", "true", "1"} else 0,
-            "flags": json.dumps(flags),
-            "raw_text": str(rec.get("raw_text") or ""),
-            "search_blob": " ".join(
-                filter(None, [title.lower(), str(rec.get("brand") or "").lower(),
-                              str(rec.get("category") or "").lower(),
-                              str(rec.get("subcategory") or "").lower()])
-            ),
-            "dirty": 0,
-        }
-        db.upsert("deals", row, conflict="id")
-        restored += 1
+        # One malformed row (a stray schema-migration artifact, a hand-edited
+        # cell, anything) must never take down the whole restore — that
+        # includes users and channels, restored right after this in the same
+        # startup sequence. Skip and keep going instead of aborting.
+        try:
+            deal_id = str(rec.get("id") or "").strip()
+            if not deal_id:
+                continue
+            title = str(rec.get("title") or "")
+            flags = [f.strip() for f in str(rec.get("flags") or "").split(",") if f.strip()]
+            row = {
+                "id": deal_id,
+                "title": title,
+                "norm_title": normalize_title(title),
+                "product_key": str(rec.get("product_key") or ""),
+                "price": _float(rec.get("price")),
+                "mrp": _float(rec.get("mrp")),
+                "discount_pct": _int(rec.get("discount_pct")),
+                "currency": "INR",
+                "store": str(rec.get("store") or ""),
+                "url": str(rec.get("url") or ""),
+                "clean_url": str(rec.get("clean_url") or ""),
+                "image_url": str(rec.get("image_url") or ""),
+                "coupon": str(rec.get("coupon") or ""),
+                "category": str(rec.get("category") or "Other"),
+                "subcategory": str(rec.get("subcategory") or "General"),
+                "brand": str(rec.get("brand") or ""),
+                "sizes": str(rec.get("sizes") or ""),
+                "channel_id": _int(rec.get("channel_tg_id")),
+                "channel_title": str(rec.get("channel_title") or ""),
+                "message_id": _int(rec.get("message_id")),
+                "posted_at": _ts(rec.get("posted_at_iso")),
+                "first_seen_at": _ts(rec.get("posted_at_iso")),
+                "last_seen_at": _ts(rec.get("posted_at_iso")),
+                "expires_at": _ts(rec.get("expires_at_iso")),
+                "repost_count": _int(rec.get("repost_count"), default=1),
+                "channels_seen": "[]",
+                "status": str(rec.get("status") or "live"),
+                "score": _float(rec.get("score")) or 0.0,
+                "is_lowest": 1 if str(rec.get("is_lowest")).lower() in {"yes", "true", "1"} else 0,
+                "flags": json.dumps(flags),
+                "raw_text": str(rec.get("raw_text") or ""),
+                "search_blob": " ".join(
+                    filter(None, [title.lower(), str(rec.get("brand") or "").lower(),
+                                  str(rec.get("category") or "").lower(),
+                                  str(rec.get("subcategory") or "").lower()])
+                ),
+                "dirty": 0,
+            }
+            db.upsert("deals", row, conflict="id")
+            restored += 1
+        except Exception as exc:  # noqa: BLE001
+            skipped += 1
+            log.warning("Skipped one malformed row during restore (id=%r): %s", rec.get("id"), exc)
+
+    if skipped:
+        log.warning("Restore finished with %d skipped rows out of %d", skipped, len(records))
 
     with _lock:
         _load_row_map()
@@ -385,12 +410,12 @@ def sync_users() -> int:
         return 0
     rows = db.query("SELECT * FROM users ORDER BY created_at")
     values = [[
-        r["telegram_id"], r["username"] or "", r["first_name"] or "",
+        r["telegram_id"], r["phone"] or "", r["username"] or "", r["first_name"] or "",
         _iso(r["created_at"]), _iso(r["last_login_at"]),
     ] for r in rows]
     try:
         ws = _spreadsheet.worksheet("Users")
-        ws.batch_clear(["A2:E5000"])
+        ws.batch_clear(["A2:F5000"])
         if values:
             ws.update("A2", values, value_input_option="RAW")
     except Exception as exc:  # noqa: BLE001
@@ -488,9 +513,10 @@ def restore_users() -> int:
             continue
         db.execute(
             "INSERT INTO users (telegram_id, username, first_name, phone, session_enc, "
-            "created_at, last_login_at) VALUES (?, ?, ?, '', '', ?, ?) "
+            "created_at, last_login_at) VALUES (?, ?, ?, ?, '', ?, ?) "
             "ON CONFLICT(telegram_id) DO NOTHING",
             (tid, str(rec.get("username") or ""), str(rec.get("first_name") or ""),
+             str(rec.get("phone") or ""),
              _parse_iso(rec.get("created_iso")), _parse_iso(rec.get("last_login_iso"))),
         )
         restored += 1

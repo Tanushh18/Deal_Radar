@@ -348,6 +348,31 @@ def purge_housekeeping(notified_days: int = 30) -> Dict[str, int]:
     return {"notified": notified}
 
 
+def backfill_channel_ids() -> int:
+    """Repair deals restored from Sheets before the Deals tab tracked
+    channel_tg_id (they came back with channel_id=0, invisible to any
+    channel-scoped query — a signed-in browsing their own tracked channels
+    would see nothing at all, since 0 never matches a real channel's id).
+
+    Resolves each affected deal's channel by matching its stored
+    channel_title text against the known channels table, marks it dirty so
+    the fix reaches Sheets on the next flush, and is safe to call
+    repeatedly — deals with no title match, or already carrying a real
+    channel_id, are left untouched.
+    """
+    rows = db.query(
+        "SELECT d.id, c.tg_id FROM deals d JOIN channels c ON c.title = d.channel_title "
+        "WHERE d.channel_id = 0 AND d.channel_title != ''"
+    )
+    if not rows:
+        return 0
+    db.execute_many(
+        "UPDATE deals SET channel_id = ?, dirty = 1 WHERE id = ?",
+        [(r["tg_id"], r["id"]) for r in rows],
+    )
+    return len(rows)
+
+
 def rescore_all() -> int:
     """Recompute scores so recency decay stays honest between polls."""
     rows = db.query("SELECT * FROM deals WHERE status = 'live'")

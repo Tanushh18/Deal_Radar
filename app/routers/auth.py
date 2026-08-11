@@ -76,6 +76,13 @@ def _complete(result: dict, response: Response) -> dict:
     if sheets.is_enabled():
         try:
             sheets.sync_users()
+            # If the local cache was ever rebuilt from scratch (a Render
+            # restart, or this user's row simply didn't exist yet locally),
+            # their tracked-channel selections still live in the
+            # UserChannels sheet keyed by telegram_id. Re-linking on every
+            # login is cheap and idempotent, and means "sign in again" never
+            # also means "re-pick every channel by hand."
+            sheets.restore_user_channels()
         except Exception:  # noqa: BLE001 - a Sheets hiccup must not block login
             pass
     return {"status": "ok", "user": user}
