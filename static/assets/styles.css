@@ -193,8 +193,8 @@ select.input { appearance: none; cursor: pointer;
 }
 .search { position: relative; display: flex; align-items: center; gap: 8px; max-width: 640px; width: 100%; justify-self: center; }
 .search-icon { position: absolute; left: 13px; width: 16px; height: 16px; color: var(--text-3); pointer-events: none; }
-.search input { padding-left: 38px; background: var(--surface-2); border-radius: 999px; }
-.search .btn { border-radius: 999px; }
+.search input { flex: 1; min-width: 0; padding-left: 38px; background: var(--surface-2); border-radius: 999px; }
+.search .btn { flex: none; border-radius: 999px; }
 .topnav { display: flex; align-items: center; gap: 6px; }
 .navlink { background: none; border: none; color: var(--text-2); font-weight: 600; font-size: .9rem;
   padding: 8px 12px; border-radius: var(--radius-sm); transition: color .15s, background .15s; }
@@ -417,10 +417,24 @@ select.input { appearance: none; cursor: pointer;
   .facet-list { max-height: none; }
 }
 @media (max-width: 760px) {
-  .topbar { grid-template-columns: auto 1fr; gap: 12px; height: auto; padding: 11px 14px; row-gap: 10px; }
+  /* minmax(0, 1fr): without the 0 floor, a 1fr track won't shrink below the
+     min-content width of what's inside it — with 3 nav links + a Sync button
+     + an avatar all fighting for column 2, that min-content easily exceeds a
+     phone's width, and the whole topbar (plus .search, which spans both
+     columns) silently overflows the viewport instead of the nav compressing. */
+  .topbar { grid-template-columns: auto minmax(0, 1fr); gap: 8px; height: auto; padding: 11px 14px; row-gap: 10px; }
   .search { grid-column: 1 / -1; order: 3; max-width: none; }
-  .topnav .navlink { padding: 7px 9px; font-size: .85rem; }
+  /* Tightened to fit Deals/Channels/Alerts + Sync + avatar without scrolling —
+     overflow-x is a safety net for an even narrower phone, not the default path,
+     so justify-content stays flex-start: if it ever does overflow, "Deals" (the
+     link people land on) stays the visible one, not scrolled out behind it. */
+  .topnav { gap: 1px; overflow-x: auto; scrollbar-width: none; }
+  .topnav::-webkit-scrollbar { display: none; }
+  .topnav .navlink { padding: 6px 7px; font-size: .78rem; white-space: nowrap; flex: none; }
+  .topnav #btn-sync { flex: none; padding: 7px; }
   .topnav #btn-sync span { display: none; }
+  .avatar { width: 30px; height: 30px; font-size: .78rem; flex: none; }
+  .usermenu { margin-left: 2px; }
   .page { padding: 18px 14px 50px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 11px; }
   .deal-body { padding: 10px; }

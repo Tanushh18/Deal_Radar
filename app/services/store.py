@@ -168,18 +168,21 @@ def _match_by_title(deal: Dict[str, Any], now: float) -> Optional[Any]:
     Channels post the same product with wildly different links — a bare
     amzn.to shortlink in one, a full /dp/ASIN URL in another. Those produce
     different product keys, so without this the same headphone shows up twice.
-    Matching on normalised title + near-identical price catches it.
+
+    Matches purely on product identity (same_product's model-number-gated
+    check), not price: a genuine price drop is exactly the case this needs to
+    still catch, so requiring the price to also stay close would defeat the
+    purpose — two posts of the same listing a week apart at very different
+    prices are still the same listing.
     """
     norm = deal.get("norm_title")
-    price = deal.get("price")
-    if not norm or not price:
+    if not norm:
         return None
 
-    lo, hi = float(price) * 0.98, float(price) * 1.02
     rows = db.query(
-        "SELECT * FROM deals WHERE store = ? AND expires_at > ? AND price BETWEEN ? AND ? "
-        "AND product_key != ? ORDER BY last_seen_at DESC LIMIT 25",
-        (deal.get("store", ""), now, lo, hi, deal.get("product_key") or ""),
+        "SELECT * FROM deals WHERE store = ? AND expires_at > ? AND product_key != ? "
+        "ORDER BY last_seen_at DESC LIMIT 25",
+        (deal.get("store", ""), now, deal.get("product_key") or ""),
     )
     best, best_score = None, 0.0
     for row in rows:
@@ -201,24 +204,20 @@ def save_deal(deal: Dict[str, Any]) -> str:
     deal["product_key"] = pkey
     price = deal.get("price")
 
+    # Any live deal sharing this product_key IS this listing, at whatever price
+    # it's now at — canonical_product_key already vetted true product identity
+    # (via same_product's model-number gating) when the key came from a title
+    # hash, and an ASIN/pid key match is trivially the same listing regardless.
+    # A price-proximity check here would only block the case that matters most:
+    # catching a genuine price drop as an update to the same card instead of a
+    # brand new one.
     existing = None
     if pkey:
-        # Match the same product at a comparable price within the TTL window.
-        rows = db.query(
+        existing = db.query_one(
             "SELECT * FROM deals WHERE product_key = ? AND expires_at > ? "
-            "ORDER BY last_seen_at DESC LIMIT 5",
+            "ORDER BY last_seen_at DESC LIMIT 1",
             (pkey, now),
         )
-        for row in rows:
-            row_price = row["price"]
-            if price and row_price:
-                # Within 2% -> same offer reposted, not a new price.
-                if abs(float(row_price) - float(price)) / max(float(row_price), 1.0) <= 0.02:
-                    existing = row
-                    break
-            elif not price and not row_price:
-                existing = row
-                break
 
     if existing is None:
         existing = _match_by_title(deal, now)
@@ -258,6 +257,11 @@ def save_deal(deal: Dict[str, Any]) -> str:
     merged["channels_seen"] = seen
     merged["repost_count"] = len(seen) or int(existing["repost_count"] or 1)
     merged["last_seen_at"] = now
+    # The existing row can be hours or days old by the time a new price comes
+    # in (that's the whole point of merging on identity, not price proximity)
+    # — posted_at needs to track the latest sighting or both the freshness
+    # score and the "posted X ago" display go stale on an actively-tracked deal.
+    merged["posted_at"] = max(float(existing["posted_at"] or 0), float(deal.get("posted_at") or now))
     merged["expires_at"] = max(
         float(existing["expires_at"] or 0),
         (deal.get("posted_at") or now) + settings.deal_ttl_hours * 3600,
@@ -265,6 +269,20 @@ def save_deal(deal: Dict[str, Any]) -> str:
     merged["status"] = "live"
     merged["flags"] = deal["flags"]
     merged["is_lowest"] = deal.get("is_lowest", existing["is_lowest"])
+
+    # The current price always wins — this card must show what the product
+    # costs *now*, with price_history (already recorded above) carrying the
+    # trend. MRP prefers the fresh value too, falling back to the last known
+    # one; discount_pct is recomputed against the numbers that actually apply
+    # after the update; without them, the freshly-parsed value is used.
+    if price is not None:
+        merged["price"] = price
+    if deal.get("mrp") is not None:
+        merged["mrp"] = deal["mrp"]
+    if merged.get("price") and merged.get("mrp") and float(merged["mrp"]) > float(merged["price"]):
+        merged["discount_pct"] = int(round((float(merged["mrp"]) - float(merged["price"])) / float(merged["mrp"]) * 100))
+    elif deal.get("discount_pct"):
+        merged["discount_pct"] = deal["discount_pct"]
     # A real marketplace id beats a title hash — upgrade if the new post has one,
     # and carry the price history across so the all-time-low flag stays correct.
     old_key = str(existing["product_key"] or "")
@@ -278,12 +296,11 @@ def save_deal(deal: Dict[str, Any]) -> str:
             "UPDATE deals SET product_key = ?, dirty = 1 WHERE product_key = ?", (new_key, old_key)
         )
 
-    # Backfill anything the earlier post was missing.
-    for field in ("image_url", "coupon", "mrp", "sizes", "brand", "url", "clean_url"):
+    # Backfill anything the earlier post was missing (price/mrp/discount_pct
+    # are handled explicitly above, not here — they update, they don't just fill gaps).
+    for field in ("image_url", "coupon", "sizes", "brand", "url", "clean_url"):
         if not merged.get(field) and deal.get(field):
             merged[field] = deal[field]
-    if deal.get("discount_pct") and not merged.get("discount_pct"):
-        merged["discount_pct"] = deal["discount_pct"]
     merged["score"] = compute_score(merged, now)
 
     db.upsert("deals", _encode(merged), conflict="id")

@@ -412,24 +412,26 @@
 
   function showEmpty() {
     const el = $('#empty-state');
-    const hasQuery = !!state.filters.q;
+    const hasFilters = !!(state.filters.q || state.filters.category || state.filters.subcategory
+      || state.filters.store || state.filters.brand || state.filters.max_price
+      || state.filters.min_discount || state.filters.only_lowest);
+
     el.innerHTML = `
-      <span class="emoji">${hasQuery ? '🔍' : '📭'}</span>
-      <h3>${hasQuery ? 'No deals match that yet' : 'No deals stored yet'}</h3>
-      <p>${hasQuery
-        ? 'Try a broader word, drop the filters, or tick “Include untracked channels”. New deals arrive with every sync.'
-        : 'Track a few deal channels, then hit Sync. The first fetch pulls recent history, after that it polls automatically.'}</p>
-      <div style="margin-top:18px; display:flex; gap:9px; justify-content:center;">
-        ${hasQuery
-          ? '<button class="btn btn-soft" id="empty-clear">Clear search</button>'
-          : '<button class="btn btn-primary" id="empty-channels">Choose channels</button>'}
+      <span class="emoji">📭</span>
+      <h3>No products found</h3>
+      <p>${hasFilters
+        ? 'Nothing matches your search and filters right now.'
+        : 'No deals have come in yet.'}</p>
+      <div style="margin-top:18px; display:flex; gap:9px; justify-content:center; flex-wrap:wrap;">
+        ${hasFilters ? '<button class="btn btn-soft" id="empty-clear">Clear search &amp; filters</button>' : ''}
+        <button class="btn ${hasFilters ? 'btn-soft' : 'btn-primary'}" id="empty-channels">Choose channels</button>
         <button class="btn btn-soft" id="empty-sync">Sync now</button>
       </div>`;
     el.classList.remove('hidden');
     $('#empty-clear')?.addEventListener('click', () => {
       $('#search-input').value = '';
       state.filters.q = '';
-      refreshDeals(true);
+      $('#btn-clear-filters').click(); // resets the rest of the filters and re-queries
     });
     $('#empty-channels')?.addEventListener('click', () => navigate('channels'));
     $('#empty-sync')?.addEventListener('click', () => syncNow());
