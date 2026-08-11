@@ -55,11 +55,46 @@ def state() -> Dict[str, Any]:
     return dict(_state)
 
 
+async def _resolve_reader(channel: Dict[str, Any]) -> Optional[int]:
+    """Pick a user whose Telegram session can actually read this channel.
+
+    The recorded source_user_id may be stale — most commonly right after a
+    Render restart, where Sheets restored the channel and its tracking links
+    but sessions can't be restored (they're a deliberate secret, never written
+    to Sheets) and that user hasn't signed back in yet. Rather than stall the
+    channel until that specific person returns, fall back to any other user
+    who tracks it and already has a live session, and adopt them as the new
+    source going forward.
+    """
+    source_user = channel.get("source_user_id")
+    if source_user and await telegram.get_client(int(source_user)) is not None:
+        return int(source_user)
+
+    candidates = db.query(
+        "SELECT uc.user_id FROM user_channels uc JOIN channels c ON c.id = uc.channel_id "
+        "WHERE c.tg_id = ? AND uc.enabled = 1 AND uc.user_id != ?",
+        (channel["tg_id"], source_user or 0),
+    )
+    for row in candidates:
+        candidate_id = int(row["user_id"])
+        if await telegram.get_client(candidate_id) is not None:
+            db.execute(
+                "UPDATE channels SET source_user_id = ? WHERE tg_id = ?",
+                (candidate_id, channel["tg_id"]),
+            )
+            log.info(
+                "Channel %s: switched reader to user %s (previous reader unavailable)",
+                channel.get("title"), candidate_id,
+            )
+            return candidate_id
+    return None
+
+
 # --- step 1-3: fetch, parse, store -------------------------------------
 async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
     """Pull and store new deals from one channel."""
     result = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0}
-    source_user = channel.get("source_user_id")
+    source_user = await _resolve_reader(channel)
     if not source_user:
         return result
 
@@ -300,7 +335,11 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
 
             flushed = {"updated": 0, "appended": 0}
             if sheets.is_enabled():
-                flushed = await asyncio.get_event_loop().run_in_executor(None, sheets.flush_deals)
+                loop = asyncio.get_event_loop()
+                flushed = await loop.run_in_executor(None, sheets.flush_deals)
+                # Channel watermarks move every cycle; without this a restart
+                # would re-backfill instead of resuming from where it left off.
+                await loop.run_in_executor(None, sheets.sync_channels)
 
             result = {
                 **totals,

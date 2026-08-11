@@ -250,8 +250,16 @@ Then add every variable from `.env.example` under **Environment**.
 
 - **512 MB RAM / 0.1 CPU.** Fine for ~40 channels. The image cache is capped at
   120 thumbnails and link probing is bounded to 8 concurrent requests.
-- **Ephemeral disk.** SQLite is wiped on restart — that's why Sheets matters. The
-  cache rebuilds from Sheets automatically on boot.
+- **Ephemeral disk.** SQLite is wiped on every restart (sleep/wake, every deploy).
+  This is why **Google Sheets setup isn't optional on Render** — without it,
+  restarting means starting over: no deals, no tracked channels, no alerts.
+  With it, on boot the app restores deals, users, channels, channel-tracking
+  links, and watchlists from Sheets automatically.
+  **One thing Sheets deliberately does not restore: the Telegram session
+  itself** — it's a secret and is never written there. So after a restart,
+  each user needs to sign in again (same phone number), but the moment they
+  do, their tracked channels and saved alerts are exactly as they left them —
+  nothing needs re-selecting.
 - **Sleeps after 15 minutes idle**, and cold starts take ~30s. See below.
 - **750 instance-hours/month** — one always-on service fits.
 

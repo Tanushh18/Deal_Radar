@@ -9,11 +9,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .. import auth, db
-from ..services import ingest, telegram
+from ..services import ingest, sheets, telegram
 
 router = APIRouter(prefix="/api/watchlists", tags=["watchlists"])
 
 MAX_PER_USER = 20
+
+
+def _sync_meta_safely() -> None:
+    if not sheets.is_enabled():
+        return
+    try:
+        sheets.sync_watchlists()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 class WatchlistPayload(BaseModel):
@@ -61,6 +70,7 @@ async def create_watchlist(payload: WatchlistPayload, user=Depends(auth.current_
         "VALUES (?, ?, ?, ?, ?, 0)",
         (user["id"], payload.query.strip(), json.dumps(filters), 1 if payload.notify else 0, time.time()),
     )
+    _sync_meta_safely()
     return {"status": "ok", "id": cur.lastrowid}
 
 
@@ -72,6 +82,7 @@ async def toggle_watchlist(watchlist_id: int, notify: bool, user=Depends(auth.cu
     if not row:
         raise HTTPException(status_code=404, detail="Alert not found.")
     db.execute("UPDATE watchlists SET notify = ? WHERE id = ?", (1 if notify else 0, watchlist_id))
+    _sync_meta_safely()
     return {"status": "ok"}
 
 
@@ -84,6 +95,7 @@ async def delete_watchlist(watchlist_id: int, user=Depends(auth.current_user)):
         raise HTTPException(status_code=404, detail="Alert not found.")
     db.execute("DELETE FROM notified WHERE watchlist_id = ?", (watchlist_id,))
     db.execute("DELETE FROM watchlists WHERE id = ?", (watchlist_id,))
+    _sync_meta_safely()
     return {"status": "ok"}
 
 

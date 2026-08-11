@@ -30,10 +30,15 @@ DEALS_HEADER = [
     "score", "is_lowest", "flags", "product_key", "raw_text",
 ]
 CHANNELS_HEADER = [
-    "tg_id", "username", "title", "participants", "last_message_id", "last_fetched_iso", "active",
+    "tg_id", "username", "title", "participants", "last_message_id", "last_fetched_iso",
+    "active", "source_user_telegram_id",
 ]
 USERS_HEADER = ["telegram_id", "username", "first_name", "created_iso", "last_login_iso"]
-WATCH_HEADER = ["id", "user_telegram_id", "query", "filters", "notify", "created_iso"]
+WATCH_HEADER = ["user_telegram_id", "query", "category", "store", "max_price", "min_discount", "notify", "created_iso"]
+# Which user tracks which channel. Keyed by stable Telegram ids (not local
+# autoincrement ids) so it survives a full cold start, where every local id
+# gets reassigned as rows are recreated.
+USER_CHANNELS_HEADER = ["user_telegram_id", "channel_tg_id", "enabled", "added_iso"]
 
 _lock = threading.RLock()
 _client = None
@@ -111,6 +116,7 @@ def _ensure_tabs() -> None:
         "Channels": CHANNELS_HEADER,
         "Users": USERS_HEADER,
         "Watchlists": WATCH_HEADER,
+        "UserChannels": USER_CHANNELS_HEADER,
     }
     existing = {ws.title: ws for ws in _spreadsheet.worksheets()}
     for title, header in wanted.items():
@@ -311,14 +317,18 @@ def sync_channels() -> int:
     """Mirror the channel registry into its tab (small, so full rewrite is fine)."""
     if not connect():
         return 0
-    rows = db.query("SELECT * FROM channels ORDER BY title")
+    rows = db.query(
+        "SELECT c.*, u.telegram_id AS source_telegram_id FROM channels c "
+        "LEFT JOIN users u ON u.id = c.source_user_id ORDER BY c.title"
+    )
     values = [[
         r["tg_id"], r["username"] or "", r["title"] or "", r["participants"] or 0,
         r["last_message_id"] or 0, _iso(r["last_fetched_at"]), "yes" if r["active"] else "no",
+        r["source_telegram_id"] or "",
     ] for r in rows]
     try:
         ws = _spreadsheet.worksheet("Channels")
-        ws.batch_clear(["A2:G10000"])
+        ws.batch_clear(["A2:H10000"])
         if values:
             ws.update("A2", values, value_input_option="RAW")
     except Exception as exc:  # noqa: BLE001
@@ -344,3 +354,226 @@ def sync_users() -> int:
         log.warning("User sync failed: %s", exc)
         return 0
     return len(values)
+
+
+def sync_user_channels() -> int:
+    """Mirror who-tracks-what, keyed by stable Telegram ids."""
+    if not connect():
+        return 0
+    rows = db.query(
+        "SELECT u.telegram_id AS user_tid, c.tg_id AS channel_tid, uc.enabled, uc.added_at "
+        "FROM user_channels uc "
+        "JOIN users u ON u.id = uc.user_id JOIN channels c ON c.id = uc.channel_id"
+    )
+    values = [[
+        r["user_tid"], r["channel_tid"], "yes" if r["enabled"] else "no", _iso(r["added_at"]),
+    ] for r in rows]
+    try:
+        ws = _spreadsheet.worksheet("UserChannels")
+        ws.batch_clear(["A2:D20000"])
+        if values:
+            ws.update("A2", values, value_input_option="RAW")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("UserChannels sync failed: %s", exc)
+        return 0
+    return len(values)
+
+
+def sync_watchlists() -> int:
+    if not connect():
+        return 0
+    rows = db.query(
+        "SELECT w.*, u.telegram_id AS user_tid FROM watchlists w JOIN users u ON u.id = w.user_id"
+    )
+    values = []
+    for r in rows:
+        try:
+            filters = json.loads(r["filters"] or "{}")
+        except (json.JSONDecodeError, TypeError):
+            filters = {}
+        values.append([
+            r["user_tid"], r["query"] or "", filters.get("category") or "",
+            filters.get("store") or "", filters.get("max_price") or "",
+            filters.get("min_discount") or 0, "yes" if r["notify"] else "no",
+            _iso(r["created_at"]),
+        ])
+    try:
+        ws = _spreadsheet.worksheet("Watchlists")
+        ws.batch_clear(["A2:H5000"])
+        if values:
+            ws.update("A2", values, value_input_option="RAW")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Watchlist sync failed: %s", exc)
+        return 0
+    return len(values)
+
+
+def sync_all_meta() -> Dict[str, int]:
+    """Flush every small table. Cheap enough to call once per ingest cycle."""
+    return {
+        "users": sync_users(),
+        "channels": sync_channels(),
+        "user_channels": sync_user_channels(),
+        "watchlists": sync_watchlists(),
+    }
+
+
+def restore_users() -> int:
+    """Recreate user shells from Sheets. Sessions are never stored in Sheets
+    (by design — they're a secret), so restored users must sign in again;
+    what this buys is that their *local id* is stable once they do, so
+    anything restored below that references them (channels, alerts) still
+    lines up. See _finish_login, which updates in place when telegram_id
+    already exists instead of minting a new id.
+    """
+    if not connect():
+        return 0
+    try:
+        records = _spreadsheet.worksheet("Users").get_all_records()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Users restore failed: %s", exc)
+        return 0
+
+    restored = 0
+    for rec in records:
+        tid = rec.get("telegram_id")
+        if not tid:
+            continue
+        try:
+            tid = int(tid)
+        except (TypeError, ValueError):
+            continue
+        db.execute(
+            "INSERT INTO users (telegram_id, username, first_name, phone, session_enc, "
+            "created_at, last_login_at) VALUES (?, ?, ?, '', '', ?, ?) "
+            "ON CONFLICT(telegram_id) DO NOTHING",
+            (tid, str(rec.get("username") or ""), str(rec.get("first_name") or ""),
+             _parse_iso(rec.get("created_iso")), _parse_iso(rec.get("last_login_iso"))),
+        )
+        restored += 1
+    log.info("Restored %d user shells from Sheets (re-login required for each)", restored)
+    return restored
+
+
+def restore_channels() -> int:
+    """Recreate the channel registry, resolving source_user by telegram_id."""
+    if not connect():
+        return 0
+    try:
+        records = _spreadsheet.worksheet("Channels").get_all_records()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Channels restore failed: %s", exc)
+        return 0
+
+    restored = 0
+    for rec in records:
+        tg_id = rec.get("tg_id")
+        if not tg_id:
+            continue
+        source_tid = rec.get("source_user_telegram_id")
+        source_user_id = None
+        if source_tid:
+            row = db.query_one("SELECT id FROM users WHERE telegram_id = ?", (source_tid,))
+            source_user_id = row["id"] if row else None
+        db.upsert("channels", {
+            "tg_id": int(tg_id),
+            "username": str(rec.get("username") or ""),
+            "title": str(rec.get("title") or ""),
+            "participants": int(rec.get("participants") or 0),
+            "last_message_id": int(rec.get("last_message_id") or 0),
+            "last_fetched_at": _parse_iso(rec.get("last_fetched_iso")),
+            "source_user_id": source_user_id,
+            "active": 1 if str(rec.get("active")).lower() in {"yes", "true", "1"} else 0,
+        }, conflict="tg_id")
+        restored += 1
+    log.info("Restored %d channels from Sheets", restored)
+    return restored
+
+
+def restore_user_channels() -> int:
+    if not connect():
+        return 0
+    try:
+        records = _spreadsheet.worksheet("UserChannels").get_all_records()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("UserChannels restore failed: %s", exc)
+        return 0
+
+    restored = 0
+    for rec in records:
+        user_row = db.query_one(
+            "SELECT id FROM users WHERE telegram_id = ?", (rec.get("user_telegram_id"),)
+        )
+        channel_row = db.query_one(
+            "SELECT id FROM channels WHERE tg_id = ?", (rec.get("channel_tg_id"),)
+        )
+        if not user_row or not channel_row:
+            continue
+        enabled = 1 if str(rec.get("enabled")).lower() in {"yes", "true", "1"} else 0
+        db.execute(
+            "INSERT INTO user_channels (user_id, channel_id, enabled, added_at) VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(user_id, channel_id) DO UPDATE SET enabled = excluded.enabled",
+            (user_row["id"], channel_row["id"], enabled, _parse_iso(rec.get("added_iso")) or time.time()),
+        )
+        restored += 1
+    log.info("Restored %d channel-tracking links from Sheets", restored)
+    return restored
+
+
+def restore_watchlists() -> int:
+    if not connect():
+        return 0
+    try:
+        records = _spreadsheet.worksheet("Watchlists").get_all_records()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Watchlists restore failed: %s", exc)
+        return 0
+
+    restored = 0
+    for rec in records:
+        user_row = db.query_one(
+            "SELECT id FROM users WHERE telegram_id = ?", (rec.get("user_telegram_id"),)
+        )
+        query = str(rec.get("query") or "").strip()
+        if not user_row or not query:
+            continue
+        filters = {
+            "category": rec.get("category") or "",
+            "store": rec.get("store") or "",
+            "max_price": float(rec["max_price"]) if str(rec.get("max_price") or "").strip() else None,
+            "min_discount": int(rec.get("min_discount") or 0),
+        }
+        already = db.query_one(
+            "SELECT id FROM watchlists WHERE user_id = ? AND query = ?", (user_row["id"], query)
+        )
+        if already:
+            continue
+        notify = 1 if str(rec.get("notify")).lower() in {"yes", "true", "1"} else 0
+        db.execute(
+            "INSERT INTO watchlists (user_id, query, filters, notify, created_at, last_notified_at) "
+            "VALUES (?, ?, ?, ?, ?, 0)",
+            (user_row["id"], query, json.dumps(filters), notify,
+             _parse_iso(rec.get("created_iso")) or time.time()),
+        )
+        restored += 1
+    log.info("Restored %d watchlists from Sheets", restored)
+    return restored
+
+
+def restore_all_meta() -> Dict[str, int]:
+    """Full cold-start recovery, in dependency order: users -> channels -> links."""
+    return {
+        "users": restore_users(),
+        "channels": restore_channels(),
+        "user_channels": restore_user_channels(),
+        "watchlists": restore_watchlists(),
+    }
+
+
+def _parse_iso(value: Any) -> float:
+    if not value:
+        return 0.0
+    try:
+        return time.mktime(time.strptime(str(value), "%Y-%m-%d %H:%M:%S"))
+    except (ValueError, TypeError):
+        return 0.0

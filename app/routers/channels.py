@@ -139,12 +139,21 @@ async def track_channels(payload: TrackPayload, user=Depends(auth.current_user))
             )
 
     _deactivate_orphans()
-    if sheets.is_enabled():
-        try:
-            sheets.sync_channels()
-        except Exception:  # noqa: BLE001
-            pass
+    _sync_meta_safely()
     return {"status": "ok", "tracked": added}
+
+
+def _sync_meta_safely() -> None:
+    """Best-effort push of channels + tracking links so a Render restart
+    doesn't lose the user's channel selection. Never let a Sheets hiccup
+    fail the request that triggered it."""
+    if not sheets.is_enabled():
+        return
+    try:
+        sheets.sync_channels()
+        sheets.sync_user_channels()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 @router.post("/add-public")
@@ -161,6 +170,7 @@ async def add_public_channel(payload: PublicChannelPayload, user=Depends(auth.cu
         "ON CONFLICT(user_id, channel_id) DO UPDATE SET enabled = 1",
         (user["id"], channel_id, time.time()),
     )
+    _sync_meta_safely()
     return {"status": "ok", "channel": info}
 
 
@@ -174,6 +184,7 @@ async def untrack_channel(tg_id: int, user=Depends(auth.current_user)):
         (user["id"], channel["id"]),
     )
     _deactivate_orphans()
+    _sync_meta_safely()
     return {"status": "ok"}
 
 

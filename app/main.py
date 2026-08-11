@@ -48,11 +48,21 @@ async def lifespan(app: FastAPI):
         log.warning("SECRET_KEY is the insecure default — set a real one before deploying.")
 
     # Render's disk is ephemeral: rebuild the cache from Sheets on cold start.
+    # Order matters — users before channels before user_channels/watchlists,
+    # since the latter are resolved by looking up the former's local ids.
     if sheets.is_enabled():
         try:
             loop = asyncio.get_event_loop()
             restored = await loop.run_in_executor(None, sheets.restore_deals)
-            log.info("Restored %d deals from Google Sheets", restored)
+            meta = await loop.run_in_executor(None, sheets.restore_all_meta)
+            log.info(
+                "Restored from Google Sheets: %d deals, %d users, %d channels, "
+                "%d tracking links, %d watchlists",
+                restored, meta["users"], meta["channels"],
+                meta["user_channels"], meta["watchlists"],
+            )
+            if meta["users"]:
+                log.info("Restored users hold no session — each needs to sign in again.")
         except Exception as exc:  # noqa: BLE001
             log.warning("Sheets restore skipped: %s", exc)
     else:
