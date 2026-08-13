@@ -6,7 +6,9 @@
  * app loads instantly and opens at all when offline — every /api/ request
  * always goes to the network, no exceptions.
  */
-const CACHE_VERSION = 'dealradar-shell-v1';
+/* Bumped whenever the shell changes: the old cache is deleted on activate, so
+ * an installed app picks the new UI up instead of serving last year's CSS. */
+const CACHE_VERSION = 'dealradar-shell-v2';
 const SHELL_FILES = [
   '/',
   '/assets/styles.css',

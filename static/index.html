@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>DealRadar — Telegram deals, searchable</title>
   <meta name="description" content="Aggregates marketplace deals from your Telegram channels into one searchable, de-duplicated catalog." />
-  <meta name="theme-color" content="#0b0f17" />
+  <meta name="theme-color" content="#080b12" id="meta-theme-color" />
+  <meta name="color-scheme" content="dark light" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="/assets/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>" />
@@ -14,33 +15,68 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DealRadar" />
+  <script>
+    /* Applied before first paint so a light-theme user never sees a dark flash. */
+    try {
+      var t = localStorage.getItem('dr-theme');
+      if (t) document.documentElement.dataset.theme = t;
+    } catch (e) { /* private mode — the default theme is fine */ }
+  </script>
 </head>
 <body>
 
-<!-- ================= LOGIN ================= -->
-<section id="view-login" class="view login-view">
+<!-- ============================= ICON SPRITE ============================= -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+    <symbol id="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.6 13.4L12 22l-9-9V3h10l7.6 7.6a2 2 0 010 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24"><path d="M4.9 19.1a10 10 0 010-14.2M7.8 16.2a6 6 0 010-8.4M16.2 7.8a6 6 0 010 8.4M19.1 4.9a10 10 0 010 14.2"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L14.7 3.9a2 2 0 00-3.4 0z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+    <!-- referenced by the Android shell's glue script (MainActivity.NATIVE_GLUE_JS) -->
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M1 1l22 22M16.7 12.7A6 6 0 0112 21a6 6 0 01-4.7-8.3M5 12.6a10 10 0 013-2.1M8.8 5.3A14 14 0 0123 8.6"/></symbol>
+  </defs>
+</svg>
+
+<!-- First paint: neither view is shown until the auth check resolves, so this
+     stands in rather than flashing the login screen at a signed-in user. -->
+<div id="boot">
+  <span class="brand-mark" style="width:56px;height:56px;border-radius:18px;font-size:1.8rem">📡</span>
+  <span class="muted small">Tuning the radar…</span>
+</div>
+
+<!-- ================================ LOGIN ================================ -->
+<section id="view-login" class="view login-view hidden">
   <div class="login-grid">
     <div class="login-pitch">
       <div class="brand brand-lg">
         <span class="brand-mark">📡</span>
         <span class="brand-name">Deal<span>Radar</span></span>
       </div>
-      <h1>Every deal from your Telegram channels.<br />Searchable, de-duplicated, ranked.</h1>
+      <h1>Every deal from your Telegram channels. Searchable, de-duplicated, ranked.</h1>
       <p class="lede">
         Deal channels fire hundreds of posts a day. DealRadar reads the channels you already
         follow, parses each post into a structured deal, collapses the same product posted
         across a dozen channels into one entry, and lets you just search for what you want.
       </p>
-      <ul class="pitch-list">
-        <li><b>Search in plain words</b> — “women kurta” finds kurti, anarkali, ethnic sets.</li>
-        <li><b>Cross-channel dedup</b> — one product, one card, with a “seen in N channels” badge.</li>
-        <li><b>Price history</b> — flags a genuine all-time low and catches inflated MRPs.</li>
-        <li><b>Live-link checks</b> — dead and out-of-stock deals drop out automatically.</li>
-        <li><b>Alerts</b> — saved searches ping you in your own Telegram Saved Messages.</li>
-      </ul>
-      <div class="pitch-foot">
-        Stored in Google Sheets · deals kept 4 days or until they go dead
-      </div>
     </div>
 
     <div class="login-panel">
@@ -58,6 +94,10 @@
           <button class="btn btn-primary btn-block" type="submit">
             <span class="btn-label">Send login code</span>
           </button>
+          <div class="auth-secure">
+            <svg><use href="#i-lock"/></svg>
+            Secure Telegram authentication
+          </div>
           <p class="fineprint">
             Your Telegram session is encrypted before storage and is used only to read the
             channels you choose. Your code and 2FA password are never stored.
@@ -70,7 +110,7 @@
           <p class="muted">Telegram sent a code to <b id="code-phone"></b>. Check your Telegram app, not SMS.</p>
           <label class="field">
             <span>Login code</span>
-            <input id="input-code" inputmode="numeric" placeholder="12345" autocomplete="one-time-code" required />
+            <input id="input-code" class="code-input" inputmode="numeric" placeholder="12345" autocomplete="one-time-code" required />
           </label>
           <button class="btn btn-primary btn-block" type="submit"><span class="btn-label">Verify</span></button>
           <button class="btn btn-ghost btn-block" type="button" data-back="phone">Use a different number</button>
@@ -90,134 +130,209 @@
         <div id="auth-error" class="alert alert-error hidden"></div>
       </div>
     </div>
+
+    <div class="login-why">
+      <ul class="pitch-list">
+        <li><b>Search in plain words</b> — “women kurta” finds kurti, anarkali, ethnic sets.</li>
+        <li><b>Cross-channel dedup</b> — one product, one card, with a “seen in N channels” badge.</li>
+        <li><b>Price history</b> — flags a genuine all-time low and catches inflated MRPs.</li>
+        <li><b>Live-link checks</b> — dead and out-of-stock deals drop out automatically.</li>
+        <li><b>Alerts</b> — saved searches ping you in your own Telegram Saved Messages.</li>
+      </ul>
+      <div class="pitch-foot">
+        Stored in Google Sheets · deals kept 4 days or until they go dead
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ================= APP ================= -->
+<!-- ================================= APP ================================= -->
 <section id="view-app" class="view hidden">
-  <header class="topbar">
-    <div class="brand" data-nav="deals">
-      <span class="brand-mark">📡</span>
-      <span class="brand-name">Deal<span>Radar</span></span>
-    </div>
-
-    <form id="search-form" class="search">
-      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
-      <input id="search-input" type="search" placeholder="What are you looking for?  charger, women kurta, running shoes…" autocomplete="off" />
-      <button type="submit" class="btn btn-primary btn-sm">Search</button>
-    </form>
-
-    <nav class="topnav">
-      <button class="navlink active" data-nav="deals">Deals</button>
-      <button class="navlink" data-nav="channels">Channels</button>
-      <button class="navlink" data-nav="alerts">Alerts</button>
-      <button id="btn-sync" class="btn btn-soft btn-sm" title="Fetch new deals from Telegram now">
-        <svg viewBox="0 0 24 24" class="ico"><path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"/></svg>
-        <span>Sync</span>
-      </button>
-      <div class="usermenu">
-        <button id="user-btn" class="avatar" title="Account"></button>
-        <div id="user-drop" class="dropdown hidden">
-          <div class="drop-head">
-            <div id="drop-name" class="drop-name"></div>
-            <div id="drop-handle" class="muted small"></div>
-          </div>
-          <button class="drop-item hidden" id="install-item" data-action="install">Install app</button>
-          <button class="drop-item" data-action="theme">Toggle theme</button>
-          <button class="drop-item" data-action="status">System status</button>
-          <button class="drop-item danger" data-action="logout">Sign out</button>
-        </div>
+  <header class="appbar" id="appbar">
+    <div class="appbar-row">
+      <div class="brand appbar-brand" data-nav="deals">
+        <span class="brand-mark">📡</span>
+        <span class="appbar-greet">
+          <span class="brand-name">Deal<span>Radar</span></span>
+          <span class="greet-hi" id="greeting">Find something worth buying</span>
+        </span>
       </div>
-    </nav>
+
+      <form id="search-form" class="search" role="search">
+        <svg class="search-icon" aria-hidden="true"><use href="#i-search"/></svg>
+        <input id="search-input" type="search" enterkeyhint="search"
+               placeholder="What are you looking for?"
+               autocomplete="off" aria-label="Search deals" />
+        <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">
+          <svg aria-hidden="true"><use href="#i-close"/></svg>
+        </button>
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        <div id="suggest" class="suggest hidden"></div>
+      </form>
+
+      <nav class="topnav" aria-label="Sections">
+        <button class="navlink active" data-nav="deals">Deals</button>
+        <button class="navlink" data-nav="channels">Channels</button>
+        <button class="navlink" data-nav="alerts">Alerts</button>
+      </nav>
+
+      <div class="appbar-actions">
+        <button id="btn-sync" class="iconbtn" title="Fetch new deals from Telegram now" aria-label="Sync deals now">
+          <svg aria-hidden="true"><use href="#i-sync"/></svg>
+        </button>
+        <button id="btn-bell" class="iconbtn bell" data-nav="alerts" title="Deal alerts" aria-label="Deal alerts">
+          <svg aria-hidden="true"><use href="#i-bell"/></svg>
+          <span id="bell-count" class="bell-dot hidden">0</span>
+        </button>
+        <button id="user-btn" class="avatar" title="Account" aria-label="Account" aria-haspopup="menu"></button>
+      </div>
+    </div>
   </header>
 
-  <!-- ---------- DEALS ---------- -->
+  <!-- Deliberately a sibling of the app bar, not a child of it: .appbar carries
+       a backdrop-filter, which makes it the containing block for any
+       position:fixed descendant — the sheet would anchor to the header instead
+       of the viewport. -->
+  <div id="user-drop" class="dropdown hidden" role="menu">
+    <div class="drop-head">
+      <div id="drop-avatar" class="drop-avatar"></div>
+      <div style="min-width:0">
+        <div id="drop-name" class="drop-name"></div>
+        <div id="drop-handle" class="muted small"></div>
+      </div>
+    </div>
+    <button class="drop-item hidden" id="install-item" data-action="install">
+      <svg class="ico" aria-hidden="true"><use href="#i-download"/></svg> Install app
+    </button>
+    <button class="drop-item" data-action="theme">
+      <svg class="ico" aria-hidden="true"><use href="#i-moon"/></svg> Toggle theme
+    </button>
+    <button class="drop-item" data-action="status">
+      <svg class="ico" aria-hidden="true"><use href="#i-activity"/></svg> System status
+    </button>
+    <button class="drop-item danger" data-action="logout">
+      <svg class="ico" aria-hidden="true"><use href="#i-logout"/></svg> Sign out
+    </button>
+  </div>
+
+  <!-- ------------------------------ DEALS ------------------------------ -->
   <main id="page-deals" class="page">
     <div class="statstrip" id="statstrip"></div>
 
-    <div class="chiprow-row">
-      <div class="chiprow" id="category-chips"></div>
-      <button class="btn btn-soft btn-sm filters-toggle" id="btn-filters-toggle">
-        <svg viewBox="0 0 24 24" class="ico"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-        Filters
-        <span class="filters-badge hidden" id="filters-badge">0</span>
-      </button>
-    </div>
+    <div class="catrow" id="category-chips" role="tablist" aria-label="Categories"></div>
 
     <div class="layout">
-      <aside class="filters" id="filters">
+      <aside class="filters" id="filters" aria-label="Filters">
+        <div class="sheet-grab" id="sheet-grab" aria-hidden="true"></div>
         <div class="filter-head">
           <h3>Filters</h3>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button class="btn btn-ghost btn-xs" id="btn-clear-filters">Clear</button>
-            <button class="btn btn-ghost btn-xs filters-close" id="btn-filters-close">Done</button>
+          <div class="head-actions">
+            <button class="btn btn-soft btn-xs filters-close" id="btn-filters-close">Done</button>
           </div>
         </div>
 
-        <div class="filter-block">
-          <label class="filter-label">Sort by</label>
-          <select id="f-sort" class="input">
-            <option value="newest" selected>Newest first</option>
-            <option value="relevance">Best match</option>
-            <option value="best">Top deals</option>
-            <option value="discount">Biggest discount</option>
-            <option value="price_low">Price: low to high</option>
-            <option value="price_high">Price: high to low</option>
-          </select>
+        <div class="filter-body">
+          <div class="filter-block">
+            <label class="filter-label" for="f-sort">Sort by</label>
+            <select id="f-sort" class="input">
+              <option value="newest" selected>Newest first</option>
+              <option value="relevance">Best match</option>
+              <option value="best">Top deals</option>
+              <option value="discount">Biggest discount</option>
+              <option value="price_low">Price: low to high</option>
+              <option value="price_high">Price: high to low</option>
+            </select>
+          </div>
+
+          <div class="filter-block hidden" id="f-subcategory-block">
+            <label class="filter-label" for="f-subcategory">Subcategory</label>
+            <select id="f-subcategory" class="input">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="filter-block">
+            <label class="filter-label" for="f-max-price">Max price (₹)</label>
+            <input id="f-max-price" type="number" min="0" step="50" class="input" placeholder="Any" />
+          </div>
+
+          <div class="filter-block">
+            <label class="filter-label" for="f-discount">Minimum discount <span id="f-discount-out">any</span></label>
+            <input id="f-discount" type="range" min="0" max="90" step="5" value="0" class="range" />
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-label">Store</div>
+            <div id="f-stores" class="facet-list"></div>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-label">Brand</div>
+            <div id="f-brands" class="facet-list"></div>
+          </div>
+
+          <div class="filter-block">
+            <label class="check">
+              <input type="checkbox" id="f-lowest" />
+              <span>Only all-time lows</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" id="f-all-channels" />
+              <span>Include untracked channels</span>
+            </label>
+          </div>
         </div>
 
-        <div class="filter-block hidden" id="f-subcategory-block">
-          <label class="filter-label">Subcategory</label>
-          <select id="f-subcategory" class="input">
-            <option value="">All</option>
-          </select>
-        </div>
-
-        <div class="filter-block">
-          <label class="filter-label">Max price (₹)</label>
-          <input id="f-max-price" type="number" min="0" step="50" class="input" placeholder="Any" />
-        </div>
-
-        <div class="filter-block">
-          <label class="filter-label">Minimum discount — <span id="f-discount-out">any</span></label>
-          <input id="f-discount" type="range" min="0" max="90" step="5" value="0" class="range" />
-        </div>
-
-        <div class="filter-block">
-          <label class="filter-label">Store</label>
-          <div id="f-stores" class="facet-list"></div>
-        </div>
-
-        <div class="filter-block">
-          <label class="filter-label">Brand</label>
-          <div id="f-brands" class="facet-list"></div>
-        </div>
-
-        <div class="filter-block">
-          <label class="check">
-            <input type="checkbox" id="f-lowest" />
-            <span>Only all-time lows</span>
-          </label>
-          <label class="check">
-            <input type="checkbox" id="f-all-channels" />
-            <span>Include untracked channels</span>
-          </label>
+        <div class="filter-foot">
+          <span id="filter-count"></span>
+          <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear all</button>
+          <button class="btn btn-primary btn-sm" id="btn-filters-apply">Show deals</button>
         </div>
       </aside>
 
       <div class="results">
-        <div class="results-head">
-          <div id="results-summary" class="muted"></div>
-          <button class="btn btn-soft btn-sm" id="btn-save-search">
-            <svg viewBox="0 0 24 24" class="ico"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-            Alert me about this search
+        <div class="toolbar" id="toolbar">
+          <div id="results-summary"></div>
+          <button class="btn btn-soft btn-sm" id="btn-save-search" title="Alert me about this search">
+            <svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg>
+            <span class="save-search-label">Alert me about this search</span>
+          </button>
+          <button class="btn btn-soft btn-sm filters-toggle" id="btn-filters-toggle">
+            <svg class="ico" aria-hidden="true"><use href="#i-filter"/></svg>
+            Filters
+            <span class="filters-badge hidden" id="filters-badge">0</span>
           </button>
         </div>
 
-        <section id="trending-wrap" class="trending hidden">
-          <h3 class="section-title">🔥 Reposted across your channels right now</h3>
-          <div id="trending-row" class="trending-row"></div>
+        <div class="activefilters hidden" id="active-filters"></div>
+
+        <section id="trending-wrap" class="rail-section hidden">
+          <div class="section-head">
+            <div>
+              <h3 class="section-title">🔥 Trending right now</h3>
+              <div class="section-sub">Reposted across your channels</div>
+            </div>
+          </div>
+          <div id="trending-row" class="rail"></div>
         </section>
+
+        <section id="lowest-wrap" class="rail-section hidden">
+          <div class="section-head">
+            <div>
+              <h3 class="section-title">📉 All-time lows</h3>
+              <div class="section-sub">Cheapest we have ever recorded</div>
+            </div>
+            <button class="btn btn-ghost btn-xs" id="btn-see-lows">See all</button>
+          </div>
+          <div id="lowest-row" class="rail"></div>
+        </section>
+
+        <div class="section-head" id="grid-head">
+          <div>
+            <h3 class="section-title" id="grid-title">🕘 Latest deals</h3>
+            <div class="section-sub" id="grid-sub">Freshly parsed from your channels</div>
+          </div>
+        </div>
 
         <div id="deal-grid" class="grid"></div>
         <div id="empty-state" class="empty hidden"></div>
@@ -228,21 +343,25 @@
     </div>
   </main>
 
-  <!-- ---------- CHANNELS ---------- -->
+  <!-- ----------------------------- CHANNELS ----------------------------- -->
   <main id="page-channels" class="page hidden">
     <div class="page-head">
       <div>
         <h2>Channels</h2>
-        <p class="muted">Pick the deal channels DealRadar should read. Only channels you already follow are listed — plus any public channel you add by username.</p>
+        <p>Pick the deal channels DealRadar should read. Only channels you already follow are listed — plus any public channel you add by username.</p>
       </div>
       <div class="page-head-actions">
-        <button class="btn btn-soft" id="btn-refresh-channels">Refresh list</button>
-        <button class="btn btn-primary" id="btn-save-channels">Save selection</button>
+        <button class="btn btn-soft" id="btn-refresh-channels">
+          <svg class="ico" aria-hidden="true"><use href="#i-sync"/></svg> Refresh list
+        </button>
+        <button class="btn btn-primary" id="btn-save-channels">
+          <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Save selection
+        </button>
       </div>
     </div>
 
     <div class="addpublic card">
-      <label class="field row">
+      <label class="field">
         <span>Add a public channel by username</span>
         <div class="row-inputs">
           <input id="input-public" class="input" placeholder="@dealschannel or t.me/dealschannel" />
@@ -252,18 +371,18 @@
     </div>
 
     <div class="channel-toolbar">
-      <input id="channel-filter" class="input" placeholder="Filter channels…" />
-      <span class="muted small" id="channel-count"></span>
+      <input id="channel-filter" class="input" placeholder="Filter channels…" aria-label="Filter channels" />
+      <span id="channel-count" class="muted small"></span>
     </div>
     <div id="channel-list" class="channel-list"></div>
   </main>
 
-  <!-- ---------- ALERTS ---------- -->
+  <!-- ------------------------------ ALERTS ------------------------------ -->
   <main id="page-alerts" class="page hidden">
     <div class="page-head">
       <div>
         <h2>Deal alerts</h2>
-        <p class="muted">Saved searches. When a new matching deal appears, DealRadar messages you in your own Telegram <b>Saved Messages</b>.</p>
+        <p>Saved searches. When a new matching deal appears, DealRadar messages you in your own Telegram <b>Saved Messages</b>.</p>
       </div>
     </div>
 
@@ -286,7 +405,9 @@
           <input id="a-discount" type="number" min="0" max="95" class="input" placeholder="0" />
         </label>
       </div>
-      <button class="btn btn-primary" type="submit">Create alert</button>
+      <button class="btn btn-primary btn-block" type="submit">
+        <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Create alert
+      </button>
     </form>
 
     <div id="alert-list" class="alert-list"></div>
@@ -295,14 +416,36 @@
   <footer class="footer">
     <span id="footer-status" class="muted small"></span>
   </footer>
+
+  <!-- --------------------------- BOTTOM NAV --------------------------- -->
+  <nav class="bottomnav" id="bottomnav" aria-label="Primary">
+    <button class="navbtn active" data-nav="deals">
+      <svg class="navicon" aria-hidden="true"><use href="#i-tag"/></svg>
+      Deals
+    </button>
+    <button class="navbtn" data-nav="channels">
+      <svg class="navicon" aria-hidden="true"><use href="#i-radio"/></svg>
+      Channels
+    </button>
+    <button class="navbtn" data-nav="alerts">
+      <svg class="navicon" aria-hidden="true"><use href="#i-bell"/></svg>
+      Alerts
+      <span id="nav-alert-count" class="nav-badge hidden">0</span>
+    </button>
+    <button class="navbtn" id="nav-account">
+      <svg class="navicon" aria-hidden="true"><use href="#i-user"/></svg>
+      Account
+    </button>
+  </nav>
 </section>
 
-<!-- ================= MODALS / TOASTS ================= -->
+<!-- ========================= SHEETS / OVERLAYS ========================= -->
+<div id="sheet-backdrop" class="sheet-backdrop hidden"></div>
 <div id="modal" class="modal hidden">
   <div class="modal-backdrop" data-close></div>
   <div class="modal-body card" id="modal-body"></div>
 </div>
-<div id="toasts" class="toasts"></div>
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 
 <script src="/assets/app.js"></script>
 </body>

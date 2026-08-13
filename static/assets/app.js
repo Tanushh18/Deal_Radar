@@ -21,8 +21,13 @@
     total: 0,
     loading: false,       // guards "Load more" only — see searchAbortController for search
     availableChannels: [],
+    channelDeals: {},     // tg_id -> live deal count, from /api/channels
     selectedChannels: new Set(),
     categories: [],
+    facets: { stores: [], brands: [] },
+    alertCount: 0,
+    lastStats: null,
+    countersAnimated: false,
   };
 
   // Fast typing can fire a new search before the previous one resolves. Rather
@@ -51,15 +56,41 @@
   const post = (path, body) => api(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined });
   const del  = (path) => api(path, { method: 'DELETE' });
 
+  /* ---------------- formatting helpers ---------------- */
+  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+
+  const money = (n) => (n == null ? '—' : '₹' + Math.round(n).toLocaleString('en-IN'));
+  // The parser stores store/brand names lowercased ("amazon", "cuttli").
+  const titleCase = (s) => String(s || '').replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  const storeName = (deal) => (deal.store && deal.store !== 'unknown' ? titleCase(deal.store) : '');
+  const num = (n) => (n || 0).toLocaleString('en-IN');
+  const icon = (name, cls = '') => `<svg class="${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+
+  function timeAgo(ts) {
+    if (!ts) return '';
+    const secs = Math.max(0, Date.now() / 1000 - ts);
+    if (secs < 60) return 'just now';
+    if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+    if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+    return `${Math.floor(secs / 86400)}d ago`;
+  }
+
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   /* ---------------- UI helpers ---------------- */
+  const TOAST_ICON = { ok: 'check', err: 'alert', info: 'info' };
+
   function toast(message, kind = 'info', ms = 4200) {
     const el = document.createElement('div');
     el.className = `toast ${kind}`;
-    el.textContent = message;
+    el.innerHTML = `<span class="t-ico">${icon(TOAST_ICON[kind] || 'info')}</span><span></span>`;
+    el.lastElementChild.textContent = message;
     $('#toasts').appendChild(el);
     setTimeout(() => {
       el.style.opacity = '0';
-      el.style.transition = 'opacity .25s';
+      el.style.transform = 'translateY(8px)';
       setTimeout(() => el.remove(), 260);
     }, ms);
   }
@@ -70,25 +101,36 @@
     btn.disabled = on;
   }
 
-  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-  ));
-
-  const money = (n) => (n == null ? '—' : '₹' + Math.round(n).toLocaleString('en-IN'));
-
-  function timeAgo(ts) {
-    if (!ts) return '';
-    const secs = Math.max(0, Date.now() / 1000 - ts);
-    if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
-    if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
-    return `${Math.floor(secs / 86400)}d ago`;
+  /* An open sheet sits at scroll position 0, which is exactly when the Android
+     shell arms pull-to-refresh — so a downward drag inside a sheet would reload
+     the app. Tell the shell to stand down while any overlay is up. */
+  function syncOverlayState() {
+    const open = !$('#modal').classList.contains('hidden')
+      || $('#filters').classList.contains('open')
+      || !$('#user-drop').classList.contains('hidden');
+    document.body.style.overflow = open ? 'hidden' : '';
+    try { window.DealRadarNative?.setPullToRefresh(!open); } catch { /* browser, not the shell */ }
+    return open;
   }
 
   function openModal(html) {
     $('#modal-body').innerHTML = html;
     $('#modal').classList.remove('hidden');
+    syncOverlayState();
   }
-  const closeModal = () => $('#modal').classList.add('hidden');
+  function closeModal() {
+    $('#modal').classList.add('hidden');
+    syncOverlayState();
+  }
+
+  /* The sticky results toolbar has to sit exactly under the app bar, whose
+     height changes with the viewport (the search field wraps onto its own row
+     on phones). Measuring beats guessing. */
+  function measureChrome() {
+    const bar = $('#appbar');
+    if (!bar || bar.offsetParent === null) return;
+    document.documentElement.style.setProperty('--appbar-h', `${Math.round(bar.getBoundingClientRect().height)}px`);
+  }
 
   /* ============================================================
      AUTH
@@ -169,19 +211,36 @@
 
   $$('[data-back]').forEach((btn) => btn.addEventListener('click', () => showStep(btn.dataset.back)));
 
+  function greeting() {
+    const h = new Date().getHours();
+    if (h < 5)  return 'Still up? Fresh deals below';
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    if (h < 22) return 'Good evening';
+    return 'Good night';
+  }
+
   async function onSignedIn(user) {
     state.user = user;
+    $('#boot')?.remove();
     $('#view-login').classList.add('hidden');
     $('#view-app').classList.remove('hidden');
 
-    const initials = (user.first_name || user.username || 'U').slice(0, 1).toUpperCase();
+    const name = user.first_name || user.username || '';
+    const initials = (name || 'U').slice(0, 1).toUpperCase();
     $('#user-btn').textContent = initials;
+    $('#drop-avatar').textContent = initials;
     $('#drop-name').textContent = user.first_name || 'Telegram user';
     $('#drop-handle').textContent = user.username ? '@' + user.username : '';
+    $('#greeting').textContent = name ? `${greeting()}, ${name} 👋` : `${greeting()} 👋`;
+
+    measureChrome();
 
     await loadCategories();
     const mine = await api('/api/channels').catch(() => ({ channels: [] }));
-    const active = mine.channels.filter((c) => c.enabled);
+    state.channelDeals = {};
+    (mine.channels || []).forEach((c) => { state.channelDeals[c.tg_id] = c.live_deals; });
+    const active = (mine.channels || []).filter((c) => c.enabled);
     if (!active.length) {
       // Nothing tracked yet — send them straight to channel selection.
       toast('Pick the deal channels you want DealRadar to read.', 'info', 6000);
@@ -191,9 +250,10 @@
       navigate('deals');
       refreshDeals(true);
       loadFacets();
-      loadTrending();
+      loadRails();
     }
     loadStats();
+    loadAlertCount();
   }
 
   /* ============================================================
@@ -204,72 +264,130 @@
     ['deals', 'channels', 'alerts'].forEach((p) => {
       $(`#page-${p}`).classList.toggle('hidden', p !== page);
     });
-    $$('.navlink').forEach((n) => n.classList.toggle('active', n.dataset.nav === page));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    $$('.navlink, .navbtn').forEach((n) => n.classList.toggle('active', n.dataset.nav === page));
+    window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
     closeFilters();
+    closeUserMenu();
+    closeSuggest();
     if (page === 'alerts') loadAlerts();
     if (page === 'channels' && !state.availableChannels.length) loadAvailableChannels();
   }
 
   $$('[data-nav]').forEach((el) => el.addEventListener('click', () => navigate(el.dataset.nav)));
 
-  /* user dropdown */
-  $('#user-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    $('#user-drop').classList.toggle('hidden');
-  });
-  document.addEventListener('click', () => $('#user-drop').classList.add('hidden'));
+  /* ---------------- account menu ---------------- */
+  function openUserMenu() {
+    $('#user-drop').classList.remove('hidden');
+    $('#nav-account').classList.add('active');
+    if (isSheetLayout()) $('#sheet-backdrop').classList.remove('hidden');
+    syncOverlayState();
+  }
+  function closeUserMenu() {
+    if ($('#user-drop').classList.contains('hidden')) return;
+    $('#user-drop').classList.add('hidden');
+    $('#nav-account').classList.remove('active');
+    $$('.navbtn').forEach((n) => n.classList.toggle('active', n.dataset.nav === state.page));
+    if (!$('#filters').classList.contains('open')) $('#sheet-backdrop').classList.add('hidden');
+    syncOverlayState();
+  }
+  const toggleUserMenu = () => (
+    $('#user-drop').classList.contains('hidden') ? openUserMenu() : closeUserMenu()
+  );
+
+  $('#user-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleUserMenu(); });
+  $('#nav-account').addEventListener('click', (e) => { e.stopPropagation(); toggleUserMenu(); });
+  document.addEventListener('click', closeUserMenu);
   $('#user-drop').addEventListener('click', (e) => e.stopPropagation());
 
-  $$('#user-drop .drop-item').forEach((item) => item.addEventListener('click', async () => {
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    // Keeps the Android/PWA status bar the same colour as the page it sits above.
+    const meta = $('#meta-theme-color');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#080b12' : '#f7f8fa');
+    document.querySelector('meta[name="color-scheme"]')
+      ?.setAttribute('content', theme === 'dark' ? 'dark light' : 'light dark');
+  }
+
+  /* Delegated, not bound per item: the Android shell injects its own
+     "App settings" entry into this menu after load, and it should dismiss the
+     sheet like every other row. */
+  $('#user-drop').addEventListener('click', async (e) => {
+    const item = e.target.closest('.drop-item');
+    if (!item) return;
     const action = item.dataset.action;
-    $('#user-drop').classList.add('hidden');
+    closeUserMenu();
+    if (!action) return;             // injected by the native shell — it handles itself
     if (action === 'logout') {
       await post('/api/auth/logout').catch(() => {});
       window.location.reload();
     } else if (action === 'theme') {
       const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('dr-theme', next);
+      applyTheme(next);
+      try { localStorage.setItem('dr-theme', next); } catch { /* private mode */ }
     } else if (action === 'status') {
       showStatus();
     } else if (action === 'install') {
       promptInstall();
     }
-  }));
+  });
 
   async function showStatus() {
-    openModal('<p class="muted">Loading system status…</p>');
+    openModal(sheetShell('System status', '<p class="muted">Loading system status…</p>'));
     try {
       const health = await api('/api/health');
       const sheetsInfo = health.checks.sheets || {};
       const ingestInfo = health.checks.ingest || {};
-      openModal(`
-        <div class="modal-head">
-          <h2>System status</h2>
-          <button class="btn btn-ghost btn-xs" data-close>Close</button>
-        </div>
+      openModal(sheetShell('System status', `
         <dl class="kv">
           <dt>Service</dt><dd>${escapeHtml(health.status)} · up ${Math.floor(health.uptime_seconds / 60)} min</dd>
           <dt>Database</dt><dd>${escapeHtml(health.checks.database)}</dd>
           <dt>Telegram API</dt><dd>${health.checks.telegram_configured ? 'configured' : 'not configured'}</dd>
           <dt>Google Sheets</dt><dd>${sheetsInfo.configured ? (sheetsInfo.connected ? 'connected' : 'configured, not connected') : 'not configured'}</dd>
           <dt>Rows in Sheets</dt><dd>${sheetsInfo.rows_tracked ?? 0}</dd>
-          <dt>Last sheet flush</dt><dd>${escapeHtml(sheetsInfo.last_flush || 'never')}</dd>
+          <dt>Last sheet flush</dt><dd class="raw">${escapeHtml(sheetsInfo.last_flush || 'never')}</dd>
           <dt>Ingest cycles</dt><dd>${ingestInfo.cycles ?? 0}</dd>
           <dt>Last sync</dt><dd>${ingestInfo.last_run_ago_seconds != null ? Math.floor(ingestInfo.last_run_ago_seconds / 60) + ' min ago' : 'not yet'}</dd>
-          <dt>Last error</dt><dd>${escapeHtml(ingestInfo.last_error || sheetsInfo.last_error || 'none')}</dd>
+          <dt>Last error</dt><dd class="raw">${escapeHtml(ingestInfo.last_error || sheetsInfo.last_error || 'none')}</dd>
         </dl>
         <p class="fineprint">Ping endpoint: <code>/api/ping</code> · API docs: <a href="/api/docs" target="_blank" rel="noopener">/api/docs</a></p>
-      `);
+      `));
     } catch (err) {
-      openModal(`<p class="alert alert-error">${escapeHtml(err.message)}</p>`);
+      openModal(sheetShell('System status', `<p class="alert alert-error">${escapeHtml(err.message)}</p>`));
     }
   }
 
+  /** Standard sheet chrome: sticky title bar + padded body. */
+  function sheetShell(title, bodyHtml) {
+    return `
+      <div class="modal-head">
+        <h2>${escapeHtml(title)}</h2>
+        <button class="btn btn-soft btn-xs" data-close>Close</button>
+      </div>
+      <div class="modal-pad">${bodyHtml}</div>`;
+  }
+
   /* ============================================================
-     DEALS
+     CATEGORIES
      ============================================================ */
+  // Keyed by the taxonomy names the backend actually returns; anything new
+  // falls back to a neutral tag icon rather than breaking the row.
+  const CATEGORY_ICON = {
+    '': '✨',
+    'Electronics': '📱',
+    'Women Fashion': '👗',
+    'Men Fashion': '👔',
+    'Footwear': '👟',
+    'Appliances': '🔌',
+    'Home & Kitchen': '🏠',
+    'Beauty': '💄',
+    'Grocery': '🛒',
+    'Baby & Kids': '🧸',
+    'Bags & Luggage': '🎒',
+    'Books & Stationery': '📚',
+    'Sports & Fitness': '🏋️',
+    'Other': '🎁',
+  };
+
   async function loadCategories() {
     try {
       const res = await api('/api/deals/categories');
@@ -289,15 +407,21 @@
     const chips = [{ name: '', label: 'All deals' }]
       .concat(state.categories.map((c) => ({ name: c.name, label: c.name })));
     row.innerHTML = chips.map((c) => `
-      <button class="chip ${state.filters.category === c.name ? 'active' : ''}" data-cat="${escapeHtml(c.name)}">
-        ${escapeHtml(c.label)}
+      <button class="cat ${state.filters.category === c.name ? 'active' : ''}"
+              data-cat="${escapeHtml(c.name)}" role="tab"
+              aria-selected="${state.filters.category === c.name}">
+        <span class="cat-icon" aria-hidden="true">${CATEGORY_ICON[c.name] || '🏷️'}</span>
+        <span class="cat-label">${escapeHtml(c.label)}</span>
       </button>`).join('');
-    $$('.chip', row).forEach((chip) => chip.addEventListener('click', () => {
+
+    $$('.cat', row).forEach((chip) => chip.addEventListener('click', () => {
       state.filters.category = chip.dataset.cat;
       state.filters.subcategory = '';
       renderCategoryChips();
       renderSubcategoryFilter();
       refreshDeals(true);
+      // Keep the chosen category in view rather than leaving it half-scrolled.
+      chip.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
     }));
   }
 
@@ -317,30 +441,120 @@
     block.classList.remove('hidden');
   }
 
-  function updateFiltersBadge() {
+  /* ============================================================
+     FILTER STATE / CHIPS
+     ============================================================ */
+  function activeFilterCount() {
     const f = state.filters;
-    const count = [
+    return [
       f.category, f.subcategory, f.store, f.brand,
       f.max_price ? 1 : 0, f.min_discount ? 1 : 0, f.only_lowest ? 1 : 0, f.all_channels ? 1 : 0,
     ].filter(Boolean).length;
+  }
+
+  const isBrowseMode = () => !state.filters.q && activeFilterCount() === 0;
+
+  function updateFiltersBadge() {
+    const count = activeFilterCount();
     const badge = $('#filters-badge');
     badge.textContent = count;
     badge.classList.toggle('hidden', count === 0);
+    renderActiveChips();
   }
+
+  function renderActiveChips() {
+    const f = state.filters;
+    const chips = [];
+    if (f.category)    chips.push(['category', f.category]);
+    if (f.subcategory) chips.push(['subcategory', f.subcategory]);
+    if (f.store)       chips.push(['store', f.store]);
+    if (f.brand)       chips.push(['brand', f.brand]);
+    if (f.max_price)   chips.push(['max_price', `Under ${money(f.max_price)}`]);
+    if (f.min_discount) chips.push(['min_discount', `${f.min_discount}%+ off`]);
+    if (f.only_lowest) chips.push(['only_lowest', 'All-time lows']);
+    if (f.all_channels) chips.push(['all_channels', 'All channels']);
+
+    const box = $('#active-filters');
+    box.classList.toggle('hidden', !chips.length);
+    if (!chips.length) { box.innerHTML = ''; return; }
+
+    box.innerHTML = chips.map(([key, label]) => `
+      <button class="chip removable" data-clear="${key}">
+        ${escapeHtml(label)}
+        <span class="chip-x">${icon('close')}</span>
+      </button>`).join('');
+
+    $$('[data-clear]', box).forEach((btn) => btn.addEventListener('click', () => {
+      clearFilter(btn.dataset.clear);
+    }));
+  }
+
+  function clearFilter(key) {
+    const f = state.filters;
+    if (key === 'category') { f.category = ''; f.subcategory = ''; renderCategoryChips(); renderSubcategoryFilter(); }
+    else if (key === 'max_price') { f.max_price = null; $('#f-max-price').value = ''; }
+    else if (key === 'min_discount') { f.min_discount = 0; $('#f-discount').value = 0; $('#f-discount-out').textContent = 'any'; }
+    else if (key === 'only_lowest') { f.only_lowest = false; $('#f-lowest').checked = false; }
+    else if (key === 'all_channels') { f.all_channels = false; $('#f-all-channels').checked = false; loadFacets(); }
+    else if (key === 'subcategory') { f.subcategory = ''; $('#f-subcategory').value = ''; }
+    else { f[key] = ''; renderFacet('#f-stores', state.facets.stores, 'store'); renderFacet('#f-brands', state.facets.brands, 'brand'); }
+    refreshDeals(true);
+  }
+
+  /* ---------------- filter sheet ---------------- */
+  const isSheetLayout = () => window.innerWidth < 1024;
 
   function openFilters() {
     $('#filters').classList.add('open');
-    document.body.style.overflow = 'hidden';
+    $('#sheet-backdrop').classList.remove('hidden');
+    syncOverlayState();
   }
   function closeFilters() {
-    $('#filters').classList.remove('open');
-    document.body.style.overflow = '';
+    const sheet = $('#filters');
+    if (!sheet.classList.contains('open')) return;
+    sheet.classList.remove('open');
+    sheet.style.transform = '';
+    if ($('#user-drop').classList.contains('hidden')) $('#sheet-backdrop').classList.add('hidden');
+    syncOverlayState();
   }
   $('#btn-filters-toggle').addEventListener('click', openFilters);
   $('#btn-filters-close').addEventListener('click', closeFilters);
+  $('#btn-filters-apply').addEventListener('click', closeFilters);
+  $('#sheet-backdrop').addEventListener('click', () => { closeFilters(); closeUserMenu(); });
 
-  function buildQuery() {
-    const f = state.filters;
+  /* Drag-to-dismiss on the sheet handle — the gesture Android users expect. */
+  (function initSheetDrag() {
+    const sheet = $('#filters');
+    const grab = $('#sheet-grab');
+    let startY = 0, dy = 0, dragging = false;
+
+    grab.addEventListener('pointerdown', (e) => {
+      if (!isSheetLayout()) return;
+      dragging = true; startY = e.clientY; dy = 0;
+      sheet.classList.add('dragging');
+      grab.setPointerCapture(e.pointerId);
+    });
+    grab.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      dy = Math.max(0, e.clientY - startY);
+      sheet.style.transform = `translateY(${dy}px)`;
+    });
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      sheet.classList.remove('dragging');
+      sheet.style.transform = '';
+      if (dy > 110) closeFilters();
+    };
+    grab.addEventListener('pointerup', end);
+    grab.addEventListener('pointercancel', end);
+  })();
+
+  /* ============================================================
+     DEALS
+     ============================================================ */
+  function buildQuery(overrides = {}) {
+    const f = { ...state.filters, ...overrides };
     const params = new URLSearchParams();
     if (f.q) params.set('q', f.q);
     if (f.category) params.set('category', f.category);
@@ -354,17 +568,26 @@
     // Sent as-is: the backend already degrades "relevance" to score-order
     // by itself when there's no query to rank against (see search.py).
     params.set('sort', f.sort);
-    params.set('limit', state.limit);
-    params.set('offset', state.offset);
+    params.set('limit', overrides.limit ?? state.limit);
+    params.set('offset', overrides.offset ?? state.offset);
     return params.toString();
   }
 
-  function skeletons(n = 8) {
-    return Array.from({ length: n }, () => '<div class="skel"></div>').join('');
-  }
+  const skeletonCard = () => `
+    <div class="skel skel-card">
+      <div class="sk-media"></div>
+      <div class="sk-lines">
+        <div class="sk-line"></div><div class="sk-line w70"></div><div class="sk-line w45"></div>
+      </div>
+    </div>`;
+  const skeletons = (n = 8) => Array.from({ length: n }, skeletonCard).join('');
+  const railSkeletons = (n = 4) => Array.from({ length: n },
+    () => `<div class="skel skel-card skel-rail"><div class="sk-media"></div>
+           <div class="sk-lines"><div class="sk-line"></div><div class="sk-line w45"></div></div></div>`).join('');
 
   async function refreshDeals(reset = false) {
     updateFiltersBadge();
+    updateGridHeading();
     if (!reset) {
       // Pagination ("Load more"): duplicate clicks should be dropped, not raced.
       if (state.loading) return;
@@ -381,6 +604,8 @@
       state.offset = 0;
       $('#deal-grid').innerHTML = skeletons();
       $('#empty-state').classList.add('hidden');
+      $('#btn-more').classList.add('hidden');
+      toggleRails();
     }
 
     try {
@@ -397,81 +622,148 @@
       } else {
         summary.textContent = '';
       }
+      $('#filter-count').textContent = res.total
+        ? `${res.total.toLocaleString()} deal${res.total === 1 ? '' : 's'} match`
+        : 'No deals match';
 
       $('#btn-more').classList.toggle('hidden', state.offset + res.count >= res.total);
       if (!res.total) showEmpty();
     } catch (err) {
       if (err.name === 'AbortError') return; // superseded by a newer search — ignore
       if (err.status === 401) { window.location.reload(); return; }
-      toast(err.message, 'err');
-      $('#deal-grid').innerHTML = '';
+      showError(err);
     } finally {
       if (!reset) state.loading = false;
     }
   }
 
+  function updateGridHeading() {
+    const head = $('#grid-head');
+    const title = $('#grid-title');
+    const sub = $('#grid-sub');
+    if (state.filters.q) {
+      title.textContent = `🔎 Results for “${state.filters.q}”`;
+      sub.textContent = 'Best matches across your channels';
+    } else if (activeFilterCount()) {
+      title.textContent = '🏷️ Filtered deals';
+      sub.textContent = 'Matching your filters';
+    } else {
+      const labels = {
+        newest: ['🕘 Latest deals', 'Freshly parsed from your channels'],
+        best: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
+        discount: ['⚡ Biggest discounts', 'Largest drop from the quoted MRP'],
+        price_low: ['💸 Cheapest first', 'Lowest price across your channels'],
+        price_high: ['💎 Priciest first', 'Highest price across your channels'],
+        relevance: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
+      };
+      const [t, s] = labels[state.filters.sort] || labels.newest;
+      title.textContent = t;
+      sub.textContent = s;
+    }
+    head.classList.remove('hidden');
+  }
+
   function showEmpty() {
     const el = $('#empty-state');
-    const hasFilters = !!(state.filters.q || state.filters.category || state.filters.subcategory
-      || state.filters.store || state.filters.brand || state.filters.max_price
-      || state.filters.min_discount || state.filters.only_lowest);
+    const hasFilters = !!(state.filters.q || activeFilterCount());
 
     el.innerHTML = `
-      <span class="emoji">📭</span>
+      <span class="emoji">${hasFilters ? '🔎' : '📭'}</span>
       <h3>No products found</h3>
       <p>${hasFilters
-        ? 'Nothing matches your search and filters right now.'
-        : 'No deals have come in yet.'}</p>
-      <div style="margin-top:18px; display:flex; gap:9px; justify-content:center; flex-wrap:wrap;">
-        ${hasFilters ? '<button class="btn btn-soft" id="empty-clear">Clear search &amp; filters</button>' : ''}
+        ? 'Nothing matches your search and filters right now. Try fewer filters or a broader term.'
+        : 'No deals have come in yet. Pick a few channels and run a sync to fill your feed.'}</p>
+      <div class="empty-actions">
+        ${hasFilters ? '<button class="btn btn-primary" id="empty-clear">Clear search &amp; filters</button>' : ''}
         <button class="btn ${hasFilters ? 'btn-soft' : 'btn-primary'}" id="empty-channels">Choose channels</button>
         <button class="btn btn-soft" id="empty-sync">Sync now</button>
       </div>`;
     el.classList.remove('hidden');
+    $('#deal-grid').innerHTML = '';
     $('#empty-clear')?.addEventListener('click', () => {
       $('#search-input').value = '';
       state.filters.q = '';
+      $('#search-clear').classList.add('hidden');
       $('#btn-clear-filters').click(); // resets the rest of the filters and re-queries
     });
     $('#empty-channels')?.addEventListener('click', () => navigate('channels'));
     $('#empty-sync')?.addEventListener('click', () => syncNow());
   }
 
-  function dealCard(deal) {
-    const badges = [];
-    if (deal.discount_pct >= 10) badges.push(`<span class="badge badge-off">${deal.discount_pct}% OFF</span>`);
-    if (deal.is_lowest) badges.push('<span class="badge badge-low">ALL-TIME LOW</span>');
-    if (deal.repost_count > 2) badges.push(`<span class="badge badge-hot">${deal.repost_count}× POSTED</span>`);
+  function showError(err) {
+    const offline = !navigator.onLine;
+    const el = $('#empty-state');
+    el.innerHTML = `
+      <span class="emoji">${offline ? '📶' : '⚠️'}</span>
+      <h3>${offline ? 'You’re offline' : 'Something went wrong'}</h3>
+      <p>${offline
+        ? 'We’ll refresh automatically as soon as you’re back online.'
+        : 'We couldn’t load the deals right now.'}</p>
+      <div class="empty-actions">
+        <button class="btn btn-primary" id="error-retry">Try again</button>
+      </div>
+      <p class="fineprint" style="margin-top:16px">${escapeHtml(err.message || '')}</p>`;
+    el.classList.remove('hidden');
+    $('#deal-grid').innerHTML = '';
+    $('#results-summary').textContent = '';
+    $('#error-retry').addEventListener('click', () => refreshDeals(true));
+  }
 
-    const media = deal.image_url
-      ? `<img src="${escapeHtml(deal.image_url)}" alt="" loading="lazy"
-             onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🛍️</div>'" />`
-      : '<div class="placeholder">🛍️</div>';
+  /* ---------------- deal card ---------------- */
+  const FRESH_SECONDS = 5400;   // 90 min — "new" only while it genuinely is
+
+  function isFresh(deal) {
+    return deal.posted_at && (Date.now() / 1000 - deal.posted_at) < FRESH_SECONDS;
+  }
+
+  function dealMedia(deal, extra = '') {
+    // The placeholder sits underneath the image, so a broken URL reveals it
+    // instead of wiping the badges that share this container.
+    const img = deal.image_url
+      ? `<img src="${escapeHtml(deal.image_url)}" alt="" loading="lazy" decoding="async" onerror="this.remove()" />`
+      : '';
+    return `<div class="placeholder" aria-hidden="true">🛍️</div>${img}${extra}`;
+  }
+
+  function dealBadges(deal) {
+    const badges = [];
+    if (deal.discount_pct >= 10) badges.push(`<span class="badge badge-off">-${deal.discount_pct}%</span>`);
+    if (deal.is_lowest) badges.push('<span class="badge badge-low">🟢 LOWEST EVER</span>');
+    else if (deal.score >= 80) badges.push('<span class="badge badge-hot">🏆 GREAT DEAL</span>');
+    else if (isFresh(deal)) badges.push('<span class="badge badge-new">🆕 NEW</span>');
+    return badges;
+  }
+
+  function dealCard(deal) {
+    const badges = dealBadges(deal);
+    const store = storeName(deal)
+      ? `<span class="store-tag">${escapeHtml(storeName(deal))}</span>` : '';
 
     return `
       <article class="deal" data-id="${escapeHtml(deal.id)}">
-        <div class="deal-media">
-          ${media}
-          <div class="badges">${badges.join('')}</div>
-          ${deal.store ? `<span class="store-tag">${escapeHtml(deal.store)}</span>` : ''}
+        <div class="deal-media" data-detail="${escapeHtml(deal.id)}" role="button" tabindex="0"
+             aria-label="${escapeHtml(deal.title)}">
+          ${dealMedia(deal, `<div class="badges">${badges.join('')}</div>${store}`)}
         </div>
         <div class="deal-body">
           <div class="deal-title" title="${escapeHtml(deal.title)}">${escapeHtml(deal.title)}</div>
           <div class="deal-price">
             <span class="price-now">${money(deal.price)}</span>
             ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
-            ${deal.saving ? `<span class="price-save">save ${money(deal.saving)}</span>` : ''}
           </div>
+          ${deal.saving ? `<div class="price-save">${icon('down')} Save ${money(deal.saving)}</div>` : ''}
           ${deal.coupon ? `<div><span class="coupon">🏷 ${escapeHtml(deal.coupon)}</span></div>` : ''}
           <div class="deal-meta">
             <span>${timeAgo(deal.posted_at)}</span>
-            ${deal.repost_count > 1 ? `<span class="dot"></span><span class="reposts">seen in ${deal.repost_count} channels</span>` : ''}
-            ${deal.channel_title ? `<span class="dot"></span><span>${escapeHtml(deal.channel_title)}</span>` : ''}
+            ${deal.repost_count > 1
+              ? `<span class="dot"></span><span class="reposts">${deal.repost_count} channels</span>` : ''}
           </div>
         </div>
         <div class="deal-actions">
           <button class="btn btn-soft btn-sm" data-detail="${escapeHtml(deal.id)}">Details</button>
-          ${deal.url ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">Buy now</a>` : ''}
+          ${deal.url
+            ? `<a class="btn btn-primary btn-sm btn-buy" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">Buy now</a>`
+            : ''}
         </div>
       </article>`;
   }
@@ -481,59 +773,147 @@
     const html = results.map(dealCard).join('');
     if (reset) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
     $('#empty-state').classList.toggle('hidden', results.length > 0 || state.total > 0);
-    $$('[data-detail]', grid).forEach((btn) => {
-      if (btn.dataset.bound) return;
-      btn.dataset.bound = '1';
-      btn.addEventListener('click', () => showDealDetail(btn.dataset.detail));
+    bindDetailTriggers(grid);
+  }
+
+  function bindDetailTriggers(root) {
+    $$('[data-detail]', root).forEach((el) => {
+      if (el.dataset.bound) return;
+      el.dataset.bound = '1';
+      el.addEventListener('click', () => showDealDetail(el.dataset.detail));
+      if (el.getAttribute('role') === 'button') {
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDealDetail(el.dataset.detail); }
+        });
+      }
     });
   }
 
+  /* Press feedback that survives a scroll: the card only "depresses" while the
+     finger is actually held on it, and releases on scroll/cancel. */
+  (function initPressFeedback() {
+    let pressed = null;
+    const release = () => { pressed?.classList.remove('pressed'); pressed = null; };
+    document.addEventListener('pointerdown', (e) => {
+      const card = e.target.closest?.('.deal, .railcard');
+      if (!card) return;
+      pressed = card;
+      card.classList.add('pressed');
+    }, { passive: true });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) =>
+      document.addEventListener(ev, release, { passive: true }));
+    window.addEventListener('scroll', release, { passive: true });
+  })();
+
+  /* ---------------- deal detail sheet ---------------- */
+  function scoreLabel(score) {
+    if (score >= 80) return ['Excellent deal', 'Among the strongest we have seen'];
+    if (score >= 60) return ['Good deal', 'Better than most deals in this category'];
+    if (score >= 40) return ['Fair deal', 'Reasonable, but not exceptional'];
+    return ['Average deal', 'Worth comparing before you buy'];
+  }
+
+  function scoreDial(score) {
+    const pct = Math.max(0, Math.min(100, Math.round(score || 0)));
+    const r = 24, c = 2 * Math.PI * r;
+    return `
+      <div class="scoredial">
+        <svg viewBox="0 0 58 58" aria-hidden="true">
+          <circle class="track-ring" cx="29" cy="29" r="${r}" fill="none" stroke-width="5" />
+          <circle class="value-ring" cx="29" cy="29" r="${r}" fill="none" stroke-width="5"
+                  stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}"
+                  stroke-dashoffset="${(c * (1 - pct / 100)).toFixed(1)}" />
+        </svg>
+        <b>${pct}</b>
+      </div>`;
+  }
+
+  function dealReasons(deal) {
+    const history = deal.price_history || {};
+    const out = [];
+    if (deal.is_lowest) out.push('Lowest price we have recorded for this product');
+    if (deal.discount_pct >= 10) out.push(`${deal.discount_pct}% below the quoted MRP`);
+    if (history.median && deal.price && history.points >= 3 && history.median > deal.price) {
+      const below = Math.round((1 - deal.price / history.median) * 100);
+      if (below >= 5) out.push(`${below}% below its typical price (${history.points} price points)`);
+    }
+    if (deal.repost_count > 1) out.push(`Posted in ${deal.repost_count} of the channels you track`);
+    return out;
+  }
+
   async function showDealDetail(id) {
-    openModal('<p class="muted">Loading…</p>');
+    openModal(sheetShell('Deal', '<p class="muted" style="padding:16px 0">Loading…</p>'));
     try {
       const [deal, fullHistory] = await Promise.all([
         api(`/api/deals/${encodeURIComponent(id)}`),
         api(`/api/deals/${encodeURIComponent(id)}/history`).catch(() => ({ points: [] })),
       ]);
       const history = deal.price_history || {};
+      const badges = dealBadges(deal);
+      const [label, blurb] = scoreLabel(deal.score || 0);
+      const reasons = dealReasons(deal);
+      const suspicious = (deal.flags || []).includes('suspicious_mrp');
+
       openModal(`
         <div class="modal-head">
-          <h2 style="font-size:1.1rem">${escapeHtml(deal.title)}</h2>
-          <button class="btn btn-ghost btn-xs" data-close>Close</button>
+          <h2>${escapeHtml(deal.title)}</h2>
+          <button class="btn btn-soft btn-xs" data-close>Close</button>
         </div>
-        <div class="deal-price" style="margin-bottom:6px">
-          <span class="price-now">${money(deal.price)}</span>
-          ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
-          ${deal.discount_pct ? `<span class="price-save">${deal.discount_pct}% off</span>` : ''}
+        ${deal.image_url ? `<div class="detail-hero">${dealMedia(deal)}</div>` : ''}
+        <div class="modal-pad">
+          ${badges.length ? `<div class="detail-badges">${badges.join('')}</div>` : ''}
+          <div class="detail-price">
+            <span class="price-now">${money(deal.price)}</span>
+            ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
+          </div>
+          ${deal.saving ? `<span class="detail-save">${icon('down')} You save ${money(deal.saving)}${deal.discount_pct ? ` · ${deal.discount_pct}% off` : ''}</span>` : ''}
+
+          ${deal.is_lowest ? `<div class="detail-note good">${icon('trend')}<span>Lowest price we have recorded for this product.</span></div>` : ''}
+          ${suspicious ? `<div class="detail-note warn">${icon('alert')}<span>The quoted MRP looks inflated versus this product’s price history.</span></div>` : ''}
+
+          <div class="scorecard">
+            ${scoreDial(deal.score)}
+            <div class="scoretext">
+              <div class="st-title">${label}</div>
+              <div class="st-sub">Deal score ${Math.round(deal.score || 0)} / 100 — ${blurb}</div>
+            </div>
+          </div>
+          ${reasons.length ? `<ul class="reasons">${reasons.map((r) => `<li>${icon('check')}<span>${escapeHtml(r)}</span></li>`).join('')}</ul>` : ''}
+
+          <div class="price-chart-wrap">
+            <div class="price-chart-title">Price history</div>
+            <div class="price-chart" id="price-chart-${escapeHtml(id)}"></div>
+          </div>
+
+          <dl class="kv">
+            <dt>Store</dt><dd>${escapeHtml(deal.store || '—')}</dd>
+            <dt>Category</dt><dd>${escapeHtml(deal.category || '—')} › ${escapeHtml(deal.subcategory || '—')}</dd>
+            ${deal.brand ? `<dt>Brand</dt><dd>${escapeHtml(deal.brand)}</dd>` : ''}
+            ${deal.sizes ? `<dt>Sizes</dt><dd class="raw">${escapeHtml(deal.sizes)}</dd>` : ''}
+            ${deal.coupon ? `<dt>Coupon</dt><dd><span class="coupon">${escapeHtml(deal.coupon)}</span></dd>` : ''}
+            <dt>Posted</dt><dd class="raw">${timeAgo(deal.posted_at)} in ${escapeHtml(deal.channel_title || 'a channel')}</dd>
+            <dt>Reposted</dt><dd>${deal.repost_count} channel${deal.repost_count === 1 ? '' : 's'}</dd>
+            <dt>Expires</dt><dd class="raw">${deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString() : '—'}</dd>
+            ${history.points ? `<dt>History</dt><dd class="raw">${history.points} points · low ${money(history.min)} · high ${money(history.max)}</dd>` : ''}
+            <dt>Deal score</dt><dd>${Math.round(deal.score ?? 0)} / 100</dd>
+          </dl>
+
+          <details class="raw">
+            <summary>Original channel post</summary>
+            <pre class="rawpost">${escapeHtml(deal.raw_text || '')}</pre>
+          </details>
         </div>
-        ${deal.is_lowest ? '<p class="small" style="color:var(--gold);font-weight:700">📉 Lowest price we have recorded for this product</p>' : ''}
-        ${(deal.flags || []).includes('suspicious_mrp') ? '<p class="small" style="color:var(--warn);font-weight:700">⚠️ The quoted MRP looks inflated versus this product’s price history</p>' : ''}
-        <div class="price-chart-wrap">
-          <div class="price-chart-title">Price history</div>
-          <div class="price-chart" id="price-chart-${escapeHtml(id)}"></div>
-        </div>
-        <dl class="kv">
-          <dt>Store</dt><dd>${escapeHtml(deal.store || '—')}</dd>
-          <dt>Category</dt><dd>${escapeHtml(deal.category || '—')} › ${escapeHtml(deal.subcategory || '—')}</dd>
-          ${deal.brand ? `<dt>Brand</dt><dd>${escapeHtml(deal.brand)}</dd>` : ''}
-          ${deal.sizes ? `<dt>Sizes</dt><dd>${escapeHtml(deal.sizes)}</dd>` : ''}
-          ${deal.coupon ? `<dt>Coupon</dt><dd><span class="coupon">${escapeHtml(deal.coupon)}</span></dd>` : ''}
-          <dt>Posted</dt><dd>${timeAgo(deal.posted_at)} in ${escapeHtml(deal.channel_title || 'a channel')}</dd>
-          <dt>Reposted</dt><dd>${deal.repost_count} channel${deal.repost_count === 1 ? '' : 's'}</dd>
-          <dt>Expires</dt><dd>${deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString() : '—'}</dd>
-          ${history.points ? `<dt>History</dt><dd>${history.points} points · low ${money(history.min)} · high ${money(history.max)}</dd>` : ''}
-          <dt>Deal score</dt><dd>${deal.score ?? 0} / 100</dd>
-        </dl>
-        <details style="margin:14px 0">
-          <summary class="muted small" style="cursor:pointer">Original channel post</summary>
-          <pre style="white-space:pre-wrap;font-size:.8rem;color:var(--text-2);margin-top:9px">${escapeHtml(deal.raw_text || '')}</pre>
-        </details>
-        ${deal.url ? `<a class="btn btn-primary btn-block" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">Open on ${escapeHtml(deal.store || 'store')}</a>` : ''}
+        ${deal.url ? `
+          <div class="detail-cta">
+            <a class="btn btn-primary btn-block" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">
+              Open on ${escapeHtml(storeName(deal) || 'store')} ${icon('external', 'ico')}
+            </a>
+          </div>` : ''}
       `);
       const chartHost = document.getElementById(`price-chart-${id}`);
       if (chartHost) renderPriceChart(chartHost, fullHistory.points || []);
     } catch (err) {
-      openModal(`<p class="alert alert-error">${escapeHtml(err.message)}</p>`);
+      openModal(sheetShell('Deal', `<p class="alert alert-error">${escapeHtml(err.message)}</p>`));
     }
   }
 
@@ -702,30 +1082,115 @@
     overlay.addEventListener('pointerleave', hide);
   }
 
-  async function loadTrending() {
-    try {
-      const res = await api('/api/deals/trending?limit=10');
-      const wrap = $('#trending-wrap');
-      if (!res.results.length) { wrap.classList.add('hidden'); return; }
-      $('#trending-row').innerHTML = res.results.map((d) => `
-        <a class="trend-card" href="${escapeHtml(d.url || '#')}" target="_blank" rel="noopener noreferrer nofollow">
-          <div class="trend-title">${escapeHtml(d.title)}</div>
-          <div class="trend-meta">
-            <b>${money(d.price)}</b>
-            <span class="reposts">${d.repost_count}× posted</span>
+  /* ============================================================
+     HOME RAILS  (only shown while browsing — a search replaces them)
+     ============================================================ */
+  function railCard(deal, note) {
+    const badges = [];
+    if (deal.discount_pct >= 10) badges.push(`<span class="badge badge-off">-${deal.discount_pct}%</span>`);
+    return `
+      <article class="railcard" data-detail="${escapeHtml(deal.id)}" role="button" tabindex="0"
+               aria-label="${escapeHtml(deal.title)}">
+        <div class="rail-media">${dealMedia(deal, `<div class="badges">${badges.join('')}</div>`)}</div>
+        <div class="rail-body">
+          <div class="rail-title">${escapeHtml(deal.title)}</div>
+          <div class="rail-price">
+            <span class="price-now">${money(deal.price)}</span>
+            ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
           </div>
-        </a>`).join('');
-      wrap.classList.remove('hidden');
-    } catch { /* non-fatal */ }
+          ${note}
+        </div>
+      </article>`;
   }
 
+  function toggleRails() {
+    const show = isBrowseMode();
+    ['#trending-wrap', '#lowest-wrap'].forEach((sel) => {
+      const el = $(sel);
+      // A rail with no data stays hidden regardless — `has-data` is set by its loader.
+      el.classList.toggle('hidden', !show || !el.dataset.hasData);
+    });
+  }
+
+  async function loadRails() {
+    loadTrending();
+    loadLowest();
+  }
+
+  async function loadTrending() {
+    const wrap = $('#trending-wrap');
+    const row = $('#trending-row');
+    row.innerHTML = railSkeletons();
+    try {
+      const res = await api('/api/deals/trending?limit=12');
+      if (!res.results.length) {
+        delete wrap.dataset.hasData;
+        wrap.classList.add('hidden');
+        return;
+      }
+      row.innerHTML = res.results.map((d) => railCard(d,
+        `<span class="rail-note hot">${icon('trend')} ${d.repost_count}× posted</span>`)).join('');
+      wrap.dataset.hasData = '1';
+      bindDetailTriggers(row);
+      toggleRails();
+    } catch {
+      delete wrap.dataset.hasData;
+      wrap.classList.add('hidden');
+    }
+  }
+
+  async function loadLowest() {
+    const wrap = $('#lowest-wrap');
+    const row = $('#lowest-row');
+    row.innerHTML = railSkeletons();
+    try {
+      const query = buildQuery({
+        q: '', category: '', subcategory: '', store: '', brand: '',
+        max_price: null, min_discount: 0, only_lowest: true,
+        sort: 'best', limit: 12, offset: 0,
+      });
+      const res = await api('/api/deals?' + query);
+      if (!res.results.length) {
+        delete wrap.dataset.hasData;
+        wrap.classList.add('hidden');
+        return;
+      }
+      row.innerHTML = res.results.map((d) => railCard(d,
+        d.saving ? `<span class="rail-note">${icon('down')} Save ${money(d.saving)}</span>`
+                 : `<span class="rail-note">${icon('check')} All-time low</span>`)).join('');
+      wrap.dataset.hasData = '1';
+      bindDetailTriggers(row);
+      toggleRails();
+    } catch {
+      delete wrap.dataset.hasData;
+      wrap.classList.add('hidden');
+    }
+  }
+
+  $('#btn-see-lows').addEventListener('click', () => {
+    state.filters.only_lowest = true;
+    $('#f-lowest').checked = true;
+    refreshDeals(true);
+    $('#grid-head').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+  });
+
+  /* ============================================================
+     FACETS
+     ============================================================ */
   async function loadFacets() {
     try {
       const facets = await api('/api/deals/facets');
-      renderFacet('#f-stores', facets.stores, 'store');
-      renderFacet('#f-brands', facets.brands, 'brand');
+      state.facets = { stores: facets.stores || [], brands: facets.brands || [] };
+      renderFacet('#f-stores', state.facets.stores, 'store');
+      renderFacet('#f-brands', state.facets.brands, 'brand');
     } catch { /* non-fatal */ }
   }
+
+  // Facets are collapsed to a handful with an explicit "show all" rather than
+  // given their own inner scrollbar: a scroller nested inside the filter sheet
+  // is the classic mobile trap where neither list scrolls the way you meant.
+  const FACET_PREVIEW = 6;
+  const facetExpanded = { store: false, brand: false };
 
   function renderFacet(selector, items, key) {
     const box = $(selector);
@@ -733,43 +1198,191 @@
       box.innerHTML = '<span class="muted small">No data yet</span>';
       return;
     }
-    box.innerHTML = items.map((item) => `
+    const expanded = facetExpanded[key];
+    // A selected facet must stay visible even if it sits past the preview cut.
+    const selectedIdx = items.findIndex((i) => i.key === state.filters[key]);
+    const cut = expanded ? items.length : Math.max(FACET_PREVIEW, selectedIdx + 1);
+    const shown = items.slice(0, cut);
+
+    box.innerHTML = shown.map((item) => `
       <button class="facet ${state.filters[key] === item.key ? 'active' : ''}" data-key="${escapeHtml(item.key)}">
         <span>${escapeHtml(item.key)}</span><span class="facet-count">${item.count}</span>
-      </button>`).join('');
+      </button>`).join('')
+      + (items.length > cut || expanded
+        ? `<button class="facet-more" data-more="1">${expanded ? 'Show fewer' : `Show all ${items.length}`}</button>`
+        : '');
+
     $$('.facet', box).forEach((btn) => btn.addEventListener('click', () => {
       state.filters[key] = state.filters[key] === btn.dataset.key ? '' : btn.dataset.key;
       renderFacet(selector, items, key);
       refreshDeals(true);
     }));
+    $('[data-more]', box)?.addEventListener('click', () => {
+      facetExpanded[key] = !expanded;
+      renderFacet(selector, items, key);
+    });
+  }
+
+  /* ============================================================
+     STATS / LIVE STATUS
+     ============================================================ */
+  function animateCount(el, to) {
+    if (reduceMotion() || state.countersAnimated || to <= 0) { el.textContent = num(to); return; }
+    const start = performance.now(), dur = 650;
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / dur);
+      el.textContent = num(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function renderStats(stats, statusOverride) {
+    state.lastStats = stats;
+    const last = stats.ingest && stats.ingest.last_run;
+    const status = statusOverride || (last
+      ? `Updated ${timeAgo(last)} · scanning every ${Math.round(stats.poll_interval_seconds / 60)} min`
+      : 'Waiting for the first sync…');
+
+    $('#statstrip').innerHTML = `
+      <div class="radarcard">
+        <div class="radar-top">
+          <span class="livedot ${last ? '' : 'idle'}" id="livedot" aria-hidden="true"></span>
+          <span class="radar-status" id="radar-status">${escapeHtml(status)}</span>
+        </div>
+        <div class="radar-stats">
+          <div class="stat">
+            <div class="stat-value" data-count="${stats.deals_live || 0}">0</div>
+            <div class="stat-label">Live deals</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value up" data-count="${stats.deals_today || 0}">0</div>
+            <div class="stat-label">Added today</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" data-count="${stats.channels || 0}">0</div>
+            <div class="stat-label">Channels</div>
+          </div>
+        </div>
+      </div>`;
+
+    $$('#statstrip .stat-value').forEach((el) => animateCount(el, Number(el.dataset.count)));
+    state.countersAnimated = true;
+
+    $('#footer-status').textContent = last
+      ? `Deals are kept ${stats.deal_ttl_hours}h or until the link goes dead.`
+      : '';
   }
 
   async function loadStats() {
     try {
-      const stats = await api('/api/stats');
-      $('#statstrip').innerHTML = `
-        <div class="stat"><div class="stat-value">${(stats.deals_live || 0).toLocaleString()}</div><div class="stat-label">Live deals</div></div>
-        <div class="stat"><div class="stat-value">${(stats.deals_today || 0).toLocaleString()}</div><div class="stat-label">Added today</div></div>
-        <div class="stat"><div class="stat-value">${(stats.channels || 0).toLocaleString()}</div><div class="stat-label">Channels watched</div></div>
-        <div class="stat"><div class="stat-value">${stats.deal_ttl_hours}h</div><div class="stat-label">Deal retention</div></div>`;
-      const last = stats.ingest && stats.ingest.last_run;
-      $('#footer-status').textContent = last
-        ? `Last sync ${timeAgo(last)} · polling every ${Math.round(stats.poll_interval_seconds / 60)} min`
-        : 'Waiting for the first sync…';
+      renderStats(await api('/api/stats'));
     } catch { /* non-fatal */ }
   }
 
-  /* search + filter wiring */
+  function setSyncStatus(text, mode) {
+    const dot = $('#livedot');
+    const label = $('#radar-status');
+    if (!dot || !label) return;
+    label.textContent = text;
+    dot.classList.toggle('syncing', mode === 'syncing');
+    dot.classList.toggle('idle', mode === 'idle');
+  }
+
+  async function loadAlertCount() {
+    try {
+      const res = await api('/api/watchlists');
+      setAlertCount((res.watchlists || []).filter((w) => w.notify).length);
+    } catch { /* non-fatal */ }
+  }
+
+  function setAlertCount(count) {
+    const n = Math.max(0, count);
+    state.alertCount = n;
+    [$('#bell-count'), $('#nav-alert-count')].forEach((el) => {
+      if (!el) return;
+      el.textContent = n > 99 ? '99+' : n;
+      el.classList.toggle('hidden', !n);
+    });
+  }
+
+  /* ============================================================
+     SEARCH
+     ============================================================ */
+  const RECENTS_KEY = 'dr-recent';
+
+  function recents() {
+    try { return JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]').slice(0, 6); }
+    catch { return []; }
+  }
+  function pushRecent(q) {
+    if (!q) return;
+    try {
+      const list = [q, ...recents().filter((r) => r.toLowerCase() !== q.toLowerCase())].slice(0, 6);
+      localStorage.setItem(RECENTS_KEY, JSON.stringify(list));
+    } catch { /* private mode */ }
+  }
+
+  function renderSuggest() {
+    const panel = $('#suggest');
+    const typed = $('#search-input').value.trim().toLowerCase();
+    const recent = recents().filter((r) => !typed || r.toLowerCase().includes(typed));
+    // "Popular" is not invented: these are the brands the catalog actually has
+    // the most live deals for, straight from /api/deals/facets.
+    const brands = (state.facets.brands || [])
+      .filter((b) => !typed || b.key.toLowerCase().includes(typed))
+      .slice(0, 8);
+
+    if (!recent.length && !brands.length) { closeSuggest(); return; }
+
+    panel.innerHTML = `
+      ${recent.length ? `
+        <div class="suggest-head">Recent searches <button type="button" id="clear-recents">Clear</button></div>
+        ${recent.map((r) => `<button type="button" class="suggest-item" data-q="${escapeHtml(r)}">
+            ${icon('clock')}<span>${escapeHtml(r)}</span></button>`).join('')}` : ''}
+      ${brands.length ? `
+        <div class="suggest-head">Most deals right now</div>
+        ${brands.map((b) => `<button type="button" class="suggest-item" data-q="${escapeHtml(b.key)}">
+            ${icon('search')}<span>${escapeHtml(b.key)}</span><span class="s-count">${b.count}</span></button>`).join('')}` : ''}`;
+
+    panel.classList.remove('hidden');
+    $$('.suggest-item', panel).forEach((btn) => btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();          // beat the blur, so the click always lands
+      runSearch(btn.dataset.q);
+    }));
+    $('#clear-recents')?.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      try { localStorage.removeItem(RECENTS_KEY); } catch { /* private mode */ }
+      renderSuggest();
+    });
+  }
+
+  const closeSuggest = () => $('#suggest').classList.add('hidden');
+
+  function runSearch(q) {
+    $('#search-input').value = q;
+    state.filters.q = q;
+    pushRecent(q);
+    $('#search-clear').classList.toggle('hidden', !q);
+    closeSuggest();
+    $('#search-input').blur();
+    refreshDeals(true);
+  }
+
   $('#search-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    state.filters.q = $('#search-input').value.trim();
-    refreshDeals(true);
+    runSearch($('#search-input').value.trim());
   });
+
+  $('#search-input').addEventListener('focus', renderSuggest);
+  $('#search-input').addEventListener('blur', () => setTimeout(closeSuggest, 120));
 
   let searchTimer;
   $('#search-input').addEventListener('input', (e) => {
     clearTimeout(searchTimer);
     const value = e.target.value.trim();
+    $('#search-clear').classList.toggle('hidden', !value);
+    renderSuggest();
     searchTimer = setTimeout(() => {
       if (value === state.filters.q) return;
       state.filters.q = value;
@@ -777,6 +1390,16 @@
     }, 420);
   });
 
+  $('#search-clear').addEventListener('click', () => {
+    $('#search-input').value = '';
+    state.filters.q = '';
+    $('#search-clear').classList.add('hidden');
+    closeSuggest();
+    refreshDeals(true);
+    loadRails();
+  });
+
+  /* ---------------- filter controls ---------------- */
   $('#f-sort').addEventListener('change', (e) => {
     state.filters.sort = e.target.value;
     refreshDeals(true);
@@ -826,10 +1449,14 @@
     refreshDeals(false);
   });
 
+  /* ============================================================
+     SYNC
+     ============================================================ */
   async function syncNow() {
     const btn = $('#btn-sync');
+    btn.classList.add('spinning');
     busy(btn, true);
-    toast('Fetching new deals from Telegram…', 'info');
+    setSyncStatus('Scanning your Telegram channels…', 'syncing');
     try {
       const res = await post('/api/channels/sync');
       const added = (res.new || 0) + (res.merged || 0);
@@ -838,28 +1465,61 @@
         : 'Sync complete — no new deals in your channels yet.', 'ok');
       refreshDeals(true);
       loadFacets();
-      loadTrending();
-      loadStats();
+      loadRails();
+      // Status line last: loadStats() repaints the whole card, so setting the
+      // sync result before it would be immediately overwritten.
+      await loadStats();
+      setSyncStatus(added
+        ? `Updated just now · ${res.new} new, ${res.merged} matched`
+        : 'Updated just now · no new deals', null);
     } catch (err) {
       toast(err.message, 'err');
-    } finally { busy(btn, false); }
+      setSyncStatus('Sync failed — pull down or tap sync to retry', 'idle');
+    } finally {
+      busy(btn, false);
+      btn.classList.remove('spinning');
+    }
   }
   $('#btn-sync').addEventListener('click', syncNow);
 
   /* ============================================================
      CHANNELS
      ============================================================ */
+  const AVATAR_HUES = [212, 258, 168, 24, 340, 190, 45, 285];
+
+  function channelAvatar(channel) {
+    const title = channel.title || '?';
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
+    const hue = AVATAR_HUES[hash % AVATAR_HUES.length];
+    const initial = title.trim().slice(0, 1).toUpperCase() || '#';
+    return `<div class="channel-avatar" aria-hidden="true"
+                 style="background:linear-gradient(140deg, hsl(${hue} 72% 52%), hsl(${(hue + 28) % 360} 72% 44%))">
+              ${escapeHtml(initial)}</div>`;
+  }
+
   async function loadAvailableChannels() {
     const list = $('#channel-list');
-    list.innerHTML = '<p class="muted">Reading your Telegram channel list…</p>';
+    list.innerHTML = Array.from({ length: 5 }, () => '<div class="skel skel-row"></div>').join('');
     try {
       const res = await api('/api/channels/available');
       state.availableChannels = res.channels;
       state.selectedChannels = new Set(res.channels.filter((c) => c.tracked).map((c) => c.tg_id));
       renderChannels();
     } catch (err) {
-      list.innerHTML = `<p class="alert alert-error">${escapeHtml(err.message)}</p>`;
+      list.innerHTML = `
+        <div class="empty">
+          <span class="emoji">⚠️</span>
+          <h3>Couldn’t read your channels</h3>
+          <p>${escapeHtml(err.message)}</p>
+          <div class="empty-actions"><button class="btn btn-primary" id="ch-retry">Try again</button></div>
+        </div>`;
+      $('#ch-retry')?.addEventListener('click', loadAvailableChannels);
     }
+  }
+
+  function channelCountLabel() {
+    return `${state.selectedChannels.size} selected · ${state.availableChannels.length} channels found`;
   }
 
   function renderChannels() {
@@ -867,35 +1527,47 @@
     const items = state.availableChannels.filter(
       (c) => !filter || c.title.toLowerCase().includes(filter) || (c.username || '').toLowerCase().includes(filter)
     );
-    $('#channel-count').textContent =
-      `${state.selectedChannels.size} selected · ${state.availableChannels.length} channels found`;
+    $('#channel-count').textContent = channelCountLabel();
 
     if (!items.length) {
-      $('#channel-list').innerHTML = `<p class="muted">${state.availableChannels.length
-        ? 'No channels match that filter.'
-        : 'No broadcast channels found on your account. Join some deal channels in Telegram, then hit Refresh.'}</p>`;
+      $('#channel-list').innerHTML = `
+        <div class="empty">
+          <span class="emoji">📡</span>
+          <h3>${state.availableChannels.length ? 'No matches' : 'No channels found'}</h3>
+          <p>${state.availableChannels.length
+            ? 'No channels match that filter.'
+            : 'No broadcast channels found on your account. Join some deal channels in Telegram, then hit Refresh.'}</p>
+        </div>`;
       return;
     }
 
-    $('#channel-list').innerHTML = items.map((c) => `
-      <label class="channel ${state.selectedChannels.has(c.tg_id) ? 'on' : ''}" data-id="${c.tg_id}">
-        <input type="checkbox" ${state.selectedChannels.has(c.tg_id) ? 'checked' : ''} />
+    $('#channel-list').innerHTML = items.map((c) => {
+      const on = state.selectedChannels.has(c.tg_id);
+      const deals = state.channelDeals[c.tg_id];
+      return `
+      <label class="channel ${on ? 'on' : ''}" data-id="${c.tg_id}">
+        ${channelAvatar(c)}
         <div class="channel-info">
           <div class="channel-name">${escapeHtml(c.title)}</div>
           <div class="channel-sub">
-            ${c.username ? '@' + escapeHtml(c.username) : 'private channel'}
-            ${c.participants ? ' · ' + c.participants.toLocaleString() + ' members' : ''}
+            <span>${c.username ? '@' + escapeHtml(c.username) : 'private channel'}</span>
+            ${c.participants ? `<span class="dot"></span><span>${num(c.participants)} members</span>` : ''}
+            ${deals ? `<span class="dot"></span><span class="channel-deals">${num(deals)} deals</span>` : ''}
           </div>
         </div>
-      </label>`).join('');
+        <span class="switch">
+          <input type="checkbox" ${on ? 'checked' : ''} aria-label="Track ${escapeHtml(c.title)}" />
+          <span class="track"></span>
+        </span>
+      </label>`;
+    }).join('');
 
     $$('.channel').forEach((el) => {
       el.querySelector('input').addEventListener('change', (e) => {
         const id = Number(el.dataset.id);
         if (e.target.checked) state.selectedChannels.add(id); else state.selectedChannels.delete(id);
         el.classList.toggle('on', e.target.checked);
-        $('#channel-count').textContent =
-          `${state.selectedChannels.size} selected · ${state.availableChannels.length} channels found`;
+        $('#channel-count').textContent = channelCountLabel();
       });
     });
   }
@@ -940,10 +1612,17 @@
      ============================================================ */
   async function loadAlerts() {
     const list = $('#alert-list');
+    list.innerHTML = Array.from({ length: 2 }, () => '<div class="skel skel-row"></div>').join('');
     try {
       const res = await api('/api/watchlists');
+      setAlertCount((res.watchlists || []).filter((w) => w.notify).length);
       if (!res.watchlists.length) {
-        list.innerHTML = '<p class="muted">No alerts yet. Create one above, or search for something and use “Alert me about this search”.</p>';
+        list.innerHTML = `
+          <div class="empty">
+            <span class="emoji">🔔</span>
+            <h3>No alerts yet</h3>
+            <p>Create an alert above and DealRadar will message you in Telegram the moment a matching deal appears.</p>
+          </div>`;
         return;
       }
       list.innerHTML = res.watchlists.map((w) => {
@@ -955,14 +1634,22 @@
         ].filter(Boolean);
         return `
           <div class="alert-row" data-id="${w.id}">
-            <div>
+            <div class="alert-main">
               <div class="alert-q">${escapeHtml(w.query)}</div>
               <div class="alert-filters">${bits.length ? escapeHtml(bits.join(' · ')) : 'no extra filters'} · ${w.alerts_sent} sent</div>
+              <div class="alert-status ${w.notify ? '' : 'off'}">
+                <span class="sdot"></span>${w.notify ? 'Active' : 'Paused'}
+              </div>
             </div>
-            <div class="spacer"></div>
-            <label class="check"><input type="checkbox" ${w.notify ? 'checked' : ''} data-toggle="${w.id}" /><span>Notify</span></label>
-            <button class="btn btn-soft btn-xs" data-test="${w.id}">Test</button>
-            <button class="btn btn-ghost btn-xs" data-del="${w.id}">Delete</button>
+            <div class="alert-actions">
+              <span class="switch">
+                <input type="checkbox" ${w.notify ? 'checked' : ''} data-toggle="${w.id}"
+                       aria-label="Notify for ${escapeHtml(w.query)}" />
+                <span class="track"></span>
+              </span>
+              <button class="btn btn-soft btn-xs" data-test="${w.id}">Test</button>
+              <button class="btn btn-ghost btn-xs" data-del="${w.id}" aria-label="Delete alert">Delete</button>
+            </div>
           </div>`;
       }).join('');
 
@@ -978,6 +1665,13 @@
         } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
       }));
       $$('[data-toggle]', list).forEach((box) => box.addEventListener('change', async () => {
+        const row = box.closest('.alert-row');
+        const status = row?.querySelector('.alert-status');
+        if (status) {
+          status.classList.toggle('off', !box.checked);
+          status.innerHTML = `<span class="sdot"></span>${box.checked ? 'Active' : 'Paused'}`;
+        }
+        setAlertCount(state.alertCount + (box.checked ? 1 : -1));
         await api(`/api/watchlists/${box.dataset.toggle}?notify=${box.checked}`, { method: 'PATCH' })
           .catch((err) => toast(err.message, 'err'));
       }));
@@ -1019,6 +1713,7 @@
         notify: true,
       });
       toast(`Alert saved for “${q}”.`, 'ok');
+      setAlertCount(state.alertCount + 1);
     } catch (err) { toast(err.message, 'err'); }
   });
 
@@ -1029,12 +1724,33 @@
     if (e.target.dataset.close !== undefined || e.target.closest('[data-close]')) closeModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeModal(); closeFilters(); }
+    if (e.key === 'Escape') { closeModal(); closeFilters(); closeUserMenu(); closeSuggest(); }
     if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && state.user) {
       e.preventDefault();
       $('#search-input').focus();
     }
   });
+
+  /* App bar elevates once the page moves; the toolbar gets its divider then too. */
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const y = window.scrollY;
+      $('#appbar').classList.toggle('scrolled', y > 4);
+      $('#toolbar')?.classList.toggle('stuck', y > 90);
+      ticking = false;
+    });
+  }, { passive: true });
+
+  window.addEventListener('resize', measureChrome);
+  window.addEventListener('orientationchange', () => setTimeout(measureChrome, 120));
+
+  window.addEventListener('online', () => {
+    if (state.user && state.page === 'deals') { refreshDeals(true); loadStats(); }
+  });
+  window.addEventListener('offline', () => toast('You’re offline — showing the last loaded deals.', 'info'));
 
   /* ---------------- PWA: install + offline shell ---------------- */
   let deferredInstallPrompt = null;
@@ -1064,15 +1780,13 @@
 
   async function promptInstall() {
     if (isIOS()) {
-      openModal(`
-        <div class="modal-head"><h2>Install DealRadar</h2><button class="btn btn-ghost btn-xs" data-close>Close</button></div>
-        <p class="muted" style="margin-bottom:10px">iOS doesn't let apps trigger this automatically — three taps:</p>
-        <ol style="padding-left:20px; display:grid; gap:8px; font-size:.9rem;">
+      openModal(sheetShell('Install DealRadar', `
+        <p class="muted" style="margin-bottom:12px">iOS doesn't let apps trigger this automatically — three taps:</p>
+        <ol style="padding-left:20px; display:grid; gap:9px; font-size:.9rem; color:var(--text-2)">
           <li>Tap the <b>Share</b> button in Safari's toolbar</li>
           <li>Scroll down and tap <b>Add to Home Screen</b></li>
           <li>Tap <b>Add</b> — DealRadar opens full-screen from your home screen next time</li>
-        </ol>
-      `);
+        </ol>`));
       return;
     }
     if (!deferredInstallPrompt) {
@@ -1092,8 +1806,9 @@
   }
 
   (async function boot() {
-    const saved = localStorage.getItem('dr-theme');
-    if (saved) document.documentElement.dataset.theme = saved;
+    // The inline <head> script already applied the saved theme; this keeps the
+    // theme-color meta in step with it.
+    applyTheme(document.documentElement.dataset.theme || 'dark');
     initInstall();
 
     try {
@@ -1104,6 +1819,7 @@
       }
     } catch { /* fall through to the login screen */ }
 
+    $('#boot')?.remove();
     $('#view-login').classList.remove('hidden');
     initAuthScreen();
   })();
