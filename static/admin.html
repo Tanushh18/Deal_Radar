@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>DealRadar Admin</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <script>
+    try { var t = localStorage.getItem('dr-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <style>
+    body { padding: 24px 16px 64px; }
+    .admin { max-width: 880px; margin: 0 auto; display: grid; gap: 18px; }
+    .admin header { display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
+    .admin .card { padding: 20px; }
+    .admin h2 { font-size: 1.1rem; margin-bottom: 6px; }
+    .admin .muted { font-size: .88rem; margin-bottom: 14px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .row .input { flex: 1; min-width: 200px; }
+    .status-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px;
+      font-size: .82rem; font-weight: 700; background: var(--surface-2); }
+    .status-pill.ok { background: var(--good-soft); color: var(--good); }
+    .status-pill.bad { background: var(--hot-soft); color: var(--hot); }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-3); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    textarea.input { font-family: var(--mono); font-size: .75rem; min-height: 90px; resize: vertical; }
+    .hidden { display: none !important; }
+    .msg { margin-top: 12px; font-size: .86rem; }
+    .msg.err { color: var(--hot); } .msg.ok { color: var(--good); }
+  </style>
+</head>
+<body>
+<main class="admin">
+  <header>
+    <div class="brand"><span class="brand-mark">📡</span><span class="brand-name">Deal<span>Radar</span> Admin</span></div>
+    <a class="btn btn-ghost btn-sm" href="/">Open site ↗</a>
+  </header>
+
+  <section class="card" id="gate">
+    <h2>Admin access</h2>
+    <p class="muted">Enter the ADMIN_TOKEN from your Render environment. It stays in this browser tab only.</p>
+    <form class="row" id="gate-form">
+      <input class="input" id="token" type="password" placeholder="ADMIN_TOKEN" autocomplete="off" required />
+      <button class="btn btn-primary" type="submit">Unlock</button>
+    </form>
+    <div class="msg err hidden" id="gate-msg"></div>
+  </section>
+
+  <div id="panel" class="hidden" style="display:grid;gap:18px">
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Reader Telegram account</h2>
+        <span class="status-pill" id="reader-status">…</span>
+      </div>
+      <p class="muted">This one account reads every channel below for all visitors. Visitors never sign in.</p>
+
+      <form class="row" id="step-phone">
+        <input class="input" id="phone" type="tel" placeholder="+91 81304 83894" required />
+        <button class="btn btn-primary" type="submit">Send login code</button>
+      </form>
+      <form class="row hidden" id="step-code">
+        <input class="input" id="code" inputmode="numeric" placeholder="Code from your Telegram app" required />
+        <button class="btn btn-primary" type="submit">Verify</button>
+      </form>
+      <form class="row hidden" id="step-password">
+        <input class="input" id="password" type="password" placeholder="Two-step verification password" required />
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+      <div class="msg hidden" id="login-msg"></div>
+
+      <div class="hidden" id="session-box" style="margin-top:16px">
+        <p class="muted" style="margin-bottom:8px"><b>Save this once:</b> copy it into Render → Environment as
+          <code>TELEGRAM_SESSION</code> so the reader survives restarts (the free plan wipes local data).
+          It is full access to this Telegram account — never share it.</p>
+        <textarea class="input" id="session" readonly></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn btn-soft btn-sm" id="copy-session" type="button">Copy</button></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Channels <span class="muted" id="channel-count" style="font-weight:500"></span></h2>
+        <button class="btn btn-soft btn-sm" id="sync">Sync now</button>
+      </div>
+      <p class="muted">Public channels only. Paste @username or a t.me link; the reader joins it automatically.</p>
+      <form class="row" id="add-form">
+        <input class="input" id="new-channel" placeholder="@dealschannel or https://t.me/dealschannel" required />
+        <button class="btn btn-primary" type="submit">Add channel</button>
+      </form>
+      <div class="msg hidden" id="channel-msg"></div>
+      <div style="overflow-x:auto;margin-top:14px">
+        <table>
+          <thead><tr><th>Channel</th><th class="num">Members</th><th class="num">Live deals</th><th>Last read</th><th></th></tr></thead>
+          <tbody id="channels"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="/assets/admin.js"></script>
+</body>
+</html>

@@ -24,15 +24,11 @@ def search_input(page):
 
 # ---------------------------------------------------------------- login
 @pytest.mark.parametrize("viewport", VIEWPORTS)
-def test_login_screen(open_page, viewport):
+def test_visitors_land_on_deals_without_login(open_page, viewport):
     page, errors = open_page(viewport, signed_in=False)
-    expect(page.locator("#view-login")).to_be_visible()
-    expect(page.locator("#input-phone")).to_be_visible()
-    preview = page.locator(".login-preview")
-    if viewport["width"] >= 1024:
-        expect(preview).to_be_visible()
-    else:
-        expect(preview).to_be_hidden()
+    deals_loaded(page)
+    expect(page.locator("#view-login")).to_be_hidden()
+    expect(page.locator('[data-nav="channels"]').first).to_be_hidden()
     assert not errors, errors
 
 

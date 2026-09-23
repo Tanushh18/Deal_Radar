@@ -37,7 +37,16 @@
   let searchAbortController = null;
 
   /* ---------------- API ---------------- */
+  // Account-only endpoints; visitors (no sign-in) never call them.
+  const ACCOUNT_API = /^\/api\/(channels|watchlists|notifications|push)(\/|\?|$)/;
+
   async function api(path, options = {}) {
+    if (state.user?.guest && ACCOUNT_API.test(path)) {
+      const error = new Error('Not available without an account.');
+      error.status = 401;
+      error.guest = true;
+      throw error;
+    }
     const res = await fetch(path, {
       credentials: 'same-origin',
       headers: options.body ? { 'Content-Type': 'application/json' } : {},
@@ -2530,19 +2539,11 @@
         await onSignedIn(me.user);
         return;
       }
-      // Public mode: the server reads a fixed channel list itself, so visitors
-      // browse straight away — no Telegram sign-in, no channel picking.
-      const config = await api('/api/auth/config');
-      if (config.public_mode) {
-        document.documentElement.classList.add('guest');
-        await onSignedIn({ first_name: '', guest: true });
-        return;
-      }
-    } catch { /* fall through to the login screen */ }
-
-    $('#boot')?.remove();
-    $('#view-login').classList.remove('hidden');
-    initAuthScreen();
+    } catch { /* offline or server error — still open the deals view */ }
+    // No visitor sign-in: the server reads the channels with its own account,
+    // so everyone lands on the deals immediately.
+    document.documentElement.classList.add('guest');
+    await onSignedIn({ first_name: '', guest: true });
   })();
 
   // Keep stats fresh while the tab is open.

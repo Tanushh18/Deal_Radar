@@ -41,6 +41,7 @@ async def bootstrap() -> int:
     )
     user_id = int(db.query_one("SELECT id FROM users WHERE telegram_id = ?", (me.id,))["id"])
     await telegram.drop_client(user_id)   # a stale cached client from an older session must not linger
+    db.set_meta("reader_user_id", str(user_id))
 
     tracked = 0
     for username in settings.public_channels:

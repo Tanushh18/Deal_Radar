@@ -172,17 +172,10 @@ def main() -> int:
     r = client.get("/api/deals", params={"q": "headphones"})
     check("/api/deals has categories", r.status_code == 200 and r.json()["categories"][0]["name"] == "Electronics")
 
+    # No visitor accounts: a signed-in cookie must not narrow what anyone sees.
     app.dependency_overrides[auth.optional_user] = lambda: {"id": 42}
-    original = deals_router.ingest.user_channel_ids
-    deals_router.ingest.user_channel_ids = lambda uid: [1003]
-    try:
-        body = client.get("/api/deals/suggest", params={"q": "headphones"}).json()
-        check("signed-in suggest scoped to own channels",
-              [d["title"] for d in body["deals"]] == ["Sony WH-CH520 Wireless Headphones"], str(titles(body["deals"])))
-        body = client.get("/api/deals/suggest", params={"q": "headphones", "all_channels": "true"}).json()
-        check("all_channels=true lifts the scope", len(body["deals"]) == 2, str(titles(body["deals"])))
-    finally:
-        deals_router.ingest.user_channel_ids = original
+    body = client.get("/api/deals/suggest", params={"q": "headphones"}).json()
+    check("everyone sees every channel's deals", len(body["deals"]) == 2, str(titles(body["deals"])))
 
     print("\n" + "=" * 52)
     if failures:

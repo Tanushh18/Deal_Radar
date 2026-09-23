@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import db
 from .config import settings
+from .routers import admin as admin_router
 from .routers import auth as auth_router
 from .routers import channels as channels_router
 from .routers import deals as deals_router
@@ -104,7 +105,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         log.warning("Re-parse of stored deals failed: %s", exc)
 
-    if settings.public_mode:
+    if settings.telegram_configured and settings.telegram_session:
         _tasks.append(asyncio.create_task(public_reader.bootstrap()))
     _tasks.append(asyncio.create_task(ingest.scheduler_loop()))
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
@@ -156,6 +157,7 @@ app.include_router(channels_router.router)
 app.include_router(deals_router.router)
 app.include_router(watchlists_router.router)
 app.include_router(notifications_router.router)
+app.include_router(admin_router.router)
 
 
 @app.middleware("http")
@@ -185,6 +187,10 @@ if os.path.isdir(STATIC_DIR):
     @app.get("/", include_in_schema=False)
     async def index():
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+    @app.get("/admin", include_in_schema=False)
+    async def admin_page():
+        return FileResponse(os.path.join(STATIC_DIR, "admin.html"))
 
     @app.get("/{path:path}", include_in_schema=False)
     async def spa_fallback(path: str):
