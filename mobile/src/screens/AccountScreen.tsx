@@ -214,6 +214,10 @@ export function AccountScreen() {
         <Group title="More">
           <Row icon="globe" title="Open website" sub="The full DealRadar site, in the app" onPress={() => navigation.navigate('Website', {})} />
           <Divider />
+          <Row icon="lock" title="Privacy Policy" onPress={() => navigation.navigate('Website', { path: '/privacy' })} />
+          <Divider />
+          <Row icon="info" title="Terms of Service" onPress={() => navigation.navigate('Website', { path: '/terms' })} />
+          <Divider />
           <Row icon="activity" title="About" sub="App version" onPress={() => navigation.navigate('Settings')} />
         </Group>
 
