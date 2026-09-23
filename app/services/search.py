@@ -36,7 +36,17 @@ SORTS = {
 }
 
 _CANDIDATE_CAP = 5000
+
+# Browsing orders that the admin's "show on top" rule leads; explicit sorts
+# (price, discount, ending) stay exactly what the visitor asked for.
+_PRIORITY_SORTS = ("relevance", "best", "newest")
+
+
+def _priority_sql() -> str:
+    from . import priority  # local: priority imports taxonomy, same as this module
+    return priority.sql()
 _LIGHT_COLUMNS = "id, title, brand, store, category, subcategory, search_blob, score"
+_W_PRIORITY = 12.0   # search boost for the priority audience — nudges, never outranks a real match
 _WORD_RE = re.compile(r"[a-z0-9&']+")
 _STOPWORDS = {"the", "and", "for", "with", "of", "in", "on", "to", "a", "an", "under", "below", "at", "by"}
 
@@ -265,7 +275,7 @@ def _candidates(
         where.append(f"channel_id IN ({','.join('?' for _ in channel_ids)})")
         params.extend(channel_ids)
     sql = (
-        f"SELECT {_LIGHT_COLUMNS} FROM deals WHERE {' AND '.join(where)} "
+        f"SELECT {_LIGHT_COLUMNS}, {_priority_sql()} AS priority FROM deals WHERE {' AND '.join(where)} "
         f"ORDER BY {order} LIMIT {_CANDIDATE_CAP}"
     )
     return [dict(r) for r in db.query(sql, params)]
@@ -274,7 +284,8 @@ def _candidates(
 def _rank(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return sorted(
         rows,
-        key=lambda d: d["_relevance"] + float(d.get("score") or 0) * 0.45,
+        key=lambda d: d["_relevance"] + float(d.get("score") or 0) * 0.45
+        + (_W_PRIORITY if d.get("priority") else 0.0),
         reverse=True,
     )
 
@@ -335,7 +346,9 @@ def search(
         store=store, brand=brand, min_price=min_price, max_price=max_price,
         min_discount=min_discount, channel_ids=channel_ids,
         include_expired=include_expired, only_lowest=only_lowest,
-        order=SORTS.get(sort) or SORTS["best"], archive=archive, has_coupon=has_coupon,
+        order=(f"{_priority_sql()} DESC, " if sort in _PRIORITY_SORTS and _priority_sql() != "(1 = 0)" else "")
+        + (SORTS.get(sort) or SORTS["best"]),
+        archive=archive, has_coupon=has_coupon,
     )
 
     plan = _Plan(q or "")
@@ -481,7 +494,7 @@ def trending(channel_ids: Optional[List[int]] = None, limit: int = 12) -> List[D
         params.extend(channel_ids)
     rows = db.query(
         f"SELECT * FROM deals WHERE {' AND '.join(where)} "
-        f"ORDER BY repost_count DESC, score DESC LIMIT ?",
+        f"ORDER BY {_priority_sql()} DESC, repost_count DESC, score DESC LIMIT ?",
         params + [limit],
     )
     return [shape(d) for d in db.rows_to_dicts(rows)]

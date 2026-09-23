@@ -71,6 +71,11 @@ async def lifespan(app: FastAPI):
         except Exception as exc:  # noqa: BLE001
             log.warning("Price history restore failed: %s", exc)
 
+        try:
+            await loop.run_in_executor(None, sheets.restore_settings)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Settings restore failed: %s", exc)
+
         meta = {"users": 0, "channels": 0, "user_channels": 0, "watchlists": 0}
         try:
             # Order matters — users before channels before user_channels/

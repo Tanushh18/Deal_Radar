@@ -67,9 +67,51 @@
       </tr>`).join('') : '<tr><td colspan="6" class="muted">No channels yet — connect the reader, then “Refresh from Telegram”.</td></tr>';
   }
 
+  let presets = {};
+  async function loadPriority() {
+    const r = await api('/api/admin/reader/priority');
+    presets = r.presets;
+    const rule = r.rule;
+    $('#pr-preset').innerHTML = Object.entries(presets).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('')
+      + '<option value="custom">Custom</option>';
+    $('#pr-preset').value = presets[rule.preset] ? rule.preset : 'custom';
+    $('#pr-label').value = rule.label;
+    $('#pr-cats').innerHTML = r.categories.map((c) => `<label class="catpick"><input type="checkbox" value="${esc(c)}"
+      ${rule.categories.includes(c) ? 'checked' : ''}/> ${esc(c)}</label>`).join('');
+    $('#pr-keywords').value = rule.keywords.join(', ');
+    $('#pr-stores').value = rule.stores.join(', ');
+    const empty = !rule.categories.length && !rule.keywords.length && !rule.stores.length;
+    $('#priority-now').textContent = empty ? 'Neutral — nothing prioritised' : `● ${rule.label} on top`;
+    $('#priority-now').className = `status-pill ${empty ? '' : 'ok'}`;
+  }
+  $('#pr-preset').addEventListener('change', async (e) => {
+    if (e.target.value === 'custom') return;
+    try {
+      await post('/api/admin/reader/priority', { preset: e.target.value });
+      await loadPriority();
+      show($('#priority-msg'), `Saved — ${presets[e.target.value]} deals now lead the site and app.`, 'ok');
+    } catch (err) { show($('#priority-msg'), err.message, 'err'); }
+  });
+  $('#priority-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const list = (v) => v.split(',').map((x) => x.trim()).filter(Boolean);
+    try {
+      const r = await post('/api/admin/reader/priority', {
+        preset: 'custom',
+        label: $('#pr-label').value.trim() || 'Custom',
+        categories: [...document.querySelectorAll('#pr-cats input:checked')].map((i) => i.value),
+        keywords: list($('#pr-keywords').value),
+        stores: list($('#pr-stores').value),
+      });
+      await loadPriority();
+      show($('#priority-msg'), `Saved “${r.rule.label}”. It applies on the next page load.`, 'ok');
+    } catch (err) { show($('#priority-msg'), err.message, 'err'); }
+  });
+
   async function unlock() {
     try {
       await refresh();
+      await loadPriority();
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
     } catch (err) {

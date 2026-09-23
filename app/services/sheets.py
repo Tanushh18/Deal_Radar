@@ -41,6 +41,8 @@ WATCH_HEADER = ["user_telegram_id", "query", "category", "store", "max_price", "
 USER_CHANNELS_HEADER = ["user_telegram_id", "channel_tg_id", "enabled", "added_iso"]
 # Every price ever observed per product, so charts and all-time lows survive restarts.
 PRICE_HISTORY_HEADER = ["product_key", "price", "store", "seen_iso", "seen_at"]
+# Admin-panel settings (e.g. the "show on top" rule) as key/value rows.
+SETTINGS_HEADER = ["key", "value", "updated_iso"]
 
 _lock = threading.RLock()
 _client = None
@@ -165,6 +167,7 @@ def _ensure_tabs() -> None:
         "Watchlists": WATCH_HEADER,
         "UserChannels": USER_CHANNELS_HEADER,
         "PriceHistory": PRICE_HISTORY_HEADER,
+        "Settings": SETTINGS_HEADER,
     }
     existing = {ws.title: ws for ws in _spreadsheet.worksheets()}
     for title, header in wanted.items():
@@ -740,3 +743,38 @@ def restore_price_history() -> int:
         db.execute("DELETE FROM price_history")
         db.execute_many("INSERT INTO price_history (product_key, price, store, seen_at, synced) VALUES (?, ?, ?, ?, 1)", points)
     return len(points)
+
+
+def save_setting(key: str, value: str) -> bool:
+    """Upsert one admin setting row so it survives restarts."""
+    if not connect():
+        return False
+    with _lock:
+        try:
+            ws = _spreadsheet.worksheet("Settings")
+            keys = ws.col_values(1)
+            row = [key, value, _iso(time.time())]
+            if key in keys:
+                ws.update(f"A{keys.index(key) + 1}", [row], value_input_option="RAW")
+            else:
+                ws.append_rows([row], value_input_option="RAW")
+            return True
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Saving setting %s failed: %s", key, exc)
+            return False
+
+
+def restore_settings() -> int:
+    if not connect():
+        return 0
+    try:
+        records = _spreadsheet.worksheet("Settings").get_all_records()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Settings restore failed: %s", exc)
+        return 0
+    restored = 0
+    for rec in records:
+        if rec.get("key"):
+            db.set_meta(str(rec["key"]), str(rec.get("value") or ""))
+            restored += 1
+    return restored

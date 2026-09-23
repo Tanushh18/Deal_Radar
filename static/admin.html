@@ -34,6 +34,9 @@
     .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .74rem; font-weight: 700; }
     .tag.on { background: var(--good-soft); color: var(--good); }
     .tag.off { background: var(--hot-soft); color: var(--hot); }
+    .catpick { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--border); font-size: .84rem; cursor: pointer; }
+    .catpick input { accent-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -82,6 +85,28 @@
         <textarea class="input" id="session" readonly></textarea>
         <div class="row" style="margin-top:8px"><button class="btn btn-soft btn-sm" id="copy-session" type="button">Copy</button></div>
       </div>
+    </section>
+
+    <section class="card" id="priority-card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Show on top</h2>
+        <span class="status-pill ok" id="priority-now">…</span>
+      </div>
+      <p class="muted">Deals matching this rule lead the website and app (Newest, Top rated, home rows, trending,
+        category order) and get a boost in search. Price / discount / ending-soon sorts are never changed.</p>
+      <form id="priority-form" style="display:grid;gap:12px">
+        <div class="row">
+          <select class="input" id="pr-preset" style="max-width:260px"></select>
+          <input class="input" id="pr-label" placeholder="Name shown here, e.g. Women" />
+        </div>
+        <div><div class="muted small" style="margin-bottom:6px">Categories</div><div class="row" id="pr-cats"></div></div>
+        <label class="field" style="margin:0"><span>Keywords (comma separated — match the start of a word)</span>
+          <textarea class="input" id="pr-keywords" rows="3" placeholder="women, kurti, saree, lipstick"></textarea></label>
+        <label class="field" style="margin:0"><span>Stores (comma separated)</span>
+          <input class="input" id="pr-stores" placeholder="myntra, nykaa" /></label>
+        <div class="row"><button class="btn btn-primary" type="submit">Save rule</button></div>
+      </form>
+      <div class="msg hidden" id="priority-msg"></div>
     </section>
 
     <section class="card">

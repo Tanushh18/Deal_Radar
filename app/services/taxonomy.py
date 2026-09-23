@@ -170,10 +170,10 @@ _SORTED_TERMS = sorted(TERM_TO_CATEGORY.keys(), key=len, reverse=True)
 
 def category_list() -> List[Dict[str, object]]:
     """Shape the taxonomy for the UI's category picker."""
-    return [
-        {"name": cat, "subcategories": sorted(subs.keys())}
-        for cat, subs in sorted(CATEGORIES.items())
-    ]
+    from . import priority  # the admin's "show on top" categories lead the chips
+    lead = priority.lead_categories()
+    ordered = [c for c in lead if c in CATEGORIES] + sorted(c for c in CATEGORIES if c not in lead)
+    return [{"name": cat, "subcategories": sorted(CATEGORIES[cat].keys())} for cat in ordered]
 
 
 def classify(text: str) -> tuple:

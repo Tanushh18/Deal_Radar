@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .. import auth, db
-from ..services import ingest, public_reader, sheets, telegram
+from ..services import ingest, priority, public_reader, sheets, taxonomy, telegram
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -39,6 +39,14 @@ class ChannelPayload(BaseModel):
 
 class BlockPayload(BaseModel):
     blocked: bool
+
+
+class PriorityPayload(BaseModel):
+    preset: str = "custom"
+    label: str = ""
+    categories: list = []
+    keywords: list = []
+    stores: list = []
 
 
 def reader_id() -> Optional[int]:
@@ -199,3 +207,20 @@ async def block_channel(tg_id: int, payload: BlockPayload):
         except Exception:  # noqa: BLE001
             pass
     return {"status": "ok", "blocked": payload.blocked}
+
+
+@router.get("/priority")
+async def get_priority():
+    """The "show on top" rule, the presets and the category list for the admin form."""
+    return {"rule": priority.get(),
+            "presets": {k: v["label"] for k, v in priority.PRESETS.items()},
+            "categories": [c["name"] for c in taxonomy.category_list()]}
+
+
+@router.post("/priority")
+async def set_priority(payload: PriorityPayload):
+    import json
+    rule = priority.save(payload.model_dump())
+    if sheets.is_enabled():
+        sheets.save_setting(priority.META_KEY, json.dumps(rule))
+    return {"status": "ok", "rule": rule}

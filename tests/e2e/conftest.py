@@ -36,6 +36,7 @@ def server():
         "GOOGLE_SHEET_ID": "", "PUBLIC_URL": "",
         "LIVENESS_CHECK": "false", "KEEPALIVE_ENABLED": "false",
         "POLL_INTERVAL_SECONDS": "86400",
+        "PRIORITY_AUDIENCE": "off",
     }
     seeded = subprocess.run([sys.executable, os.path.join(ROOT, "tests", "e2e", "seed.py")],
                             env=env, cwd=ROOT, capture_output=True, text=True, check=True)

@@ -32,6 +32,9 @@ class Settings:
             for c in _split(os.getenv("PUBLIC_CHANNELS", ""))
         ]
 
+        # --- Ranking: this audience's deals lead browsing (empty = neutral) ---
+        self.priority_audience: str = os.getenv("PRIORITY_AUDIENCE", "women").strip().lower()
+
         # --- Security ---
         # SECRET_KEY signs session cookies and derives the key that encrypts
         # each user's Telethon session string at rest.
