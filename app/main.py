@@ -24,7 +24,7 @@ from .routers import deals as deals_router
 from .routers import health as health_router
 from .routers import notifications as notifications_router
 from .routers import watchlists as watchlists_router
-from .services import ingest, sheets, store, telegram
+from .services import ingest, public_reader, sheets, store, telegram
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -104,6 +104,8 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         log.warning("Re-parse of stored deals failed: %s", exc)
 
+    if settings.public_mode:
+        _tasks.append(asyncio.create_task(public_reader.bootstrap()))
     _tasks.append(asyncio.create_task(ingest.scheduler_loop()))
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)

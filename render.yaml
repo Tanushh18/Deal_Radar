@@ -32,6 +32,12 @@ services:
       - key: PUBLIC_URL
         sync: false             # e.g. https://dealradar.onrender.com — enables self-ping
 
+      # --- public mode (no user sign-in): one account reads these channels ---
+      - key: TELEGRAM_SESSION
+        sync: false             # from: python tools/make_session.py  (secret — full account access)
+      - key: PUBLIC_CHANNELS
+        value: "dealsvelocity,OMGDeals,CoolzTricks,idoffers,lootdealsapp,lootping,Lootunboxing,bestlootdeals07,desidime,turbotechplus1,PowerLoot,Techofferstoday,Online_Shopping_Offers_Live,realearnkaro,diyadeals,popcorndeal,takedealsofficialloots,extrape,couponbazi,GrabOnIndiaOfficial,bigtricksin,technicalfuture,lootalerts,techindiafirmofficial,lootstricks,WeTeach_loot,ajio_coupons,Loot_Offers_Dealss"
+
       # --- tuning ---
       - key: PYTHON_VERSION
         value: "3.11.9"

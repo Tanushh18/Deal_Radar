@@ -1,3 +1,4 @@
+import { isPublicMode } from '../native/session';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -66,8 +67,9 @@ function MainTabs() {
       }}
     >
       <Tabs.Screen name="Deals" component={S.DealsScreen} options={{ tabBarIcon: DealsIcon }} />
-      <Tabs.Screen name="Alerts" component={S.AlertsScreen} options={{ tabBarIcon: AlertsIcon }} />
-      <Tabs.Screen name="Channels" component={S.ChannelsScreen} options={{ tabBarIcon: ChannelsIcon }} />
+      {/* Alerts and channel picking need a Telegram account; public-mode guests browse only. */}
+      {!isPublicMode() && <Tabs.Screen name="Alerts" component={S.AlertsScreen} options={{ tabBarIcon: AlertsIcon }} />}
+      {!isPublicMode() && <Tabs.Screen name="Channels" component={S.ChannelsScreen} options={{ tabBarIcon: ChannelsIcon }} />}
       <Tabs.Screen name="Account" component={S.AccountScreen} options={{ tabBarIcon: AccountIcon }} />
     </Tabs.Navigator>
   );

@@ -24,6 +24,14 @@ class Settings:
         self.telegram_api_id: int = int(os.getenv("TELEGRAM_API_ID", "0") or 0)
         self.telegram_api_hash: str = os.getenv("TELEGRAM_API_HASH", "")
 
+        # --- Public mode: one server-side Telegram account reads a fixed list
+        # of public channels, and everyone browses without signing in. ---
+        self.telegram_session: str = os.getenv("TELEGRAM_SESSION", "").strip()
+        self.public_channels: List[str] = [
+            c.split("t.me/")[-1].lstrip("@").strip("/ ")
+            for c in _split(os.getenv("PUBLIC_CHANNELS", ""))
+        ]
+
         # --- Security ---
         # SECRET_KEY signs session cookies and derives the key that encrypts
         # each user's Telethon session string at rest.
@@ -72,6 +80,10 @@ class Settings:
     @property
     def telegram_configured(self) -> bool:
         return bool(self.telegram_api_id and self.telegram_api_hash)
+
+    @property
+    def public_mode(self) -> bool:
+        return bool(self.telegram_configured and self.telegram_session and self.public_channels)
 
     @property
     def sheets_configured(self) -> bool:

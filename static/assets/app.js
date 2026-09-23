@@ -308,7 +308,7 @@
     state.channelDeals = {};
     (mine.channels || []).forEach((c) => { state.channelDeals[c.tg_id] = c.live_deals; });
     const active = (mine.channels || []).filter((c) => c.enabled);
-    if (!active.length) {
+    if (!active.length && !user.guest) {
       // Nothing tracked yet — send them straight to channel selection.
       toast('Pick the deal channels you want DealRadar to read.', 'info', 6000);
       navigate('channels');
@@ -2528,6 +2528,14 @@
       const me = await api('/api/auth/me');
       if (me.authenticated) {
         await onSignedIn(me.user);
+        return;
+      }
+      // Public mode: the server reads a fixed channel list itself, so visitors
+      // browse straight away — no Telegram sign-in, no channel picking.
+      const config = await api('/api/auth/config');
+      if (config.public_mode) {
+        document.documentElement.classList.add('guest');
+        await onSignedIn({ first_name: '', guest: true });
         return;
       }
     } catch { /* fall through to the login screen */ }

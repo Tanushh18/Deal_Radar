@@ -14,7 +14,7 @@ import { stopBackgroundPolling } from './src/native/backgroundTask';
 import { COLORS, getBaseUrl } from './src/native/config';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
 import { configureNotificationHandler, isSignedIn, pollNotifications, resetPollingState } from './src/native/notifications';
-import { onSignedIn } from './src/native/session';
+import { onSignedIn, setPublicMode } from './src/native/session';
 import { AppProviders } from './src/components/AppProviders';
 import { useTheme } from './src/theme';
 
@@ -61,6 +61,15 @@ async function checkAuth(server: string): Promise<{ authenticated: boolean; user
   }
 }
 
+async function isPublicServer(server: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${server}/api/auth/config`, { headers: { Accept: 'application/json' } });
+    return res.ok && Boolean((await res.json()).public_mode);
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg }}>
@@ -91,6 +100,9 @@ function Root() {
       const me = await checkAuth(server);
       if (me.authenticated) {
         onSignedIn(me.user).catch(() => {});
+        setPhase({ kind: 'ready', initial: 'Main' });
+      } else if (await isPublicServer(server)) {
+        setPublicMode(true);
         setPhase({ kind: 'ready', initial: 'Main' });
       } else {
         if (await isSignedIn()) {

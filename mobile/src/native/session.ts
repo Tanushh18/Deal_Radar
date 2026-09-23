@@ -33,6 +33,12 @@ export type SessionUser = {
   [k: string]: unknown;
 };
 
+let publicMode = false;
+export const isPublicMode = () => publicMode;
+export function setPublicMode(on: boolean): void {
+  publicMode = on;
+}
+
 export async function getServerUrl(): Promise<string> {
   return (await getBaseUrl()) ?? LIVE_HOST;
 }
@@ -118,7 +124,8 @@ async function doSignedOut(): Promise<void> {
   } catch {
     /* nothing presented */
   }
-  if (navigationRef.isReady() && navigationRef.getCurrentRoute()?.name !== 'Login') {
+  // Guests have no session to lose; a stray 401 must not strand them on a login screen.
+  if (!publicMode && navigationRef.isReady() && navigationRef.getCurrentRoute()?.name !== 'Login') {
     navigationRef.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
   }
 }

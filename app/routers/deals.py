@@ -9,6 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from .. import auth, db
+from ..config import settings
 from ..services import ingest, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
@@ -27,7 +28,7 @@ _limit_image = ratelimit.limit("deal-image", max_requests=90, window_seconds=60)
 
 def _scope(user: Optional[dict]) -> Optional[list]:
     """Restrict results to the signed-in user's tracked channels."""
-    if not user:
+    if not user or settings.public_mode:
         return None
     ids = ingest.user_channel_ids(user["id"])
     return ids or None

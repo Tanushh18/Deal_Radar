@@ -5,7 +5,7 @@ export type User = {
   first_name?: string | null;
 };
 
-export type AuthConfig = { telegram_configured: boolean; sheets_configured: boolean };
+export type AuthConfig = { telegram_configured: boolean; sheets_configured: boolean; public_mode?: boolean };
 export type SendCodeResult = { login_id: string; phone: string };
 export type VerifyResult = { status: 'password_required' } | { status: 'ok'; user: User };
 export type MeResult =

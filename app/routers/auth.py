@@ -37,6 +37,7 @@ async def auth_config():
     return {
         "telegram_configured": settings.telegram_configured,
         "sheets_configured": settings.sheets_configured,
+        "public_mode": settings.public_mode,
     }
 
 

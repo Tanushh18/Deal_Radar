@@ -1567,3 +1567,9 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 :root.dr-native-android body { overscroll-behavior-y: contain; }
 
 .detail-cta { display: grid; gap: 8px; }
+
+/* Public mode visitors: channel picking, alerts and sync need a Telegram
+   account, so those controls disappear instead of failing with 401s. */
+:root.guest [data-nav="channels"], :root.guest [data-nav="alerts"], :root.guest #btn-sync,
+:root.guest #btn-bell, :root.guest #btn-save-search, :root.guest [data-action="logout"],
+:root.guest #nav-account .nav-badge { display: none !important; }
