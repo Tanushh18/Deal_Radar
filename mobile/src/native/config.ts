@@ -1,17 +1,10 @@
 /**
  * Where the DealRadar backend lives, persisted across launches.
  * Port of legacy/android-kotlin/.../ServerConfig.kt.
- *
- * The app ships without a hardcoded host on purpose: the same APK has to work
- * against an emulator's host loopback (10.0.2.2), a laptop on the same Wi-Fi,
- * and the deployed https:// instance.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 
-export const LIVE_HOST: string =
-  (Constants.expoConfig?.extra?.defaultServerUrl as string | undefined) ??
-  'https://dealradar-k2hb.onrender.com';
+export const LIVE_HOST: string = 'https://dealradar-0oza.onrender.com';
 export const EMULATOR_HOST = 'http://10.0.2.2:8765';
 
 export const COLORS = {

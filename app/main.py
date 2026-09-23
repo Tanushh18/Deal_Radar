@@ -240,6 +240,14 @@ if os.path.isdir(STATIC_DIR):
     async def admin_page():
         return FileResponse(os.path.join(STATIC_DIR, "admin.html"))
 
+    @app.get("/privacy", include_in_schema=False)
+    async def privacy_page():
+        return FileResponse(os.path.join(STATIC_DIR, "privacy.html"))
+
+    @app.get("/terms", include_in_schema=False)
+    async def terms_page():
+        return FileResponse(os.path.join(STATIC_DIR, "terms.html"))
+
     @app.get("/{path:path}", include_in_schema=False)
     async def spa_fallback(path: str):
         """Serve static files, falling back to the SPA shell for unknown routes."""
