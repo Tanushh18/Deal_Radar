@@ -223,11 +223,18 @@ def _candidates(
     include_expired: bool,
     only_lowest: bool,
     order: str,
+    archive: bool = False,
 ) -> List[Dict[str, Any]]:
     """Light rows for every deal passing the hard filters (not category — that's counted)."""
     where: List[str] = []
     params: List[Any] = []
-    if include_expired:
+    if archive:
+        # Past deals only (ended / expired / out of stock) — the Sheet-backed
+        # archive shown under live results. Retired non-product posts stay out.
+        where.append("(status != 'live' OR expires_at <= ?)")
+        params.append(time.time())
+        where.append("flags NOT LIKE '%not_a_deal%'")
+    elif include_expired:
         where.append("status != 'dead'")
     else:
         where.append("status = 'live'")
@@ -317,12 +324,13 @@ def search(
     sort: str = "relevance",
     limit: int = 48,
     offset: int = 0,
+    archive: bool = False,
 ) -> Dict[str, Any]:
     rows = _candidates(
         store=store, brand=brand, min_price=min_price, max_price=max_price,
         min_discount=min_discount, channel_ids=channel_ids,
         include_expired=include_expired, only_lowest=only_lowest,
-        order=SORTS.get(sort) or SORTS["best"],
+        order=SORTS.get(sort) or SORTS["best"], archive=archive,
     )
 
     plan = _Plan(q or "")

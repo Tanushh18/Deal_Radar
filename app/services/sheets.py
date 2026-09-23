@@ -112,6 +112,51 @@ def connect() -> bool:
             return False
 
 
+_HEADER_STYLE = {
+    "backgroundColor": {"red": 0.145, "green": 0.388, "blue": 0.922},
+    "textFormat": {"bold": True, "foregroundColor": {"red": 1, "green": 1, "blue": 1}},
+    "horizontalAlignment": "CENTER",
+    "wrapStrategy": "CLIP",
+}
+_RUPEE = {"numberFormat": {"type": "CURRENCY", "pattern": "₹#,##0"}}
+
+
+def _col(index: int) -> str:
+    name = ""
+    index += 1
+    while index:
+        index, rem = divmod(index - 1, 26)
+        name = chr(65 + rem) + name
+    return name
+
+
+def _style_tabs(tabs: Dict[str, List[str]]) -> None:
+    """Make the Sheet readable by a person: styled frozen header, filters,
+    ₹ formatting and sane column widths. Cosmetic only — never fatal."""
+    for title, header in tabs.items():
+        try:
+            ws = _spreadsheet.worksheet(title)
+            last = _col(len(header) - 1)
+            ws.format(f"A1:{last}1", _HEADER_STYLE)
+            ws.freeze(rows=1, cols=2 if title == "Deals" else 1)
+            ws.set_basic_filter(f"A1:{last}")
+            for column in ("price", "mrp"):
+                if column in header:
+                    c = _col(header.index(column))
+                    ws.format(f"{c}2:{c}", _RUPEE)
+            widths = {"title": 380, "raw_text": 260, "url": 220, "clean_url": 220, "image_url": 160,
+                      "product_key": 200, "channel_title": 180, "flags": 160}
+            requests = []
+            for i, name in enumerate(header):
+                requests.append({"updateDimensionProperties": {
+                    "range": {"sheetId": ws.id, "dimension": "COLUMNS", "startIndex": i, "endIndex": i + 1},
+                    "properties": {"pixelSize": widths.get(name, 120)}, "fields": "pixelSize"}})
+            if requests:
+                _spreadsheet.batch_update({"requests": requests})
+        except Exception as exc:  # noqa: BLE001
+            log.info("Sheet styling for %s skipped: %s", title, exc)
+
+
 def _ensure_tabs() -> None:
     wanted = {
         "Deals": DEALS_HEADER,
@@ -132,6 +177,7 @@ def _ensure_tabs() -> None:
             current = ws.row_values(1)
             if current != header:
                 ws.update("A1", [header])
+    _style_tabs({title: header for title, header in wanted.items()})
     # A fresh spreadsheet ships with a stray "Sheet1"; drop it.
     if "Sheet1" in existing and len(existing) > 1:
         try:

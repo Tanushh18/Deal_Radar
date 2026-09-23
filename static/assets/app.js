@@ -802,7 +802,8 @@
         : 'Show deals';
 
       $('#btn-more').classList.toggle('hidden', state.offset + res.count >= res.total);
-      if (!res.total) showEmpty();
+      if (reset) loadArchive(res.total);
+      if (!res.total && !state.filters.q) showEmpty();
     } catch (err) {
       if (err.name === 'AbortError') return; // superseded by a newer search — ignore
       if (err.status === 401) { window.location.reload(); return; }
@@ -931,6 +932,53 @@
     $('#error-retry').addEventListener('click', () => refreshDeals(true));
   }
 
+  /* ---------------- archive: past deals from the Google Sheet ---------------- */
+  let archiveAbort = null;
+  async function loadArchive(liveTotal) {
+    const wrap = $('#archive-wrap');
+    const q = state.filters.q;
+    archiveAbort?.abort();
+    if (!q) { wrap.classList.add('hidden'); return; }
+    const controller = new AbortController();
+    archiveAbort = controller;
+    try {
+      const res = await api('/api/deals?' + buildQuery({ q, limit: 24, offset: 0, sort: 'relevance' }) + '&archive=true', { signal: controller.signal });
+      if (controller.signal.aborted) return;
+      if (!res.total) {
+        wrap.classList.add('hidden');
+        if (!liveTotal) showEmpty();
+        return;
+      }
+      $('#archive-sub').textContent = liveTotal
+        ? `${res.total.toLocaleString()} earlier deal${res.total === 1 ? '' : 's'} for “${q}” — prices may have changed`
+        : `No live deal for “${q}” right now — ${res.total.toLocaleString()} earlier deal${res.total === 1 ? '' : 's'} from our archive`;
+      $('#archive-grid').innerHTML = res.results.map(dealCard).join('');
+      bindDetailTriggers($('#archive-grid'));
+      wrap.classList.remove('hidden');
+      if (!liveTotal) $('#empty-state').classList.add('hidden');
+    } catch (err) {
+      if (err.name !== 'AbortError') wrap.classList.add('hidden');
+    }
+  }
+
+  /* ---------------- live: "N new deals" pill ---------------- */
+  let seenLive = null;
+  function noteLiveCount(stats) {
+    const live = stats.deals_live || 0;
+    if (seenLive != null && live > seenLive && state.page === 'deals') {
+      $('#new-deals-text').textContent = `${live - seenLive} new deal${live - seenLive === 1 ? '' : 's'} — tap to see`;
+      $('#new-deals').classList.remove('hidden');
+    }
+    if (seenLive == null || live < seenLive) seenLive = live;
+  }
+  $('#new-deals').addEventListener('click', () => {
+    $('#new-deals').classList.add('hidden');
+    seenLive = state.lastStats?.deals_live ?? seenLive;
+    refreshDeals(true);
+    loadRails();
+    window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
+  });
+
   /* ---------------- deal card ---------------- */
   const FRESH_SECONDS = 5400;   // 90 min — "new" only while it genuinely is
 
@@ -962,6 +1010,7 @@
 
   function dealBadges(deal) {
     const badges = [];
+    if (deal.status && deal.status !== 'live') badges.push('<span class="badge badge-score">Past deal</span>');
     if (hasFlag(deal, 'stock_unknown')) badges.push('<span class="badge badge-score">Stock unknown</span>');
     if (deal.is_lowest) badges.push('<span class="badge badge-low">🟢 LOWEST EVER</span>');
     else if (deal.score >= 80) badges.push('<span class="badge badge-hot">🏆 GREAT DEAL</span>');
@@ -1557,6 +1606,7 @@
   }
 
   function renderStats(stats, statusOverride) {
+    noteLiveCount(stats);
     state.lastStats = stats;
     const last = stats.ingest && stats.ingest.last_run;
     const status = statusOverride || (last
@@ -1986,6 +2036,7 @@
   /* ---------------- grid / list view ---------------- */
   function setView(view) {
     $('#deal-grid').classList.toggle('list', view === 'list');
+    $('#archive-grid').classList.toggle('list', view === 'list');
     $$('.viewtoggle [data-view]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
     try { localStorage.setItem('dr-view', view); } catch { /* private mode */ }
   }

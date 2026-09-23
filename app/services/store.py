@@ -318,20 +318,14 @@ def expire_stale() -> int:
     return cur.rowcount or 0
 
 
-def purge_ancient(days: int = 14) -> List[str]:
-    """Drop rows well past usefulness so the cache stays small.
+def purge_ancient(days: int = 400) -> List[str]:
+    """Every deal is kept — past ones power archive search and mirror the Sheet.
 
-    Returns the ids removed (not just a count) so a caller can mirror the
-    same deletion in Google Sheets — see sheets.delete_deals — instead of
-    Sheets silently accumulating every deal forever while the local cache
-    quietly forgets them.
+    Only price points older than `days` are trimmed. Returns [] (kept for the
+    caller's signature).
     """
-    cutoff = time.time() - days * 86400
-    ids = [r["id"] for r in db.query("SELECT id FROM deals WHERE last_seen_at < ?", (cutoff,))]
-    if ids:
-        db.execute("DELETE FROM deals WHERE last_seen_at < ?", (cutoff,))
-    db.execute("DELETE FROM price_history WHERE seen_at < ?", (time.time() - 90 * 86400,))
-    return ids
+    db.execute("DELETE FROM price_history WHERE seen_at < ?", (time.time() - days * 86400,))
+    return []
 
 
 def purge_housekeeping(notified_days: int = 30) -> Dict[str, int]:

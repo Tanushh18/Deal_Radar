@@ -521,7 +521,18 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             flushed = {"updated": 0, "appended": 0}
             if sheets.is_enabled():
                 loop = asyncio.get_event_loop()
-                flushed = await loop.run_in_executor(None, sheets.flush_deals)
+                # Push every changed deal each cycle (batches of 400), so the
+                # Sheet always holds everything fetched from Telegram.
+                flushed = {"updated": 0, "appended": 0}
+                for _ in range(25):
+                    batch = await loop.run_in_executor(None, sheets.flush_deals)
+                    flushed["updated"] += batch.get("updated", 0)
+                    flushed["appended"] += batch.get("appended", 0)
+                    if batch.get("skipped") or not (batch.get("updated") or batch.get("appended")):
+                        break
+                    # Each batch is ≤2 Google write calls; pacing keeps a big
+                    # backlog under Sheets' 60 writes/minute quota.
+                    await asyncio.sleep(1.5)
                 # Channel watermarks move every cycle; without this a restart
                 # would re-backfill instead of resuming from where it left off.
                 await loop.run_in_executor(None, sheets.sync_channels)
@@ -557,7 +568,10 @@ async def scheduler_loop() -> None:
     """Background poller. Started on app startup, cancelled on shutdown."""
     await asyncio.sleep(15)  # let the app finish booting first
     while True:
+        started = time.time()
         try:
+            from . import public_reader  # local: avoids an import cycle via routers
+            await public_reader.maybe_sync_followed()
             has_channels = db.query_one("SELECT COUNT(*) AS c FROM channels WHERE active = 1")
             if has_channels and has_channels["c"]:
                 result = await run_cycle("scheduled")
@@ -566,7 +580,9 @@ async def scheduler_loop() -> None:
             raise
         except Exception as exc:  # noqa: BLE001
             log.warning("Scheduler iteration failed: %s", exc)
-        await asyncio.sleep(settings.poll_interval_seconds)
+        # Fixed cadence: a new cycle starts every POLL_INTERVAL_SECONDS (5 min),
+        # however long the last one took.
+        await asyncio.sleep(max(30, settings.poll_interval_seconds - (time.time() - started)))
 
 
 async def keepalive_loop() -> None:

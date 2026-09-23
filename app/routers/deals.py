@@ -81,11 +81,12 @@ async def list_deals(
     limit: int = Query(48, ge=1, le=100),
     offset: int = Query(0, ge=0),
     all_channels: bool = False,
+    archive: bool = Query(False, description="Past deals from the Google Sheet archive instead of live ones"),
     user=Depends(auth.optional_user),
 ):
     if sort not in search.SORTS:
         raise HTTPException(status_code=400, detail=f"sort must be one of {list(search.SORTS)}")
-    scope = None if all_channels else _scope(user)
+    scope = None if (all_channels or archive) else _scope(user)
     return search.search(
         q=q,
         category=category,
@@ -101,6 +102,7 @@ async def list_deals(
         sort=sort,
         limit=limit,
         offset=offset,
+        archive=archive,
     )
 
 

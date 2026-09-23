@@ -399,6 +399,15 @@
         <div class="resultcats hidden" id="result-cats" role="tablist" aria-label="Result categories"></div>
 
         <div id="deal-grid" class="grid"></div>
+        <section id="archive-wrap" class="archive hidden" aria-live="polite">
+          <div class="section-head">
+            <div>
+              <h3 class="section-title">🗂️ From the deal archive</h3>
+              <div class="section-sub" id="archive-sub">Earlier deals for this search — prices may have changed</div>
+            </div>
+          </div>
+          <div id="archive-grid" class="grid"></div>
+        </section>
         <div id="empty-state" class="empty hidden"></div>
         <div class="loadmore">
           <button id="btn-more" class="btn btn-soft hidden">Load more deals</button>
@@ -520,6 +529,7 @@
   <div class="modal-body card" id="modal-body" role="dialog" aria-modal="true" tabindex="-1"></div>
 </div>
 <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+<button class="newdeals hidden" id="new-deals" type="button"><span class="livedot"></span><span id="new-deals-text">New deals</span></button>
 
 <script src="/assets/app.js"></script>
 </body>

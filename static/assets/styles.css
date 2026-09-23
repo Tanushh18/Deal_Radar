@@ -1612,3 +1612,89 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   .vh-stats { gap: 18px; }
   .vh-stats b { font-size: 1.25rem; }
 }
+
+/* ============================================================
+   VISITOR: live + glass effects
+   ============================================================ */
+:root { --glass: rgba(255, 255, 255, .62); --glass-line: rgba(255, 255, 255, .7); --glass-blur: saturate(170%) blur(18px); }
+:root[data-theme="dark"] { --glass: rgba(17, 24, 39, .55); --glass-line: rgba(255, 255, 255, .08); }
+
+/* Slowly drifting colour field behind everything — the page feels "on". */
+:root.guest body::before {
+  content: ""; position: fixed; inset: -20vmax; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38vmax 38vmax at 18% 22%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+    radial-gradient(34vmax 34vmax at 82% 30%, color-mix(in srgb, var(--cyan) 18%, transparent), transparent 60%),
+    radial-gradient(40vmax 40vmax at 60% 85%, color-mix(in srgb, #a855f7 14%, transparent), transparent 62%);
+  animation: aurora 26s ease-in-out infinite alternate;
+}
+@keyframes aurora {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%  { transform: translate3d(-4vmax, 3vmax, 0) rotate(8deg); }
+  100% { transform: translate3d(3vmax, -2vmax, 0) rotate(-6deg); }
+}
+:root.guest body { background: var(--bg); }
+
+/* Frosted glass surfaces */
+:root.guest .appbar { background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-line); }
+:root.guest .visitor-hero, :root.guest .deal, :root.guest .railcard, :root.guest .cat-icon,
+:root.guest .sorttabs button, :root.guest .viewtoggle, :root.guest .toolbar {
+  background-color: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border-color: var(--glass-line);
+}
+:root.guest .sorttabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
+:root.guest .search input { background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-line); }
+@media (min-width: 1024px) {
+  :root.guest .filters { background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-color: var(--glass-line); }
+}
+
+/* Cards: glow on hover, arrive with a staggered rise */
+:root.guest .deal { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-normal), border-color var(--t-normal); }
+@media (hover: hover) and (pointer: fine) {
+  :root.guest .deal:hover, :root.guest .railcard:hover {
+    border-color: var(--accent-line);
+    box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--accent) 55%, transparent), var(--shadow-2);
+  }
+}
+:root.guest #deal-grid .deal, :root.guest #archive-grid .deal { animation: card-in .5s var(--ease) both; }
+:root.guest #deal-grid .deal:nth-child(2), :root.guest #archive-grid .deal:nth-child(2) { animation-delay: 40ms; }
+:root.guest #deal-grid .deal:nth-child(3), :root.guest #archive-grid .deal:nth-child(3) { animation-delay: 80ms; }
+:root.guest #deal-grid .deal:nth-child(4), :root.guest #archive-grid .deal:nth-child(4) { animation-delay: 120ms; }
+:root.guest #deal-grid .deal:nth-child(5) { animation-delay: 160ms; }
+:root.guest #deal-grid .deal:nth-child(6) { animation-delay: 200ms; }
+:root.guest #deal-grid .deal:nth-child(n+7) { animation-delay: 240ms; }
+@keyframes card-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+
+/* Hero: animated gradient headline + glowing live dot */
+.vh-copy h1 span {
+  background: linear-gradient(90deg, var(--accent), var(--cyan), #a855f7, var(--accent));
+  background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shine 8s linear infinite;
+}
+@keyframes shine { to { background-position: 300% 0; } }
+.vh-live .livedot { box-shadow: 0 0 0 0 var(--good-line), 0 0 12px var(--good); }
+
+/* Past deals from the archive read as history, not live offers */
+.archive { margin-top: 28px; padding-top: 6px; border-top: 1px dashed var(--border-strong); }
+#archive-grid .deal { opacity: .88; }
+#archive-grid .deal .price-now { color: var(--text-2); }
+
+/* Floating "N new deals" pill */
+.newdeals {
+  position: fixed; z-index: 95; left: 50%; transform: translateX(-50%);
+  top: calc(var(--appbar-h) + 12px);
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px;
+  font-weight: 700; font-size: .86rem; color: #fff; border: 1px solid rgba(255,255,255,.25);
+  background: color-mix(in srgb, var(--accent) 88%, transparent);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+  animation: rise var(--t-smooth) var(--ease);
+}
+.newdeals .livedot { background: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root.guest body::before, .vh-copy h1 span { animation: none; }
+}
