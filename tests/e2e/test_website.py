@@ -41,7 +41,7 @@ def test_home_layout(open_page, viewport):
     overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
     assert overflow <= 0, f"horizontal overflow of {overflow}px"
     if viewport["width"] >= 1024:
-        expect(page.locator(".topnav")).to_be_visible()
+        expect(page.locator(".topnav")).to_be_hidden()
         expect(page.locator("#bottomnav")).to_be_hidden()
         expect(page.locator("#filters")).to_be_visible()
     else:
