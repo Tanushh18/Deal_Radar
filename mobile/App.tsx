@@ -61,15 +61,6 @@ async function checkAuth(server: string): Promise<{ authenticated: boolean; user
   }
 }
 
-async function isPublicServer(server: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${server}/api/auth/config`, { headers: { Accept: 'application/json' } });
-    return res.ok && Boolean((await res.json()).public_mode);
-  } catch {
-    return false;
-  }
-}
-
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg }}>
@@ -101,16 +92,11 @@ function Root() {
       if (me.authenticated) {
         onSignedIn(me.user).catch(() => {});
         setPhase({ kind: 'ready', initial: 'Main' });
-      } else if (await isPublicServer(server)) {
+      } else {
+        // No user sign-in: the server reads the channels itself, so the app
+        // opens straight to the deals.
         setPublicMode(true);
         setPhase({ kind: 'ready', initial: 'Main' });
-      } else {
-        if (await isSignedIn()) {
-          // Session expired server-side: stop polling a feed we can't read.
-          await resetPollingState();
-          await stopBackgroundPolling();
-        }
-        setPhase({ kind: 'ready', initial: 'Login' });
       }
     } catch (e: any) {
       const message = e?.name === 'AbortError' ? 'The server took too long to answer.' : e?.message ?? String(e);
