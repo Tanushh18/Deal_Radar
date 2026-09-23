@@ -1393,6 +1393,7 @@
           </div>
           ${deal.saving ? `<span class="detail-save">${icon('down')} You save ${money(deal.saving)}${deal.discount_pct ? ` · ${deal.discount_pct}% off` : ''}</span>` : ''}
 
+          ${verdictChip(deal.price_verdict)}
           ${deal.is_lowest ? `<div class="detail-note good">${icon('trend')}<span>Lowest price we have recorded for this product.</span></div>` : ''}
           ${suspicious ? `<div class="detail-note warn">${icon('alert')}<span>The quoted MRP looks inflated versus this product’s price history.</span></div>` : ''}
 
@@ -1428,6 +1429,7 @@
             <summary>Original post</summary>
             <pre class="rawpost">${escapeHtml(deal.raw_text || '')}</pre>
           </details>
+          <div class="similar"><h3 class="section-title" style="margin:18px 0 10px">Similar deals</h3><div class="rail" id="similar-row">${railSkeletons(3)}</div></div>
         </div>
         </div>
         ${deal.url ? `
@@ -1442,6 +1444,7 @@
       const chartHost = document.getElementById(`price-chart-${id}`);
       if (chartHost) renderPriceChart(chartHost, fullHistory.points || [], deal.price_history_url);
       bindDetailActions(deal);
+      loadSimilar(deal);
     } catch (err) {
       openModal(sheetShell('Deal', `<p class="alert alert-error">${escapeHtml(err.message)}</p>`));
     }
@@ -1638,9 +1641,100 @@
       </article>`;
   }
 
+  /* ---------------- extra home rows + store chips ---------------- */
+  const ALL_OFF = { q: '', category: '', subcategory: '', store: '', brand: '', min_price: null, max_price: null,
+    min_discount: 0, has_coupon: false, only_lowest: false, offset: 0, limit: 12 };
+  async function fillRail(name, overrides, note) {
+    const wrap = $(`#${name}-wrap`);
+    const row = $(`#${name}-row`);
+    try {
+      const res = await api('/api/deals?' + buildQuery({ ...ALL_OFF, ...overrides }));
+      if (!res.results.length) { delete wrap.dataset.hasData; toggleRails(); return; }
+      row.innerHTML = res.results.map((d) => railCard(d, note(d))).join('');
+      wrap.dataset.hasData = '1';
+      bindDetailTriggers(row);
+    } catch { delete wrap.dataset.hasData; }
+    toggleRails();
+  }
+  function endsIn(ts) {
+    const h = Math.max(0, (ts - Date.now() / 1000) / 3600);
+    return h < 1 ? 'Ends within the hour' : h < 24 ? `Ends in ${Math.round(h)}h` : `Ends in ${Math.round(h / 24)}d`;
+  }
+  function loadExtraRails() {
+    fillRail('ending', { sort: 'ending' }, (d) => `<span class="rail-note hot">${icon('clock')} ${endsIn(d.expires_at)}</span>`);
+    fillRail('fresh', { sort: 'newest' }, (d) => `<span class="rail-note">${icon('clock')} ${timeAgo(d.posted_at)}</span>`);
+    fillRail('coupons', { sort: 'best', has_coupon: true }, (d) => `<span class="coupon">🏷 ${escapeHtml(d.coupon || '')}</span>`);
+  }
+  function renderStoreChips() {
+    const box = $('#store-chips');
+    const stores = (state.facets.stores || []).filter((s) => s.key && s.key !== 'unknown').slice(0, 10);
+    box.classList.toggle('hidden', !stores.length);
+    box.innerHTML = stores.map((s) => `<button class="chip ${state.filters.store === s.key ? 'active' : ''}" data-store="${escapeHtml(s.key)}">
+      ${escapeHtml(titleCase(s.key))} <span class="facet-count">${s.count}</span></button>`).join('');
+  }
+  $('#store-chips').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-store]');
+    if (!chip) return;
+    state.filters.store = state.filters.store === chip.dataset.store ? '' : chip.dataset.store;
+    renderFacet('#f-stores', state.facets.stores, 'store');
+    renderStoreChips();
+    refreshDeals(true);
+  });
+
+  /* ---------------- 🔎 check any product link ---------------- */
+  function verdictChip(v) {
+    return v ? `<div class="verdict verdict-${escapeHtml(v.level)}">${escapeHtml(v.label)}</div>` : '';
+  }
+  async function openCheckPrice(prefill = '') {
+    openModal(sheetShell('Check a product’s price', `
+      <p class="muted" style="margin:12px 0">Paste any Amazon, Flipkart, Myntra, Ajio… link. We show what it has cost in our deals and its full history.</p>
+      <form class="row-inputs" id="check-form">
+        <input class="input" id="check-url" type="url" placeholder="https://www.amazon.in/dp/…" value="${escapeHtml(prefill)}" required />
+        <button class="btn btn-primary" type="submit">Check</button>
+      </form>
+      <div id="check-result" style="margin:16px 0 8px"></div>`));
+    $('#check-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      const out = $('#check-result');
+      busy(btn, true);
+      out.innerHTML = '<p class="muted">Looking it up…</p>';
+      try {
+        const r = await api('/api/lookup?url=' + encodeURIComponent($('#check-url').value.trim()));
+        const cards = (list) => `<div class="grid check-grid">${list.map(dealCard).join('')}</div>`;
+        out.innerHTML = `
+          ${verdictChip(r.verdict)}
+          ${r.price_stats && r.price_stats.points ? `<p class="muted small" style="margin:8px 0">We've seen it ${r.price_stats.points} times · lowest ${money(r.price_stats.min)} · highest ${money(r.price_stats.max)}</p>` : ''}
+          <div class="price-chart" id="check-chart"></div>
+          ${r.deals.length ? `<h3 class="section-title" style="margin:16px 0 10px">Live deals</h3>${cards(r.deals)}` : ''}
+          ${r.archive.length ? `<h3 class="section-title" style="margin:16px 0 10px">🗂️ Earlier deals</h3>${cards(r.archive)}` : ''}
+          ${!r.deals.length && !r.archive.length ? '<p class="muted">We haven’t seen this product in our channels yet.</p>' : ''}
+          ${r.price_history_url ? `<a class="btn btn-soft btn-block" style="margin-top:14px" target="_blank" rel="noopener noreferrer nofollow" href="${escapeHtml(r.price_history_url)}">${icon('trend', 'ico')} Full price history on BuyHatke</a>` : ''}`;
+        renderPriceChart($('#check-chart'), r.history || [], '');
+        bindDetailTriggers(out);
+      } catch (err) {
+        out.innerHTML = `<p class="alert alert-error">${escapeHtml(err.message)}</p>`;
+      } finally { busy(btn, false); }
+    });
+    if (prefill) $('#check-form').requestSubmit();
+  }
+  $('#btn-check').addEventListener('click', () => openCheckPrice());
+
+  /* ---------------- detail: verdict + similar deals ---------------- */
+  async function loadSimilar(deal) {
+    const host = $('#similar-row');
+    if (!host) return;
+    try {
+      const res = await api(`/api/deals/${encodeURIComponent(deal.id)}/similar?limit=10`);
+      if (!res.results.length) { host.closest('.similar')?.remove(); return; }
+      host.innerHTML = res.results.map((d) => railCard(d, d.saving ? `<span class="rail-note">${icon('down')} Save ${money(d.saving)}</span>` : '')).join('');
+      bindDetailTriggers(host);
+    } catch { host.closest('.similar')?.remove(); }
+  }
+
   function toggleRails() {
     const show = isBrowseMode();
-    ['#trending-wrap', '#lowest-wrap'].forEach((sel) => {
+    ['#trending-wrap', '#lowest-wrap', '#ending-wrap', '#fresh-wrap', '#coupons-wrap'].forEach((sel) => {
       const el = $(sel);
       // A rail with no data stays hidden regardless — `has-data` is set by its loader.
       el.classList.toggle('hidden', !show || !el.dataset.hasData);
@@ -1652,6 +1746,7 @@
   async function loadRails() {
     loadTrending();
     loadLowest();
+    loadExtraRails();
     catRails.stale = true;
   }
 
@@ -1788,6 +1883,7 @@
       state.facets = { stores: facets.stores || [], brands: facets.brands || [] };
       renderFacet('#f-stores', state.facets.stores, 'store');
       renderFacet('#f-brands', state.facets.brands, 'brand');
+      renderStoreChips();
     } catch { /* non-fatal */ }
   }
 

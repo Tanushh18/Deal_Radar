@@ -93,7 +93,8 @@ async def _post_batch(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 async def send_push(
-    tokens: List[str], title: str, body: str, url: str, deal_id: Optional[str] = None
+    tokens: List[str], title: str, body: str, url: str, deal_id: Optional[str] = None,
+    image: str = "", kind: str = "",
 ) -> int:
     """Send to every token; returns how many Expo accepted. Never raises."""
     tokens = [t for t in dict.fromkeys(tokens) if is_expo_token(t)]
@@ -107,7 +108,9 @@ async def send_push(
             "sound": "default",
             "priority": "high",
             "channelId": CHANNEL_ID,
-            "data": {"url": url, "deal_id": deal_id},
+            "data": {"url": url, "deal_id": deal_id, "image_url": image, "kind": kind},
+            # Product photo on the notification (thumbnail on Android, like Myntra).
+            **({"richContent": {"image": image}} if image else {}),
         }
         for token in tokens
     ]
@@ -133,6 +136,7 @@ async def send_push(
     for token in dead:
         try:
             db.execute("DELETE FROM push_tokens WHERE token = ?", (token,))
+            db.execute("UPDATE devices SET push_token = '' WHERE push_token = ?", (token,))
         except Exception as exc:  # noqa: BLE001
             log.warning("Couldn't drop dead push token: %s", exc)
     return sent

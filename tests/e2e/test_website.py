@@ -215,3 +215,19 @@ def test_price_band_and_coupon_filters(open_page):
     assert prices and all(int(re.sub(r"\D", "", p)) <= 499 for p in prices), prices
     page.locator("#f-coupon").check()
     expect(page.locator("#active-filters")).to_contain_text("Has coupon")
+
+
+def test_check_price_tool_and_detail_extras(open_page):
+    page, errors = open_page(DESKTOP)
+    deals_loaded(page)
+    expect(page.locator("#ending-wrap")).to_be_visible()
+    expect(page.locator("#store-chips .chip").first).to_be_visible()
+    page.locator("#btn-check").click()
+    page.locator("#check-url").fill("https://www.amazon.in/dp/B07PR1CL3S?tag=x")
+    page.locator("#check-form button").click()
+    expect(page.locator("#check-result .deal").first).to_be_visible()
+    expect(page.locator("#check-result")).to_contain_text("BuyHatke")
+    page.keyboard.press("Escape")
+    page.locator("#deal-grid .deal-media").first.click()
+    expect(page.locator("#modal .similar, #modal .verdict").first).to_be_attached()
+    assert not [e for e in errors if "favicon" not in e], errors

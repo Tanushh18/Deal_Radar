@@ -158,6 +158,42 @@ CREATE TABLE IF NOT EXISTS price_alerts (
 CREATE INDEX IF NOT EXISTS idx_price_alerts_key ON price_alerts(product_key, triggered_at);
 CREATE INDEX IF NOT EXISTS idx_price_alerts_device ON price_alerts(device_id);
 
+CREATE TABLE IF NOT EXISTS devices (
+    device_id           TEXT PRIMARY KEY,
+    platform            TEXT DEFAULT '',
+    push_token          TEXT DEFAULT '',
+    digest              INTEGER DEFAULT 0,
+    digest_hour         INTEGER DEFAULT 19,
+    last_digest_day     TEXT DEFAULT '',
+    last_follow_push_at REAL DEFAULT 0,
+    created_at          REAL,
+    last_seen_at        REAL
+);
+
+CREATE TABLE IF NOT EXISTS device_follows (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id    TEXT,
+    kind         TEXT,
+    value        TEXT,
+    min_discount INTEGER DEFAULT 0,
+    created_at   REAL
+);
+CREATE INDEX IF NOT EXISTS idx_follows_match ON device_follows(kind, value);
+CREATE INDEX IF NOT EXISTS idx_follows_device ON device_follows(device_id);
+
+CREATE TABLE IF NOT EXISTS device_notifications (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id  TEXT,
+    kind       TEXT,
+    title      TEXT,
+    body       TEXT,
+    image_url  TEXT,
+    deal_id    TEXT,
+    url        TEXT,
+    created_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_devnotif ON device_notifications(device_id, created_at);
+
 CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
     value TEXT

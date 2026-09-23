@@ -516,6 +516,9 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             purged_ids = store.purge_ancient()
             store.purge_housekeeping()
             push.prune_notifications()
+            from . import devices
+            devices.digest_tick()
+            devices.prune()
             ratelimit.prune()
 
             flushed = {"updated": 0, "appended": 0}

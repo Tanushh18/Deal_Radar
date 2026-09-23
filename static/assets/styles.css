@@ -1735,3 +1735,19 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 .chipset { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .chipset .chip { min-height: 32px; padding: 6px 12px; font-size: .78rem; }
 .chipset .chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+/* ---------- good-price meter, store row, check price, similar ---------- */
+.verdict { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 6px 12px;
+  border-radius: 999px; font-size: .82rem; font-weight: 750; }
+.verdict::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.verdict-great { background: var(--good-soft); color: var(--good); }
+.verdict-good  { background: color-mix(in srgb, var(--good) 10%, transparent); color: var(--good); }
+.verdict-fair  { background: var(--warn-soft); color: var(--warn); }
+.verdict-high  { background: var(--hot-soft); color: var(--hot); }
+.storerow { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none;
+  margin-inline: calc(var(--page-pad) * -1); padding-inline: var(--page-pad); }
+.storerow::-webkit-scrollbar { display: none; }
+.storerow .chip { flex: none; text-transform: none; }
+.storerow .chip.active .facet-count { color: inherit; }
+.check-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.similar .rail { margin-inline: 0; padding-inline: 0; }

@@ -7,7 +7,6 @@ an Expo push when it registered a token.
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 import time
@@ -77,15 +76,12 @@ def _trigger(alerts: List[Dict[str, Any]], price: float) -> None:
     now = time.time()
     db.execute_many("UPDATE price_alerts SET triggered_at = ?, triggered_price = ? WHERE id = ?",
                     [(now, price, a["id"]) for a in alerts])
-    tokens = [a for a in alerts if a.get("push_token")]
-    if not tokens:
-        return
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        return  # no loop (tests/scripts): the device still sees it on its next poll
-    from . import push
-    for a in tokens:
-        title = f"📉 Price drop: ₹{int(price):,}"
-        body = f"{(a.get('title') or 'Your deal')[:90]} — below your ₹{int(a['target_price']):,} alert"
-        loop.create_task(push.send_push([a["push_token"]], title, body, f"/?deal={a['deal_id']}", a["deal_id"]))
+    from . import devices
+    for a in alerts:
+        row = db.query_one("SELECT * FROM deals WHERE id = ?", (a["deal_id"],))
+        deal = dict(row) if row else {"id": a["deal_id"]}
+        devices.notify(
+            a["device_id"], "price_drop", f"📉 Price drop: ₹{int(price):,}",
+            f"{(a.get('title') or 'Your deal')[:90]} — below your ₹{int(a['target_price']):,} alert",
+            deal, extra_token=a.get("push_token") or "",
+        )

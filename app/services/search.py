@@ -32,6 +32,7 @@ SORTS = {
     "discount": "discount_pct DESC",
     "price_low": "price ASC",
     "price_high": "price DESC",
+    "ending": "expires_at ASC",
 }
 
 _CANDIDATE_CAP = 5000

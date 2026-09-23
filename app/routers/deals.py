@@ -108,6 +108,35 @@ async def list_deals(
     )
 
 
+def price_verdict(price, stats):
+    """Great / Good / Fair / High versus everything we've seen for this product."""
+    if price is None or not stats or stats.get("points", 0) < 2:
+        return None
+    price, low, median = float(price), float(stats["min"]), float(stats["median"])
+    if price <= low:
+        return {"level": "great", "label": "Great price — lowest we've seen"}
+    if price <= median * 0.95:
+        return {"level": "good", "label": "Good price — below its usual"}
+    if price <= median * 1.05:
+        return {"level": "fair", "label": "Fair price — about usual"}
+    return {"level": "high", "label": "High — it's often cheaper"}
+
+
+@router.get("/{deal_id}/similar")
+async def similar_deals(deal_id: str, limit: int = Query(8, ge=1, le=24)):
+    row = db.query_one("SELECT id, subcategory, category, brand, product_key FROM deals WHERE id = ?", (deal_id,))
+    if not row:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+    rows = db.query(
+        "SELECT * FROM deals WHERE status = 'live' AND expires_at > ? AND id != ? AND product_key != ? "
+        "AND (subcategory = ? OR (brand != '' AND brand = ?)) "
+        "ORDER BY (subcategory = ?) DESC, score DESC LIMIT ?",
+        (time.time(), deal_id, row["product_key"] or "", row["subcategory"] or "", row["brand"] or "",
+         row["subcategory"] or "", limit),
+    )
+    return {"results": [search.shape(d) for d in db.rows_to_dicts(rows)]}
+
+
 @router.get("/{deal_id}")
 async def get_deal(deal_id: str):
     row = db.query_one("SELECT * FROM deals WHERE id = ?", (deal_id,))
@@ -117,6 +146,7 @@ async def get_deal(deal_id: str):
     shaped = search.shape(deal)
     shaped["raw_text"] = deal.get("raw_text")
     shaped["price_history"] = store.price_stats(deal.get("product_key") or "")
+    shaped["price_verdict"] = price_verdict(deal.get("price"), shaped["price_history"])
     return shaped
 
 

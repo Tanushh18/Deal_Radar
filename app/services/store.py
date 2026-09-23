@@ -244,6 +244,8 @@ def save_deal(deal: Dict[str, Any]) -> str:
     if existing is None:
         deal["score"] = compute_score(deal, now)
         db.upsert("deals", _encode(deal), conflict="id")
+        from . import devices  # local: keeps store importable without the device layer
+        devices.match_follows(deal)
         return "new"
 
     # --- merge into the existing row --------------------------------

@@ -223,6 +223,9 @@
           <svg aria-hidden="true"><use href="#i-bell"/></svg>
           <span id="bell-count" class="bell-dot hidden">0</span>
         </button>
+        <button id="btn-check" class="iconbtn" title="Check any product's price" aria-label="Check a product's price">
+          <svg aria-hidden="true"><use href="#i-trend"/></svg>
+        </button>
         <button id="btn-saved" class="iconbtn bell" data-nav="saved" title="Saved deals" aria-label="Saved deals">
           <svg aria-hidden="true"><use href="#i-heart"/></svg>
           <span id="saved-count" class="bell-dot hidden">0</span>
@@ -263,6 +266,7 @@
     <div class="statstrip" id="statstrip"></div>
 
     <div class="catrow" id="category-chips" role="tablist" aria-label="Categories"></div>
+    <div class="storerow hidden" id="store-chips" aria-label="Shop by store"></div>
 
     <div class="layout">
       <aside class="filters" id="filters" aria-label="Filters">
@@ -398,6 +402,45 @@
             </div>
           </div>
           <div id="lowest-row" class="rail"></div>
+        </section>
+        <section id="ending-wrap" class="rail-section hidden">
+          <div class="section-head">
+            <div>
+              <h3 class="section-title">⏳ Ending soon</h3>
+              <div class="section-sub">Grab these before they expire</div>
+            </div>
+            <div class="rail-nav" data-rail="#ending-row">
+              <button class="iconbtn" data-dir="-1" aria-label="Scroll left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
+              <button class="iconbtn" data-dir="1" aria-label="Scroll right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
+            </div>
+          </div>
+          <div id="ending-row" class="rail"></div>
+        </section>
+        <section id="fresh-wrap" class="rail-section hidden">
+          <div class="section-head">
+            <div>
+              <h3 class="section-title">⚡ Just dropped</h3>
+              <div class="section-sub">Posted in the last few hours</div>
+            </div>
+            <div class="rail-nav" data-rail="#fresh-row">
+              <button class="iconbtn" data-dir="-1" aria-label="Scroll left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
+              <button class="iconbtn" data-dir="1" aria-label="Scroll right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
+            </div>
+          </div>
+          <div id="fresh-row" class="rail"></div>
+        </section>
+        <section id="coupons-wrap" class="rail-section hidden">
+          <div class="section-head">
+            <div>
+              <h3 class="section-title">🏷 Coupon deals</h3>
+              <div class="section-sub">Extra savings with a code</div>
+            </div>
+            <div class="rail-nav" data-rail="#coupons-row">
+              <button class="iconbtn" data-dir="-1" aria-label="Scroll left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
+              <button class="iconbtn" data-dir="1" aria-label="Scroll right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
+            </div>
+          </div>
+          <div id="coupons-row" class="rail"></div>
         </section>
 
         <div id="cat-rails" class="cat-rails hidden"></div>
