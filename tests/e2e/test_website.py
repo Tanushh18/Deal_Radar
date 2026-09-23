@@ -41,7 +41,7 @@ def test_login_screen(open_page, viewport):
 def test_home_layout(open_page, viewport):
     page, errors = open_page(viewport)
     deals_loaded(page)
-    expect(page.locator(".stat-value").first).to_have_text("24")
+    expect(page.locator(".stat-value").first).to_have_text("25")
     overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
     assert overflow <= 0, f"horizontal overflow of {overflow}px"
     if viewport["width"] >= 1024:
@@ -108,6 +108,16 @@ def test_clearing_search_returns_to_browsing(open_page):
     deals_loaded(page)
 
 
+def test_range_prices_are_labelled(open_page):
+    page, _ = open_page(PHONE)
+    deals_loaded(page)
+    search_input(page).fill("peter england")
+    search_input(page).press("Enter")
+    card = page.locator("#deal-grid .deal").first
+    expect(card.locator(".price-now")).to_have_text(re.compile(r"From\s*₹509"))
+    expect(card.locator(".price-off")).to_have_text("Up to 70%")
+
+
 # ---------------------------------------------------------------- browse controls
 def test_sort_tabs_and_view_toggle(open_page):
     page, _ = open_page(DESKTOP)
@@ -115,7 +125,7 @@ def test_sort_tabs_and_view_toggle(open_page):
     page.locator('#sort-tabs [data-sort="discount"]').click()
     expect(page.locator("#f-sort")).to_have_value("discount")
     expect(page.locator("#grid-title")).to_contain_text("Biggest discounts")
-    offs = [int(t.strip("-%")) for t in page.locator("#deal-grid .price-off").all_inner_texts()[:6]]
+    offs = [int(re.sub(r"\D", "", t)) for t in page.locator("#deal-grid .price-off").all_inner_texts()[:6]]
     assert offs == sorted(offs, reverse=True), offs
 
     page.locator('.viewtoggle [data-view="list"]').click()

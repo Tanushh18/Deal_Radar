@@ -18,6 +18,7 @@ from rapidfuzz import fuzz
 
 from .. import db
 from ..config import settings
+from . import parser
 
 DEAL_COLUMNS = [
     "id", "title", "norm_title", "product_key", "price", "mrp", "discount_pct",
@@ -371,6 +372,77 @@ def backfill_channel_ids() -> int:
         [(r["tg_id"], r["id"]) for r in rows],
     )
     return len(rows)
+
+
+_PARSER_FLAGS = {"price_from", "upto_discount"}
+
+
+def reparse_stored_deals() -> int:
+    """Re-read every stored deal's price/MRP/discount from its raw post text.
+
+    Deals are parsed once, when first saved — so rows written (or restored
+    from Sheets) by an older parser keep its mistakes forever, e.g. a ₹300
+    watch stored as ₹91. Runs once per parser.PARSER_VERSION. Corrected rows
+    are marked dirty so the fix also reaches Sheets, and the wrong price is
+    dropped from price history so it can't masquerade as an all-time low.
+    """
+    done = db.get_meta("parser_version")
+    if done == str(parser.PARSER_VERSION):
+        return 0
+
+    fixed = 0
+    now = time.time()
+    for row in db.query("SELECT * FROM deals WHERE raw_text IS NOT NULL AND raw_text != ''"):
+        old = db.row_to_dict(row) or {}
+        fresh = parser.parse_message(
+            old["raw_text"], channel_id=int(old.get("channel_id") or 0),
+            channel_title=old.get("channel_title") or "", message_id=int(old.get("message_id") or 0),
+            posted_at=float(old.get("posted_at") or now),
+        )
+        if fresh is None:
+            if old.get("status") == "live":
+                flags = sorted(set(list(old.get("flags") or []) + ["not_a_deal"]))
+                db.execute("UPDATE deals SET status = 'dead', flags = ?, dirty = 1 WHERE id = ?",
+                           (json.dumps(flags), old["id"]))
+                fixed += 1
+            continue
+        parser_flags = {f for f in fresh.get("flags") or [] if f in _PARSER_FLAGS or f.startswith("min_buy_")}
+        kept_flags = {f for f in old.get("flags") or [] if f not in _PARSER_FLAGS and not f.startswith("min_buy_")}
+        new_flags = sorted(kept_flags | parser_flags)
+        if new_flags != sorted(old.get("flags") or []) or fresh["title"] != old.get("title"):
+            db.execute(
+                "UPDATE deals SET title = ?, norm_title = ?, search_blob = ?, flags = ?, dirty = 1 WHERE id = ?",
+                (fresh["title"], fresh["norm_title"], fresh["search_blob"], json.dumps(new_flags), old["id"]),
+            )
+            fixed += 1
+        if fresh.get("price") is None:
+            continue
+        changes = {k: fresh.get(k) for k in ("price", "mrp", "discount_pct")
+                   if fresh.get(k) != old.get(k)}
+        if not changes:
+            continue
+        wrong_price = old.get("price")
+        updated = {**old, **changes}
+        if "price" in changes and wrong_price is not None and old.get("product_key"):
+            db.execute(
+                "DELETE FROM price_history WHERE product_key = ? AND ABS(price - ?) < 0.01",
+                (old["product_key"], float(wrong_price)),
+            )
+            record_price(old["product_key"], updated["price"], old.get("store") or "")
+            stats = price_stats(old["product_key"])
+            updated["is_lowest"] = int(bool(stats.get("points", 0) >= 2 and stats.get("min") is not None
+                                            and float(updated["price"]) <= float(stats["min"])))
+        updated["score"] = compute_score(updated, now)
+        db.execute(
+            "UPDATE deals SET price = ?, mrp = ?, discount_pct = ?, is_lowest = ?, score = ?, dirty = 1 "
+            "WHERE id = ?",
+            (updated["price"], updated.get("mrp"), int(updated.get("discount_pct") or 0),
+             int(updated.get("is_lowest") or 0), updated["score"], old["id"]),
+        )
+        fixed += 1
+
+    db.set_meta("parser_version", str(parser.PARSER_VERSION))
+    return fixed
 
 
 def rescore_all() -> int:

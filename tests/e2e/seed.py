@@ -77,6 +77,7 @@ POSTS = [
     ("Allen Solly Men Polo T-Shirt Pack of 2\n₹799 MRP ₹1,998 60% off\nhttps://www.myntra.com/tshirts/allen-solly/x/776655/buy", "Allen Solly", 4),
     ("Logitech MX Master 3S Wireless Mouse\n₹7,495 MRP ₹10,995\nhttps://www.amazon.in/dp/B0B11LJ69K", "Logitech", 5),
     ("Duracell Ultra AA Batteries Pack of 8\n₹299\nhttps://www.amazon.in/dp/B0DURACELL", "", 1),
+    ("Peter England Watches from ₹509.\nUpto 70% off\nhttps://www.flipkart.com/p/itmpe?pid=WATPETER509", "Peter England", 3),
 ]
 
 ids = []

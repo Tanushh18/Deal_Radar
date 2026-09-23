@@ -94,6 +94,27 @@ async def _resolve_reader(channel: Dict[str, Any]) -> Optional[int]:
 
 
 # --- step 1-3: fetch, parse, store -------------------------------------
+def with_hidden_links(text: str, message: Any) -> str:
+    """Append URLs that Telegram keeps outside the visible text.
+
+    Deal channels mostly post "🛒 Buy Now" as a text link (the URL lives in a
+    MessageEntityTextUrl) or as an inline button — plain `message.message`
+    has no URL at all, which left ~12% of deals without a buy link.
+    """
+    urls: List[str] = []
+    for entity in getattr(message, "entities", None) or []:
+        url = getattr(entity, "url", None)
+        if url:
+            urls.append(url)
+    for row in getattr(getattr(message, "reply_markup", None), "rows", None) or []:
+        for button in getattr(row, "buttons", None) or []:
+            url = getattr(button, "url", None)
+            if url:
+                urls.append(url)
+    extra = [u for u in dict.fromkeys(urls) if u.startswith(("http://", "https://")) and u not in text]
+    return f"{text}\n" + "\n".join(extra) if extra and text else text
+
+
 async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
     """Pull and store new deals from one channel."""
     result = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0}
@@ -118,7 +139,7 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
     highest = watermark
     for message in messages:
         highest = max(highest, int(message.id or 0))
-        text = message.message or getattr(message, "raw_text", "") or ""
+        text = with_hidden_links(message.message or getattr(message, "raw_text", "") or "", message)
         if not text:
             continue
         result["fetched"] += 1

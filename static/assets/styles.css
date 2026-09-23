@@ -903,6 +903,7 @@ mark {
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 .price-was { font-size: .76rem; color: var(--text-3); text-decoration: line-through; }
+.price-from { font-size: .62em; font-weight: 650; color: var(--text-2); letter-spacing: 0; margin-right: 1px; }
 .price-off {
   align-self: center; padding: 2px 7px; border-radius: 6px;
   background: var(--hot-soft); color: var(--hot);

@@ -941,7 +941,16 @@
 
   // Discount lives in the price row (like every major deal site); image
   // badges are reserved for status so they never cover the product.
-  const priceOff = (deal) => (deal.discount_pct >= 5 ? `<span class="price-off">-${deal.discount_pct}%</span>` : '');
+  const hasFlag = (deal, flag) => (deal.flags || []).includes(flag);
+  const minBuy = (deal) => {
+    const f = (deal.flags || []).find((x) => /^min_buy_\d+$/.test(x));
+    return f ? Number(f.split('_')[2]) : 0;
+  };
+  // A sale ("up to 87%") or a floor price ("from ₹509") must not read as one exact product price.
+  const priceOff = (deal) => (deal.discount_pct >= 5
+    ? `<span class="price-off">${hasFlag(deal, 'upto_discount') ? 'Up to ' : '-'}${deal.discount_pct}%</span>` : '');
+  const priceNow = (deal) => `<span class="price-now">${hasFlag(deal, 'price_from') && deal.price != null
+    ? '<small class="price-from">From </small>' : ''}${money(deal.price)}</span>`;
 
   function dealBadges(deal) {
     const badges = [];
@@ -966,7 +975,7 @@
           <div class="deal-title" title="${escapeHtml(deal.title)}">${highlight(deal.title, state.filters.q)}</div>
           <div class="deal-price">
             ${priceOff(deal)}
-            <span class="price-now">${money(deal.price)}</span>
+            ${priceNow(deal)}
             ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
           </div>
           ${deal.saving ? `<div class="price-save">${icon('down')} Save ${money(deal.saving)}</div>` : ''}
@@ -975,6 +984,7 @@
             <span>${timeAgo(deal.posted_at)}</span>
             ${deal.repost_count > 1
               ? `<span class="dot"></span><span class="reposts">${deal.repost_count} channels</span>` : ''}
+            ${minBuy(deal) ? `<span class="dot"></span><span>Min ${minBuy(deal)}</span>` : ''}
           </div>
         </div>
         <div class="deal-actions">
@@ -1083,7 +1093,7 @@
           ${badges.length ? `<div class="detail-badges">${badges.join('')}</div>` : ''}
           <div class="detail-price">
             ${priceOff(deal)}
-            <span class="price-now">${money(deal.price)}</span>
+            ${priceNow(deal)}
             ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
           </div>
           ${deal.saving ? `<span class="detail-save">${icon('down')} You save ${money(deal.saving)}${deal.discount_pct ? ` · ${deal.discount_pct}% off` : ''}</span>` : ''}
@@ -1315,7 +1325,7 @@
           <div class="rail-title">${highlight(deal.title, state.filters.q)}</div>
           <div class="rail-price">
             ${priceOff(deal)}
-            <span class="price-now">${money(deal.price)}</span>
+            ${priceNow(deal)}
             ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
           </div>
           ${note}
@@ -1674,7 +1684,7 @@
       <span class="s-deal">
         <span class="s-title">${highlight(deal.title, typed)}</span>
         <span class="s-price">
-          <span class="price-now">${money(deal.price)}</span>
+          ${priceNow(deal)}
           ${priceOff(deal)}
           ${storeName(deal) ? `<span class="s-store">${escapeHtml(storeName(deal))}</span>` : ''}
         </span>

@@ -54,15 +54,19 @@ export function StatusBadge({ kind, label, small }: { kind: BadgeKind; label: st
   );
 }
 
-export function PriceRow({ deal, size = 'md' }: { deal: Pick<Deal, 'price' | 'mrp' | 'discount_pct'>; size?: 'sm' | 'md' | 'lg' }) {
+export function PriceRow({ deal, size = 'md' }: { deal: Pick<Deal, 'price' | 'mrp' | 'discount_pct'> & { flags?: string[] }; size?: 'sm' | 'md' | 'lg' }) {
   const t = useTheme();
   const now = size === 'lg' ? 30 : size === 'md' ? 18.5 : 16;
+  const flags = deal.flags ?? [];
+  // A sale ("up to 87%") or a floor price ("from ₹509") must not read as one exact product price.
+  const upto = flags.includes('upto_discount');
+  const from = flags.includes('price_from') && deal.price != null;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 7, rowGap: 2 }}>
       {deal.discount_pct >= 5 ? (
         <View style={{ backgroundColor: t.c.hotSoft, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
           <Text maxFontSizeMultiplier={1.2} style={{ color: t.c.hot, fontWeight: '800', fontSize: size === 'lg' ? 14 : 12 }}>
-            -{deal.discount_pct}%
+            {upto ? 'Up to ' : '-'}{deal.discount_pct}%
           </Text>
         </View>
       ) : null}
@@ -70,6 +74,7 @@ export function PriceRow({ deal, size = 'md' }: { deal: Pick<Deal, 'price' | 'mr
         maxFontSizeMultiplier={1.3}
         style={{ color: t.c.text, fontSize: now, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }}
       >
+        {from ? <Text style={{ fontSize: now * 0.62, fontWeight: '600', color: t.c.text2 }}>From </Text> : null}
         {money(deal.price)}
       </Text>
       {deal.mrp ? (

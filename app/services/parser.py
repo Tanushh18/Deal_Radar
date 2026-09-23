@@ -21,6 +21,10 @@ from urllib.parse import parse_qs, urlparse, urlunparse
 
 from . import taxonomy
 
+# Bump whenever price/MRP extraction changes: stored deals are re-parsed from
+# their raw text once per version (store.reparse_stored_deals).
+PARSER_VERSION = 3
+
 URL_RE = re.compile(r"https?://[^\s<>\"')\]]+", re.IGNORECASE)
 
 # ₹1,299  |  Rs. 1299  |  INR 1299  |  1299/-  |  @999
@@ -40,6 +44,27 @@ DISCOUNT_RE = re.compile(r"(\d{1,3})\s*%\s*(?:off|discount|dis)", re.IGNORECASE)
 AT_PRICE_RE = re.compile(
     r"(?:@|\bat\b|\bjust\b|\bonly\b)\s*(?:₹|\brs\b\.?|\binr\b\.?)?\s*"
     r"([0-9][0-9,]{2,7}(?:\.[0-9]{1,2})?)",
+    re.IGNORECASE,
+)
+
+# "Printed T-Shirt - ₹91", "Mugs Set | ₹244": a currency amount right after a
+# separator on the product-name line is that product's price.
+TITLE_PRICE_RE = re.compile(
+    r"[-–—|:]\s*(?:₹|\brs\b\.?|\binr\b\.?)\s*([0-9][0-9,]{1,7}(?:\.[0-9]{1,2})?)",
+    re.IGNORECASE,
+)
+# "Watches from ₹509", "Jeans starts @208" — a floor, not the price of one item.
+FROM_PRICE_RE = re.compile(
+    r"\b(?:from|starts?(?:\s+(?:from|at))?|starting(?:\s+(?:from|at))?)\s*(?:just\s*)?"
+    r"(?:@|₹|\brs\b\.?|\binr\b\.?)?\s*[0-9]",
+    re.IGNORECASE,
+)
+UPTO_DISCOUNT_RE = re.compile(r"\b(?:up\s*to|upto|till)\s*(\d{1,3})\s*%", re.IGNORECASE)
+MIN_BUY_RE = re.compile(r"\bmin(?:imum)?\.?\s*(?:buy|order|qty|quantity)\s*[-:]?\s*(\d{1,2})\b", re.IGNORECASE)
+# Lines that are channel furniture, never a product name.
+JUNK_LINE_RE = re.compile(
+    r"deal\s*time|buy\s*now|shop\s*now|grab\s*now|order\s*now|click\s*here|^more\b|"
+    r"min(?:imum)?\.?\s*(?:buy|order)|join\s+(?:us|our|now)|share\s+(?:and|&)|^link\b",
     re.IGNORECASE,
 )
 
@@ -205,7 +230,7 @@ def extract_title(text: str) -> str:
     candidates: List[str] = []
     for raw_line in (text or "").splitlines():
         line = _clean_line(raw_line)
-        if len(line) < 6:
+        if len(line) < 6 or JUNK_LINE_RE.search(line):
             continue
         letters = sum(c.isalpha() for c in line)
         if letters < 5:
@@ -220,8 +245,9 @@ def extract_title(text: str) -> str:
         if len(candidates) >= 4:
             break
     if not candidates:
-        flat = _clean_line(" ".join((text or "").split()))
-        return flat[:140] or "Untitled deal"
+        # No product name anywhere ("₹199 : Buy Now … Deal Time: 12:24 PM") —
+        # a card titled with a timestamp is worse than no card.
+        return ""
     # Prefer the first reasonably long candidate, else the longest available.
     for candidate in candidates:
         if len(candidate) >= 18:
@@ -272,6 +298,14 @@ def parse_message(
     if not urls and not prices and quoted is None:
         return None  # neither a link nor a price -> chatter, not a deal
 
+    title = extract_title(text)
+    if not title:
+        return None
+    title_price = None
+    title_match = TITLE_PRICE_RE.search(strip_discount_amounts(title))
+    if title_match:
+        title_price = _to_number(title_match.group(1))
+
     url = urls[0] if urls else ""
     store = detect_store(url) if url else "unknown"
     cleaned = clean_url(url) if url else ""
@@ -286,6 +320,8 @@ def parse_message(
     if quoted is not None:
         # An explicitly quoted "@…" price wins over anything inferred.
         price = quoted
+    elif title_price is not None:
+        price = title_price
     elif prices:
         candidates = sorted(set(prices))
         if mrp is not None:
@@ -308,7 +344,17 @@ def parse_message(
     elif price and mrp and mrp > price:
         discount = int(round((mrp - price) / mrp * 100))
 
-    title = extract_title(text)
+    # Shown on the card as "From ₹509" / "Up to 87% off" / "Min 3" instead of
+    # presenting a range or a per-unit figure as one exact product price.
+    flags: List[str] = []
+    if price is not None and FROM_PRICE_RE.search(text):
+        flags.append("price_from")
+    if UPTO_DISCOUNT_RE.search(text):
+        flags.append("upto_discount")
+    min_buy = MIN_BUY_RE.search(text)
+    if min_buy and int(min_buy.group(1)) > 1:
+        flags.append(f"min_buy_{int(min_buy.group(1))}")
+
     norm = normalize_title(title)
     category, subcategory = taxonomy.classify(f"{title} {text[:400]}")
     brand = taxonomy.detect_brand(f"{title} {text[:200]}")
@@ -349,7 +395,7 @@ def parse_message(
         "status": "live",
         "score": 0.0,
         "is_lowest": 0,
-        "flags": [],
+        "flags": flags,
         "raw_text": text[:1500],
         "search_blob": search_blob,
     }

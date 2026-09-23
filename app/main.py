@@ -95,6 +95,15 @@ async def lifespan(app: FastAPI):
     else:
         log.info("Google Sheets not configured — running in SQLite-only mode.")
 
+    try:
+        repaired = store.reparse_stored_deals()
+        if repaired:
+            log.info("Re-parsed %d stored deals with the current parser", repaired)
+            if sheets.is_enabled():
+                await asyncio.get_event_loop().run_in_executor(None, sheets.flush_deals)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Re-parse of stored deals failed: %s", exc)
+
     _tasks.append(asyncio.create_task(ingest.scheduler_loop()))
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
