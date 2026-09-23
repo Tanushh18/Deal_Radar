@@ -2,10 +2,12 @@
   "name": "DealRadar — Telegram deals, searchable",
   "short_name": "DealRadar",
   "description": "Aggregates marketplace deals from your Telegram channels into one searchable, de-duplicated catalog.",
+  "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
+  "categories": ["shopping", "lifestyle"],
   "background_color": "#080b12",
   "theme_color": "#080b12",
   "icons": [

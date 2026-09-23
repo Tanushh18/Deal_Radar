@@ -48,6 +48,17 @@ async def trending_deals(limit: int = Query(12, ge=1, le=50), user=Depends(auth.
     return {"results": search.trending(_scope(user), limit)}
 
 
+@router.get("/suggest")
+async def suggest_deals(
+    q: str = Query("", max_length=120),
+    limit: int = Query(6, ge=1, le=20),
+    all_channels: bool = False,
+    user=Depends(auth.optional_user),
+):
+    scope = None if all_channels else _scope(user)
+    return search.suggest(q, channel_ids=scope, limit=limit)
+
+
 @router.get("")
 async def list_deals(
     q: str = Query("", max_length=120),

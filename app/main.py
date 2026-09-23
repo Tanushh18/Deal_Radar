@@ -22,6 +22,7 @@ from .routers import auth as auth_router
 from .routers import channels as channels_router
 from .routers import deals as deals_router
 from .routers import health as health_router
+from .routers import notifications as notifications_router
 from .routers import watchlists as watchlists_router
 from .services import ingest, sheets, store, telegram
 
@@ -143,6 +144,22 @@ app.include_router(auth_router.router)
 app.include_router(channels_router.router)
 app.include_router(deals_router.router)
 app.include_router(watchlists_router.router)
+app.include_router(notifications_router.router)
+
+
+@app.middleware("http")
+async def shell_cache_headers(request: Request, call_next):
+    """The app shell has no build step (no hashed filenames), so browsers must
+    revalidate it on each load — otherwise a deploy can pair a cached old
+    stylesheet with a new app.js. ETags keep the revalidation a cheap 304."""
+    response = await call_next(request)
+    path = request.url.path
+    if not path.startswith("/api/") and "cache-control" not in response.headers:
+        if path.startswith("/assets/icons/"):
+            response.headers["Cache-Control"] = "public, max-age=604800"
+        else:
+            response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
 @app.exception_handler(Exception)

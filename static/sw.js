@@ -8,7 +8,7 @@
  */
 /* Bumped whenever the shell changes: the old cache is deleted on activate, so
  * an installed app picks the new UI up instead of serving last year's CSS. */
-const CACHE_VERSION = 'dealradar-shell-v2';
+const CACHE_VERSION = 'dealradar-shell-v4';
 const SHELL_FILES = [
   '/',
   '/assets/styles.css',
@@ -53,16 +53,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first: online users always get the deployed CSS/JS together (a
+  // cached old stylesheet next to a new app.js breaks the UI); the cache is
+  // the offline fallback only.
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      });
-    })
+    fetch(request).then((response) => {
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    }).catch(() => caches.match(request))
   );
 });

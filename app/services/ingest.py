@@ -29,7 +29,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import parser, ratelimit, search, sheets, store, telegram
+from . import parser, push, ratelimit, search, sheets, store, telegram
 
 log = logging.getLogger(__name__)
 
@@ -310,9 +310,33 @@ def _format_alert(deal: Dict[str, Any]) -> str:
     return "\n".join(bits)
 
 
+def _app_alert(query: str, deal: Dict[str, Any]) -> Dict[str, str]:
+    name = (deal.get("title") or "").strip()
+    if len(name) > 60:
+        name = name[:59].rstrip() + "…"
+    price = f"₹{int(deal['price']):,} " if deal.get("price") else ""
+    body_bits = []
+    if deal.get("store"):
+        body_bits.append(str(deal["store"]).title())
+    if deal.get("discount_pct"):
+        body_bits.append(f"{deal['discount_pct']}% off")
+    if deal.get("mrp") and deal.get("price"):
+        body_bits.append(f"was ₹{int(deal['mrp']):,}")
+    if deal.get("is_lowest"):
+        body_bits.append("lowest price we've seen")
+    if deal.get("coupon"):
+        body_bits.append(f"code {deal['coupon']}")
+    return {
+        "title": f"🔔 \"{query}\": {price}{name}".strip(),
+        "body": " · ".join(body_bits) or "New deal matching your alert",
+        "url": f"/?deal={deal['id']}",
+    }
+
+
 async def run_watchlist_alerts(max_per_watchlist: int = 3) -> Dict[str, int]:
     watchlists = db.rows_to_dicts(db.query("SELECT * FROM watchlists WHERE notify = 1"))
     sent = 0
+    app_sent = 0
     for watch in watchlists:
         filters = watch.get("filters") or {}
         if isinstance(filters, str):
@@ -351,11 +375,22 @@ async def run_watchlist_alerts(max_per_watchlist: int = 3) -> Dict[str, int]:
                 break
 
         for deal in fresh:
-            ok = await telegram.notify_user(watch["user_id"], _format_alert(deal))
+            # Mark first so a failure below can never cause a repeat alert.
             db.execute(
                 "INSERT OR REPLACE INTO notified (watchlist_id, deal_id, sent_at) VALUES (?, ?, ?)",
                 (watch["id"], deal["id"], time.time()),
             )
+            try:
+                alert = _app_alert(watch.get("query") or "", deal)
+                await push.notify(watch["user_id"], alert["title"], alert["body"], alert["url"], deal["id"])
+                app_sent += 1
+            except Exception as exc:  # noqa: BLE001
+                log.warning("App notification failed for watchlist %s: %s", watch["id"], exc)
+            try:
+                ok = await telegram.notify_user(watch["user_id"], _format_alert(deal))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Telegram alert failed for watchlist %s: %s", watch["id"], exc)
+                ok = False
             if ok:
                 sent += 1
         if fresh:
@@ -363,7 +398,7 @@ async def run_watchlist_alerts(max_per_watchlist: int = 3) -> Dict[str, int]:
                 "UPDATE watchlists SET last_notified_at = ? WHERE id = ?",
                 (time.time(), watch["id"]),
             )
-    return {"alerts_sent": sent, "watchlists": len(watchlists)}
+    return {"alerts_sent": sent, "app_notifications": app_sent, "watchlists": len(watchlists)}
 
 
 def user_channel_ids(user_id: int) -> List[int]:
@@ -401,6 +436,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             alerts = await run_watchlist_alerts()
             purged_ids = store.purge_ancient()
             store.purge_housekeeping()
+            push.prune_notifications()
             ratelimit.prune()
 
             flushed = {"updated": 0, "appended": 0}

@@ -1,19 +1,26 @@
 """Query engine over the cached deals.
 
-Two-stage: SQL narrows by hard filters (price, store, category, the user's own
-channels), then Python ranks what survives. At a few thousand live deals this
-is far simpler than a search index and still sub-100ms.
+Two-stage: SQL narrows by hard filters (price, store, the user's own channels)
+and pulls a light projection of every candidate, then Python matches and ranks.
+At a few thousand live deals this is far simpler than a search index and still
+well under 100ms; only the page being returned is loaded in full.
 
-Relevance blends exact-phrase hits, synonym hits (so "kurta" finds "kurti"),
-and a fuzzy fallback for typos, then folds in the stored deal score so a
+Each query word is matched independently across title, brand, store, category
+and subcategory, through taxonomy synonyms (so "kurta" finds "kurti"), and
+through a typo-tolerant pass against the candidate vocabulary. Deals matching
+more of the words rank higher, and the stored deal score is folded in so a
 mediocre-but-relevant match ranks below a great one.
 """
 from __future__ import annotations
 
+import math
+import re
 import time
-from typing import Any, Dict, List, Optional
+from collections import Counter
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
-from rapidfuzz import fuzz
+from rapidfuzz import process
+from rapidfuzz.distance import OSA
 
 from .. import db
 from . import taxonomy
@@ -27,32 +34,271 @@ SORTS = {
     "price_high": "price DESC",
 }
 
+_CANDIDATE_CAP = 5000
+_LIGHT_COLUMNS = "id, title, brand, store, category, subcategory, search_blob, score"
+_WORD_RE = re.compile(r"[a-z0-9&']+")
+_STOPWORDS = {"the", "and", "for", "with", "of", "in", "on", "to", "a", "an", "under", "below", "at", "by"}
 
-def _relevance(deal: Dict[str, Any], raw_query: str, terms: List[str]) -> float:
-    blob = (deal.get("search_blob") or "").lower()
-    title = (deal.get("title") or "").lower()
-    if not blob:
-        return 0.0
+# Weight of the best way a single query word hit a deal.
+_W_TITLE = 1.0
+_W_BRAND = 1.0
+_W_STORE = 0.9
+_W_SUBCATEGORY = 0.85
+_W_CATEGORY = 0.75
+_W_BLOB = 0.75
+_W_SYNONYM = 0.7
+_W_FUZZY = 0.6
+_FIELD_WEIGHTS = [
+    ("title", _W_TITLE), ("brand", _W_BRAND), ("store", _W_STORE),
+    ("subcategory", _W_SUBCATEGORY), ("category", _W_CATEGORY), ("blob", _W_BLOB),
+]
 
-    score = 0.0
-    if raw_query and raw_query in title:
-        score += 60.0                     # exact phrase in the product name
-    elif raw_query and raw_query in blob:
-        score += 40.0
 
-    hits = sum(1 for term in terms if term in blob)
-    if hits:
-        score += min(hits, 5) * 12.0      # synonym / token overlap
+def _words(text: str) -> List[str]:
+    return _WORD_RE.findall((text or "").lower())
 
-    if score == 0.0:
-        # Nothing matched literally — allow a typo-tolerant fallback.
-        fuzzy = fuzz.partial_ratio(raw_query, title)
-        if fuzzy >= 82:
-            score += (fuzzy - 82) * 1.6
 
-    if deal.get("brand") and raw_query and deal["brand"].lower() in raw_query:
-        score += 15.0
-    return score
+def _hit(text: str, padded: str, term: str) -> float:
+    if f" {term}" in padded:
+        return 1.0
+    # Short terms ("pb", "mi", "ac") only count at a word start — mid-word
+    # they'd hit half the catalogue. Longer ones mid-word ("phone" inside
+    # "headphone") still count, just weaker than a real word hit.
+    if len(term) > 3 and term in text:
+        return 0.5
+    return 0.0
+
+
+class _Plan:
+    """A parsed query: its words, their synonyms, and typo corrections."""
+
+    def __init__(self, raw: str, typing: bool = False):
+        self.raw = " ".join(_words(raw))
+        tokens = [w for w in _words(raw) if len(w) > 1 and w not in _STOPWORDS]
+        if not tokens and self.raw:
+            tokens = [w for w in _words(raw) if w]
+        self.tokens: List[str] = list(dict.fromkeys(tokens))
+        self.typing = typing
+        self.synonyms: Dict[str, Set[str]] = {t: set() for t in self.tokens}
+        self.fuzzy: Dict[str, Set[str]] = {t: set() for t in self.tokens}
+        self._expand()
+
+    def _expand(self) -> None:
+        if not self.tokens:
+            return
+        padded = f" {' '.join(self.tokens)} "
+        allowed = taxonomy.expand_query(self.raw)
+
+        def attach(trigger: str, group: Iterable[str]) -> None:
+            for tok in trigger.split():
+                if tok in self.synonyms:
+                    self.synonyms[tok].update(g.strip() for g in group if g.strip() != tok)
+
+        # expand_query matches taxonomy terms as raw substrings of the query, so
+        # "headphones" drags in the whole Mobile group via "phone". Only keep
+        # groups whose trigger is a whole word/phrase of the query.
+        for term, group in taxonomy.SYNONYM_GROUPS.items():
+            trigger = term.strip()
+            if trigger and f" {trigger} " in padded:
+                attach(trigger, {g for g in group if g in allowed})
+        for category, subs in taxonomy.CATEGORIES.items():
+            for name, terms in [(category, [t for ts in subs.values() for t in ts])] + list(subs.items()):
+                trigger = " ".join(_words(name))
+                if trigger and f" {trigger} " in padded:
+                    attach(trigger, {t.lower() for t in terms})
+
+    def correct(self, vocab: List[str]) -> None:
+        """Map misspelt words onto words that actually exist in the candidates."""
+        if not vocab:
+            return
+        for i, tok in enumerate(self.tokens):
+            if len(tok) < 5 or not tok.isalpha():
+                continue
+            if any(tok in w for w in vocab):
+                continue
+            max_edits = 2 if len(tok) >= 8 else 1
+            for word, _, _ in process.extract(
+                tok, vocab, scorer=OSA.distance, score_cutoff=max_edits, limit=8
+            ):
+                self.fuzzy[tok].add(word)
+            is_last = i == len(self.tokens) - 1
+            if self.typing and is_last:
+                # Mid-keystroke "headphn" should already reach "headphones".
+                for word in vocab:
+                    if len(word) > len(tok) and OSA.distance(tok, word[: len(tok)]) <= 1:
+                        self.fuzzy[tok].add(word)
+            for word in list(self.fuzzy[tok]):
+                self.synonyms[tok].update(
+                    g.strip() for g in taxonomy.SYNONYM_GROUPS.get(word, ()) if g.strip() != tok
+                )
+
+
+def _token_weight(tok: str, fields: Dict[str, Tuple[str, str]], word_set: Set[str], plan: _Plan) -> float:
+    best = 0.0
+    for name, weight in _FIELD_WEIGHTS:
+        text, padded = fields[name]
+        if text:
+            best = max(best, weight * _hit(text, padded, tok))
+            if best == weight:
+                return best
+    blob, blob_p = fields["blob"]
+    for syn in plan.synonyms.get(tok, ()):
+        if f" {syn} " in blob_p or (len(syn) > 3 and f" {syn}" in blob_p):
+            best = max(best, _W_SYNONYM)
+            break
+    if best < _W_FUZZY and plan.fuzzy.get(tok) and plan.fuzzy[tok] & word_set:
+        best = _W_FUZZY
+    return best
+
+
+def _fields(deal: Dict[str, Any]) -> Dict[str, Tuple[str, str]]:
+    def norm(value: Any) -> Tuple[str, str]:
+        text = " ".join(_words(str(value or "")))
+        return text, f" {text} "
+
+    blob_parts = [deal.get("search_blob"), deal.get("title"), deal.get("brand"),
+                  deal.get("store"), deal.get("category"), deal.get("subcategory")]
+    return {
+        "title": norm(deal.get("title")),
+        "brand": norm(deal.get("brand")),
+        "store": norm(deal.get("store")),
+        "subcategory": norm(deal.get("subcategory")),
+        "category": norm(deal.get("category")),
+        "blob": norm(" ".join(str(p) for p in blob_parts if p)),
+    }
+
+
+def _match(rows: List[Dict[str, Any]], plan: _Plan) -> List[Dict[str, Any]]:
+    """Filter + annotate rows with `_relevance`; keeps the incoming order."""
+    prepared = []
+    vocab: Set[str] = set()
+    for deal in rows:
+        fields = _fields(deal)
+        word_set = set(fields["blob"][0].split())
+        vocab.update(w for w in word_set if len(w) >= 3)
+        prepared.append((deal, fields, word_set))
+    plan.correct(sorted(vocab))
+
+    weights_per_deal = []
+    token_hits: Counter = Counter()
+    for deal, fields, word_set in prepared:
+        weights = {tok: _token_weight(tok, fields, word_set, plan) for tok in plan.tokens}
+        for tok, w in weights.items():
+            if w:
+                token_hits[tok] += 1
+        weights_per_deal.append((deal, fields, weights))
+
+    # Words nothing in the catalogue matches ("cheap", "best", "offer") would
+    # otherwise cap every deal's coverage — treat them as noise.
+    live_tokens = [t for t in plan.tokens if token_hits[t]] or plan.tokens
+    n = len(live_tokens)
+    need = 1 if n <= 2 else math.ceil(n / 2)
+
+    matched = []
+    for deal, fields, weights in weights_per_deal:
+        hit = [weights[t] for t in live_tokens if weights[t]]
+        if len(hit) < need:
+            continue
+        rel = 60.0 * sum(hit) / n
+        if n > 1 and len(hit) == n:
+            rel += 20.0
+        if plan.raw and len(plan.raw) > 2:
+            if f" {plan.raw}" in fields["title"][1]:
+                rel += 20.0
+            elif f" {plan.raw}" in fields["blob"][1]:
+                rel += 10.0
+        deal["_relevance"] = round(rel, 1)
+        matched.append(deal)
+    return matched
+
+
+def _candidates(
+    *,
+    store: str,
+    brand: str,
+    min_price: Optional[float],
+    max_price: Optional[float],
+    min_discount: int,
+    channel_ids: Optional[List[int]],
+    include_expired: bool,
+    only_lowest: bool,
+    order: str,
+) -> List[Dict[str, Any]]:
+    """Light rows for every deal passing the hard filters (not category — that's counted)."""
+    where: List[str] = []
+    params: List[Any] = []
+    if include_expired:
+        where.append("status != 'dead'")
+    else:
+        where.append("status = 'live'")
+        where.append("expires_at > ?")
+        params.append(time.time())
+    if store:
+        where.append("store = ?")
+        params.append(store.lower())
+    if brand:
+        where.append("LOWER(brand) = ?")
+        params.append(brand.lower())
+    if min_price is not None:
+        where.append("price >= ?")
+        params.append(min_price)
+    if max_price is not None:
+        where.append("price IS NOT NULL AND price <= ?")
+        params.append(max_price)
+    if min_discount:
+        where.append("discount_pct >= ?")
+        params.append(min_discount)
+    if only_lowest:
+        where.append("is_lowest = 1")
+    if channel_ids:
+        where.append(f"channel_id IN ({','.join('?' for _ in channel_ids)})")
+        params.extend(channel_ids)
+    sql = (
+        f"SELECT {_LIGHT_COLUMNS} FROM deals WHERE {' AND '.join(where)} "
+        f"ORDER BY {order} LIMIT {_CANDIDATE_CAP}"
+    )
+    return [dict(r) for r in db.query(sql, params)]
+
+
+def _rank(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return sorted(
+        rows,
+        key=lambda d: d["_relevance"] + float(d.get("score") or 0) * 0.45,
+        reverse=True,
+    )
+
+
+def _load(page: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Fetch full rows for one page in a single query, preserving order."""
+    if not page:
+        return []
+    ids = [d["id"] for d in page]
+    full = {
+        d["id"]: d
+        for d in db.rows_to_dicts(
+            db.query(f"SELECT * FROM deals WHERE id IN ({','.join('?' for _ in ids)})", ids)
+        )
+    }
+    out = []
+    for light in page:
+        deal = full.get(light["id"])
+        if deal is not None:
+            deal["_relevance"] = light.get("_relevance")
+            out.append(deal)
+    return out
+
+
+def _counts(rows: List[Dict[str, Any]], column: str, key: str, lower: bool = False,
+            limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    counter: Counter = Counter()
+    for deal in rows:
+        value = deal.get(column)
+        if value:
+            counter[value.lower() if lower else value] += 1
+    ordered = sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))
+    if limit is not None:
+        ordered = ordered[:limit]
+    return [{key: name, "count": n} for name, n in ordered]
 
 
 def search(
@@ -72,83 +318,59 @@ def search(
     limit: int = 48,
     offset: int = 0,
 ) -> Dict[str, Any]:
-    now = time.time()
-    where: List[str] = []
-    params: List[Any] = []
+    rows = _candidates(
+        store=store, brand=brand, min_price=min_price, max_price=max_price,
+        min_discount=min_discount, channel_ids=channel_ids,
+        include_expired=include_expired, only_lowest=only_lowest,
+        order=SORTS.get(sort) or SORTS["best"],
+    )
 
-    if include_expired:
-        where.append("status != 'dead'")
-    else:
-        where.append("status = 'live'")
-        where.append("expires_at > ?")
-        params.append(now)
+    plan = _Plan(q or "")
+    if plan.tokens:
+        rows = _match(rows, plan)
+        if sort == "relevance":
+            rows = _rank(rows)
 
+    categories = _counts(rows, "category", "name")
     if category:
-        where.append("category = ?")
-        params.append(category)
+        rows = [d for d in rows if d.get("category") == category]
     if subcategory:
-        where.append("subcategory = ?")
-        params.append(subcategory)
-    if store:
-        where.append("store = ?")
-        params.append(store.lower())
-    if brand:
-        where.append("LOWER(brand) = ?")
-        params.append(brand.lower())
-    if min_price is not None:
-        where.append("price >= ?")
-        params.append(min_price)
-    if max_price is not None:
-        where.append("price IS NOT NULL AND price <= ?")
-        params.append(max_price)
-    if min_discount:
-        where.append("discount_pct >= ?")
-        params.append(min_discount)
-    if only_lowest:
-        where.append("is_lowest = 1")
-    if channel_ids:
-        placeholders = ",".join("?" for _ in channel_ids)
-        where.append(f"channel_id IN ({placeholders})")
-        params.extend(channel_ids)
-
-    sql = f"SELECT * FROM deals WHERE {' AND '.join(where)}"
-
-    raw_query = (q or "").strip().lower()
-    if raw_query:
-        # Cheap SQL prefilter on any expanded term, exact ranking happens below.
-        terms = sorted(taxonomy.expand_query(raw_query), key=len, reverse=True)[:24]
-        likes = " OR ".join("search_blob LIKE ?" for _ in terms) if terms else "1=1"
-        sql += f" AND ({likes} OR search_blob LIKE ?)"
-        params.extend([f"%{t}%" for t in terms])
-        params.append(f"%{raw_query}%")
-    else:
-        terms = []
-
-    order = SORTS.get(sort) or SORTS["best"]
-    sql += f" ORDER BY {order} LIMIT 2000"
-
-    rows = db.rows_to_dicts(db.query(sql, params))
-
-    if raw_query and sort == "relevance":
-        ranked = []
-        for deal in rows:
-            rel = _relevance(deal, raw_query, terms)
-            if rel <= 0:
-                continue
-            deal["_relevance"] = round(rel, 1)
-            deal["_rank"] = rel + float(deal.get("score") or 0) * 0.45
-            ranked.append(deal)
-        ranked.sort(key=lambda d: d["_rank"], reverse=True)
-        rows = ranked
+        rows = [d for d in rows if d.get("subcategory") == subcategory]
 
     total = len(rows)
-    page = rows[offset: offset + limit]
+    page = _load(rows[offset: offset + limit])
     return {
         "total": total,
         "count": len(page),
         "offset": offset,
         "limit": limit,
         "results": [shape(d) for d in page],
+        "categories": categories,
+    }
+
+
+def suggest(q: str, channel_ids: Optional[List[int]] = None, limit: int = 6) -> Dict[str, Any]:
+    """Type-ahead: top deals plus the categories/brands/stores they fall under."""
+    query = (q or "").strip()
+    empty = {"query": query, "deals": [], "categories": [], "brands": [], "stores": []}
+    if len(query) < 2:
+        return empty
+    plan = _Plan(query, typing=True)
+    if not plan.tokens:
+        return empty
+
+    rows = _candidates(
+        store="", brand="", min_price=None, max_price=None, min_discount=0,
+        channel_ids=channel_ids, include_expired=False, only_lowest=False,
+        order=SORTS["best"],
+    )
+    rows = _rank(_match(rows, plan))
+    return {
+        "query": query,
+        "deals": [shape(d) for d in _load(rows[:limit])],
+        "categories": _counts(rows, "category", "name", limit=5),
+        "brands": _counts(rows, "brand", "key", lower=True, limit=5),
+        "stores": _counts(rows, "store", "key", lower=True, limit=5),
     }
 
 

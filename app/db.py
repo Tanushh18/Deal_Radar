@@ -121,6 +121,27 @@ CREATE TABLE IF NOT EXISTS notified (
     PRIMARY KEY (watchlist_id, deal_id)
 );
 
+CREATE TABLE IF NOT EXISTS push_tokens (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER,
+    token        TEXT UNIQUE,
+    platform     TEXT,
+    created_at   REAL,
+    last_seen_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_push_user ON push_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER,
+    deal_id    TEXT,
+    title      TEXT,
+    body       TEXT,
+    url        TEXT,
+    created_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at);
+
 CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
     value TEXT

@@ -31,7 +31,32 @@ PRICE_RE = re.compile(
     r"|([0-9][0-9,]{1,7})\s*(?:/-|\brs\b)",
     re.IGNORECASE,
 )
-DISCOUNT_RE = re.compile(r"(\d{1,2})\s*%\s*(?:off|discount|dis)", re.IGNORECASE)
+DISCOUNT_RE = re.compile(r"(\d{1,3})\s*%\s*(?:off|discount|dis)", re.IGNORECASE)
+
+# These channels quote the selling price as "@7,371", "@ ₹146" or "at ₹34,740".
+# It is by far the most reliable signal in the post, and critically it is the
+# number attached to the product named in the title — unlike "smallest number
+# present", which is whatever coupon happens to be mentioned.
+AT_PRICE_RE = re.compile(
+    r"(?:@|\bat\b|\bjust\b|\bonly\b)\s*(?:₹|\brs\b\.?|\binr\b\.?)?\s*"
+    r"([0-9][0-9,]{2,7}(?:\.[0-9]{1,2})?)",
+    re.IGNORECASE,
+)
+
+# Money that is a *reduction*, not a price: "₹819 off with HDFC Credit Card",
+# "Apply ₹3500 Coupon", "flat ₹200 off", "₹1250 cashback".
+#
+# Removing these before reading prices is the single most important step in
+# this file. Without it a ₹34,740 pair of headphones posted with an "Apply
+# ₹2000 off Coupon" line is stored as a ₹2,000 product at 94% off — the
+# coupon becomes the price and the real price becomes a fabricated MRP.
+DISCOUNT_AMOUNT_RE = re.compile(
+    r"(?:apply\s+)?(?:flat\s+|extra\s+|additional\s+)?"
+    r"(?:₹|\brs\b\.?|\binr\b\.?)?\s*[0-9][0-9,]{1,7}\s*(?:/-)?\s*"
+    r"(?:off|discount|cashback|coupon)\b"
+    r"|(?:coupon|cashback|discount)\s*(?:of|:)?\s*(?:₹|\brs\b\.?|\binr\b\.?)?\s*[0-9][0-9,]{1,7}",
+    re.IGNORECASE,
+)
 MRP_RE = re.compile(
     r"(?:mrp|m\.r\.p|was|list price|original)\D{0,12}?([0-9][0-9,]{1,7})", re.IGNORECASE
 )
@@ -84,6 +109,11 @@ def _to_number(raw: str) -> Optional[float]:
     return value
 
 
+def strip_discount_amounts(text: str) -> str:
+    """Blank out "₹N off"-style amounts so they can't be mistaken for prices."""
+    return DISCOUNT_AMOUNT_RE.sub(" ", text or "")
+
+
 def extract_prices(text: str) -> List[float]:
     prices: List[float] = []
     for match in PRICE_RE.finditer(text):
@@ -92,6 +122,20 @@ def extract_prices(text: str) -> List[float]:
         if value is not None:
             prices.append(value)
     return prices
+
+
+def extract_quoted_price(text: str) -> Optional[float]:
+    """The "@…" / "at …" selling price, if the post quotes one.
+
+    Returns the *first* such price: a post listing several products puts the
+    one named in the title first, so the first quote is the one that belongs
+    with the title we extracted.
+    """
+    for match in AT_PRICE_RE.finditer(text or ""):
+        value = _to_number(match.group(1))
+        if value is not None:
+            return value
+    return None
 
 
 def detect_store(url: str) -> str:
@@ -220,8 +264,12 @@ def parse_message(
         return None
 
     urls = URL_RE.findall(text)
-    prices = extract_prices(text)
-    if not urls and not prices:
+    # Prices are read from a copy with "₹N off"/"apply ₹N coupon" removed;
+    # the original text is kept for the title, coupon code and raw display.
+    sanitized = strip_discount_amounts(text)
+    prices = extract_prices(sanitized)
+    quoted = extract_quoted_price(sanitized)
+    if not urls and not prices and quoted is None:
         return None  # neither a link nor a price -> chatter, not a deal
 
     url = urls[0] if urls else ""
@@ -231,19 +279,27 @@ def parse_message(
     # --- price / MRP resolution -------------------------------------
     price: Optional[float] = None
     mrp: Optional[float] = None
-    mrp_match = MRP_RE.search(text)
+    mrp_match = MRP_RE.search(sanitized)
     if mrp_match:
         mrp = _to_number(mrp_match.group(1))
-    if prices:
+
+    if quoted is not None:
+        # An explicitly quoted "@…" price wins over anything inferred.
+        price = quoted
+    elif prices:
         candidates = sorted(set(prices))
         if mrp is not None:
             below = [p for p in candidates if p < mrp]
             price = below[-1] if below else candidates[0]
-        elif len(candidates) >= 2:
-            # Two prices in a post is almost always "deal price, MRP".
-            price, mrp = candidates[0], candidates[-1]
         else:
             price = candidates[0]
+
+    # An MRP is only ever taken from an explicit "MRP/was/original" mention.
+    # The old "two prices in a post means deal + MRP" rule is what fabricated
+    # the 90%-off entries: in a post listing several products, or one quoting
+    # a coupon, the largest number belongs to something else entirely.
+    if mrp is not None and price is not None and mrp <= price:
+        mrp = None
 
     discount = 0
     discount_match = DISCOUNT_RE.search(text)
@@ -251,9 +307,6 @@ def parse_message(
         discount = int(discount_match.group(1))
     elif price and mrp and mrp > price:
         discount = int(round((mrp - price) / mrp * 100))
-    if mrp and price and mrp <= price:
-        mrp = None
-        discount = discount or 0
 
     title = extract_title(text)
     norm = normalize_title(title)

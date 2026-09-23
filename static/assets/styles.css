@@ -15,6 +15,8 @@
   --text:          #111827;
   --text-2:        #6b7280;
   --text-3:        #9aa3b2;
+  /* Product photos are shot on white; a light tile keeps them looking intended. */
+  --media-bg:      #ffffff;
 
   /* --- brand --- */
   --accent:        #2563eb;
@@ -89,6 +91,7 @@
   --text:          #e9eef7;
   --text-2:        #9ba7bc;
   --text-3:        #6b7789;
+  --media-bg:      #eef1f5;
 
   --accent:        #5b93f7;
   --accent-hover:  #7aabff;
@@ -128,6 +131,17 @@ body {
   font-size: 16px;
   overflow-x: hidden;
   overscroll-behavior-y: none;
+  /* Landscape iPhones: keep content clear of the notch / dynamic island. */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+/* One visible, consistent keyboard focus ring for every interactive element. */
+:where(button, a, [role="button"], [tabindex], summary, select):focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.noscript {
+  padding: 16px; text-align: center; font-weight: 650;
+  background: var(--warn-soft); color: var(--warn);
 }
 h1, h2, h3, h4 { margin: 0; line-height: 1.22; letter-spacing: -.022em; font-weight: 700; }
 h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
@@ -175,7 +189,6 @@ svg {
 }
 .btn:active:not(:disabled) { transform: scale(.97); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn:focus-visible { outline: none; box-shadow: var(--ring); }
 
 .btn-primary { background: var(--accent); color: var(--accent-text); }
 .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
@@ -209,7 +222,6 @@ svg {
 .iconbtn svg { width: 19px; height: 19px; }
 .iconbtn:hover { color: var(--text); background: var(--surface-3); }
 .iconbtn:active { transform: scale(.92); }
-.iconbtn:focus-visible { outline: none; box-shadow: var(--ring); }
 .iconbtn:disabled { opacity: .6; cursor: default; }
 .iconbtn.spinning svg { animation: spin 1s linear infinite; }
 .iconbtn.spinning { color: var(--accent); }
@@ -446,6 +458,68 @@ select.input {
 .suggest-item svg { width: 16px; height: 16px; flex: none; color: var(--text-3); }
 .suggest-item .s-count { margin-left: auto; font-size: .76rem; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .suggest-chips { display: flex; flex-wrap: wrap; gap: 7px; padding: 4px 8px 8px; }
+.suggest {
+  max-height: min(64vh, 560px); max-height: min(64dvh, 560px);
+  overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+}
+.suggest [role="group"] + [role="group"], .suggest .s-query + [role="group"] { margin-top: 2px; }
+.suggest-item { cursor: pointer; min-height: 48px; }
+.suggest-item.active { background: var(--accent-soft); }
+.suggest-item.active svg { color: var(--accent); }
+.suggest-item .s-text { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest-item .s-emoji { width: 16px; flex: none; text-align: center; font-size: .95rem; line-height: 1; }
+.suggest-item.s-query .s-text b { font-weight: 700; }
+.s-kbd {
+  display: none; flex: none; padding: 2px 7px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface-2);
+  font: 600 .68rem/1.4 var(--font); color: var(--text-3);
+}
+@media (hover: hover) and (pointer: fine) { .s-kbd { display: inline-block; } }
+.s-dealrow { align-items: center; padding-block: 7px; }
+.s-thumb {
+  position: relative; flex: none; width: 46px; height: 46px; overflow: hidden;
+  border-radius: var(--r-xs); background: var(--surface-2); border: 1px solid var(--border);
+  display: grid; place-items: center; font-size: 1.1rem;
+}
+.s-thumb > span { opacity: .4; }
+.s-thumb img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; padding: 3px; background: var(--media-bg);
+}
+.s-deal { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.s-title {
+  font-size: .86rem; font-weight: 600; line-height: 1.3; color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.s-price { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; min-width: 0; }
+.s-price .price-now { font-size: .9rem; }
+.s-price .price-off { font-size: .68rem; padding: 1px 6px; }
+.s-store { font-size: .7rem; color: var(--text-3); text-transform: capitalize; }
+.suggest-status {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 10px; font-size: .8rem; color: var(--text-3); text-align: center;
+}
+.s-spin {
+  width: 13px; height: 13px; border-radius: 50%; flex: none;
+  border: 2px solid var(--border-strong); border-top-color: var(--accent);
+  animation: spin .7s linear infinite;
+}
+.suggest.stale [role="group"] { opacity: .6; transition: opacity var(--t-fast); }
+
+/* matched query terms */
+mark {
+  background: var(--warn-soft); color: inherit;
+  border-radius: 3px; padding: 0 1px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.deal-title mark, .rail-title mark, .s-title mark { font-weight: 750; }
+
+/* unseen notifications: a dot on the bell and on the bottom-nav Alerts tab */
+.bell.has-unseen::after, .navbtn.has-unseen::after {
+  content: ""; position: absolute; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--bg);
+}
+.bell.has-unseen::after { top: 4px; left: 4px; }
+.navbtn.has-unseen::after { top: 6px; left: 50%; margin-left: -18px; border-color: var(--surface); }
 
 /* ============================================================
    BOTTOM NAVIGATION
@@ -678,6 +752,38 @@ select.input {
 }
 .activefilters::-webkit-scrollbar { display: none; }
 
+/* result categories with counts, directly above the grid */
+.resultcats {
+  display: flex; gap: 7px; overflow-x: auto; scroll-snap-type: x proximity;
+  padding: 0 0 12px;
+  margin-inline: calc(var(--page-pad) * -1); padding-inline: var(--page-pad);
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.resultcats::-webkit-scrollbar { display: none; }
+.rcat {
+  flex: none; scroll-snap-align: start;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 12px; border-radius: var(--r-full);
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-2); font-size: .8rem; font-weight: 650; white-space: nowrap;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.rcat:hover { border-color: var(--border-strong); color: var(--text); }
+.rcat-icon { font-size: .9rem; line-height: 1; }
+.rcat-count {
+  min-width: 20px; padding: 1px 6px; border-radius: var(--r-full);
+  background: var(--surface-2); color: var(--text-3);
+  font-size: .7rem; font-weight: 750; font-variant-numeric: tabular-nums; text-align: center;
+}
+.rcat.active { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.rcat.active .rcat-count { background: var(--accent); color: var(--accent-text); }
+@media (max-width: 599px) {
+  .resultcats {
+    -webkit-mask-image: linear-gradient(to right, #000 86%, transparent);
+    mask-image: linear-gradient(to right, #000 86%, transparent);
+  }
+}
+
 /* ============================================================
    HORIZONTAL DEAL RAILS
    ============================================================ */
@@ -713,12 +819,22 @@ select.input {
 }
 .rail-note svg { width: 12px; height: 12px; }
 .rail-note.hot { color: var(--hot); }
+.rail-note.muted-note { color: var(--text-3); font-weight: 600; }
+.cat-rails { display: block; }
 
 /* ============================================================
    DEAL GRID + CARD
    ============================================================ */
 .layout { display: block; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 11px; }
+/* Two columns on every phone, however narrow — one giant card per row wastes the screen. */
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 359px) {
+  /* Tapping the photo already opens details; the narrowest phones keep one clear CTA. */
+  .grid:not(.list) .deal-actions .btn-soft { display: none; }
+  .grid:not(.list) .deal-body { padding: 9px 9px 6px; }
+  .grid:not(.list) .deal-actions { padding: 0 9px 9px; }
+  .price-now { font-size: 1.05rem; }
+}
 
 .deal {
   display: flex; flex-direction: column; position: relative;
@@ -730,10 +846,14 @@ select.input {
 .deal.pressed { transform: scale(.975); }
 
 .deal-media { position: relative; aspect-ratio: 1; background: var(--surface-2); overflow: hidden; }
+/* contain, not cover: a cropped product photo is the fastest way to look amateur. */
 .deal-media img, .rail-media img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
+  position: relative; z-index: 1;
+  width: 100%; height: 100%; object-fit: contain; display: block;
+  padding: 8px; background: var(--media-bg);
   animation: fade-in var(--t-smooth) var(--ease);
 }
+.deal-media .badges, .deal-media .store-tag, .rail-media .badges { z-index: 2; }
 @keyframes fade-in { from { opacity: 0; } }
 /* The placeholder is a layer *under* the image, so an image that 404s simply
    reveals it — nothing has to rewrite the container and blow away the badges. */
@@ -783,6 +903,11 @@ select.input {
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 .price-was { font-size: .76rem; color: var(--text-3); text-decoration: line-through; }
+.price-off {
+  align-self: center; padding: 2px 7px; border-radius: 6px;
+  background: var(--hot-soft); color: var(--hot);
+  font-size: .74rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
 .price-save {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .72rem; font-weight: 750; color: var(--good);
@@ -932,10 +1057,48 @@ select.input {
 .alert-status .sdot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .alert-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 
+/* notification history ("Recent matches") */
+.notif-section { margin-top: var(--s-2); }
+.notif-section .section-head { align-items: center; flex-wrap: wrap; }
+.notif-list {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.notif-list > .skel-row { border-radius: 0; border: none; border-bottom: 1px solid var(--border); }
+.notif {
+  display: flex; align-items: flex-start; gap: 12px; width: 100%; min-height: 56px;
+  padding: 13px 15px; text-align: left; background: none; border: none;
+  border-bottom: 1px solid var(--border); color: var(--text);
+  transition: background var(--t-fast);
+}
+.notif:last-child { border-bottom: none; }
+.notif:hover { background: var(--surface-2); }
+.notif:active { background: var(--surface-3); }
+.notif-ico {
+  display: grid; place-items: center; flex: none; width: 34px; height: 34px;
+  border-radius: 50%; background: var(--surface-2); color: var(--text-3);
+}
+.notif-ico svg { width: 16px; height: 16px; }
+.notif.unseen .notif-ico { background: var(--accent-soft); color: var(--accent); }
+.notif-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.notif-title { font-weight: 650; font-size: .9rem; line-height: 1.35; overflow-wrap: anywhere; }
+.notif.unseen .notif-title { font-weight: 750; }
+.notif-body {
+  font-size: .8rem; color: var(--text-2); line-height: 1.45; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.notif-time { flex: none; font-size: .72rem; color: var(--text-3); white-space: nowrap; padding-top: 2px; }
+.notif-empty {
+  display: flex; align-items: flex-start; gap: 10px; padding: 16px 15px;
+  font-size: .85rem; color: var(--text-2); line-height: 1.5;
+}
+.notif-empty svg { width: 17px; height: 17px; flex: none; margin-top: 2px; color: var(--text-3); }
+
 /* ============================================================
    EMPTY / ERROR / SKELETON
    ============================================================ */
 .empty { text-align: center; padding: 56px 18px; color: var(--text-2); }
+.channel-list > .empty, .alert-list > .empty, .alert-list > .alert { grid-column: 1 / -1; }
 .empty .emoji {
   display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 16px;
   border-radius: var(--r-lg); background: var(--surface-2); font-size: 1.9rem;
@@ -993,7 +1156,12 @@ select.input {
   position: relative; aspect-ratio: 16/10; background: var(--surface-2);
   display: grid; place-items: center; overflow: hidden;
 }
-.detail-hero img { width: 100%; height: 100%; object-fit: contain; }
+/* Absolutely pinned: a percentage height inside an aspect-ratio grid box
+   doesn't resolve reliably, and the photo overflowed on phones. */
+.detail-hero img {
+  position: absolute; inset: 0; z-index: 1;   /* above the placeholder layer */
+  width: 100%; height: 100%; object-fit: contain; padding: 12px; background: var(--media-bg);
+}
 .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
 .detail-badges .badge { font-size: .7rem; padding: 5px 10px; border-radius: var(--r-full); }
 .detail-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 12px 0 4px; }
@@ -1075,7 +1243,9 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   letter-spacing: .06em; color: var(--text-3); margin-bottom: 10px;
 }
 .price-chart { position: relative; width: 100%; touch-action: pan-y; }
-.price-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* stroke: none — the global icon rule would otherwise outline every label
+   and the hover rect; chart lines set their own stroke explicitly. */
+.price-chart svg { display: block; width: 100%; height: auto; overflow: visible; stroke: none; }
 .price-chart-empty {
   padding: 20px 14px; text-align: center; color: var(--text-3);
   font-size: .83rem; background: var(--surface-2); border-radius: var(--r-sm); line-height: 1.5;
@@ -1119,6 +1289,94 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
 
 /* ============================================================
+   SORT TABS + VIEW TOGGLE  (one bar, like DesiDime / Amazon)
+   ============================================================ */
+.sortbar { display: flex; align-items: center; gap: 10px; margin: 0 0 var(--s-3); }
+.sorttabs {
+  flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.sorttabs::-webkit-scrollbar { display: none; }
+.sorttabs button {
+  flex: none; min-height: 36px; padding: 7px 14px; border-radius: var(--r-full);
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+  font-size: .82rem; font-weight: 650; white-space: nowrap;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.sorttabs button:hover { color: var(--text); border-color: var(--border-strong); }
+.sorttabs button[aria-selected="true"] {
+  background: var(--text); border-color: var(--text); color: var(--bg);
+}
+.viewtoggle {
+  flex: none; display: flex; padding: 3px; gap: 2px;
+  border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface);
+}
+.viewtoggle button {
+  display: grid; place-items: center; width: 34px; height: 30px; padding: 0;
+  border: none; border-radius: var(--r-full); background: none; color: var(--text-3);
+}
+.viewtoggle button svg { width: 16px; height: 16px; }
+.viewtoggle button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
+
+/* ---------- list view: photo left, details right ---------- */
+.grid.list { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.grid.list .deal {
+  display: grid; grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-rows: 1fr auto; align-items: stretch;
+}
+.grid.list .deal-media { grid-row: 1 / span 2; aspect-ratio: auto; min-height: 112px; }
+.grid.list .deal-body { padding: 11px 12px 6px; }
+.grid.list .deal-title { font-size: .9rem; min-height: 0; }
+.grid.list .deal-actions { padding: 0 12px 11px; }
+.grid.list .deal-actions .btn { min-height: 36px; }
+.grid.list .store-tag { display: none; }
+.grid.list .badges { top: 6px; left: 6px; }
+.grid.list .badge { font-size: .6rem; padding: 2px 6px; }
+
+/* ---------- rail arrows (mouse users can't swipe) ---------- */
+.section-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.rail-nav { display: none; gap: 6px; flex: none; }
+.rail-nav .iconbtn { width: 34px; height: 34px; }
+.rail-nav .iconbtn svg { width: 16px; height: 16px; }
+.rail-nav .iconbtn:disabled { opacity: .35; }
+@media (hover: hover) and (pointer: fine) {
+  .rail-nav { display: flex; }
+  /* Hover lift reads as "clickable" with a mouse; on touch it would stick. */
+  .deal:hover, .railcard:hover { transform: translateY(-2px); }
+}
+
+/* ---------- back to top ---------- */
+.totop {
+  position: fixed; z-index: 80; right: 16px;
+  bottom: calc(var(--bottomnav-h) + var(--safe-bottom) + 16px);
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  box-shadow: var(--shadow-2); animation: rise var(--t-normal) var(--ease);
+}
+.totop svg { width: 18px; height: 18px; }
+
+/* ---------- login preview (desktop only) ---------- */
+.login-preview { display: none; position: relative; margin-top: 28px; height: 150px; }
+.lp-card {
+  position: absolute; left: 0; top: 0; width: 330px;
+  display: flex; gap: 12px; padding: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--shadow-2);
+  z-index: 2; animation: rise var(--t-page) var(--ease) 200ms both;
+}
+.lp-card.lp-back { left: 150px; top: 58px; z-index: 1; opacity: .75; animation-delay: 320ms; }
+.lp-media {
+  position: relative; flex: none; width: 76px; height: 76px; border-radius: var(--r-sm);
+  display: grid; place-items: center; font-size: 2rem; background: var(--media-bg);
+}
+.lp-media .badge { position: absolute; left: 4px; top: 4px; font-size: .5rem; padding: 2px 5px; }
+.lp-body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.lp-title { font-size: .84rem; font-weight: 650; line-height: 1.3; }
+
+/* ---------- deal detail: wide two-column on large screens ---------- */
+.detail-layout { display: block; }
+
+/* ============================================================
    RESPONSIVE — phone first, then up
    ============================================================ */
 
@@ -1152,6 +1410,19 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   .detail-cta { padding-bottom: 12px; }
   .toasts { align-items: flex-end; padding-right: 20px; }
   .toast { width: auto; min-width: 280px; }
+  /* A full-bleed bottom sheet looks stretched on a tablet: centre it instead. */
+  .filters, .dropdown { max-width: 560px; margin-inline: auto; }
+  .grid.list .deal { grid-template-columns: 140px minmax(0, 1fr); }
+  .grid.list .deal-media { min-height: 140px; }
+}
+
+/* Tablets (iPad portrait and up): one-row app bar with the search inline. */
+@media (min-width: 768px) {
+  .appbar-row { flex-wrap: nowrap; gap: 14px; }
+  .appbar-brand { flex: none; max-width: 230px; }
+  .search { order: 0; flex: 1 1 auto; min-width: 0; }
+  .channel-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid.list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* Tablet / desktop: top navigation returns, filters become a sidebar. */
@@ -1162,6 +1433,26 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   .topnav { display: flex; }
   .page { padding-bottom: 60px; }
   .toasts { bottom: 22px; }
+  .totop { bottom: 24px; right: 24px; }
+  .login-preview { display: block; }
+  .grid.list { grid-template-columns: minmax(0, 1fr); }
+  .alert-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters, .dropdown { max-width: none; margin-inline: 0; }
+
+  /* Mouse users can't swipe, so on desktop the category row wraps instead. */
+  .catrow { flex-wrap: wrap; overflow: visible; row-gap: 12px; }
+  .cat { flex: 1 1 76px; width: auto; max-width: 120px; }
+
+  .modal-body.wide:has(.has-hero) { max-width: 980px; }
+  .modal-body.wide .detail-layout.has-hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: start;
+  }
+  .modal-body.wide .detail-hero {
+    position: sticky; top: 72px; aspect-ratio: 1; margin: 16px 0 16px 16px;
+    border-radius: var(--r-md); background: var(--media-bg);
+  }
+  .modal-body.wide .detail-hero img { padding: 20px; }
+  .modal-body.wide .modal-pad { padding: 0 20px 8px; }
 
   .appbar-row { flex-wrap: nowrap; gap: 16px; padding: 11px var(--page-pad); }
   .appbar-brand { flex: none; }
@@ -1181,7 +1472,8 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 
   .layout { display: grid; grid-template-columns: 268px minmax(0, 1fr); gap: 24px; align-items: start; }
   .filters {
-    position: sticky; top: calc(var(--appbar-h) + 20px); left: auto; right: auto; bottom: auto;
+    /* z-index drops from the sheet's 125 so the app bar's search dropdown stays on top. */
+    position: sticky; z-index: 10; top: calc(var(--appbar-h) + 20px); left: auto; right: auto; bottom: auto;
     transform: none; max-height: calc(100dvh - var(--appbar-h) - 44px);
     border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-1);
   }
@@ -1209,13 +1501,24 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 
 @media (min-width: 1280px) {
   .grid { grid-template-columns: repeat(auto-fill, minmax(224px, 1fr)); gap: 16px; }
+  .grid.list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .railcard, .skel-rail { width: 210px; }
+}
+
+/* Large monitors: use the width instead of floating in a 1440px column. */
+@media (min-width: 1600px) {
+  .appbar-row, .page, .footer { max-width: 1680px; }
+  .layout { grid-template-columns: 288px minmax(0, 1fr); gap: 28px; }
+  .grid.list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* Landscape phones: the sheet can't be 88dvh of a 380px-tall viewport. */
 @media (max-height: 480px) and (orientation: landscape) {
   .filters, .modal-body { max-height: 96dvh; }
   .login-view { align-items: start; }
+  .greet-hi { display: none; }
+  .appbar-row { padding-block: 6px; }
+  .bottomnav, .toasts { padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1250,6 +1553,11 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   /* The controls that dismiss a sheet get a full-size target — they are the
      ones people jab at without looking. */
   .filters-close, [data-close], #btn-see-lows { min-height: 44px; }
+  /* Fade the clipped edge so the sort chips read as scrollable. */
+  .sorttabs {
+    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
+    mask-image: linear-gradient(to right, #000 82%, transparent);
+  }
 }
 
 /* ============================================================

@@ -28,3 +28,10 @@ Thumbs.db
 .vscode/
 .idea/
 .claude/
+
+# Expo app (mobile/) — generated/native build output
+mobile/node_modules/
+mobile/android/
+mobile/ios/
+mobile/dist/
+mobile/.expo/

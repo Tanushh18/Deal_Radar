@@ -104,23 +104,81 @@
   /* An open sheet sits at scroll position 0, which is exactly when the Android
      shell arms pull-to-refresh — so a downward drag inside a sheet would reload
      the app. Tell the shell to stand down while any overlay is up. */
+  let lastOverlayOpen = null;
   function syncOverlayState() {
     const open = !$('#modal').classList.contains('hidden')
       || $('#filters').classList.contains('open')
       || !$('#user-drop').classList.contains('hidden');
     document.body.style.overflow = open ? 'hidden' : '';
     try { window.DealRadarNative?.setPullToRefresh(!open); } catch { /* browser, not the shell */ }
+    if (open !== lastOverlayOpen) { lastOverlayOpen = open; postToApp({ type: 'overlay', open }); }
     return open;
   }
 
-  function openModal(html) {
-    $('#modal-body').innerHTML = html;
+  /* ---------------- native app bridge (Expo WebView) ---------------- */
+  function postToApp(message) {
+    try { window.ReactNativeWebView?.postMessage(JSON.stringify(message)); } catch { /* plain browser */ }
+  }
+  const inNativeApp = () => !!window.ReactNativeWebView;
+
+  let modalReturnFocus = null;
+
+  function openModal(html, { wide = false } = {}) {
+    const body = $('#modal-body');
+    const wasOpen = !$('#modal').classList.contains('hidden');
+    if (!wasOpen) modalReturnFocus = document.activeElement;
+    body.innerHTML = html;
+    body.classList.toggle('wide', wide);
+    const heading = body.querySelector('h2');
+    if (heading) { heading.id = 'modal-title'; body.setAttribute('aria-labelledby', 'modal-title'); }
     $('#modal').classList.remove('hidden');
     syncOverlayState();
+    // Re-renders (loading → loaded) keep scroll and focus where they are.
+    if (!wasOpen) { body.scrollTop = 0; body.focus({ preventScroll: true }); }
   }
   function closeModal() {
+    if ($('#modal').classList.contains('hidden')) return;
     $('#modal').classList.add('hidden');
     syncOverlayState();
+    if (modalReturnFocus && document.contains(modalReturnFocus)) modalReturnFocus.focus({ preventScroll: true });
+    modalReturnFocus = null;
+  }
+
+  /* Keeps Tab inside the open dialog. */
+  $('#modal').addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const focusable = $$('a[href], button:not([disabled]), input, select, summary, [tabindex]:not([tabindex="-1"])', $('#modal-body'))
+      .filter((el) => el.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === $('#modal-body'))) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault(); first.focus();
+    }
+  });
+
+  /** Small confirm sheet; resolves true only on the confirm button. */
+  function confirmDialog(title, message, confirmLabel = 'Delete') {
+    return new Promise((resolve) => {
+      openModal(`
+        <div class="modal-head"><h2>${escapeHtml(title)}</h2></div>
+        <div class="modal-pad" style="padding-top:14px">
+          <p class="muted">${escapeHtml(message)}</p>
+          <div class="empty-actions" style="justify-content:flex-end;margin:20px 0 4px">
+            <button class="btn btn-soft" data-confirm="0">Cancel</button>
+            <button class="btn btn-danger" data-confirm="1">${escapeHtml(confirmLabel)}</button>
+          </div>
+        </div>`);
+      const done = (ok) => { observer.disconnect(); closeModal(); resolve(ok); };
+      $$('[data-confirm]', $('#modal-body')).forEach((b) => b.addEventListener('click', () => done(b.dataset.confirm === '1')));
+      $('[data-confirm="0"]', $('#modal-body')).focus();
+      // Backdrop / Escape close the modal without a choice → treat as cancel.
+      const observer = new MutationObserver(() => {
+        if ($('#modal').classList.contains('hidden')) { observer.disconnect(); resolve(false); }
+      });
+      observer.observe($('#modal'), { attributes: true, attributeFilter: ['class'] });
+    });
   }
 
   /* The sticky results toolbar has to sit exactly under the app bar, whose
@@ -235,6 +293,15 @@
     $('#greeting').textContent = name ? `${greeting()}, ${name} 👋` : `${greeting()} 👋`;
 
     measureChrome();
+    postToApp({ type: 'signed-in', user: { first_name: user.first_name || '' } });
+    registerPushToken();
+
+    const link = takeDeepLinks();
+    if (link.q) {
+      $('#search-input').value = link.q;
+      $('#search-clear').classList.remove('hidden');
+      state.filters.q = link.q;
+    }
 
     await loadCategories();
     const mine = await api('/api/channels').catch(() => ({ channels: [] }));
@@ -254,7 +321,85 @@
     }
     loadStats();
     loadAlertCount();
+    checkUnseenNotifications();
+    if (link.deal) showDealDetail(link.deal);
   }
+
+  /* ---------------- deep links: /?deal=<id>, /?q=<text> ---------------- */
+  const pendingLinks = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return { deal: params.get('deal') || '', q: (params.get('q') || '').trim() };
+    } catch { return { deal: '', q: '' }; }
+  })();
+
+  function takeDeepLinks() {
+    const link = { ...pendingLinks };
+    pendingLinks.deal = ''; pendingLinks.q = '';
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('deal') || url.searchParams.has('q')) {
+        url.searchParams.delete('deal');
+        url.searchParams.delete('q');
+        history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+      }
+    } catch { /* ancient browser: a stale query string is harmless */ }
+    return link;
+  }
+
+  /* ---------------- push tokens handed over by the native app ---------------- */
+  const PUSH_KEY = 'dr-push-token';
+  let pushRegisteredKey = null;
+
+  function storedPushToken() {
+    try { return JSON.parse(localStorage.getItem(PUSH_KEY) || 'null'); } catch { return null; }
+  }
+
+  async function registerPushToken() {
+    const saved = storedPushToken();
+    if (!saved || !saved.token || !state.user) return;
+    const key = `${saved.token}|${saved.platform}`;
+    if (pushRegisteredKey === key) return;
+    pushRegisteredKey = key;
+    try {
+      await post('/api/push/register', { token: saved.token, platform: saved.platform || 'unknown' });
+    } catch {
+      pushRegisteredKey = null;   // retried on the next sign-in or token hand-off
+    }
+  }
+
+  async function unregisterPushToken() {
+    const saved = storedPushToken();
+    if (!saved || !saved.token) return;
+    await post('/api/push/unregister', { token: saved.token }).catch(() => {});
+    pushRegisteredKey = null;
+  }
+
+  window.DealRadarWeb = {
+    onPushToken(token, platform) {
+      if (!token) return;
+      try { localStorage.setItem(PUSH_KEY, JSON.stringify({ token: String(token), platform: String(platform || 'unknown') })); }
+      catch { /* private mode — still register for this session */ }
+      if (!storedPushToken()) {
+        if (state.user) post('/api/push/register', { token: String(token), platform: String(platform || 'unknown') }).catch(() => {});
+        return;
+      }
+      registerPushToken();
+    },
+    openDeal(id) {
+      if (!id) return;
+      if (!state.user) { pendingLinks.deal = String(id); return; }
+      showDealDetail(String(id));
+    },
+    refresh() {
+      if (!state.user) return;
+      if (state.page === 'deals') { refreshDeals(true); loadRails(); loadStats(); }
+      else if (state.page === 'alerts') { loadAlerts(); loadNotifications(); }
+      else if (state.page === 'channels') loadAvailableChannels();
+      checkUnseenNotifications();
+    },
+  };
+  postToApp({ type: 'web-ready' });
 
   /* ============================================================
      NAVIGATION
@@ -269,7 +414,7 @@
     closeFilters();
     closeUserMenu();
     closeSuggest();
-    if (page === 'alerts') loadAlerts();
+    if (page === 'alerts') { loadAlerts(); loadNotifications(); }
     if (page === 'channels' && !state.availableChannels.length) loadAvailableChannels();
   }
 
@@ -306,7 +451,16 @@
     if (meta) meta.setAttribute('content', theme === 'dark' ? '#080b12' : '#f7f8fa');
     document.querySelector('meta[name="color-scheme"]')
       ?.setAttribute('content', theme === 'dark' ? 'dark light' : 'light dark');
+    const label = $('#theme-label');
+    if (label) label.textContent = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    $('#theme-icon')?.setAttribute('href', theme === 'dark' ? '#i-sun' : '#i-moon');
   }
+
+  const savedTheme = () => { try { return localStorage.getItem('dr-theme'); } catch { return null; } };
+  // Without an explicit choice the app tracks the OS, including live changes.
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', (e) => {
+    if (!savedTheme()) applyTheme(e.matches ? 'light' : 'dark');
+  });
 
   /* Delegated, not bound per item: the Android shell injects its own
      "App settings" entry into this menu after load, and it should dismiss the
@@ -318,6 +472,9 @@
     closeUserMenu();
     if (!action) return;             // injected by the native shell — it handles itself
     if (action === 'logout') {
+      postToApp({ type: 'signed-out' });
+      // Must precede the logout call: unregistering needs the session.
+      await unregisterPushToken();
       await post('/api/auth/logout').catch(() => {});
       window.location.reload();
     } else if (action === 'theme') {
@@ -588,6 +745,7 @@
   async function refreshDeals(reset = false) {
     updateFiltersBadge();
     updateGridHeading();
+    syncSortTabs();
     if (!reset) {
       // Pagination ("Load more"): duplicate clicks should be dropped, not raced.
       if (state.loading) return;
@@ -605,6 +763,7 @@
       $('#deal-grid').innerHTML = skeletons();
       $('#empty-state').classList.add('hidden');
       $('#btn-more').classList.add('hidden');
+      if (isBrowseMode()) $('#result-cats').classList.add('hidden');
       toggleRails();
     }
 
@@ -612,6 +771,10 @@
       const res = await api('/api/deals?' + buildQuery(), signal ? { signal } : {});
       state.total = res.total;
       renderDeals(res.results, reset);
+      if (reset) {
+        renderResultCats(res.categories);
+        if (isBrowseMode()) maybeLoadCategoryRails(res);
+      }
 
       const summary = $('#results-summary');
       if (res.total) {
@@ -625,12 +788,22 @@
       $('#filter-count').textContent = res.total
         ? `${res.total.toLocaleString()} deal${res.total === 1 ? '' : 's'} match`
         : 'No deals match';
+      $('#btn-filters-apply').textContent = res.total
+        ? `Show ${res.total.toLocaleString()} deal${res.total === 1 ? '' : 's'}`
+        : 'Show deals';
 
       $('#btn-more').classList.toggle('hidden', state.offset + res.count >= res.total);
       if (!res.total) showEmpty();
     } catch (err) {
       if (err.name === 'AbortError') return; // superseded by a newer search — ignore
       if (err.status === 401) { window.location.reload(); return; }
+      if (!reset) {
+        // A failed page must not wipe the deals already on screen, and the
+        // next attempt has to ask for the same page again.
+        state.offset = Math.max(0, state.offset - state.limit);
+        toast(navigator.onLine ? 'Couldn’t load more deals — try again.' : 'You’re offline.', 'err');
+        return;
+      }
       showError(err);
     } finally {
       if (!reset) state.loading = false;
@@ -662,6 +835,47 @@
     }
     head.classList.remove('hidden');
   }
+
+  function applyCategory(name) {
+    state.filters.category = name;
+    state.filters.subcategory = '';
+    renderCategoryChips();
+    renderSubcategoryFilter();
+    refreshDeals(true);
+  }
+
+  /* Categories of the current result set, counted by the backend with the
+     category filter ignored — so "All" and every sibling stay reachable. */
+  function renderResultCats(categories) {
+    const box = $('#result-cats');
+    const active = state.filters.category;
+    const list = (Array.isArray(categories) ? categories : []).filter((c) => c && c.name && c.count > 0);
+    if (active && !list.some((c) => c.name === active)) list.push({ name: active, count: 0 });
+    if (isBrowseMode() || !list.length || (list.length < 2 && !active)) {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+      return;
+    }
+    const total = list.reduce((sum, c) => sum + c.count, 0);
+    const chips = [{ name: '', label: 'All', count: total }]
+      .concat(list.map((c) => ({ name: c.name, label: c.name, count: c.count })));
+    const scroll = box.scrollLeft;
+    box.innerHTML = chips.map((c) => `
+      <button class="rcat ${active === c.name ? 'active' : ''}" role="tab"
+              aria-selected="${active === c.name}" data-rcat="${escapeHtml(c.name)}">
+        ${c.name ? `<span class="rcat-icon" aria-hidden="true">${CATEGORY_ICON[c.name] || '🏷️'}</span>` : ''}
+        <span class="rcat-label">${escapeHtml(c.label)}</span>
+        <span class="rcat-count">${num(c.count)}</span>
+      </button>`).join('');
+    box.classList.remove('hidden');
+    box.scrollLeft = scroll;
+  }
+
+  $('#result-cats').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-rcat]');
+    if (!chip || chip.dataset.rcat === state.filters.category) return;
+    applyCategory(chip.dataset.rcat);
+  });
 
   function showEmpty() {
     const el = $('#empty-state');
@@ -725,9 +939,12 @@
     return `<div class="placeholder" aria-hidden="true">🛍️</div>${img}${extra}`;
   }
 
+  // Discount lives in the price row (like every major deal site); image
+  // badges are reserved for status so they never cover the product.
+  const priceOff = (deal) => (deal.discount_pct >= 5 ? `<span class="price-off">-${deal.discount_pct}%</span>` : '');
+
   function dealBadges(deal) {
     const badges = [];
-    if (deal.discount_pct >= 10) badges.push(`<span class="badge badge-off">-${deal.discount_pct}%</span>`);
     if (deal.is_lowest) badges.push('<span class="badge badge-low">🟢 LOWEST EVER</span>');
     else if (deal.score >= 80) badges.push('<span class="badge badge-hot">🏆 GREAT DEAL</span>');
     else if (isFresh(deal)) badges.push('<span class="badge badge-new">🆕 NEW</span>');
@@ -746,8 +963,9 @@
           ${dealMedia(deal, `<div class="badges">${badges.join('')}</div>${store}`)}
         </div>
         <div class="deal-body">
-          <div class="deal-title" title="${escapeHtml(deal.title)}">${escapeHtml(deal.title)}</div>
+          <div class="deal-title" title="${escapeHtml(deal.title)}">${highlight(deal.title, state.filters.q)}</div>
           <div class="deal-price">
+            ${priceOff(deal)}
             <span class="price-now">${money(deal.price)}</span>
             ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
           </div>
@@ -859,10 +1077,12 @@
           <h2>${escapeHtml(deal.title)}</h2>
           <button class="btn btn-soft btn-xs" data-close>Close</button>
         </div>
+        <div class="detail-layout ${deal.image_url ? 'has-hero' : ''}">
         ${deal.image_url ? `<div class="detail-hero">${dealMedia(deal)}</div>` : ''}
         <div class="modal-pad">
           ${badges.length ? `<div class="detail-badges">${badges.join('')}</div>` : ''}
           <div class="detail-price">
+            ${priceOff(deal)}
             <span class="price-now">${money(deal.price)}</span>
             ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
           </div>
@@ -903,13 +1123,14 @@
             <pre class="rawpost">${escapeHtml(deal.raw_text || '')}</pre>
           </details>
         </div>
+        </div>
         ${deal.url ? `
           <div class="detail-cta">
             <a class="btn btn-primary btn-block" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">
               Open on ${escapeHtml(storeName(deal) || 'store')} ${icon('external', 'ico')}
             </a>
           </div>` : ''}
-      `);
+      `, { wide: true });
       const chartHost = document.getElementById(`price-chart-${id}`);
       if (chartHost) renderPriceChart(chartHost, fullHistory.points || []);
     } catch (err) {
@@ -1086,15 +1307,14 @@
      HOME RAILS  (only shown while browsing — a search replaces them)
      ============================================================ */
   function railCard(deal, note) {
-    const badges = [];
-    if (deal.discount_pct >= 10) badges.push(`<span class="badge badge-off">-${deal.discount_pct}%</span>`);
     return `
       <article class="railcard" data-detail="${escapeHtml(deal.id)}" role="button" tabindex="0"
                aria-label="${escapeHtml(deal.title)}">
-        <div class="rail-media">${dealMedia(deal, `<div class="badges">${badges.join('')}</div>`)}</div>
+        <div class="rail-media">${dealMedia(deal)}</div>
         <div class="rail-body">
-          <div class="rail-title">${escapeHtml(deal.title)}</div>
+          <div class="rail-title">${highlight(deal.title, state.filters.q)}</div>
           <div class="rail-price">
+            ${priceOff(deal)}
             <span class="price-now">${money(deal.price)}</span>
             ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
           </div>
@@ -1110,12 +1330,82 @@
       // A rail with no data stays hidden regardless — `has-data` is set by its loader.
       el.classList.toggle('hidden', !show || !el.dataset.hasData);
     });
+    const cats = $('#cat-rails');
+    cats.classList.toggle('hidden', !show || !cats.children.length);
   }
 
   async function loadRails() {
     loadTrending();
     loadLowest();
+    catRails.stale = true;
   }
+
+  /* ---------------- category rails (browse mode, below the home rails) ---------------- */
+  const CAT_RAILS_MAX = 4;
+  const catRails = { stale: true, gen: 0 };
+
+  function maybeLoadCategoryRails(res) {
+    if (!catRails.stale) return;
+    catRails.stale = false;
+    let cats = res.categories;
+    if (!Array.isArray(cats)) {
+      // Older backend without category counts: rank by what the first page holds.
+      const counts = {};
+      (res.results || []).forEach((d) => { if (d.category) counts[d.category] = (counts[d.category] || 0) + 1; });
+      cats = Object.entries(counts).map(([name, count]) => ({ name, count }));
+    }
+    const top = cats
+      .filter((c) => c && c.name && c.name !== 'Other' && c.count >= 2)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, CAT_RAILS_MAX);
+    const gen = ++catRails.gen;
+    if (!top.length) { $('#cat-rails').innerHTML = ''; toggleRails(); return; }
+    // Deferred so the main grid paints and settles first.
+    (window.requestIdleCallback || ((fn) => setTimeout(fn, 250)))(() => loadCategoryRails(top, gen));
+  }
+
+  async function loadCategoryRails(top, gen) {
+    const loaded = await Promise.all(top.map((c) => api('/api/deals?' + buildQuery({
+      q: '', category: c.name, subcategory: '', store: '', brand: '',
+      max_price: null, min_discount: 0, only_lowest: false,
+      sort: 'best', limit: 12, offset: 0,
+    })).then((res) => ({ cat: c, res })).catch(() => null)));
+    if (gen !== catRails.gen) return;
+
+    const host = $('#cat-rails');
+    const rails = loaded.filter((x) => x && x.res.results && x.res.results.length);
+    host.innerHTML = rails.map(({ cat, res }, i) => `
+      <section class="rail-section cat-rail">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">${CATEGORY_ICON[cat.name] || '🏷️'} ${escapeHtml(cat.name)}</h3>
+            <div class="section-sub">${num(res.total)} live deal${res.total === 1 ? '' : 's'}</div>
+          </div>
+          <div class="section-actions">
+            <button class="btn btn-ghost btn-xs" data-see-cat="${escapeHtml(cat.name)}">See all</button>
+            <div class="rail-nav" data-rail="#cat-rail-${i}">
+              <button class="iconbtn" data-dir="-1" aria-label="Scroll ${escapeHtml(cat.name)} left">${icon('chev-left')}</button>
+              <button class="iconbtn" data-dir="1" aria-label="Scroll ${escapeHtml(cat.name)} right">${icon('chev-right')}</button>
+            </div>
+          </div>
+        </div>
+        <div id="cat-rail-${i}" class="rail">
+          ${res.results.map((d) => railCard(d, d.saving
+            ? `<span class="rail-note">${icon('down')} Save ${money(d.saving)}</span>`
+            : `<span class="rail-note muted-note">${icon('clock')} ${timeAgo(d.posted_at)}</span>`)).join('')}
+        </div>
+      </section>`).join('');
+    $$('.rail-nav', host).forEach(bindRailNav);
+    $$('.rail', host).forEach(bindDetailTriggers);
+    toggleRails();
+  }
+
+  $('#cat-rails').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-see-cat]');
+    if (!btn) return;
+    applyCategory(btn.dataset.seeCat);
+    $('#grid-head').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+  });
 
   async function loadTrending() {
     const wrap = $('#trending-wrap');
@@ -1323,43 +1613,239 @@
     } catch { /* private mode */ }
   }
 
-  function renderSuggest() {
-    const panel = $('#suggest');
-    const typed = $('#search-input').value.trim().toLowerCase();
-    const recent = recents().filter((r) => !typed || r.toLowerCase().includes(typed));
-    // "Popular" is not invented: these are the brands the catalog actually has
-    // the most live deals for, straight from /api/deals/facets.
-    const brands = (state.facets.brands || [])
-      .filter((b) => !typed || b.key.toLowerCase().includes(typed))
+  /* ---------------- query-term highlighting ---------------- */
+  const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  function queryTerms(q) {
+    const seen = new Set();
+    return String(q || '').toLowerCase().split(/[^\p{L}\p{N}]+/u)
+      .filter((t) => t.length >= 2 && !seen.has(t) && seen.add(t))
+      .sort((a, b) => b.length - a.length)
       .slice(0, 8);
-
-    if (!recent.length && !brands.length) { closeSuggest(); return; }
-
-    panel.innerHTML = `
-      ${recent.length ? `
-        <div class="suggest-head">Recent searches <button type="button" id="clear-recents">Clear</button></div>
-        ${recent.map((r) => `<button type="button" class="suggest-item" data-q="${escapeHtml(r)}">
-            ${icon('clock')}<span>${escapeHtml(r)}</span></button>`).join('')}` : ''}
-      ${brands.length ? `
-        <div class="suggest-head">Most deals right now</div>
-        ${brands.map((b) => `<button type="button" class="suggest-item" data-q="${escapeHtml(b.key)}">
-            ${icon('search')}<span>${escapeHtml(b.key)}</span><span class="s-count">${b.count}</span></button>`).join('')}` : ''}`;
-
-    panel.classList.remove('hidden');
-    $$('.suggest-item', panel).forEach((btn) => btn.addEventListener('mousedown', (e) => {
-      e.preventDefault();          // beat the blur, so the click always lands
-      runSearch(btn.dataset.q);
-    }));
-    $('#clear-recents')?.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      try { localStorage.removeItem(RECENTS_KEY); } catch { /* private mode */ }
-      renderSuggest();
-    });
   }
 
-  const closeSuggest = () => $('#suggest').classList.add('hidden');
+  /* Splits the raw text on the terms and escapes every piece on its own, so a
+     term can never match inside an entity like "&amp;" and no markup leaks in. */
+  function highlight(text, q) {
+    const raw = String(text ?? '');
+    const terms = queryTerms(q);
+    if (!terms.length) return escapeHtml(raw);
+    const re = new RegExp(`(${terms.map(escapeRegExp).join('|')})`, 'giu');
+    return raw.split(re)
+      .map((part, i) => (i % 2 ? `<mark>${escapeHtml(part)}</mark>` : escapeHtml(part)))
+      .join('');
+  }
+
+  /* ---------------- instant-search dropdown (combobox) ---------------- */
+  const suggest = { data: null, active: -1, timer: 0, abort: null, endpoint: true };
+  let suggestOptSeq = 0;
+
+  const suggestOption = (kind, value, inner, cls = '') => `
+    <div class="suggest-item ${cls}" role="option" id="sg-opt-${suggestOptSeq++}" aria-selected="false"
+         data-kind="${kind}" data-value="${escapeHtml(value)}">${inner}</div>`;
+
+  const suggestGroup = (label, body, extraHead = '') => `
+    <div role="group" aria-label="${escapeHtml(label)}">
+      <div class="suggest-head"><span aria-hidden="true">${escapeHtml(label)}</span>${extraHead}</div>
+      ${body}
+    </div>`;
+
+  function suggestIdleHtml() {
+    const recent = recents();
+    // "Popular" is not invented: these are the brands the catalog actually has
+    // the most live deals for, straight from /api/deals/facets.
+    const brands = (state.facets.brands || []).slice(0, 6);
+    return [
+      recent.length ? suggestGroup('Recent searches',
+        recent.map((r) => suggestOption('q', r, `${icon('clock')}<span class="s-text">${escapeHtml(r)}</span>`)).join(''),
+        '<button type="button" id="clear-recents">Clear</button>') : '',
+      brands.length ? suggestGroup('Most deals right now',
+        brands.map((b) => suggestOption('q', b.key,
+          `${icon('trend')}<span class="s-text">${escapeHtml(titleCase(b.key))}</span><span class="s-count">${num(b.count)}</span>`)).join('')) : '',
+    ].join('');
+  }
+
+  function suggestDealHtml(deal, typed) {
+    const thumb = deal.image_url
+      ? `<img src="${escapeHtml(deal.image_url)}" alt="" loading="lazy" decoding="async" onerror="this.remove()" />`
+      : '';
+    return suggestOption('deal', deal.id, `
+      <span class="s-thumb" aria-hidden="true"><span>🛍️</span>${thumb}</span>
+      <span class="s-deal">
+        <span class="s-title">${highlight(deal.title, typed)}</span>
+        <span class="s-price">
+          <span class="price-now">${money(deal.price)}</span>
+          ${priceOff(deal)}
+          ${storeName(deal) ? `<span class="s-store">${escapeHtml(storeName(deal))}</span>` : ''}
+        </span>
+      </span>`, 's-dealrow');
+  }
+
+  function suggestTypedHtml(typed) {
+    const fresh = suggest.data && suggest.data.query === typed;
+    const d = suggest.data || {};
+    const lower = typed.toLowerCase();
+    const recent = recents().filter((r) => r.toLowerCase() !== lower && r.toLowerCase().includes(lower)).slice(0, 3);
+    const deals = (d.deals || []).slice(0, 6);
+    const facet = (kind, list, ico) => (list || []).slice(0, 4).map((x) => {
+      const name = kind === 'category' ? x.name : x.key;
+      const label = kind === 'category' ? name : titleCase(name);
+      const lead = kind === 'category'
+        ? `<span class="s-emoji" aria-hidden="true">${CATEGORY_ICON[name] || '🏷️'}</span>` : icon(ico);
+      return suggestOption(kind, name,
+        `${lead}<span class="s-text">${highlight(label, typed)}</span><span class="s-count">${num(x.count)}</span>`);
+    }).join('');
+
+    const categories = facet('category', d.categories, 'tag');
+    const brands = facet('brand', d.brands, 'tag');
+    const stores = facet('store', d.stores, 'external');
+    const empty = fresh && !deals.length && !categories && !brands && !stores;
+
+    return [
+      suggestOption('q', typed,
+        `${icon('search')}<span class="s-text">Search for “<b>${escapeHtml(typed)}</b>”</span><kbd class="s-kbd">Enter</kbd>`,
+        's-query'),
+      recent.map((r) => suggestOption('q', r, `${icon('clock')}<span class="s-text">${highlight(r, typed)}</span>`)).join(''),
+      deals.length ? suggestGroup('Deals', deals.map((deal) => suggestDealHtml(deal, typed)).join('')) : '',
+      categories ? suggestGroup('Categories', categories) : '',
+      brands ? suggestGroup('Brands', brands) : '',
+      stores ? suggestGroup('Stores', stores) : '',
+      !fresh ? '<div class="suggest-status" aria-hidden="true"><span class="s-spin"></span>Finding deals…</div>' : '',
+      empty ? '<div class="suggest-status">No instant matches — press Enter to search every deal.</div>' : '',
+    ].join('');
+  }
+
+  function renderSuggest() {
+    const panel = $('#suggest');
+    const input = $('#search-input');
+    const typed = input.value.trim();
+    const html = typed ? suggestTypedHtml(typed) : suggestIdleHtml();
+    if (!html.trim()) { closeSuggest(); return; }
+    panel.innerHTML = html;
+    panel.classList.toggle('stale', !!typed && !(suggest.data && suggest.data.query === typed));
+    suggest.active = -1;
+    input.removeAttribute('aria-activedescendant');
+    panel.classList.remove('hidden');
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeSuggest() {
+    const input = $('#search-input');
+    $('#suggest').classList.add('hidden');
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+    suggest.active = -1;
+  }
+
+  const suggestOptions = () => $$('#suggest [role="option"]');
+
+  function setActiveOption(index) {
+    const options = suggestOptions();
+    const input = $('#search-input');
+    suggest.active = index;
+    options.forEach((o, i) => {
+      o.classList.toggle('active', i === index);
+      o.setAttribute('aria-selected', String(i === index));
+    });
+    const current = options[index];
+    if (current) {
+      input.setAttribute('aria-activedescendant', current.id);
+      current.scrollIntoView({ block: 'nearest' });
+    } else {
+      input.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  function moveActive(step) {
+    const count = suggestOptions().length;
+    if (!count) return;
+    // -1 is "back in the text box", so arrowing past either end returns there.
+    let next = suggest.active + step;
+    if (next >= count) next = -1;
+    else if (next < -1) next = count - 1;
+    setActiveOption(next);
+  }
+
+  function activateOption(el) {
+    const { kind, value } = el.dataset;
+    const typed = $('#search-input').value.trim();
+    if (kind === 'q') { runSearch(value); return; }
+    if (kind === 'deal') {
+      if (typed) pushRecent(typed);
+      closeSuggest();
+      $('#search-input').blur();
+      showDealDetail(value);
+      return;
+    }
+    const f = state.filters;
+    if (kind === 'category') {
+      f.category = value;
+      f.subcategory = '';
+      renderCategoryChips();
+      renderSubcategoryFilter();
+    } else if (kind === 'brand' || kind === 'store') {
+      f[kind] = value;
+      renderFacet('#f-stores', state.facets.stores, 'store');
+      renderFacet('#f-brands', state.facets.brands, 'brand');
+    }
+    // Typing "boat" and picking the boAt brand means "boAt deals", not
+    // "boAt deals that also say boat" — drop the text when it just named the facet.
+    const a = value.toLowerCase(), b = typed.toLowerCase();
+    runSearch(!b || a.includes(b) || b.includes(a) ? '' : typed);
+  }
+
+  async function suggestSource(q, signal) {
+    if (suggest.endpoint) {
+      try {
+        return await api('/api/deals/suggest?' + new URLSearchParams({ q, limit: 6 }), { signal });
+      } catch (err) {
+        if (err.name === 'AbortError' || (err.status !== 404 && err.status !== 405)) throw err;
+        suggest.endpoint = false;   // backend without /suggest — build it from /api/deals instead
+      }
+    }
+    const res = await api('/api/deals?' + buildQuery({
+      q, category: '', subcategory: '', store: '', brand: '',
+      max_price: null, min_discount: 0, only_lowest: false,
+      sort: 'relevance', limit: 6, offset: 0,
+    }), { signal });
+    const lower = q.toLowerCase();
+    const named = (list) => (list || []).filter((x) => x.key.toLowerCase().includes(lower)).slice(0, 4);
+    return {
+      deals: res.results || [],
+      categories: (res.categories || []).slice(0, 4),
+      brands: named(state.facets.brands),
+      stores: named(state.facets.stores),
+    };
+  }
+
+  async function fetchSuggest(q) {
+    suggest.abort?.abort();
+    const controller = new AbortController();
+    suggest.abort = controller;
+    let data;
+    try {
+      data = await suggestSource(q, controller.signal);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      if (err.status === 401) { window.location.reload(); return; }
+      data = { deals: [], categories: [], brands: [], stores: [] };
+    }
+    if (controller.signal.aborted) return;
+    suggest.data = { ...data, query: q };
+    const input = $('#search-input');
+    if (document.activeElement === input && input.value.trim() === q) renderSuggest();
+  }
+
+  function scheduleSuggest(value) {
+    clearTimeout(suggest.timer);
+    if (!value) { suggest.abort?.abort(); return; }
+    if (suggest.data && suggest.data.query === value) return;
+    suggest.timer = setTimeout(() => fetchSuggest(value), 180);
+  }
 
   function runSearch(q) {
+    clearTimeout(suggest.timer);
+    suggest.abort?.abort();
     $('#search-input').value = q;
     state.filters.q = q;
     pushRecent(q);
@@ -1374,25 +1860,59 @@
     runSearch($('#search-input').value.trim());
   });
 
-  $('#search-input').addEventListener('focus', renderSuggest);
-  $('#search-input').addEventListener('blur', () => setTimeout(closeSuggest, 120));
+  $('#search-input').addEventListener('focus', () => {
+    renderSuggest();
+    scheduleSuggest($('#search-input').value.trim());
+  });
+  $('#search-input').addEventListener('blur', () => setTimeout(() => {
+    if (document.activeElement !== $('#search-input')) closeSuggest();
+  }, 120));
 
-  let searchTimer;
   $('#search-input').addEventListener('input', (e) => {
-    clearTimeout(searchTimer);
     const value = e.target.value.trim();
     $('#search-clear').classList.toggle('hidden', !value);
     renderSuggest();
-    searchTimer = setTimeout(() => {
-      if (value === state.filters.q) return;
-      state.filters.q = value;
+    scheduleSuggest(value);
+    // Emptying the box by hand is a "clear": the grid goes back to browsing.
+    if (!value && state.filters.q) {
+      state.filters.q = '';
       refreshDeals(true);
-    }, 420);
+    }
+  });
+
+  $('#search-input').addEventListener('keydown', (e) => {
+    if (e.isComposing) return;
+    const open = !$('#suggest').classList.contains('hidden');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!open) { renderSuggest(); scheduleSuggest(e.target.value.trim()); return; }
+      moveActive(e.key === 'ArrowDown' ? 1 : -1);
+    } else if (e.key === 'Enter' && open && suggest.active >= 0) {
+      const option = suggestOptions()[suggest.active];
+      if (option) { e.preventDefault(); activateOption(option); }
+    } else if (e.key === 'Escape' && open) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeSuggest();
+    }
+  });
+
+  // Keeps focus in the input so a tap on the panel never triggers the blur-close.
+  $('#suggest').addEventListener('mousedown', (e) => e.preventDefault());
+  $('#suggest').addEventListener('click', (e) => {
+    if (e.target.closest('#clear-recents')) {
+      try { localStorage.removeItem(RECENTS_KEY); } catch { /* private mode */ }
+      renderSuggest();
+      return;
+    }
+    const option = e.target.closest('[role="option"]');
+    if (option) activateOption(option);
   });
 
   $('#search-clear').addEventListener('click', () => {
     $('#search-input').value = '';
     state.filters.q = '';
+    suggest.abort?.abort();
     $('#search-clear').classList.add('hidden');
     closeSuggest();
     refreshDeals(true);
@@ -1404,6 +1924,61 @@
     state.filters.sort = e.target.value;
     refreshDeals(true);
   });
+  /* ---------------- sort tabs (mirror the sort <select>) ---------------- */
+  function syncSortTabs() {
+    $$('#sort-tabs [data-sort]').forEach((tab) => {
+      tab.setAttribute('aria-selected', String(tab.dataset.sort === state.filters.sort));
+    });
+  }
+  $$('#sort-tabs [data-sort]').forEach((tab) => tab.addEventListener('click', () => {
+    if (state.filters.sort === tab.dataset.sort) return;
+    state.filters.sort = tab.dataset.sort;
+    $('#f-sort').value = tab.dataset.sort;
+    refreshDeals(true);
+    tab.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', inline: 'nearest', block: 'nearest' });
+  }));
+
+  /* ---------------- grid / list view ---------------- */
+  function setView(view) {
+    $('#deal-grid').classList.toggle('list', view === 'list');
+    $$('.viewtoggle [data-view]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+    try { localStorage.setItem('dr-view', view); } catch { /* private mode */ }
+  }
+  $$('.viewtoggle [data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+  setView((() => { try { return localStorage.getItem('dr-view'); } catch { return null; } })() === 'list' ? 'list' : 'grid');
+
+  /* ---------------- rail arrows ---------------- */
+  function updateRailNav(nav) {
+    const rail = $(nav.dataset.rail);
+    if (!rail) return;
+    const max = rail.scrollWidth - rail.clientWidth - 2;
+    $('[data-dir="-1"]', nav).disabled = rail.scrollLeft <= 2;
+    $('[data-dir="1"]', nav).disabled = rail.scrollLeft >= max;
+  }
+  function bindRailNav(nav) {
+    const rail = $(nav.dataset.rail);
+    if (!rail || nav.dataset.bound) return;
+    nav.dataset.bound = '1';
+    $$('[data-dir]', nav).forEach((btn) => btn.addEventListener('click', () => {
+      rail.scrollBy({ left: Number(btn.dataset.dir) * rail.clientWidth * 0.85, behavior: reduceMotion() ? 'auto' : 'smooth' });
+    }));
+    rail.addEventListener('scroll', () => updateRailNav(nav), { passive: true });
+    new ResizeObserver(() => updateRailNav(nav)).observe(rail);
+    new MutationObserver(() => updateRailNav(nav)).observe(rail, { childList: true });
+    updateRailNav(nav);
+  }
+  $$('.rail-nav').forEach(bindRailNav);
+
+  /* ---------------- infinite scroll (the button stays as a fallback) ---------------- */
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      const btn = $('#btn-more');
+      if (entries.some((e) => e.isIntersecting) && !btn.classList.contains('hidden') && !state.loading) btn.click();
+    }, { rootMargin: '600px 0px' }).observe($('#btn-more'));
+  }
+
+  $('#btn-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' }));
+
   $('#f-subcategory').addEventListener('change', (e) => {
     state.filters.subcategory = e.target.value;
     refreshDeals(true);
@@ -1654,7 +2229,13 @@
       }).join('');
 
       $$('[data-del]', list).forEach((btn) => btn.addEventListener('click', async () => {
-        await del(`/api/watchlists/${btn.dataset.del}`).catch((err) => toast(err.message, 'err'));
+        const query = btn.closest('.alert-row')?.querySelector('.alert-q')?.textContent || 'this alert';
+        const ok = await confirmDialog('Delete alert?', `You’ll stop getting Telegram messages for “${query}”.`);
+        if (!ok) return;
+        try {
+          await del(`/api/watchlists/${btn.dataset.del}`);
+          toast('Alert deleted.', 'ok');
+        } catch (err) { toast(err.message, 'err'); }
         loadAlerts();
       }));
       $$('[data-test]', list).forEach((btn) => btn.addEventListener('click', async () => {
@@ -1665,15 +2246,26 @@
         } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
       }));
       $$('[data-toggle]', list).forEach((box) => box.addEventListener('change', async () => {
-        const row = box.closest('.alert-row');
-        const status = row?.querySelector('.alert-status');
-        if (status) {
-          status.classList.toggle('off', !box.checked);
-          status.innerHTML = `<span class="sdot"></span>${box.checked ? 'Active' : 'Paused'}`;
-        }
-        setAlertCount(state.alertCount + (box.checked ? 1 : -1));
-        await api(`/api/watchlists/${box.dataset.toggle}?notify=${box.checked}`, { method: 'PATCH' })
-          .catch((err) => toast(err.message, 'err'));
+        const status = box.closest('.alert-row')?.querySelector('.alert-status');
+        const paint = (on) => {
+          if (status) {
+            status.classList.toggle('off', !on);
+            status.innerHTML = `<span class="sdot"></span>${on ? 'Active' : 'Paused'}`;
+          }
+        };
+        const on = box.checked;
+        paint(on);
+        setAlertCount(state.alertCount + (on ? 1 : -1));
+        box.disabled = true;
+        try {
+          await api(`/api/watchlists/${box.dataset.toggle}?notify=${on}`, { method: 'PATCH' });
+        } catch (err) {
+          // Optimistic update failed — put the switch back where the server has it.
+          box.checked = !on;
+          paint(!on);
+          setAlertCount(state.alertCount + (on ? -1 : 1));
+          toast(err.message, 'err');
+        } finally { box.disabled = false; }
       }));
     } catch (err) {
       list.innerHTML = `<p class="alert alert-error">${escapeHtml(err.message)}</p>`;
@@ -1717,6 +2309,111 @@
     } catch (err) { toast(err.message, 'err'); }
   });
 
+  /* ---------------- notification history + unseen dot ---------------- */
+  const NOTIF_SEEN_KEY = 'dr-notif-seen';
+
+  // Server timestamps are epoch seconds; tolerate ms or ISO strings too.
+  function toEpoch(v) {
+    if (v == null || v === '') return 0;
+    if (typeof v === 'number') return v > 1e12 ? v / 1000 : v;
+    const n = Number(v);
+    if (!Number.isNaN(n)) return n > 1e12 ? n / 1000 : n;
+    const t = Date.parse(v);
+    return Number.isNaN(t) ? 0 : t / 1000;
+  }
+  const notifSeenAt = () => { try { return Number(localStorage.getItem(NOTIF_SEEN_KEY)) || 0; } catch { return 0; } };
+
+  function setUnseen(on) {
+    const bell = $('#btn-bell');
+    bell.classList.toggle('has-unseen', on);
+    bell.setAttribute('aria-label', on ? 'Deal alerts — new matches' : 'Deal alerts');
+    $('.navbtn[data-nav="alerts"]')?.classList.toggle('has-unseen', on);
+  }
+
+  function markNotificationsSeen(ts) {
+    if (ts > notifSeenAt()) {
+      try { localStorage.setItem(NOTIF_SEEN_KEY, String(ts)); } catch { /* private mode */ }
+    }
+    setUnseen(false);
+  }
+
+  async function checkUnseenNotifications() {
+    if (!state.user) return;
+    if (state.page === 'alerts') { setUnseen(false); return; }
+    const seen = notifSeenAt();
+    try {
+      const res = await api(`/api/notifications?${new URLSearchParams({ since: seen, limit: 5 })}`);
+      setUnseen((res.notifications || []).some((n) => toEpoch(n.created_at) > seen));
+    } catch { /* endpoint not deployed yet, or offline — no dot */ }
+  }
+
+  async function loadNotifications() {
+    const list = $('#notif-list');
+    list.innerHTML = Array.from({ length: 2 }, () => '<div class="skel skel-row"></div>').join('');
+    try {
+      const res = await api('/api/notifications?limit=30');
+      const items = res.notifications || [];
+      const seen = notifSeenAt();
+      // Server clock, not ours — a fast phone clock would otherwise hide real matches.
+      const newest = Math.max(0, ...items.map((n) => toEpoch(n.created_at)));
+      markNotificationsSeen(toEpoch(res.now) || newest);
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="notif-empty">
+            ${icon('bell')}
+            <span>No matches yet. When an alert catches a deal it shows up here and on your devices.</span>
+          </div>`;
+        return;
+      }
+      list.innerHTML = items.map((n) => {
+        const at = toEpoch(n.created_at);
+        return `
+          <button type="button" class="notif ${at > seen ? 'unseen' : ''}"
+                  data-notif-deal="${escapeHtml(n.deal_id ?? '')}" data-notif-url="${escapeHtml(n.url || '')}">
+            <span class="notif-ico" aria-hidden="true">${icon('bell')}</span>
+            <span class="notif-main">
+              <span class="notif-title">${escapeHtml(n.title || 'Deal alert')}</span>
+              ${n.body ? `<span class="notif-body">${escapeHtml(n.body)}</span>` : ''}
+            </span>
+            <span class="notif-time">${at ? timeAgo(at) : ''}</span>
+          </button>`;
+      }).join('');
+    } catch (err) {
+      list.innerHTML = `<div class="notif-empty">${icon('info')}<span>${err.status === 404
+        ? 'Notification history isn’t available on this server yet.'
+        : escapeHtml(err.message)}</span></div>`;
+    }
+  }
+
+  $('#notif-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.notif');
+    if (!row) return;
+    const { notifDeal, notifUrl } = row.dataset;
+    if (notifDeal) { showDealDetail(notifDeal); return; }
+    if (!notifUrl) return;
+    try {
+      const url = new URL(notifUrl, window.location.origin);
+      const linked = url.origin === window.location.origin && url.searchParams.get('deal');
+      if (linked) showDealDetail(linked);
+      else if (/^https?:$/.test(url.protocol)) window.open(url.href, '_blank', 'noopener');
+    } catch { /* malformed URL — nothing sensible to open */ }
+  });
+
+  $('#btn-test-notif').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    busy(btn, true);
+    try {
+      const res = await post('/api/notifications/test');
+      toast(res && res.push_sent
+        ? 'Test notification sent — check your device.'
+        : 'Test notification saved. No device is registered for push, so it only appears here.',
+      res && res.push_sent ? 'ok' : 'info', 6000);
+      loadNotifications();
+    } catch (err) {
+      toast(err.status === 404 ? 'Notifications aren’t available on this server yet.' : err.message, 'err');
+    } finally { busy(btn, false); }
+  });
+
   /* ============================================================
      BOOT
      ============================================================ */
@@ -1725,7 +2422,8 @@
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeModal(); closeFilters(); closeUserMenu(); closeSuggest(); }
-    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && state.user) {
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) || document.activeElement.isContentEditable;
+    if (e.key === '/' && !typing && state.user && $('#modal').classList.contains('hidden')) {
       e.preventDefault();
       $('#search-input').focus();
     }
@@ -1740,6 +2438,7 @@
       const y = window.scrollY;
       $('#appbar').classList.toggle('scrolled', y > 4);
       $('#toolbar')?.classList.toggle('stuck', y > 90);
+      $('#btn-top').classList.toggle('hidden', y < 1400 || state.page !== 'deals');
       ticking = false;
     });
   }, { passive: true });
@@ -1761,7 +2460,7 @@
   const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
   function initInstall() {
-    if (isStandalone()) return; // already installed — nothing to offer
+    if (isStandalone() || inNativeApp()) return; // already an app — nothing to offer
     if (isIOS()) {
       // iOS never fires beforeinstallprompt; "Add to Home Screen" is manual-only.
       $('#install-item').classList.remove('hidden');
@@ -1809,6 +2508,7 @@
     // The inline <head> script already applied the saved theme; this keeps the
     // theme-color meta in step with it.
     applyTheme(document.documentElement.dataset.theme || 'dark');
+    syncSortTabs();
     initInstall();
 
     try {
@@ -1825,5 +2525,9 @@
   })();
 
   // Keep stats fresh while the tab is open.
-  setInterval(() => { if (state.user && state.page === 'deals') loadStats(); }, 60000);
+  setInterval(() => {
+    if (!state.user || document.hidden) return;
+    if (state.page === 'deals') loadStats();
+    checkUnseenNotifications();
+  }, 60000);
 })();

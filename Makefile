@@ -1,4 +1,4 @@
-.PHONY: help setup dev start test ping health stats status sync clean clean-data freeze
+.PHONY: help setup dev android start test e2e ping health stats status sync clean clean-data freeze
 
 VENV   := .venv
 PY     := $(VENV)/bin/python
@@ -20,11 +20,25 @@ setup:           ## Create the virtualenv, install deps, create .env
 dev:             ## Run with auto-reload (development)
 	$(UVI) app.main:app --reload --port $(PORT)
 
+android:         ## Run for the Android app — binds all interfaces, prints the address to enter
+	@ip=$$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "your-lan-ip"); \
+	 echo ""; \
+	 echo "  Emulator        ->  http://10.0.2.2:$(PORT)"; \
+	 echo "  Physical device ->  http://$$ip:$(PORT)   (phone on the same Wi-Fi)"; \
+	 echo ""
+	$(UVI) app.main:app --host 0.0.0.0 --port $(PORT) --reload
+
 start:           ## Run without reload (production-style)
 	$(UVI) app.main:app --host 0.0.0.0 --port $(PORT) --workers 1
 
-test:            ## Run the pipeline test suite (no Telegram needed)
+test:            ## Run the backend test suites (no Telegram needed)
 	$(PY) -m tests.test_pipeline
+	$(PY) -m tests.test_search
+	$(PY) -m tests.test_notifications
+
+e2e:             ## Click through the website in Chrome on screen (E2E_HEADLESS=1 to hide it)
+	$(PIP) install -q -r requirements-dev.txt
+	$(PY) -m pytest tests/e2e -v
 
 ping:            ## Hit the ping endpoint on a running server
 	@curl -s http://localhost:$(PORT)/api/ping && echo

@@ -15,10 +15,17 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DealRadar" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="DealRadar — Telegram deals, searchable" />
+  <meta property="og:description" content="Every deal from your Telegram channels. Searchable, de-duplicated, ranked." />
+  <meta property="og:image" content="/assets/icons/icon-512.png" />
+  <meta name="twitter:card" content="summary" />
   <script>
-    /* Applied before first paint so a light-theme user never sees a dark flash. */
+    /* Applied before first paint so a light-theme user never sees a dark flash.
+       No saved choice → follow the operating system. */
     try {
       var t = localStorage.getItem('dr-theme');
+      if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
       if (t) document.documentElement.dataset.theme = t;
     } catch (e) { /* private mode — the default theme is fine */ }
   </script>
@@ -53,8 +60,18 @@
     <!-- referenced by the Android shell's glue script (MainActivity.NATIVE_GLUE_JS) -->
     <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
     <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M1 1l22 22M16.7 12.7A6 6 0 0112 21a6 6 0 01-4.7-8.3M5 12.6a10 10 0 013-2.1M8.8 5.3A14 14 0 0123 8.6"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><rect x="3" y="4" width="6" height="6" rx="1.5"/><rect x="3" y="14" width="6" height="6" rx="1.5"/><path d="M13 6h8M13 9h5M13 16h8M13 19h5"/></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
   </defs>
 </svg>
+
+<noscript>
+  <div class="noscript">DealRadar needs JavaScript to run. Please enable it and reload the page.</div>
+</noscript>
 
 <!-- First paint: neither view is shown until the auth check resolves, so this
      stands in rather than flashing the login screen at a signed-in user. -->
@@ -77,6 +94,25 @@
         follow, parses each post into a structured deal, collapses the same product posted
         across a dozen channels into one entry, and lets you just search for what you want.
       </p>
+
+      <!-- Illustrative only: what a deal looks like once DealRadar has parsed it. -->
+      <div class="login-preview" aria-hidden="true">
+        <div class="lp-card">
+          <div class="lp-media">🎧<span class="badge badge-low">LOWEST EVER</span></div>
+          <div class="lp-body">
+            <div class="lp-title">boAt Rockerz 450 Bluetooth Headphones</div>
+            <div class="deal-price"><span class="price-off">-56%</span><span class="price-now">₹1,299</span><span class="price-was">₹2,990</span></div>
+            <div class="deal-meta"><span>4m ago</span><span class="dot"></span><span class="reposts">6 channels</span></div>
+          </div>
+        </div>
+        <div class="lp-card lp-back">
+          <div class="lp-media">⌚</div>
+          <div class="lp-body">
+            <div class="lp-title">Noise ColorFit Pro 5 AMOLED</div>
+            <div class="deal-price"><span class="price-off">-60%</span><span class="price-now">₹2,799</span></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="login-panel">
@@ -162,12 +198,14 @@
         <svg class="search-icon" aria-hidden="true"><use href="#i-search"/></svg>
         <input id="search-input" type="search" enterkeyhint="search"
                placeholder="What are you looking for?"
-               autocomplete="off" aria-label="Search deals" />
+               autocomplete="off" aria-label="Search deals"
+               role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
+               aria-expanded="false" aria-controls="suggest" />
         <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">
           <svg aria-hidden="true"><use href="#i-close"/></svg>
         </button>
         <button type="submit" class="btn btn-primary btn-sm">Search</button>
-        <div id="suggest" class="suggest hidden"></div>
+        <div id="suggest" class="suggest hidden" role="listbox" aria-label="Search suggestions"></div>
       </form>
 
       <nav class="topnav" aria-label="Sections">
@@ -205,7 +243,7 @@
       <svg class="ico" aria-hidden="true"><use href="#i-download"/></svg> Install app
     </button>
     <button class="drop-item" data-action="theme">
-      <svg class="ico" aria-hidden="true"><use href="#i-moon"/></svg> Toggle theme
+      <svg class="ico" aria-hidden="true"><use href="#i-moon" id="theme-icon"/></svg> <span id="theme-label">Switch theme</span>
     </button>
     <button class="drop-item" data-action="status">
       <svg class="ico" aria-hidden="true"><use href="#i-activity"/></svg> System status
@@ -312,6 +350,10 @@
               <h3 class="section-title">🔥 Trending right now</h3>
               <div class="section-sub">Reposted across your channels</div>
             </div>
+            <div class="rail-nav" data-rail="#trending-row">
+              <button class="iconbtn" data-dir="-1" aria-label="Scroll trending left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
+              <button class="iconbtn" data-dir="1" aria-label="Scroll trending right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
+            </div>
           </div>
           <div id="trending-row" class="rail"></div>
         </section>
@@ -322,10 +364,18 @@
               <h3 class="section-title">📉 All-time lows</h3>
               <div class="section-sub">Cheapest we have ever recorded</div>
             </div>
-            <button class="btn btn-ghost btn-xs" id="btn-see-lows">See all</button>
+            <div class="section-actions">
+              <button class="btn btn-ghost btn-xs" id="btn-see-lows">See all</button>
+              <div class="rail-nav" data-rail="#lowest-row">
+                <button class="iconbtn" data-dir="-1" aria-label="Scroll all-time lows left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
+                <button class="iconbtn" data-dir="1" aria-label="Scroll all-time lows right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
+              </div>
+            </div>
           </div>
           <div id="lowest-row" class="rail"></div>
         </section>
+
+        <div id="cat-rails" class="cat-rails hidden"></div>
 
         <div class="section-head" id="grid-head">
           <div>
@@ -334,11 +384,27 @@
           </div>
         </div>
 
+        <div class="sortbar">
+          <div class="sorttabs" id="sort-tabs" role="tablist" aria-label="Sort deals">
+            <button role="tab" data-sort="newest">Newest</button>
+            <button role="tab" data-sort="best">Top rated</button>
+            <button role="tab" data-sort="discount">Biggest discount</button>
+            <button role="tab" data-sort="price_low">Lowest price</button>
+          </div>
+          <div class="viewtoggle" role="group" aria-label="Layout">
+            <button data-view="grid" aria-label="Grid view" title="Grid view"><svg aria-hidden="true"><use href="#i-grid"/></svg></button>
+            <button data-view="list" aria-label="List view" title="List view"><svg aria-hidden="true"><use href="#i-list"/></svg></button>
+          </div>
+        </div>
+
+        <div class="resultcats hidden" id="result-cats" role="tablist" aria-label="Result categories"></div>
+
         <div id="deal-grid" class="grid"></div>
         <div id="empty-state" class="empty hidden"></div>
         <div class="loadmore">
           <button id="btn-more" class="btn btn-soft hidden">Load more deals</button>
         </div>
+        <button class="totop hidden" id="btn-top" aria-label="Back to top"><svg aria-hidden="true"><use href="#i-up"/></svg></button>
       </div>
     </div>
   </main>
@@ -411,6 +477,19 @@
     </form>
 
     <div id="alert-list" class="alert-list"></div>
+
+    <section class="notif-section" aria-labelledby="notif-title">
+      <div class="section-head">
+        <div>
+          <h3 class="section-title" id="notif-title">📬 Recent matches</h3>
+          <div class="section-sub">Deals your alerts caught lately</div>
+        </div>
+        <button class="btn btn-soft btn-xs" id="btn-test-notif">
+          <svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg> Send test notification
+        </button>
+      </div>
+      <div id="notif-list" class="notif-list"></div>
+    </section>
   </main>
 
   <footer class="footer">
@@ -443,7 +522,7 @@
 <div id="sheet-backdrop" class="sheet-backdrop hidden"></div>
 <div id="modal" class="modal hidden">
   <div class="modal-backdrop" data-close></div>
-  <div class="modal-body card" id="modal-body"></div>
+  <div class="modal-body card" id="modal-body" role="dialog" aria-modal="true" tabindex="-1"></div>
 </div>
 <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 
