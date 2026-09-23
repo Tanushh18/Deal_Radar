@@ -129,6 +129,14 @@ def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict
     loop.create_task(push.send_push(tokens, title, body, url, deal_id or None, image=image, kind=kind))
 
 
+def broadcast(title: str, body: str, deal: Optional[Dict[str, Any]] = None) -> int:
+    """Admin-triggered: send one message to every device that has ever registered."""
+    ids = [r["device_id"] for r in db.query("SELECT device_id FROM devices")]
+    for device_id in ids:
+        notify(device_id, "broadcast", title, body, deal)
+    return len(ids)
+
+
 def _money(value: Any) -> str:
     return f"₹{int(float(value)):,}" if value not in (None, "") else ""
 

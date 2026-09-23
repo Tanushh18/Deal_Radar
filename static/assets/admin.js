@@ -55,6 +55,9 @@
     }
     const reading = s.channels.filter((c) => c.enabled).length;
     $('#channel-count').textContent = `· ${reading} reading · ${s.channels.length - reading} blocked`;
+    $('#pause-sync').textContent = s.sync_paused ? 'Resume syncing' : 'Pause syncing';
+    $('#pause-sync').classList.toggle('on', !!s.sync_paused);
+    $('#pause-note').classList.toggle('hidden', !s.sync_paused);
     $('#channels').innerHTML = s.channels.length ? s.channels.map((c) => `
       <tr class="${c.enabled ? '' : 'blocked'}">
         <td><b>${esc(c.title)}</b><br><span class="muted small">${c.username ? '@' + esc(c.username) : 'private'}</span></td>
@@ -212,6 +215,76 @@
       show($('#channel-msg'), `Sync done: ${r.new || 0} new, ${r.merged || 0} merged, ${r.fetched || 0} posts read.`, 'ok');
       await refresh();
     } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; btn.textContent = 'Sync now'; }
+  });
+
+  $('#pause-sync').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const pausing = !btn.classList.contains('on');
+    btn.disabled = true;
+    try {
+      await post('/api/admin/reader/pause', { paused: pausing });
+      show($('#channel-msg'), pausing
+        ? 'Syncing paused — the automatic 5-min sync is off. "Sync now" still works.'
+        : 'Syncing resumed.', 'ok');
+      await refresh();
+    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+  });
+
+  /* ---------------- send notification ---------------- */
+  let pickedDeal = null;
+  let notifySearchTimer = null;
+
+  $('#notify-deal-search').addEventListener('input', (e) => {
+    clearTimeout(notifySearchTimer);
+    const q = e.target.value.trim();
+    const box = $('#notify-deal-results');
+    if (!q) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+    notifySearchTimer = setTimeout(async () => {
+      try {
+        const r = await api(`/api/deals/suggest?q=${encodeURIComponent(q)}&limit=6`);
+        const deals = r.deals || [];
+        if (!deals.length) { box.innerHTML = '<span class="muted small">No matching deals.</span>'; box.classList.remove('hidden'); return; }
+        box.innerHTML = deals.map((d) => `<button type="button" class="btn btn-ghost btn-sm" data-pick="${d.id}"
+          style="display:block;width:100%;text-align:left;margin-bottom:4px">${esc(d.title)} — ₹${Math.round(d.price || 0)}</button>`).join('');
+        box.classList.remove('hidden');
+      } catch { box.classList.add('hidden'); }
+    }, 250);
+  });
+
+  $('#notify-deal-results').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-pick]');
+    if (!btn) return;
+    pickedDeal = { id: btn.dataset.pick, title: btn.textContent.split(' — ')[0] };
+    $('#notify-deal-picked').textContent = `Attached: ${pickedDeal.title}`;
+    $('#notify-deal-picked').classList.remove('hidden');
+    $('#notify-deal-clear').classList.remove('hidden');
+    $('#notify-deal-results').classList.add('hidden');
+    $('#notify-deal-results').innerHTML = '';
+    $('#notify-deal-search').value = '';
+    if (!$('#notify-title').value.trim()) $('#notify-title').value = pickedDeal.title;
+  });
+
+  $('#notify-deal-clear').addEventListener('click', () => {
+    pickedDeal = null;
+    $('#notify-deal-picked').classList.add('hidden');
+    $('#notify-deal-clear').classList.add('hidden');
+  });
+
+  $('#notify-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    const title = $('#notify-title').value.trim();
+    const body = $('#notify-body').value.trim();
+    if (!title || !body) { show($('#notify-msg'), 'Write a title and a message.', 'err'); return; }
+    btn.disabled = true;
+    try {
+      const r = await post('/api/admin/reader/broadcast', { title, body, deal_id: pickedDeal?.id || null });
+      show($('#notify-msg'), `Sent to ${r.devices} device${r.devices === 1 ? '' : 's'}.`, 'ok');
+      e.target.reset();
+      pickedDeal = null;
+      $('#notify-deal-picked').classList.add('hidden');
+      $('#notify-deal-clear').classList.add('hidden');
+    } catch (err) { show($('#notify-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
 
   if (token()) unlock();

@@ -114,7 +114,7 @@ export const devices = {
       method: 'POST',
       body: { platform: 'android', ...input, push_token: input.push_token ?? undefined },
     }),
-  follow: (input: { device_id: string; kind: FollowKind; value: string; min_discount?: number | null }) =>
+  follow: (input: { device_id: string; kind: FollowKind; value: string; min_discount?: number }) =>
     request<{ follow: Follow }>('/api/devices/follows', { method: 'POST', body: input }),
   unfollow: (id: number, device_id: string) =>
     request<{ status: string }>(`/api/devices/follows/${id}`, { method: 'DELETE', query: { device_id } }),

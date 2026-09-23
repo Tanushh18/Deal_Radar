@@ -109,14 +109,39 @@
       <div class="msg hidden" id="priority-msg"></div>
     </section>
 
+    <section class="card" id="notify-card">
+      <h2>Send a notification</h2>
+      <p class="muted">Goes to every device that has opened the site or app. Optionally attach a deal — its photo
+        rides along, and tapping the notification opens it.</p>
+      <form id="notify-form" style="display:grid;gap:12px">
+        <label class="field" style="margin:0"><span>Attach a deal (optional)</span>
+          <div class="row">
+            <input class="input" id="notify-deal-search" placeholder="Search a deal by name…" autocomplete="off" />
+            <button class="btn btn-ghost btn-sm hidden" id="notify-deal-clear" type="button">Clear</button>
+          </div>
+          <div id="notify-deal-results" class="msg hidden" style="margin-top:2px"></div>
+          <div id="notify-deal-picked" class="msg ok hidden" style="margin-top:2px"></div>
+        </label>
+        <label class="field" style="margin:0"><span>Title</span>
+          <input class="input" id="notify-title" maxlength="120" placeholder="🔥 Big Billion Days is live" required /></label>
+        <label class="field" style="margin:0"><span>Message</span>
+          <textarea class="input" id="notify-body" rows="3" maxlength="240" placeholder="Type what you want everyone to see…" required></textarea></label>
+        <div class="row"><button class="btn btn-primary" type="submit">Send to everyone</button></div>
+      </form>
+      <div class="msg hidden" id="notify-msg"></div>
+    </section>
+
     <section class="card">
       <div class="row" style="justify-content:space-between">
         <h2>Channels <span class="muted" id="channel-count" style="font-weight:500"></span></h2>
         <div class="row">
           <button class="btn btn-soft btn-sm" id="refresh">Refresh from Telegram</button>
           <button class="btn btn-soft btn-sm" id="sync">Sync now</button>
+          <button class="btn btn-soft btn-sm" id="pause-sync">Pause syncing</button>
         </div>
       </div>
+      <p class="muted small hidden" id="pause-note" style="margin-top:-6px">
+        ⏸ Automatic syncing is paused — the site is showing what it already has. "Sync now" still works.</p>
       <p class="muted">Every channel the reader account follows on Telegram is read automatically.
         Block any you don't want on the site — blocked channels stay blocked. To add one, join it in Telegram
         (then "Refresh from Telegram") or paste its @username below.</p>

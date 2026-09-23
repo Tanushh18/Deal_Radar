@@ -59,6 +59,14 @@ def state() -> Dict[str, Any]:
     return dict(_state)
 
 
+def sync_paused() -> bool:
+    return db.get_meta("sync_paused") == "1"
+
+
+def set_sync_paused(paused: bool) -> None:
+    db.set_meta("sync_paused", "1" if paused else "0")
+
+
 async def _resolve_reader(channel: Dict[str, Any]) -> Optional[int]:
     """Pick a user whose Telegram session can actually read this channel.
 
@@ -573,12 +581,15 @@ async def scheduler_loop() -> None:
     while True:
         started = time.time()
         try:
-            from . import public_reader  # local: avoids an import cycle via routers
-            await public_reader.maybe_sync_followed()
-            has_channels = db.query_one("SELECT COUNT(*) AS c FROM channels WHERE active = 1")
-            if has_channels and has_channels["c"]:
-                result = await run_cycle("scheduled")
-                log.info("Ingest cycle: %s", result)
+            if sync_paused():
+                pass  # admin paused syncing from /admin — the manual "Sync now" button still works
+            else:
+                from . import public_reader  # local: avoids an import cycle via routers
+                await public_reader.maybe_sync_followed()
+                has_channels = db.query_one("SELECT COUNT(*) AS c FROM channels WHERE active = 1")
+                if has_channels and has_channels["c"]:
+                    result = await run_cycle("scheduled")
+                    log.info("Ingest cycle: %s", result)
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # noqa: BLE001

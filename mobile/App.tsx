@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConnectingView, OfflineView } from './src/navigation/BootScreens';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef, type RootStackParamList } from './src/navigation/types';
-import { COLORS, getBaseUrl } from './src/native/config';
+import { COLORS, LIVE_HOST, getBaseUrl, saveBaseUrl } from './src/native/config';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
 import { configureNotificationHandler, pollNotifications } from './src/native/notifications';
 import { useQuickActionRouting } from './src/native/quickActions';
@@ -43,8 +43,8 @@ function useNavTheme(): NavTheme {
 }
 
 type Phase =
-  | { kind: 'connecting'; server: string }
-  | { kind: 'offline'; server: string; message: string }
+  | { kind: 'connecting' }
+  | { kind: 'offline' }
   | { kind: 'ready'; initial: keyof RootStackParamList }
   | { kind: 'loading' };
 
@@ -84,12 +84,11 @@ function Root() {
   const lastBack = useRef(0);
 
   const boot = useCallback(async () => {
-    const server = await getBaseUrl();
-    if (!server) {
-      setPhase({ kind: 'ready', initial: 'Setup' });
-      return;
-    }
-    setPhase({ kind: 'connecting', server });
+    // Real users never see a server address: the app always points at the
+    // one production DealRadar. Setup only reappears via the hidden gesture
+    // in Settings (dev/testing use), which pre-fills a *different* saved URL.
+    const server = (await getBaseUrl()) ?? (await saveBaseUrl(LIVE_HOST));
+    setPhase({ kind: 'connecting' });
     try {
       // Reachability check only: visitors never sign in — the server reads the
       // channels with its own account, so the app opens straight to the deals.
@@ -99,8 +98,10 @@ function Root() {
       setPhase({ kind: 'ready', initial: 'Main' });
       startVisitorSession().catch((e) => console.warn('[app] visitor session failed:', e?.message ?? e));
     } catch (e: any) {
-      const message = e?.name === 'AbortError' ? 'The server took too long to answer.' : e?.message ?? String(e);
-      setPhase({ kind: 'offline', server, message });
+      // Logged for you, never rendered: a visitor has no use for a server
+      // address or a raw network error, only "it isn't working right now".
+      console.warn('[app] boot failed:', server, e?.message ?? e);
+      setPhase({ kind: 'offline' });
     }
     setNavKey((k) => k + 1);
   }, []);
@@ -144,19 +145,8 @@ function Root() {
   }, []);
 
   let body: React.ReactNode = null;
-  if (phase.kind === 'connecting') body = <ConnectingView server={phase.server} />;
-  else if (phase.kind === 'offline')
-    body = (
-      <OfflineView
-        server={phase.server}
-        message={phase.message}
-        onRetry={boot}
-        onChangeServer={() => {
-          setPhase({ kind: 'ready', initial: 'Setup' });
-          setNavKey((k) => k + 1);
-        }}
-      />
-    );
+  if (phase.kind === 'connecting') body = <ConnectingView />;
+  else if (phase.kind === 'offline') body = <OfflineView onRetry={boot} />;
   else if (phase.kind === 'ready')
     body = (
       <NavigationContainer

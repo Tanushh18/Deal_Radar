@@ -100,7 +100,41 @@ async def status():
         (uid or 0,),
     )
     return {"connected": connected, "account": account, "channels": db.rows_to_dicts(rows),
-            "ingest": ingest.state()}
+            "ingest": ingest.state(), "sync_paused": ingest.sync_paused()}
+
+
+class PausePayload(BaseModel):
+    paused: bool
+
+
+@router.post("/pause")
+async def pause_syncing(payload: PausePayload):
+    """Stops the automatic 5-min ingest loop; "Sync now" still works as a manual override."""
+    ingest.set_sync_paused(payload.paused)
+    return {"status": "ok", "sync_paused": payload.paused}
+
+
+class BroadcastPayload(BaseModel):
+    title: str
+    body: str
+    deal_id: Optional[str] = None
+
+
+@router.post("/broadcast")
+async def broadcast(payload: BroadcastPayload):
+    from ..services import devices
+
+    title, body = payload.title.strip(), payload.body.strip()
+    if not title or not body:
+        raise HTTPException(status_code=400, detail="Write a title and a message.")
+    deal = None
+    if payload.deal_id:
+        row = db.query_one("SELECT * FROM deals WHERE id = ?", (payload.deal_id,))
+        if not row:
+            raise HTTPException(status_code=404, detail="That deal id doesn't exist.")
+        deal = dict(row)
+    sent = devices.broadcast(title, body, deal)
+    return {"status": "ok", "devices": sent}
 
 
 async def _finish(result: dict) -> dict:

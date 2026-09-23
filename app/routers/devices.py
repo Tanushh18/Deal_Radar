@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ..services import devices, price_alerts, push, ratelimit
 
@@ -24,7 +24,14 @@ class FollowPayload(BaseModel):
     device_id: str
     kind: str
     value: str = Field(min_length=1, max_length=80)
-    min_discount: int = Field(0, ge=0, le=95)
+    # Optional[int] rather than int: "no minimum" is a meaningful client
+    # choice (send null/omit it), and it should mean the same as 0, not 422.
+    min_discount: Optional[int] = Field(0, ge=0, le=95)
+
+    @field_validator("min_discount", mode="before")
+    @classmethod
+    def _none_means_zero(cls, v):
+        return 0 if v is None else v
 
 
 def _device(device_id: str) -> str:

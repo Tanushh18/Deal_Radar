@@ -214,7 +214,7 @@ export function AccountScreen() {
         <Group title="More">
           <Row icon="globe" title="Open website" sub="The full DealRadar site, in the app" onPress={() => navigation.navigate('Website', {})} />
           <Divider />
-          <Row icon="activity" title="Settings" sub="Server, version, system status" onPress={() => navigation.navigate('Settings')} />
+          <Row icon="activity" title="About" sub="App version" onPress={() => navigation.navigate('Settings')} />
         </Group>
 
         {publicMode ? null : (
@@ -317,7 +317,7 @@ function FollowsAndDigest({ notifGranted, onNeedPermission }: { notifGranted: bo
     }
     setAdding(true);
     try {
-      const res = await api.devices.follow({ device_id: await getDeviceId(), kind, value, min_discount: minOff || null });
+      const res = await api.devices.follow({ device_id: await getDeviceId(), kind, value, min_discount: minOff || 0 });
       setFollows((prev) => [...prev, res.follow]);
       haptic.success();
       toast(`Following ${followLabel({ kind, value })}.`, 'ok');
