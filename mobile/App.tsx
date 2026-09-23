@@ -14,7 +14,7 @@ import { stopBackgroundPolling } from './src/native/backgroundTask';
 import { COLORS, getBaseUrl } from './src/native/config';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
 import { configureNotificationHandler, isSignedIn, pollNotifications, resetPollingState } from './src/native/notifications';
-import { onSignedIn, setPublicMode } from './src/native/session';
+import { setPublicMode } from './src/native/session';
 import { AppProviders } from './src/components/AppProviders';
 import { useTheme } from './src/theme';
 
@@ -88,16 +88,11 @@ function Root() {
     }
     setPhase({ kind: 'connecting', server });
     try {
-      const me = await checkAuth(server);
-      if (me.authenticated) {
-        onSignedIn(me.user).catch(() => {});
-        setPhase({ kind: 'ready', initial: 'Main' });
-      } else {
-        // No user sign-in: the server reads the channels itself, so the app
-        // opens straight to the deals.
-        setPublicMode(true);
-        setPhase({ kind: 'ready', initial: 'Main' });
-      }
+      // Reachability check only: visitors never sign in — the server reads the
+      // channels with its own account, so the app opens straight to the deals.
+      await checkAuth(server);
+      setPublicMode(true);
+      setPhase({ kind: 'ready', initial: 'Main' });
     } catch (e: any) {
       const message = e?.name === 'AbortError' ? 'The server took too long to answer.' : e?.message ?? String(e);
       setPhase({ kind: 'offline', server, message });

@@ -15,6 +15,7 @@ import {
   useToast,
 } from '../components';
 import { onSignedOut } from '../native/session';
+import { isPublicMode } from '../native/session';
 import { useTheme, useThemePreference, type ThemePreference } from '../theme';
 import type { TabNav } from './types';
 
@@ -46,7 +47,7 @@ export function AccountScreen() {
       api.auth
         .me()
         .then((me) => {
-          if (me.authenticated) {
+          if (me.authenticated && !isPublicMode()) {
             setUser(me.user);
             setTracked(me.tracked_channels);
           }
@@ -102,7 +103,7 @@ export function AccountScreen() {
     ]);
   };
 
-  const name = user?.first_name || 'Telegram user';
+  const name = user?.first_name || 'Visitor';
   const initial = (user?.first_name || user?.username || 'U').slice(0, 1).toUpperCase();
   const notifLabel = {
     granted: 'On — alerts arrive on this phone',

@@ -210,7 +210,6 @@
 
       <nav class="topnav" aria-label="Sections">
         <button class="navlink active" data-nav="deals">Deals</button>
-        <button class="navlink" data-nav="channels">Channels</button>
         <button class="navlink" data-nav="alerts">Alerts</button>
       </nav>
 
@@ -314,7 +313,7 @@
               <input type="checkbox" id="f-lowest" />
               <span>Only all-time lows</span>
             </label>
-            <label class="check">
+            <label class="check hidden">
               <input type="checkbox" id="f-all-channels" />
               <span>Include untracked channels</span>
             </label>
@@ -348,7 +347,7 @@
           <div class="section-head">
             <div>
               <h3 class="section-title">🔥 Trending right now</h3>
-              <div class="section-sub">Reposted across your channels</div>
+              <div class="section-sub">Posted again and again right now</div>
             </div>
             <div class="rail-nav" data-rail="#trending-row">
               <button class="iconbtn" data-dir="-1" aria-label="Scroll trending left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
@@ -380,7 +379,7 @@
         <div class="section-head" id="grid-head">
           <div>
             <h3 class="section-title" id="grid-title">🕘 Latest deals</h3>
-            <div class="section-sub" id="grid-sub">Freshly parsed from your channels</div>
+            <div class="section-sub" id="grid-sub">Freshly posted deals</div>
           </div>
         </div>
 
@@ -501,10 +500,6 @@
     <button class="navbtn active" data-nav="deals">
       <svg class="navicon" aria-hidden="true"><use href="#i-tag"/></svg>
       Deals
-    </button>
-    <button class="navbtn" data-nav="channels">
-      <svg class="navicon" aria-hidden="true"><use href="#i-radio"/></svg>
-      Channels
     </button>
     <button class="navbtn" data-nav="alerts">
       <svg class="navicon" aria-hidden="true"><use href="#i-bell"/></svg>

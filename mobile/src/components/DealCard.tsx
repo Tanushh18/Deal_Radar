@@ -190,7 +190,7 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
           <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={s.meta}>
             {timeAgo(deal.posted_at)}
             {deal.repost_count > 1 ? (
-              <Text style={s.reposts}>{`  ·  ${deal.repost_count} channels`}</Text>
+              <Text style={s.reposts}>{`  ·  Posted ${deal.repost_count}×`}</Text>
             ) : null}
           </Text>
           {list && deal.url ? (

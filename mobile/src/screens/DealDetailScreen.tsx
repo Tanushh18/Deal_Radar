@@ -158,8 +158,8 @@ export function DealDetailScreen() {
   ];
   if (deal.brand) kv.push(['Brand', deal.brand]);
   if (deal.sizes) kv.push(['Sizes', deal.sizes]);
-  kv.push(['Posted', `${timeAgo(deal.posted_at)} in ${deal.channel_title || 'a channel'}`]);
-  kv.push(['Reposted', `${deal.repost_count} ${plural(deal.repost_count, 'channel')}`]);
+  kv.push(['Posted', timeAgo(deal.posted_at)]);
+  kv.push(['Shared', `${deal.repost_count} ${plural(deal.repost_count, 'time')}`]);
   kv.push(['Expires', deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString('en-IN') : '—']);
   if (history?.points) {
     kv.push(['History', `${history.points} points · low ${money(history.min)} · high ${money(history.max)}`]);
@@ -274,7 +274,7 @@ export function DealDetailScreen() {
                 }}
                 style={{ minHeight: 48, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}
               >
-                <Text style={{ flex: 1, color: t.c.text, fontWeight: '600', fontSize: t.f.sm }}>Original channel post</Text>
+                <Text style={{ flex: 1, color: t.c.text, fontWeight: '600', fontSize: t.f.sm }}>Original post</Text>
                 <View style={{ transform: [{ rotate: showRaw ? '180deg' : '0deg' }] }}>
                   <Icon name="chevDown" size={18} color={t.c.text3} />
                 </View>

@@ -294,10 +294,10 @@
     $('#view-app').classList.remove('hidden');
 
     const name = user.first_name || user.username || '';
-    const initials = (name || 'U').slice(0, 1).toUpperCase();
+    const initials = user.guest ? 'V' : (name || 'U').slice(0, 1).toUpperCase();
     $('#user-btn').textContent = initials;
     $('#drop-avatar').textContent = initials;
-    $('#drop-name').textContent = user.first_name || 'Telegram user';
+    $('#drop-name').textContent = user.guest ? 'Visitor' : (user.first_name || 'Telegram user');
     $('#drop-handle').textContent = user.username ? '@' + user.username : '';
     $('#greeting').textContent = name ? `${greeting()}, ${name} 👋` : `${greeting()} 👋`;
 
@@ -825,17 +825,17 @@
     const sub = $('#grid-sub');
     if (state.filters.q) {
       title.textContent = `🔎 Results for “${state.filters.q}”`;
-      sub.textContent = 'Best matches across your channels';
+      sub.textContent = 'Best matches';
     } else if (activeFilterCount()) {
       title.textContent = '🏷️ Filtered deals';
       sub.textContent = 'Matching your filters';
     } else {
       const labels = {
-        newest: ['🕘 Latest deals', 'Freshly parsed from your channels'],
+        newest: ['🕘 Latest deals', 'Freshly posted deals'],
         best: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
         discount: ['⚡ Biggest discounts', 'Largest drop from the quoted MRP'],
-        price_low: ['💸 Cheapest first', 'Lowest price across your channels'],
-        price_high: ['💎 Priciest first', 'Highest price across your channels'],
+        price_low: ['💸 Cheapest first', 'Lowest prices first'],
+        price_high: ['💎 Priciest first', 'Highest prices first'],
         relevance: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
       };
       const [t, s] = labels[state.filters.sort] || labels.newest;
@@ -895,11 +895,10 @@
       <h3>No products found</h3>
       <p>${hasFilters
         ? 'Nothing matches your search and filters right now. Try fewer filters or a broader term.'
-        : 'No deals have come in yet. Pick a few channels and run a sync to fill your feed.'}</p>
+        : 'New deals arrive every few minutes — check back soon.'}</p>
       <div class="empty-actions">
         ${hasFilters ? '<button class="btn btn-primary" id="empty-clear">Clear search &amp; filters</button>' : ''}
-        <button class="btn ${hasFilters ? 'btn-soft' : 'btn-primary'}" id="empty-channels">Choose channels</button>
-        <button class="btn btn-soft" id="empty-sync">Sync now</button>
+
       </div>`;
     el.classList.remove('hidden');
     $('#deal-grid').innerHTML = '';
@@ -993,7 +992,7 @@
           <div class="deal-meta">
             <span>${timeAgo(deal.posted_at)}</span>
             ${deal.repost_count > 1
-              ? `<span class="dot"></span><span class="reposts">${deal.repost_count} channels</span>` : ''}
+              ? `<span class="dot"></span><span class="reposts">Posted ${deal.repost_count}×</span>` : ''}
             ${minBuy(deal) ? `<span class="dot"></span><span>Min ${minBuy(deal)}</span>` : ''}
           </div>
         </div>
@@ -1075,7 +1074,7 @@
       const below = Math.round((1 - deal.price / history.median) * 100);
       if (below >= 5) out.push(`${below}% below its typical price (${history.points} price points)`);
     }
-    if (deal.repost_count > 1) out.push(`Posted in ${deal.repost_count} of the channels you track`);
+    if (deal.repost_count > 1) out.push(`Posted ${deal.repost_count} times — widely shared deal`);
     return out;
   }
 
@@ -1131,15 +1130,15 @@
             ${deal.brand ? `<dt>Brand</dt><dd>${escapeHtml(deal.brand)}</dd>` : ''}
             ${deal.sizes ? `<dt>Sizes</dt><dd class="raw">${escapeHtml(deal.sizes)}</dd>` : ''}
             ${deal.coupon ? `<dt>Coupon</dt><dd><span class="coupon">${escapeHtml(deal.coupon)}</span></dd>` : ''}
-            <dt>Posted</dt><dd class="raw">${timeAgo(deal.posted_at)} in ${escapeHtml(deal.channel_title || 'a channel')}</dd>
-            <dt>Reposted</dt><dd>${deal.repost_count} channel${deal.repost_count === 1 ? '' : 's'}</dd>
+            <dt>Posted</dt><dd class="raw">${timeAgo(deal.posted_at)}</dd>
+            <dt>Posted</dt><dd>${deal.repost_count} time${deal.repost_count === 1 ? '' : 's'}</dd>
             <dt>Expires</dt><dd class="raw">${deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString() : '—'}</dd>
             ${history.points ? `<dt>History</dt><dd class="raw">${history.points} points · low ${money(history.min)} · high ${money(history.max)}</dd>` : ''}
             <dt>Deal score</dt><dd>${Math.round(deal.score ?? 0)} / 100</dd>
           </dl>
 
           <details class="raw">
-            <summary>Original channel post</summary>
+            <summary>Original post</summary>
             <pre class="rawpost">${escapeHtml(deal.raw_text || '')}</pre>
           </details>
         </div>
@@ -1570,10 +1569,6 @@
           <div class="stat">
             <div class="stat-value up" data-count="${stats.deals_today || 0}">0</div>
             <div class="stat-label">Added today</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value" data-count="${stats.channels || 0}">0</div>
-            <div class="stat-label">Channels</div>
           </div>
         </div>
       </div>`;
@@ -2053,13 +2048,13 @@
     const btn = $('#btn-sync');
     btn.classList.add('spinning');
     busy(btn, true);
-    setSyncStatus('Scanning your Telegram channels…', 'syncing');
+    setSyncStatus('Scanning for new deals…', 'syncing');
     try {
       const res = await post('/api/channels/sync');
       const added = (res.new || 0) + (res.merged || 0);
       toast(added
         ? `Synced: ${res.new} new deals, ${res.merged} matched to existing ones.`
-        : 'Sync complete — no new deals in your channels yet.', 'ok');
+        : 'Sync complete — no new deals yet.', 'ok');
       refreshDeals(true);
       loadFacets();
       loadRails();
@@ -2533,13 +2528,6 @@
     syncSortTabs();
     initInstall();
 
-    try {
-      const me = await api('/api/auth/me');
-      if (me.authenticated) {
-        await onSignedIn(me.user);
-        return;
-      }
-    } catch { /* offline or server error — still open the deals view */ }
     // No visitor sign-in: the server reads the channels with its own account,
     // so everyone lands on the deals immediately.
     document.documentElement.classList.add('guest');

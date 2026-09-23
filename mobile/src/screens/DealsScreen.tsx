@@ -47,6 +47,7 @@ import {
   withoutFilter,
   type DealFilters,
 } from '../components';
+import { isPublicMode } from '../native/session';
 import { useTheme } from '../theme';
 import type { SortKey } from '../api/types';
 import type { TabNav } from './types';
@@ -64,16 +65,16 @@ const SORT_TABS: { key: SortKey; label: string }[] = [
 ];
 
 const SORT_HEADINGS: Record<SortKey, [string, string]> = {
-  newest: ['🕘 Latest deals', 'Freshly parsed from your channels'],
+  newest: ['🕘 Latest deals', 'Freshly posted deals'],
   best: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
   relevance: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
   discount: ['⚡ Biggest discounts', 'Largest drop from the quoted MRP'],
-  price_low: ['💸 Cheapest first', 'Lowest price across your channels'],
-  price_high: ['💎 Priciest first', 'Highest price across your channels'],
+  price_low: ['💸 Cheapest first', 'Lowest prices first'],
+  price_high: ['💎 Priciest first', 'Highest prices first'],
 };
 
 function gridHeading(f: DealFilters): [string, string] {
-  if (f.q) return [`🔎 Results for “${f.q}”`, 'Best matches across your channels'];
+  if (f.q) return [`🔎 Results for “${f.q}”`, 'Best matches'];
   if (activeFilterCount(f)) return ['🏷️ Filtered deals', 'Matching your filters'];
   return SORT_HEADINGS[f.sort] ?? SORT_HEADINGS.newest;
 }
@@ -225,7 +226,7 @@ export function DealsScreen() {
     api.auth
       .me()
       .then((me) => {
-        if (me.authenticated) {
+        if (me.authenticated && !isPublicMode()) {
           setName(me.user.first_name || me.user.username || '');
           setTracked(me.tracked_channels);
         }
@@ -274,7 +275,7 @@ export function DealsScreen() {
     if (syncing) return;
     haptic.light();
     setSyncing(true);
-    setStatusOverride('Scanning your Telegram channels…');
+    setStatusOverride('Scanning for new deals…');
     try {
       const res = await api.channels.sync();
       const added = (res.new || 0) + (res.merged || 0);
@@ -282,7 +283,7 @@ export function DealsScreen() {
       toast(
         added
           ? `Synced: ${res.new ?? 0} new deals, ${res.merged ?? 0} matched to existing ones.`
-          : 'Sync complete — no new deals in your channels yet.',
+          : 'Sync complete — no new deals yet.',
         'ok',
       );
       setStatusOverride(
@@ -336,7 +337,7 @@ export function DealsScreen() {
     <View style={{ gap: 16, paddingBottom: 12 }}>
       <StatsCard stats={stats} override={statusOverride} syncing={syncing} />
 
-      {tracked === 0 ? (
+      {tracked === 0 && !isPublicMode() ? (
         <Pressable
           accessibilityRole="button"
           onPress={() => navigation.navigate('Channels')}
@@ -545,14 +546,12 @@ export function DealsScreen() {
         message={
           hasFilters
             ? 'Nothing matches your search and filters right now. Try fewer filters or a broader term.'
-            : 'No deals have come in yet. Pick a few channels and run a sync to fill your feed.'
+            : 'New deals arrive every few minutes — check back soon.'
         }
         actions={[
           ...(hasFilters
             ? [{ title: 'Clear search & filters', variant: 'primary' as const, onPress: () => setFilters((f) => ({ ...clearedFilters(f), q: '' })) }]
             : []),
-          { title: 'Choose channels', variant: hasFilters ? ('soft' as const) : ('primary' as const), onPress: () => navigation.navigate('Channels') },
-          { title: 'Sync now', onPress: syncNow },
         ]}
       />
     );
@@ -591,7 +590,7 @@ export function DealsScreen() {
           haptic.select();
           patchFilters({ q: '' });
         }}
-        onSync={syncNow}
+        onSync={isPublicMode() ? undefined : syncNow}
       />
       <FlatList
         ref={listRef}
@@ -647,7 +646,7 @@ function TopBar({
   spin: Animated.Value;
   onSearch: () => void;
   onClearQuery: () => void;
-  onSync: () => void;
+  onSync?: () => void;
 }) {
   const t = useTheme();
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
@@ -663,10 +662,11 @@ function TopBar({
             {name ? `${greeting()}, ${name} 👋` : `${greeting()} 👋`}
           </Text>
         </View>
+        {onSync ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Sync deals now"
-          accessibilityHint="Fetches new deals from your Telegram channels"
+          accessibilityHint="Fetches new deals now"
           accessibilityState={{ busy: syncing }}
           onPress={onSync}
           disabled={syncing}
@@ -686,6 +686,7 @@ function TopBar({
             <Icon name="sync" size={19} color={syncing ? t.c.accent : t.c.text} />
           </Animated.View>
         </Pressable>
+        ) : null}
       </View>
       <Pressable
         accessibilityRole="search"
@@ -728,7 +729,6 @@ function StatsCard({ stats, override, syncing }: { stats: Stats | null; override
   const cells: [string, number | undefined, boolean][] = [
     ['Live deals', stats?.deals_live, false],
     ['Added today', stats?.deals_today, true],
-    ['Channels', stats?.channels, false],
   ];
   return (
     <View style={{ borderRadius: t.r.lg, borderWidth: 1, borderColor: t.c.border, overflow: 'hidden', backgroundColor: t.c.surface }}>

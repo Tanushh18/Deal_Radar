@@ -226,11 +226,6 @@ export function FiltersScreen() {
 
         <View style={{ gap: 4 }}>
           <ToggleRow label="Only all-time lows" value={draft.only_lowest} onChange={(v) => patch({ only_lowest: v })} />
-          <ToggleRow
-            label="Include untracked channels"
-            value={draft.all_channels}
-            onChange={(v) => patch({ all_channels: v })}
-          />
         </View>
       </ScrollView>
 

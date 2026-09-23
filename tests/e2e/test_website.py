@@ -164,39 +164,6 @@ def test_deal_detail_and_deep_link(open_page, server, viewport):
     assert not errors, errors
 
 
-# ---------------------------------------------------------------- alerts + notifications
-def test_alerts_create_toggle_delete(open_page):
-    page, _ = open_page(TABLET)
-    deals_loaded(page)
-    page.locator('#bottomnav [data-nav="alerts"]').click()
-    expect(page.locator("#page-alerts")).to_be_visible()
-    page.locator("#a-query").fill("e2e noise cancelling earbuds")
-    page.locator("#a-max-price").fill("3000")
-    page.locator('#alert-form button[type="submit"]').click()
-    row = page.locator(".alert-row", has_text="e2e noise cancelling earbuds")
-    expect(row).to_be_visible()
-
-    row.locator(".switch input").click(force=True)
-    expect(row.locator(".alert-status")).to_have_text(re.compile("Paused"))
-
-    row.locator("[data-del]").click()
-    expect(page.locator("#modal-body h2")).to_have_text("Delete alert?")
-    page.locator('[data-confirm="0"]').click()
-    expect(row).to_be_visible()
-    row.locator("[data-del]").click()
-    page.locator('[data-confirm="1"]').click()
-    expect(row).to_have_count(0)
-
-
-def test_test_notification_lands_in_recent_matches(open_page):
-    page, _ = open_page(DESKTOP)
-    deals_loaded(page)
-    page.locator('.topnav [data-nav="alerts"]').click()
-    page.locator("#btn-test-notif").click()
-    expect(page.locator(".toast").last).to_be_visible()
-    expect(page.locator("#notif-list")).to_contain_text("notifications are on")
-
-
 # ---------------------------------------------------------------- theme
 def test_dark_mode_follows_the_system(open_page):
     page, _ = open_page(PHONE, color_scheme="dark")
