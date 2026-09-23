@@ -374,6 +374,19 @@ def suggest(q: str, channel_ids: Optional[List[int]] = None, limit: int = 6) -> 
     }
 
 
+# BuyHatke resolves these hosts itself (verified); other shorteners (cuttli,
+# bitli…) 404 there, so those need our resolved_url from the link checker.
+_BUYHATKE_HOSTS = ("amazon.", "amzn.to", "amzn.in", "flipkart.com", "fkrt.", "myntra.com", "myntr.it",
+                   "ajio.com", "nykaa.com", "tatacliq.com", "croma.com", "reliancedigital.in", "meesho.com")
+
+
+def price_history_url(deal: Dict[str, Any]) -> str:
+    for candidate in (deal.get("resolved_url"), deal.get("clean_url"), deal.get("url")):
+        if candidate and any(host in candidate.lower() for host in _BUYHATKE_HOSTS):
+            return "https://buyhatke.com/" + candidate
+    return ""
+
+
 def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
     """Trim a DB row down to what the UI needs."""
     price = deal.get("price")
@@ -405,6 +418,7 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
         "score": deal.get("score"),
         "is_lowest": bool(deal.get("is_lowest")),
         "flags": deal.get("flags") or [],
+        "price_history_url": price_history_url(deal),
         "relevance": deal.get("_relevance"),
     }
 

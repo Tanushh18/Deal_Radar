@@ -2,6 +2,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
 
 import { api, errorMessage, isOffline, type DealDetail, type PricePoint } from '../api';
 import {
@@ -314,6 +315,15 @@ export function DealDetailScreen() {
               }}
             />
           </View>
+          {deal.price_history_url ? (
+            <IconButton
+              name="trend"
+              label="Price history and stock"
+              variant="soft"
+              onPress={() => WebBrowser.openBrowserAsync(deal.price_history_url as string)}
+              style={{ width: 48, height: 48 }}
+            />
+          ) : null}
           <IconButton name="copy" label="Copy link" variant="soft" onPress={() => copy(deal.url ?? '', 'Link')} style={{ width: 48, height: 48 }} />
         </View>
       ) : null}

@@ -20,6 +20,7 @@ import asyncio
 import ipaddress
 import json
 import logging
+import re
 import socket
 import time
 from typing import Any, Dict, List, Optional
@@ -222,6 +223,46 @@ async def _resolve_is_safe(url: str) -> bool:
     return True
 
 
+_AVAILABILITY_RE = re.compile(r'"availability"\s*:\s*"(?:https?://schema\.org/)?([A-Za-z]+)"', re.I)
+_LD_PRICE_RE = re.compile(r'"(?:price|lowPrice)"\s*:\s*"?([0-9][0-9,]*(?:\.[0-9]+)?)"?', re.I)
+_BLOCK_MARKERS = ("captcha", "robot check", "are you a human", "access denied", "unusual traffic")
+
+
+def read_product_page(html: str) -> Dict[str, Any]:
+    """Stock + price from the page's schema.org product data (what search engines read).
+
+    Returns {"stock": "in"|"out"|None, "price": float|None, "blocked": bool}.
+    Structured data beats text matching: "out of stock" text also appears on
+    in-stock pages (other sizes, related items).
+    """
+    low = html.lower()
+    stock = None
+    match = _AVAILABILITY_RE.search(html)
+    if match:
+        value = match.group(1).lower()
+        if value in ("instock", "limitedavailability", "preorder", "onlineonly", "backorder"):
+            stock = "in"
+        elif value in ("outofstock", "soldout", "discontinued"):
+            stock = "out"
+    price = None
+    price_match = _LD_PRICE_RE.search(html)
+    if price_match:
+        try:
+            price = float(price_match.group(1).replace(",", "")) or None
+        except ValueError:
+            price = None
+    blocked = stock is None and any(m in low for m in _BLOCK_MARKERS)
+    return {"stock": stock, "price": price, "blocked": blocked}
+
+
+def _set_flag(deal_id: str, flag: str, on: bool) -> None:
+    row = db.query_one("SELECT flags FROM deals WHERE id = ?", (deal_id,))
+    flags = set((db.row_to_dict(row) or {}).get("flags") or []) if row else set()
+    new = (flags | {flag}) if on else (flags - {flag})
+    if new != flags:
+        db.execute("UPDATE deals SET flags = ?, dirty = 1 WHERE id = ?", (json.dumps(sorted(new)), deal_id))
+
+
 # --- step 5: link liveness ---------------------------------------------
 async def verify_links(batch: int = 40) -> Dict[str, int]:
     """Probe the least-recently-checked live deals; retire dead links.
@@ -233,7 +274,7 @@ async def verify_links(batch: int = 40) -> Dict[str, int]:
         return {"checked": 0, "dead": 0}
 
     rows = db.query(
-        "SELECT id, url, clean_url FROM deals WHERE status='live' AND url != '' "
+        "SELECT id, url, clean_url, product_key, store FROM deals WHERE status='live' AND url != '' "
         "ORDER BY last_seen_at ASC LIMIT ?",
         (batch,),
     )
@@ -274,9 +315,15 @@ async def verify_links(batch: int = 40) -> Dict[str, int]:
                             continue
 
                         checked += 1
+                        original = row["url"] or row["clean_url"]
+                        if url != original:
+                            db.execute("UPDATE deals SET resolved_url = ? WHERE id = ?", (url, row["id"]))
                         if resp.status_code in (404, 410):
                             store.mark_dead(row["id"], "dead_link")
                             dead += 1
+                            return
+                        if resp.status_code in (403, 429, 503):
+                            _set_flag(row["id"], "stock_unknown", True)
                             return
                         if resp.status_code < 400:
                             body = b""
@@ -284,11 +331,20 @@ async def verify_links(batch: int = 40) -> Dict[str, int]:
                                 body += chunk
                                 if len(body) >= MAX_PROBE_BYTES:
                                     break
-                            text = body.decode("utf-8", errors="ignore").lower()
-                            if any(marker in text for marker in DEAD_MARKERS):
+                            html = body.decode("utf-8", errors="ignore")
+                            page = read_product_page(html)
+                            if page["stock"] == "out" or (
+                                page["stock"] is None and not page["blocked"]
+                                and any(marker in html.lower() for marker in DEAD_MARKERS)
+                            ):
                                 store.mark_dead(row["id"], "out_of_stock")
                                 dead += 1
                                 return
+                            _set_flag(row["id"], "stock_unknown", page["blocked"])
+                            if page["stock"] == "in" and page["price"] and row["product_key"]:
+                                # Every successful check adds a real price point, so
+                                # our own history (and all-time lows) grows between posts.
+                                store.record_price(row["product_key"], page["price"], row["store"] or "")
                             # Alive and still selling — extend past the base TTL.
                             db.execute(
                                 "UPDATE deals SET last_seen_at = ?, "

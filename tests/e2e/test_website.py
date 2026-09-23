@@ -160,7 +160,8 @@ def test_deal_detail_and_deep_link(open_page, server, viewport):
     page.goto(f"/?deal={deal['id']}")
     expect(page.locator("#modal-body h2")).to_have_text(deal["title"])
     expect(page.locator(".price-chart svg")).to_be_visible()
-    expect(page.locator(".detail-cta a")).to_have_attribute("href", re.compile("flipkart|myntra|amazon"))
+    expect(page.locator(".detail-cta a.btn-primary")).to_have_attribute("href", re.compile("flipkart|myntra|amazon"))
+    expect(page.locator("#btn-price-history")).to_have_attribute("href", re.compile(r"^https://buyhatke\.com/https://"))
     assert "deal=" not in page.url
     page.keyboard.press("Escape")
     expect(page.locator("#modal")).to_be_hidden()

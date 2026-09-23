@@ -162,6 +162,10 @@ def connect() -> sqlite3.Connection:
         _conn.execute("PRAGMA journal_mode=WAL")
         _conn.execute("PRAGMA synchronous=NORMAL")
         _conn.executescript(SCHEMA)
+        # Additive migration: the final store URL behind cuttli/bitli-style redirects.
+        cols = {r[1] for r in _conn.execute("PRAGMA table_info(deals)")}
+        if "resolved_url" not in cols:
+            _conn.execute("ALTER TABLE deals ADD COLUMN resolved_url TEXT DEFAULT ''")
         _conn.commit()
         return _conn
 

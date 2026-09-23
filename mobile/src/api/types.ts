@@ -37,6 +37,7 @@ export type Deal = {
   is_lowest: boolean;
   flags: string[];
   relevance: number | null;
+  price_history_url?: string;
 };
 
 export type PriceStats = {

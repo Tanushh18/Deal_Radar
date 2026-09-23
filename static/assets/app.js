@@ -954,6 +954,7 @@
 
   function dealBadges(deal) {
     const badges = [];
+    if (hasFlag(deal, 'stock_unknown')) badges.push('<span class="badge badge-score">Stock unknown</span>');
     if (deal.is_lowest) badges.push('<span class="badge badge-low">🟢 LOWEST EVER</span>');
     else if (deal.score >= 80) badges.push('<span class="badge badge-hot">🏆 GREAT DEAL</span>');
     else if (isFresh(deal)) badges.push('<span class="badge badge-new">🆕 NEW</span>');
@@ -1136,6 +1137,8 @@
         </div>
         ${deal.url ? `
           <div class="detail-cta">
+            ${deal.price_history_url ? `<a class="btn btn-soft btn-block" id="btn-price-history" href="${escapeHtml(deal.price_history_url)}"
+               target="_blank" rel="noopener noreferrer nofollow">${icon('trend', 'ico')} Price history &amp; stock</a>` : ''}
             <a class="btn btn-primary btn-block" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">
               Open on ${escapeHtml(storeName(deal) || 'store')} ${icon('external', 'ico')}
             </a>

@@ -1565,3 +1565,5 @@ details.raw[open] summary::before { transform: rotate(45deg); }
    Native Android shell (class set by MainActivity's glue script)
    ============================================================ */
 :root.dr-native-android body { overscroll-behavior-y: contain; }
+
+.detail-cta { display: grid; gap: 8px; }
