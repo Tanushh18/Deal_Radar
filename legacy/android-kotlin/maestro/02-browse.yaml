@@ -1,0 +1,47 @@
+# Signed-in coverage: search, filters, deal detail, and the three tabs.
+#
+# Deliberately does NOT clear state. Telegram sign-in needs a login code
+# delivered to your Telegram app, which no automation can obtain — so sign in
+# by hand once, and this flow reuses that session cookie on every later run.
+#
+#   maestro test android/maestro/02-browse.yaml
+appId: com.dealradar.app
+---
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Deals"
+    timeout: 60000
+
+# --- search ---
+- tapOn:
+    text: "What are you looking for?.*"
+- inputText: "charger"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "deals for"
+    timeout: 20000
+
+# --- deal detail: opens the modal, including the price-history chart ---
+- tapOn:
+    text: "Details"
+    index: 0
+- assertVisible: "Price history"
+- assertVisible: "Deal score"
+- tapOn: "Close"
+
+# --- filter drawer (mobile layout) ---
+- tapOn: "Filters"
+- assertVisible: "Sort by"
+- assertVisible: "Minimum discount"
+- tapOn: "Done"
+
+# --- tabs ---
+- tapOn: "Channels"
+- assertVisible: "Add a public channel by username"
+
+- tapOn: "Alerts"
+- assertVisible: "What to watch for"
+
+- tapOn: "Deals"
+- assertVisible: "Live deals"

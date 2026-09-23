@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">DealRadar</string>
+
+    <string name="setup_title">Server setup</string>
+    <string name="setup_heading">Connect to your DealRadar server</string>
+    <string name="setup_body">DealRadar runs its own backend — the FastAPI service in the <b>server/</b> folder. Start it, then enter the address it is reachable at.</string>
+    <string name="setup_url_hint">https://dealradar-k2hb.onrender.com</string>
+    <string name="setup_url_label">Server address</string>
+    <string name="setup_connect">Connect</string>
+    <string name="setup_save_anyway">Save without testing</string>
+    <string name="setup_preset_live">Live server</string>
+    <string name="setup_preset_emulator">Local (emulator)</string>
+    <string name="setup_preset_lan">Local (Wi-Fi)</string>
+    <string name="setup_hint_emulator">Defaults to the live server. For a local one: 10.0.2.2 is your computer as seen from the emulator — not localhost.</string>
+    <string name="setup_testing">Checking server… a sleeping free-tier server can take up to a minute to wake.</string>
+    <string name="setup_ok">Connected. Loading DealRadar…</string>
+
+    <string name="error_title">Can\'t reach DealRadar</string>
+    <string name="error_retry">Try again</string>
+    <string name="error_change_server">Change server</string>
+
+    <string name="menu_app_settings">App settings</string>
+    <string name="back_again_to_exit">Press back again to exit</string>
+</resources>

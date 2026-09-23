@@ -1,0 +1,27 @@
+# Step 1 of sign-in: submit the phone number and request a login code.
+#
+# The number is a parameter, never a literal in this file:
+#   maestro test -e PHONE="+919999999999" android/maestro/03-signin-phone.yaml
+#
+# No launchApp on purpose. Telegram's login id lives in page JS, so relaunching
+# between this flow and 04-signin-code would discard it and invalidate the code.
+appId: com.dealradar.app
+---
+- scrollUntilVisible:
+    element:
+      text: "Send login code"
+    direction: DOWN
+
+- tapOn:
+    below:
+      text: "Phone number"
+- eraseText
+- inputText: ${PHONE}
+- hideKeyboard
+
+- tapOn: "Send login code"
+
+- extendedWaitUntil:
+    visible: "Enter your code"
+    timeout: 60000
+- assertVisible: ".*Check your Telegram app, not SMS.*"
