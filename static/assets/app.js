@@ -1419,7 +1419,7 @@
             ${deal.sizes ? `<dt>Sizes</dt><dd class="raw">${escapeHtml(deal.sizes)}</dd>` : ''}
             ${deal.coupon ? `<dt>Coupon</dt><dd><span class="coupon">${escapeHtml(deal.coupon)}</span></dd>` : ''}
             <dt>Posted</dt><dd class="raw">${timeAgo(deal.posted_at)}</dd>
-            <dt>Posted</dt><dd>${deal.repost_count} time${deal.repost_count === 1 ? '' : 's'}</dd>
+            <dt>Shared</dt><dd>${deal.repost_count} time${deal.repost_count === 1 ? '' : 's'}</dd>
             <dt>Expires</dt><dd class="raw">${deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString() : '—'}</dd>
             ${history.points ? `<dt>History</dt><dd class="raw">${history.points} points · low ${money(history.min)} · high ${money(history.max)}</dd>` : ''}
             <dt>Deal score</dt><dd>${Math.round(deal.score ?? 0)} / 100</dd>
@@ -1710,7 +1710,8 @@
           ${r.archive.length ? `<h3 class="section-title" style="margin:16px 0 10px">🗂️ Earlier deals</h3>${cards(r.archive)}` : ''}
           ${!r.deals.length && !r.archive.length ? '<p class="muted">We haven’t seen this product in our channels yet.</p>' : ''}
           ${r.price_history_url ? `<a class="btn btn-soft btn-block" style="margin-top:14px" target="_blank" rel="noopener noreferrer nofollow" href="${escapeHtml(r.price_history_url)}">${icon('trend', 'ico')} Full price history on BuyHatke</a>` : ''}`;
-        renderPriceChart($('#check-chart'), r.history || [], '');
+        if ((r.history || []).length >= 2) renderPriceChart($('#check-chart'), r.history, '');
+        else $('#check-chart').remove();
         bindDetailTriggers(out);
       } catch (err) {
         out.innerHTML = `<p class="alert alert-error">${escapeHtml(err.message)}</p>`;
