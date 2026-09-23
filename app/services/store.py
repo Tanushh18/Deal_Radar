@@ -78,6 +78,8 @@ def record_price(product_key: str, price: Optional[float], store: str) -> None:
         "INSERT INTO price_history (product_key, price, store, seen_at) VALUES (?, ?, ?, ?)",
         (product_key, float(price), store, time.time()),
     )
+    from . import price_alerts  # local: price_alerts -> push -> db only, but keep store import-light
+    price_alerts.check(product_key, price)
 
 
 def price_stats(product_key: str) -> Dict[str, Any]:

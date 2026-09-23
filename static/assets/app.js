@@ -13,7 +13,7 @@
     page: 'deals',
     filters: {
       q: '', category: '', subcategory: '', store: '', brand: '',
-      max_price: null, min_discount: 0, only_lowest: false,
+      min_price: null, max_price: null, min_discount: 0, has_coupon: false, only_lowest: false,
       all_channels: false, sort: 'newest',
     },
     offset: 0,
@@ -415,7 +415,7 @@
      ============================================================ */
   function navigate(page) {
     state.page = page;
-    ['deals', 'channels', 'alerts'].forEach((p) => {
+    ['deals', 'channels', 'alerts', 'saved'].forEach((p) => {
       $(`#page-${p}`).classList.toggle('hidden', p !== page);
     });
     $$('.navlink, .navbtn').forEach((n) => n.classList.toggle('active', n.dataset.nav === page));
@@ -424,6 +424,7 @@
     closeUserMenu();
     closeSuggest();
     if (page === 'alerts') { loadAlerts(); loadNotifications(); }
+    if (page === 'saved') loadSaved();
     if (page === 'channels' && !state.availableChannels.length) loadAvailableChannels();
   }
 
@@ -614,7 +615,8 @@
     const f = state.filters;
     return [
       f.category, f.subcategory, f.store, f.brand,
-      f.max_price ? 1 : 0, f.min_discount ? 1 : 0, f.only_lowest ? 1 : 0, f.all_channels ? 1 : 0,
+      f.min_price ? 1 : 0, f.max_price ? 1 : 0, f.min_discount ? 1 : 0, f.has_coupon ? 1 : 0,
+      f.only_lowest ? 1 : 0, f.all_channels ? 1 : 0,
     ].filter(Boolean).length;
   }
 
@@ -635,7 +637,9 @@
     if (f.subcategory) chips.push(['subcategory', f.subcategory]);
     if (f.store)       chips.push(['store', f.store]);
     if (f.brand)       chips.push(['brand', f.brand]);
+    if (f.min_price)   chips.push(['min_price', `Over ${money(f.min_price)}`]);
     if (f.max_price)   chips.push(['max_price', `Under ${money(f.max_price)}`]);
+    if (f.has_coupon)  chips.push(['has_coupon', 'Has coupon']);
     if (f.min_discount) chips.push(['min_discount', `${f.min_discount}%+ off`]);
     if (f.only_lowest) chips.push(['only_lowest', 'All-time lows']);
     if (f.all_channels) chips.push(['all_channels', 'All channels']);
@@ -658,7 +662,9 @@
   function clearFilter(key) {
     const f = state.filters;
     if (key === 'category') { f.category = ''; f.subcategory = ''; renderCategoryChips(); renderSubcategoryFilter(); }
-    else if (key === 'max_price') { f.max_price = null; $('#f-max-price').value = ''; }
+    else if (key === 'max_price') { f.max_price = null; $('#f-max-price').value = ''; syncFilterChips(); }
+    else if (key === 'min_price') { f.min_price = null; $('#f-min-price').value = ''; }
+    else if (key === 'has_coupon') { f.has_coupon = false; $('#f-coupon').checked = false; }
     else if (key === 'min_discount') { f.min_discount = 0; $('#f-discount').value = 0; $('#f-discount-out').textContent = 'any'; }
     else if (key === 'only_lowest') { f.only_lowest = false; $('#f-lowest').checked = false; }
     else if (key === 'all_channels') { f.all_channels = false; $('#f-all-channels').checked = false; loadFacets(); }
@@ -727,7 +733,9 @@
     if (f.subcategory) params.set('subcategory', f.subcategory);
     if (f.store) params.set('store', f.store);
     if (f.brand) params.set('brand', f.brand);
+    if (f.min_price) params.set('min_price', f.min_price);
     if (f.max_price) params.set('max_price', f.max_price);
+    if (f.has_coupon) params.set('has_coupon', 'true');
     if (f.min_discount) params.set('min_discount', f.min_discount);
     if (f.only_lowest) params.set('only_lowest', 'true');
     if (f.all_channels) params.set('all_channels', 'true');
@@ -979,6 +987,235 @@
     window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
   });
 
+  /* ---------------- device (no account) ---------------- */
+  const readJSON = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+  const writeJSON = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ } };
+  function deviceId() {
+    let id = readJSON('dr-device', null);
+    if (!id) {
+      id = 'web_' + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : Math.random().toString(36).slice(2) + Date.now().toString(36));
+      writeJSON('dr-device', id);
+    }
+    return id;
+  }
+
+  /* ---------------- ♡ saved deals ---------------- */
+  const SAVED_KEY = 'dr-saved';
+  const savedMap = () => readJSON(SAVED_KEY, {});
+  const isSaved = (id) => Boolean(savedMap()[id]);
+  const SNAPSHOT = ['id', 'title', 'price', 'mrp', 'discount_pct', 'saving', 'store', 'image_url', 'url', 'coupon',
+    'flags', 'posted_at', 'repost_count', 'status', 'is_lowest', 'score', 'price_history_url'];
+  const dealCache = new Map();
+  function heartButton(deal) {
+    dealCache.set(deal.id, deal);
+    const on = isSaved(deal.id);
+    return `<button class="heart ${on ? 'on' : ''}" data-save="${escapeHtml(deal.id)}" type="button"
+      aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save deal'}">${icon('heart')}</button>`;
+  }
+  function updateSavedBadges() {
+    const n = Object.keys(savedMap()).length;
+    [$('#saved-count'), $('#nav-saved-count')].forEach((el) => {
+      if (!el) return;
+      el.textContent = n > 99 ? '99+' : n;
+      el.classList.toggle('hidden', !n);
+    });
+  }
+  function toggleSaved(id) {
+    const map = savedMap();
+    if (map[id]) {
+      delete map[id];
+      toast('Removed from saved.', 'info', 2200);
+    } else {
+      const d = dealCache.get(id) || { id };
+      map[id] = { ...Object.fromEntries(SNAPSHOT.map((k) => [k, d[k]])), savedAt: Date.now() };
+      toast('Saved ♡ — find it under Saved.', 'ok', 2200);
+    }
+    writeJSON(SAVED_KEY, map);
+    const on = Boolean(map[id]);
+    $$(`[data-save="${CSS.escape(id)}"]`).forEach((b) => {
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+      if (b.classList.contains('heart')) b.setAttribute('aria-label', on ? 'Remove from saved' : 'Save deal');
+      const label = b.querySelector('span');
+      if (label) label.textContent = on ? 'Saved' : 'Save';
+    });
+    updateSavedBadges();
+    if (state.page === 'saved') loadSaved();
+  }
+  // Capture phase: the heart sits inside the card's clickable image, which
+  // would otherwise also open the deal.
+  document.addEventListener('click', (e) => {
+    const heart = e.target.closest?.('[data-save]');
+    if (!heart) return;
+    e.preventDefault();
+    e.stopPropagation();
+    toggleSaved(heart.dataset.save);
+  }, true);
+
+  async function loadSaved() {
+    const map = savedMap();
+    const ids = Object.keys(map).sort((a, b) => (map[b].savedAt || 0) - (map[a].savedAt || 0));
+    $('#saved-empty').classList.toggle('hidden', ids.length > 0);
+    const render = (deals) => {
+      $('#saved-grid').innerHTML = deals.map(dealCard).join('');
+      bindDetailTriggers($('#saved-grid'));
+    };
+    render(ids.map((id) => map[id]));
+    renderPriceWatch();
+    // Refresh prices; a deal gone from the server keeps its snapshot, marked past.
+    const fresh = await Promise.all(ids.slice(0, 60).map((id) =>
+      api(`/api/deals/${encodeURIComponent(id)}`)
+        .then((d) => { dealCache.set(d.id, d); return d; })
+        .catch(() => ({ ...map[id], status: 'expired' }))));
+    if (state.page === 'saved') render(fresh.concat(ids.slice(60).map((id) => map[id])));
+  }
+
+  /* ---------------- 📤 share ---------------- */
+  async function shareDeal(deal) {
+    const url = `${location.origin}/d/${encodeURIComponent(deal.id)}`;
+    const text = `${deal.title}${deal.price != null ? ` — ${money(deal.price)}` : ''}${deal.discount_pct >= 5 ? ` (${deal.discount_pct}% off)` : ''}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: deal.title, text, url }); return; } catch (err) { if (err.name === 'AbortError') return; }
+    }
+    openModal(sheetShell('Share deal', `
+      <div class="share-grid">
+        <a class="btn btn-soft" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text + '\n' + url)}">WhatsApp</a>
+        <a class="btn btn-soft" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}">Telegram</a>
+        <button class="btn btn-soft" type="button" id="copy-share">Copy link</button>
+      </div>`));
+    $('#copy-share')?.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(url); toast('Link copied.', 'ok'); closeModal(); }
+      catch { toast(url, 'info', 8000); }
+    });
+  }
+
+  /* ---------------- 🔔 price-drop alerts (device) ---------------- */
+  state.priceAlerts = [];
+  function detailActions(deal) {
+    dealCache.set(deal.id, deal);
+    const target = deal.price ? Math.max(1, Math.floor((deal.price * 0.9) / 10) * 10) : '';
+    const existing = state.priceAlerts.find((a) => a.deal_id === deal.id && !a.triggered_at);
+    return `
+      <div class="deal-actions-row">
+        <button class="btn btn-soft btn-sm ${isSaved(deal.id) ? 'on' : ''}" type="button" data-save="${escapeHtml(deal.id)}">${icon('heart', 'ico')}
+          <span>${isSaved(deal.id) ? 'Saved' : 'Save'}</span></button>
+        <button class="btn btn-soft btn-sm" type="button" id="btn-share-deal">${icon('share', 'ico')} Share</button>
+      </div>
+      ${deal.price ? `
+      <form class="pricealert" id="price-alert-form">
+        <div class="pa-copy">🔔 <b>Price-drop alert</b><span>${existing
+          ? `Watching for ₹${Number(existing.target_price).toLocaleString('en-IN')} or less`
+          : 'Get notified when it gets cheaper'}</span></div>
+        <div class="pa-row">
+          <span class="pa-cur">₹</span>
+          <input class="input" id="pa-target" type="number" min="1" step="1" value="${existing ? existing.target_price : target}" aria-label="Alert me below this price" />
+          <button class="btn btn-primary btn-sm" type="submit">${existing ? 'Update' : 'Notify me'}</button>
+        </div>
+      </form>` : ''}`;
+  }
+  function bindDetailActions(deal) {
+    $('#btn-share-deal')?.addEventListener('click', () => shareDeal(deal));
+    $('#price-alert-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type=submit]');
+      const target = Number($('#pa-target').value);
+      if (!target || target <= 0) { toast('Enter a target price.', 'err'); return; }
+      busy(btn, true);
+      try {
+        const res = await post('/api/price-alerts', { device_id: deviceId(), deal_id: deal.id, target_price: target });
+        if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+        toast(res.alert.triggered_at
+          ? `It's already ₹${Number(res.alert.triggered_price).toLocaleString('en-IN')} — at or below your target!`
+          : `We'll tell you when it drops to ₹${target.toLocaleString('en-IN')} or less.`, 'ok', 5000);
+        await pollPriceAlerts();
+      } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
+    });
+  }
+  async function pollPriceAlerts() {
+    try {
+      const res = await api(`/api/price-alerts?device_id=${encodeURIComponent(deviceId())}`);
+      state.priceAlerts = res.alerts || [];
+    } catch { return; }
+    const seen = new Set(readJSON('dr-alerts-seen', []));
+    const fresh = state.priceAlerts.filter((a) => a.triggered_at && !seen.has(a.id));
+    fresh.forEach((a) => {
+      const msg = `📉 ${(a.title || 'A deal you watch').slice(0, 60)} dropped to ₹${Number(a.triggered_price).toLocaleString('en-IN')}`;
+      toast(msg, 'ok', 8000);
+      if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+        try { new Notification('DealRadar price drop', { body: msg, icon: '/assets/icons/icon-192.png', tag: `pa-${a.id}` }); } catch { /* unsupported */ }
+      }
+      seen.add(a.id);
+    });
+    if (fresh.length) writeJSON('dr-alerts-seen', [...seen]);
+    if (state.page === 'saved') renderPriceWatch();
+  }
+  function renderPriceWatch() {
+    const list = state.priceAlerts;
+    $('#price-watch').classList.toggle('hidden', !list.length);
+    $('#price-watch-list').innerHTML = list.map((a) => `
+      <div class="alert-row" data-open="${escapeHtml(a.deal_id)}">
+        <div class="alert-main">
+          <div class="alert-q">${escapeHtml(a.title || 'Deal')}</div>
+          <div class="alert-filters">Target ₹${Number(a.target_price).toLocaleString('en-IN')}${a.current_price != null ? ` · now ₹${Number(a.current_price).toLocaleString('en-IN')}` : ''}</div>
+          <div class="alert-status ${a.triggered_at ? '' : 'off'}"><span class="sdot"></span>${a.triggered_at
+            ? `Dropped to ₹${Number(a.triggered_price).toLocaleString('en-IN')} ✓` : 'Watching'}</div>
+        </div>
+        <div class="alert-actions"><button class="btn btn-ghost btn-xs" data-pa-del="${a.id}">Remove</button></div>
+      </div>`).join('');
+  }
+  $('#price-watch-list').addEventListener('click', async (e) => {
+    const del = e.target.closest('[data-pa-del]');
+    if (del) {
+      e.stopPropagation();
+      try {
+        await api(`/api/price-alerts/${del.dataset.paDel}?device_id=${encodeURIComponent(deviceId())}`, { method: 'DELETE' });
+        await pollPriceAlerts();
+        renderPriceWatch();
+      } catch (err) { toast(err.message, 'err'); }
+      return;
+    }
+    const row = e.target.closest('[data-open]');
+    if (row) showDealDetail(row.dataset.open);
+  });
+
+  /* ---------------- enhanced filters ---------------- */
+  function syncFilterChips() {
+    const f = state.filters;
+    $$('#f-price-bands [data-band]').forEach((c) => c.classList.toggle('active', !f.min_price && Number(c.dataset.band) === Number(f.max_price)));
+    $$('#f-discount-chips [data-off]').forEach((c) => c.classList.toggle('active', Number(c.dataset.off) === Number(f.min_discount)));
+  }
+  $('#f-price-bands').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-band]');
+    if (!chip) return;
+    const band = Number(chip.dataset.band);
+    const same = state.filters.max_price === band && !state.filters.min_price;
+    state.filters.max_price = same ? null : band;
+    state.filters.min_price = null;
+    $('#f-max-price').value = same ? '' : band;
+    $('#f-min-price').value = '';
+    syncFilterChips();
+    refreshDeals(true);
+  });
+  $('#f-discount-chips').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-off]');
+    if (!chip) return;
+    const off = Number(chip.dataset.off);
+    state.filters.min_discount = state.filters.min_discount === off ? 0 : off;
+    $('#f-discount').value = state.filters.min_discount;
+    $('#f-discount-out').textContent = state.filters.min_discount ? state.filters.min_discount + '%+' : 'any';
+    syncFilterChips();
+    refreshDeals(true);
+  });
+  $('#f-min-price').addEventListener('change', (e) => {
+    state.filters.min_price = e.target.value ? Number(e.target.value) : null;
+    syncFilterChips();
+    refreshDeals(true);
+  });
+  $('#f-coupon').addEventListener('change', (e) => {
+    state.filters.has_coupon = e.target.checked;
+    refreshDeals(true);
+  });
+
   /* ---------------- deal card ---------------- */
   const FRESH_SECONDS = 5400;   // 90 min — "new" only while it genuinely is
 
@@ -1027,7 +1264,7 @@
       <article class="deal" data-id="${escapeHtml(deal.id)}">
         <div class="deal-media" data-detail="${escapeHtml(deal.id)}" role="button" tabindex="0"
              aria-label="${escapeHtml(deal.title)}">
-          ${dealMedia(deal, `<div class="badges">${badges.join('')}</div>${store}`)}
+          ${dealMedia(deal, `<div class="badges">${badges.join('')}</div>${store}${heartButton(deal)}`)}
         </div>
         <div class="deal-body">
           <div class="deal-title" title="${escapeHtml(deal.title)}">${highlight(deal.title, state.filters.q)}</div>
@@ -1167,6 +1404,7 @@
             </div>
           </div>
           ${reasons.length ? `<ul class="reasons">${reasons.map((r) => `<li>${icon('check')}<span>${escapeHtml(r)}</span></li>`).join('')}</ul>` : ''}
+          ${detailActions(deal)}
 
           <div class="price-chart-wrap">
             <div class="price-chart-title">Price history</div>
@@ -1203,6 +1441,7 @@
       `, { wide: true });
       const chartHost = document.getElementById(`price-chart-${id}`);
       if (chartHost) renderPriceChart(chartHost, fullHistory.points || [], deal.price_history_url);
+      bindDetailActions(deal);
     } catch (err) {
       openModal(sheetShell('Deal', `<p class="alert alert-error">${escapeHtml(err.message)}</p>`));
     }
@@ -1443,7 +1682,7 @@
   async function loadCategoryRails(top, gen) {
     const loaded = await Promise.all(top.map((c) => api('/api/deals?' + buildQuery({
       q: '', category: c.name, subcategory: '', store: '', brand: '',
-      max_price: null, min_discount: 0, only_lowest: false,
+      min_price: null, max_price: null, min_discount: 0, has_coupon: false, only_lowest: false,
       sort: 'best', limit: 12, offset: 0,
     })).then((res) => ({ cat: c, res })).catch(() => null)));
     if (gen !== catRails.gen) return;
@@ -1512,7 +1751,7 @@
     try {
       const query = buildQuery({
         q: '', category: '', subcategory: '', store: '', brand: '',
-        max_price: null, min_discount: 0, only_lowest: true,
+        min_price: null, max_price: null, min_discount: 0, has_coupon: false, only_lowest: true,
         sort: 'best', limit: 12, offset: 0,
       });
       const res = await api('/api/deals?' + query);
@@ -1900,7 +2139,7 @@
     }
     const res = await api('/api/deals?' + buildQuery({
       q, category: '', subcategory: '', store: '', brand: '',
-      max_price: null, min_discount: 0, only_lowest: false,
+      min_price: null, max_price: null, min_discount: 0, has_coupon: false, only_lowest: false,
       sort: 'relevance', limit: 6, offset: 0,
     }), { signal });
     const lower = q.toLowerCase();
@@ -2085,6 +2324,8 @@
   });
   $('#f-discount').addEventListener('input', (e) => {
     $('#f-discount-out').textContent = e.target.value > 0 ? e.target.value + '%+' : 'any';
+    state.filters.min_discount = Number(e.target.value);
+    syncFilterChips();
   });
   $('#f-discount').addEventListener('change', (e) => {
     state.filters.min_discount = Number(e.target.value);
@@ -2102,9 +2343,12 @@
   $('#btn-clear-filters').addEventListener('click', () => {
     Object.assign(state.filters, {
       category: '', subcategory: '', store: '', brand: '',
-      max_price: null, min_discount: 0, only_lowest: false, all_channels: false,
+      min_price: null, max_price: null, min_discount: 0, has_coupon: false, only_lowest: false, all_channels: false,
     });
     $('#f-max-price').value = '';
+    $('#f-min-price').value = '';
+    $('#f-coupon').checked = false;
+    syncFilterChips();
     $('#f-discount').value = 0;
     $('#f-discount-out').textContent = 'any';
     $('#f-lowest').checked = false;
@@ -2611,6 +2855,8 @@
     // so everyone lands on the deals immediately.
     document.documentElement.classList.add('guest');
     await onSignedIn({ first_name: '', guest: true });
+    updateSavedBadges();
+    pollPriceAlerts();
   })();
 
   // Keep stats fresh while the tab is open.
@@ -2618,5 +2864,6 @@
     if (!state.user || document.hidden) return;
     if (state.page === 'deals') loadStats();
     checkUnseenNotifications();
+    pollPriceAlerts();
   }, 60000);
 })();

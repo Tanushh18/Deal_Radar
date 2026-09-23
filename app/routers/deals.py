@@ -82,6 +82,7 @@ async def list_deals(
     offset: int = Query(0, ge=0),
     all_channels: bool = False,
     archive: bool = Query(False, description="Past deals from the Google Sheet archive instead of live ones"),
+    has_coupon: bool = False,
     user=Depends(auth.optional_user),
 ):
     if sort not in search.SORTS:
@@ -103,6 +104,7 @@ async def list_deals(
         limit=limit,
         offset=offset,
         archive=archive,
+        has_coupon=has_coupon,
     )
 
 

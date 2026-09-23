@@ -24,6 +24,7 @@ from .routers import channels as channels_router
 from .routers import deals as deals_router
 from .routers import health as health_router
 from .routers import notifications as notifications_router
+from .routers import price_alerts as price_alerts_router
 from .routers import watchlists as watchlists_router
 from .services import ingest, public_reader, sheets, store, telegram
 
@@ -164,6 +165,7 @@ app.include_router(deals_router.router)
 app.include_router(watchlists_router.router)
 app.include_router(notifications_router.router)
 app.include_router(admin_router.router)
+app.include_router(price_alerts_router.router)
 
 
 @app.middleware("http")
@@ -193,6 +195,37 @@ if os.path.isdir(STATIC_DIR):
     @app.get("/", include_in_schema=False)
     async def index():
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+    @app.get("/d/{deal_id}", include_in_schema=False)
+    async def share_page(deal_id: str, request: Request):
+        """Share link: WhatsApp/Telegram read these Open Graph tags for the
+        preview card (they don't run JS), then people land on the deal."""
+        from html import escape
+        from fastapi.responses import HTMLResponse
+
+        row = db.query_one("SELECT title, price, mrp, discount_pct, store, image_url FROM deals WHERE id = ?",
+                           (deal_id,))
+        target = f"/?deal={escape(deal_id)}"
+        if not row:
+            return HTMLResponse(f'<meta http-equiv="refresh" content="0;url=/">', status_code=404)
+        base = str(request.base_url).rstrip("/")
+        price = f"₹{int(row['price']):,}" if row["price"] else ""
+        bits = [b for b in (price, f"{row['discount_pct']}% off" if row["discount_pct"] else "",
+                            (row["store"] or "").title()) if b]
+        image = row["image_url"] or ""
+        if image.startswith("/"):
+            image = base + image
+        if not image.startswith("http"):
+            image = f"{base}/assets/icons/icon-512.png"
+        title, desc = escape(row["title"] or "DealRadar deal"), escape(" · ".join(bits) + " — on DealRadar")
+        return HTMLResponse(f"""<!doctype html><html><head><meta charset="utf-8">
+<title>{title}</title>
+<meta property="og:type" content="product"><meta property="og:site_name" content="DealRadar">
+<meta property="og:title" content="{title}"><meta property="og:description" content="{desc}">
+<meta property="og:image" content="{escape(image)}"><meta property="og:url" content="{escape(base)}/d/{escape(deal_id)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta http-equiv="refresh" content="0;url={target}"></head>
+<body><a href="{target}">Open deal</a></body></html>""")
 
     @app.get("/admin", include_in_schema=False)
     async def admin_page():

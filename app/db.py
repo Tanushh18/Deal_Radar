@@ -142,6 +142,22 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at);
 
+CREATE TABLE IF NOT EXISTS price_alerts (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id       TEXT,
+    deal_id         TEXT,
+    product_key     TEXT,
+    title           TEXT,
+    target_price    REAL,
+    start_price     REAL,
+    push_token      TEXT DEFAULT '',
+    created_at      REAL,
+    triggered_at    REAL,
+    triggered_price REAL
+);
+CREATE INDEX IF NOT EXISTS idx_price_alerts_key ON price_alerts(product_key, triggered_at);
+CREATE INDEX IF NOT EXISTS idx_price_alerts_device ON price_alerts(device_id);
+
 CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
     value TEXT

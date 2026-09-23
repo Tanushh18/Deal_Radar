@@ -224,6 +224,7 @@ def _candidates(
     only_lowest: bool,
     order: str,
     archive: bool = False,
+    has_coupon: bool = False,
 ) -> List[Dict[str, Any]]:
     """Light rows for every deal passing the hard filters (not category — that's counted)."""
     where: List[str] = []
@@ -257,6 +258,8 @@ def _candidates(
         params.append(min_discount)
     if only_lowest:
         where.append("is_lowest = 1")
+    if has_coupon:
+        where.append("coupon IS NOT NULL AND coupon != ''")
     if channel_ids:
         where.append(f"channel_id IN ({','.join('?' for _ in channel_ids)})")
         params.extend(channel_ids)
@@ -325,12 +328,13 @@ def search(
     limit: int = 48,
     offset: int = 0,
     archive: bool = False,
+    has_coupon: bool = False,
 ) -> Dict[str, Any]:
     rows = _candidates(
         store=store, brand=brand, min_price=min_price, max_price=max_price,
         min_discount=min_discount, channel_ids=channel_ids,
         include_expired=include_expired, only_lowest=only_lowest,
-        order=SORTS.get(sort) or SORTS["best"], archive=archive,
+        order=SORTS.get(sort) or SORTS["best"], archive=archive, has_coupon=has_coupon,
     )
 
     plan = _Plan(q or "")

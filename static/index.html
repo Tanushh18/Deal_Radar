@@ -66,6 +66,8 @@
     <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 000-7.8z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></symbol>
   </defs>
 </svg>
 
@@ -221,6 +223,10 @@
           <svg aria-hidden="true"><use href="#i-bell"/></svg>
           <span id="bell-count" class="bell-dot hidden">0</span>
         </button>
+        <button id="btn-saved" class="iconbtn bell" data-nav="saved" title="Saved deals" aria-label="Saved deals">
+          <svg aria-hidden="true"><use href="#i-heart"/></svg>
+          <span id="saved-count" class="bell-dot hidden">0</span>
+        </button>
         <button id="user-btn" class="avatar" title="Account" aria-label="Account" aria-haspopup="menu"></button>
       </div>
     </div>
@@ -289,13 +295,29 @@
           </div>
 
           <div class="filter-block">
-            <label class="filter-label" for="f-max-price">Max price (₹)</label>
-            <input id="f-max-price" type="number" min="0" step="50" class="input" placeholder="Any" />
+            <div class="filter-label">Price (₹)</div>
+            <div class="price-range">
+              <input id="f-min-price" type="number" min="0" step="50" class="input" placeholder="Min" aria-label="Minimum price" />
+              <span class="muted">–</span>
+              <input id="f-max-price" type="number" min="0" step="50" class="input" placeholder="Max" aria-label="Maximum price" />
+            </div>
+            <div class="chipset" id="f-price-bands">
+              <button type="button" class="chip" data-band="199">Under ₹199</button>
+              <button type="button" class="chip" data-band="499">Under ₹499</button>
+              <button type="button" class="chip" data-band="999">Under ₹999</button>
+              <button type="button" class="chip" data-band="1999">Under ₹1,999</button>
+            </div>
           </div>
 
           <div class="filter-block">
             <label class="filter-label" for="f-discount">Minimum discount <span id="f-discount-out">any</span></label>
             <input id="f-discount" type="range" min="0" max="90" step="5" value="0" class="range" />
+            <div class="chipset" id="f-discount-chips">
+              <button type="button" class="chip" data-off="10">10%+</button>
+              <button type="button" class="chip" data-off="30">30%+</button>
+              <button type="button" class="chip" data-off="50">50%+</button>
+              <button type="button" class="chip" data-off="70">70%+</button>
+            </div>
           </div>
 
           <div class="filter-block">
@@ -309,6 +331,10 @@
           </div>
 
           <div class="filter-block">
+            <label class="check">
+              <input type="checkbox" id="f-coupon" />
+              <span>Has a coupon code</span>
+            </label>
             <label class="check">
               <input type="checkbox" id="f-lowest" />
               <span>Only all-time lows</span>
@@ -417,6 +443,29 @@
     </div>
   </main>
 
+  <!-- ------------------------------- SAVED ------------------------------- -->
+  <main id="page-saved" class="page hidden">
+    <div class="page-head">
+      <div>
+        <h2>Saved deals</h2>
+        <p>Deals you ♡ are kept on this device — no account needed.</p>
+      </div>
+    </div>
+    <section id="price-watch" class="hidden" style="margin-bottom:24px">
+      <div class="section-head" style="margin-top:0"><div>
+        <h3 class="section-title">🔔 Price alerts</h3>
+        <div class="section-sub">We notify you here when a price drops below your target</div>
+      </div></div>
+      <div id="price-watch-list" class="alert-list"></div>
+    </section>
+    <div id="saved-grid" class="grid"></div>
+    <div id="saved-empty" class="empty hidden">
+      <span class="emoji">♡</span>
+      <h3>No saved deals yet</h3>
+      <p>Tap the heart on any deal to keep it here.</p>
+    </div>
+  </main>
+
   <!-- ----------------------------- CHANNELS ----------------------------- -->
   <main id="page-channels" class="page hidden">
     <div class="page-head">
@@ -514,6 +563,11 @@
       <svg class="navicon" aria-hidden="true"><use href="#i-bell"/></svg>
       Alerts
       <span id="nav-alert-count" class="nav-badge hidden">0</span>
+    </button>
+    <button class="navbtn" data-nav="saved">
+      <svg class="navicon" aria-hidden="true"><use href="#i-heart"/></svg>
+      Saved
+      <span id="nav-saved-count" class="nav-badge hidden">0</span>
     </button>
     <button class="navbtn" id="nav-account">
       <svg class="navicon" aria-hidden="true"><use href="#i-user"/></svg>

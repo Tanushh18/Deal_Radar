@@ -1698,3 +1698,40 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 @media (prefers-reduced-motion: reduce) {
   :root.guest body::before, .vh-copy h1 span { animation: none; }
 }
+
+/* ---------- ♡ save, share, price alert ---------- */
+.heart {
+  position: absolute; z-index: 3; top: 8px; right: 8px; width: 34px; height: 34px; padding: 0;
+  display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--glass-line, var(--border));
+  background: color-mix(in srgb, var(--surface) 78%, transparent); color: var(--text-2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: transform var(--t-fast) var(--ease), color var(--t-fast), background var(--t-fast);
+}
+.heart svg { width: 17px; height: 17px; }
+.heart:hover { color: var(--hot); transform: scale(1.08); }
+.heart.on { color: #fff; background: var(--hot); border-color: transparent; }
+.heart.on svg, .btn.on .ico { fill: currentColor; }
+.heart.on { animation: pop .35s var(--ease); }
+@keyframes pop { 40% { transform: scale(1.25); } }
+.grid.list .heart { top: 6px; right: auto; left: 6px; width: 30px; height: 30px; }
+.btn.on { color: var(--hot); border-color: color-mix(in srgb, var(--hot) 40%, transparent); }
+
+.deal-actions-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.deal-actions-row .btn { flex: 1; min-width: 120px; }
+.pricealert {
+  margin-top: 12px; padding: 12px 14px; border-radius: var(--r-md);
+  border: 1px solid var(--accent-line); background: var(--accent-soft);
+}
+.pa-copy { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: .9rem; margin-bottom: 8px; }
+.pa-copy span { color: var(--text-2); font-size: .82rem; }
+.pa-row { display: flex; align-items: center; gap: 8px; }
+.pa-row .input { flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; }
+.pa-cur { font-weight: 800; color: var(--text-2); }
+.share-grid { display: grid; gap: 10px; padding: 16px 0; }
+
+/* ---------- richer filters ---------- */
+.price-range { display: flex; align-items: center; gap: 8px; }
+.price-range .input { min-height: 42px; padding: 9px 12px; }
+.chipset { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chipset .chip { min-height: 32px; padding: 6px 12px; font-size: .78rem; }
+.chipset .chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }

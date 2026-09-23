@@ -171,3 +171,47 @@ def test_dark_mode_follows_the_system(open_page):
     assert page.evaluate("document.documentElement.dataset.theme") == "dark"
     bg = page.evaluate("getComputedStyle(document.body).backgroundColor")
     assert bg == "rgb(8, 11, 18)", bg
+
+
+# ---------------------------------------------------------------- save / alert / share / filters
+def test_save_deal_shows_in_saved_tab(open_page):
+    page, errors = open_page(PHONE)
+    deals_loaded(page)
+    first = page.locator("#deal-grid .deal").first
+    title = first.locator(".deal-title").inner_text()
+    first.locator(".heart").click()
+    expect(first.locator(".heart")).to_have_class(re.compile(r"\bon\b"))
+    expect(page.locator("#nav-saved-count")).to_have_text("1")
+    page.locator('#bottomnav [data-nav="saved"]').click()
+    expect(page.locator("#saved-grid .deal")).to_have_count(1)
+    expect(page.locator("#saved-grid .deal-title")).to_have_text(title)
+    page.reload()
+    page.wait_for_selector("#boot", state="detached")
+    expect(page.locator("#nav-saved-count")).to_have_text("1")   # survives reloads (device storage)
+    assert not errors, errors
+
+
+def test_price_alert_and_share(open_page):
+    page, _ = open_page(DESKTOP)
+    deals_loaded(page)
+    page.locator("#deal-grid .deal-media").first.click()
+    expect(page.locator("#price-alert-form")).to_be_visible()
+    page.locator("#pa-target").fill("99999")
+    page.locator('#price-alert-form button[type="submit"]').click()
+    expect(page.locator(".toast", has_text="already")).to_be_visible()      # target above current price fires at once
+    expect(page.locator(".toast", has_text="dropped to")).to_be_visible()   # and the device gets the drop notification
+    deal_id = page.evaluate("new URL(location.href).searchParams.get('deal')") or \
+        page.locator("#deal-grid .deal").first.get_attribute("data-id")
+    share = page.request.get(f"/d/{deal_id}")
+    assert share.ok and 'property="og:title"' in share.text()
+
+
+def test_price_band_and_coupon_filters(open_page):
+    page, _ = open_page(DESKTOP)
+    deals_loaded(page)
+    page.locator('#f-price-bands [data-band="499"]').click()
+    expect(page.locator('#f-price-bands [data-band="499"]')).to_have_class(re.compile(r"\bactive\b"))
+    prices = page.locator("#deal-grid .price-now").all_inner_texts()
+    assert prices and all(int(re.sub(r"\D", "", p)) <= 499 for p in prices), prices
+    page.locator("#f-coupon").check()
+    expect(page.locator("#active-filters")).to_contain_text("Has coupon")
