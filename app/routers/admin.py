@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .. import auth, db
-from ..services import ingest, telegram
+from ..services import ingest, public_reader, sheets, telegram
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -35,6 +35,10 @@ class PasswordPayload(BaseModel):
 
 class ChannelPayload(BaseModel):
     username: str
+
+
+class BlockPayload(BaseModel):
+    blocked: bool
 
 
 def reader_id() -> Optional[int]:
@@ -81,10 +85,10 @@ async def status():
                    "phone": (row["phone"] or "")[-4:]}
         connected = await telegram.get_client(uid) is not None
     rows = db.query(
-        "SELECT c.tg_id, c.username, c.title, c.participants, c.last_fetched_at, "
+        "SELECT c.tg_id, c.username, c.title, c.participants, c.last_fetched_at, uc.enabled, "
         "(SELECT COUNT(*) FROM deals d WHERE d.channel_id = c.tg_id AND d.status = 'live') AS live_deals "
         "FROM channels c JOIN user_channels uc ON uc.channel_id = c.id "
-        "WHERE uc.user_id = ? AND uc.enabled = 1 ORDER BY live_deals DESC, c.title",
+        "WHERE uc.user_id = ? ORDER BY uc.enabled DESC, live_deals DESC, c.title",
         (uid or 0,),
     )
     return {"connected": connected, "account": account, "channels": db.rows_to_dicts(rows),
@@ -96,6 +100,10 @@ async def _finish(result: dict) -> dict:
         return result
     user_id = int(result["user"]["id"])
     set_reader(user_id)
+    try:
+        await public_reader.sync_followed(user_id)
+    except Exception:  # noqa: BLE001 — the login itself succeeded; the list refreshes next cycle
+        pass
     # Shown once so it can be saved as TELEGRAM_SESSION on Render: the SQLite
     # copy is wiped whenever the free instance restarts.
     return {**result, "session": _session_string(user_id)}
@@ -160,3 +168,34 @@ async def sync():
     if result.get("status") == "already_running":
         raise HTTPException(status_code=409, detail="A sync is already running.")
     return result
+
+
+@router.post("/refresh")
+async def refresh_followed():
+    """Re-read the channels the reader account follows on Telegram."""
+    uid = _reader_or_400()
+    try:
+        return await public_reader.sync_followed(uid)
+    except telegram.TelegramError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/channels/{tg_id}/block")
+async def block_channel(tg_id: int, payload: BlockPayload):
+    """Blocked channels stay followed on Telegram but are never read for deals."""
+    uid = _reader_or_400()
+    cur = db.execute(
+        "UPDATE user_channels SET enabled = ? WHERE user_id = ? "
+        "AND channel_id = (SELECT id FROM channels WHERE tg_id = ?)",
+        (0 if payload.blocked else 1, uid, tg_id),
+    )
+    if not cur.rowcount:
+        raise HTTPException(status_code=404, detail="Channel not found.")
+    _deactivate_orphans()
+    if sheets.is_enabled():
+        try:
+            sheets.sync_channels()
+            sheets.sync_user_channels()
+        except Exception:  # noqa: BLE001
+            pass
+    return {"status": "ok", "blocked": payload.blocked}

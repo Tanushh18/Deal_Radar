@@ -67,5 +67,69 @@ async def bootstrap() -> int:
         tracked += 1
         await asyncio.sleep(2)   # joining channels back-to-back invites a Telegram flood-wait
     _deactivate_orphans()
-    log.info("Public mode: reading %d/%d channels as @%s", tracked, len(settings.public_channels), me.username or me.id)
+    log.info("Public mode: joined %d/%d listed channels as @%s", tracked, len(settings.public_channels), me.username or me.id)
+    try:
+        await sync_followed(user_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Initial follow-list sync failed: %s", exc)
     return tracked
+
+
+_last_follow_sync = 0.0
+FOLLOW_SYNC_SECONDS = 1800
+
+
+async def sync_followed(user_id: int) -> dict:
+    """Track every broadcast channel the reader account follows on Telegram.
+
+    New follows are read automatically; channels the admin blocked (a
+    user_channels row with enabled=0) stay blocked; channels the account has
+    left are dropped. Blocks persist through Sheets' UserChannels tab.
+    """
+    global _last_follow_sync
+    from ..routers.channels import _deactivate_orphans, _register_channel
+    from . import sheets
+
+    followed = await telegram.list_user_channels(user_id)
+    now = time.time()
+    added = 0
+    keep_ids = []
+    for info in followed:
+        channel_id = _register_channel(info, user_id)
+        keep_ids.append(channel_id)
+        row = db.query_one("SELECT enabled FROM user_channels WHERE user_id = ? AND channel_id = ?",
+                           (user_id, channel_id))
+        if row is None:
+            db.execute("INSERT INTO user_channels (user_id, channel_id, enabled, added_at) VALUES (?, ?, 1, ?)",
+                       (user_id, channel_id, now))
+            added += 1
+    if keep_ids:
+        marks = ",".join("?" for _ in keep_ids)
+        removed = db.execute(f"DELETE FROM user_channels WHERE user_id = ? AND channel_id NOT IN ({marks})",
+                             (user_id, *keep_ids)).rowcount or 0
+        db.execute(f"UPDATE channels SET source_user_id = ? WHERE id IN ({marks})", (user_id, *keep_ids))
+    else:
+        removed = 0
+    _deactivate_orphans()
+    _last_follow_sync = now
+    if sheets.is_enabled():
+        loop = asyncio.get_event_loop()
+        try:
+            await loop.run_in_executor(None, sheets.sync_channels)
+            await loop.run_in_executor(None, sheets.sync_user_channels)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Saving channel list to Sheets failed: %s", exc)
+    blocked = db.query_one("SELECT COUNT(*) AS c FROM user_channels WHERE user_id = ? AND enabled = 0", (user_id,))["c"]
+    log.info("Reader follows %d channels: %d new, %d left, %d blocked", len(followed), added, removed, blocked)
+    return {"followed": len(followed), "added": added, "removed": removed, "blocked": blocked}
+
+
+async def maybe_sync_followed() -> None:
+    """Called each ingest cycle; refreshes the follow list at most every 30 min."""
+    reader = db.get_meta("reader_user_id")
+    if not reader or time.time() - _last_follow_sync < FOLLOW_SYNC_SECONDS:
+        return
+    try:
+        await sync_followed(int(reader))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Follow-list refresh failed: %s", exc)

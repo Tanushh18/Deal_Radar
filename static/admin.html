@@ -30,6 +30,10 @@
     .hidden { display: none !important; }
     .msg { margin-top: 12px; font-size: .86rem; }
     .msg.err { color: var(--hot); } .msg.ok { color: var(--good); }
+    tr.blocked td { opacity: .55; }
+    .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .74rem; font-weight: 700; }
+    .tag.on { background: var(--good-soft); color: var(--good); }
+    .tag.off { background: var(--hot-soft); color: var(--hot); }
   </style>
 </head>
 <body>
@@ -83,9 +87,14 @@
     <section class="card">
       <div class="row" style="justify-content:space-between">
         <h2>Channels <span class="muted" id="channel-count" style="font-weight:500"></span></h2>
-        <button class="btn btn-soft btn-sm" id="sync">Sync now</button>
+        <div class="row">
+          <button class="btn btn-soft btn-sm" id="refresh">Refresh from Telegram</button>
+          <button class="btn btn-soft btn-sm" id="sync">Sync now</button>
+        </div>
       </div>
-      <p class="muted">Public channels only. Paste @username or a t.me link; the reader joins it automatically.</p>
+      <p class="muted">Every channel the reader account follows on Telegram is read automatically.
+        Block any you don't want on the site — blocked channels stay blocked. To add one, join it in Telegram
+        (then "Refresh from Telegram") or paste its @username below.</p>
       <form class="row" id="add-form">
         <input class="input" id="new-channel" placeholder="@dealschannel or https://t.me/dealschannel" required />
         <button class="btn btn-primary" type="submit">Add channel</button>
@@ -93,7 +102,7 @@
       <div class="msg hidden" id="channel-msg"></div>
       <div style="overflow-x:auto;margin-top:14px">
         <table>
-          <thead><tr><th>Channel</th><th class="num">Members</th><th class="num">Live deals</th><th>Last read</th><th></th></tr></thead>
+          <thead><tr><th>Channel</th><th>Status</th><th class="num">Members</th><th class="num">Live deals</th><th>Last read</th><th></th></tr></thead>
           <tbody id="channels"></tbody>
         </table>
       </div>

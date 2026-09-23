@@ -497,6 +497,8 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
         _state["running"] = True
         totals = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "channels": 0}
         try:
+            from . import public_reader  # local: public_reader imports routers that import ingest
+            await public_reader.maybe_sync_followed()
             channels = db.rows_to_dicts(
                 db.query("SELECT * FROM channels WHERE active = 1 ORDER BY last_fetched_at ASC")
             )

@@ -27,8 +27,16 @@ _limit_image = ratelimit.limit("deal-image", max_requests=90, window_seconds=60)
 
 
 def _scope(user: Optional[dict]) -> Optional[list]:
-    """Everyone sees every tracked channel: there is no visitor sign-in."""
-    return None
+    """Everyone sees the same catalogue: deals from the reader's channels that
+    the admin hasn't blocked (so blocking hides a channel's deals at once)."""
+    reader = db.get_meta("reader_user_id")
+    if not reader:
+        return None
+    rows = db.query(
+        "SELECT c.tg_id FROM user_channels uc JOIN channels c ON c.id = uc.channel_id "
+        "WHERE uc.user_id = ? AND uc.enabled = 1", (int(reader),),
+    )
+    return [int(r["tg_id"]) for r in rows] or None
 
 
 @router.get("/categories")

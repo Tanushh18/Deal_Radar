@@ -53,15 +53,18 @@
       pill.textContent = '● Not connected';
       pill.className = 'status-pill bad';
     }
-    $('#channel-count').textContent = `· ${s.channels.length} tracked`;
+    const reading = s.channels.filter((c) => c.enabled).length;
+    $('#channel-count').textContent = `· ${reading} reading · ${s.channels.length - reading} blocked`;
     $('#channels').innerHTML = s.channels.length ? s.channels.map((c) => `
-      <tr>
+      <tr class="${c.enabled ? '' : 'blocked'}">
         <td><b>${esc(c.title)}</b><br><span class="muted small">${c.username ? '@' + esc(c.username) : 'private'}</span></td>
+        <td><span class="tag ${c.enabled ? 'on' : 'off'}">${c.enabled ? 'Reading' : 'Blocked'}</span></td>
         <td class="num">${(c.participants || 0).toLocaleString('en-IN')}</td>
         <td class="num">${(c.live_deals || 0).toLocaleString('en-IN')}</td>
         <td>${ago(c.last_fetched_at)}</td>
-        <td><button class="btn btn-ghost btn-xs" data-remove="${c.tg_id}">Remove</button></td>
-      </tr>`).join('') : '<tr><td colspan="5" class="muted">No channels yet — connect the reader, then add channels.</td></tr>';
+        <td><button class="btn ${c.enabled ? 'btn-ghost' : 'btn-soft'} btn-xs" data-block="${c.tg_id}" data-blocked="${c.enabled ? '1' : '0'}">
+          ${c.enabled ? 'Block' : 'Unblock'}</button></td>
+      </tr>`).join('') : '<tr><td colspan="6" class="muted">No channels yet — connect the reader, then “Refresh from Telegram”.</td></tr>';
   }
 
   async function unlock() {
@@ -136,11 +139,26 @@
   });
 
   $('#channels').addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-remove]');
-    if (!btn || !confirm('Stop reading this channel? Its existing deals stay until they expire.')) return;
+    const btn = e.target.closest('[data-block]');
+    if (!btn) return;
+    const blocking = btn.dataset.blocked === '1';
     btn.disabled = true;
-    try { await api(`/api/admin/reader/channels/${btn.dataset.remove}`, { method: 'DELETE' }); await refresh(); }
-    catch (err) { show($('#channel-msg'), err.message, 'err'); btn.disabled = false; }
+    try {
+      await post(`/api/admin/reader/channels/${btn.dataset.block}/block`, { blocked: blocking });
+      show($('#channel-msg'), blocking ? 'Blocked — its deals are hidden from the site and app.' : 'Unblocked — it is read from the next sync.', 'ok');
+      await refresh();
+    } catch (err) { show($('#channel-msg'), err.message, 'err'); btn.disabled = false; }
+  });
+
+  $('#refresh').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.textContent = 'Refreshing…';
+    try {
+      const r = await post('/api/admin/reader/refresh');
+      show($('#channel-msg'), `Following ${r.followed} channels on Telegram: ${r.added} new, ${r.removed} left, ${r.blocked} blocked.`, 'ok');
+      await refresh();
+    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; btn.textContent = 'Refresh from Telegram'; }
   });
 
   $('#sync').addEventListener('click', async (e) => {
