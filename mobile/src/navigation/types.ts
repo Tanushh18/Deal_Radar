@@ -2,6 +2,7 @@ import { createNavigationContainerRef, type NavigatorScreenParams } from '@react
 
 export type MainTabParamList = {
   Deals: undefined;
+  Saved: undefined;
   Alerts: undefined;
   Channels: undefined;
   Account: undefined;
@@ -16,6 +17,7 @@ export type RootStackParamList = {
   Search: undefined;
   Settings: undefined;
   Website: { path?: string } | undefined;
+  CheckPrice: { url?: string } | undefined;
 };
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();

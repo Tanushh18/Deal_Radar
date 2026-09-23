@@ -9,6 +9,7 @@
  *   onSignedOut()   — call BEFORE POST /api/auth/logout (the push-unregister
  *                     call needs the session cookie); it is harmless after.
  *                     Stops polling, forgets the cursor, resets nav to Login.
+ *   startVisitorSession() — the no-login path, called by App once public mode is on.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -18,9 +19,12 @@ import { navigationRef } from '../navigation/types';
 import { startBackgroundPolling, stopBackgroundPolling } from './backgroundTask';
 import { getBaseUrl, LIVE_HOST, STORAGE_KEYS } from './config';
 import { setRoutingReady } from './deepLinks';
+import { getRegisteredPushToken, registerDevice } from './device';
 import {
   configureNotificationHandler,
+  ensureChannel,
   getPushToken,
+  hasPermission,
   pollNotifications,
   requestPermission,
   resetPollingState,
@@ -128,4 +132,74 @@ async function doSignedOut(): Promise<void> {
   if (!publicMode && navigationRef.isReady() && navigationRef.getCurrentRoute()?.name !== 'Login') {
     navigationRef.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
   }
+}
+
+// ---------------------------------------------------------------- visitor (no login)
+
+const PERMISSION_ASKED_KEY = 'dr.notifAsked';
+const PERMISSION_DELAY_MS = 6_000;
+
+let visitorStarted = false;
+let tokenSub: { remove(): void } | null = null;
+let permissionTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function syncPushToken(): Promise<void> {
+  if (!(await hasPermission())) return;
+  const token = await getPushToken();
+  if (!token) return;
+  if (token === (await getRegisteredPushToken())) return;
+  const device = await registerDevice({ push_token: token });
+  if (device) await AsyncStorage.setItem(STORAGE_KEYS.pushToken, token);
+}
+
+/**
+ * Registers the anonymous device, asks for notification permission a few
+ * seconds after the first launch (never at cold start), keeps the push token
+ * current, and starts the feed poller. Idempotent.
+ */
+export async function startVisitorSession(): Promise<void> {
+  if (visitorStarted) return;
+  visitorStarted = true;
+  configureNotificationHandler();
+  await ensureChannel();
+  const token = await getRegisteredPushToken();
+  await registerDevice(token ? { push_token: token } : {});
+
+  if (await hasPermission()) {
+    await syncPushToken();
+  } else if (!(await AsyncStorage.getItem(PERMISSION_ASKED_KEY))) {
+    permissionTimer = setTimeout(async () => {
+      permissionTimer = null;
+      await AsyncStorage.setItem(PERMISSION_ASKED_KEY, '1').catch(() => {});
+      try {
+        if (await requestPermission()) await syncPushToken();
+      } catch (e) {
+        console.warn('[session] permission request failed:', (e as Error)?.message ?? e);
+      }
+    }, PERMISSION_DELAY_MS);
+  }
+
+  // Fires with the native FCM token; the Expo token wrapping it changes with it.
+  tokenSub = Notifications.addPushTokenListener(() => {
+    syncPushToken().catch(() => {});
+  });
+
+  await startBackgroundPolling();
+  await pollNotifications();
+}
+
+/** For a Settings toggle: prompts if still allowed, then registers the token. */
+export async function enableNotifications(): Promise<boolean> {
+  await AsyncStorage.setItem(PERMISSION_ASKED_KEY, '1').catch(() => {});
+  const granted = await requestPermission().catch(() => false);
+  if (granted) await syncPushToken().catch(() => {});
+  return granted;
+}
+
+export function stopVisitorSession(): void {
+  visitorStarted = false;
+  tokenSub?.remove();
+  tokenSub = null;
+  if (permissionTimer) clearTimeout(permissionTimer);
+  permissionTimer = null;
 }

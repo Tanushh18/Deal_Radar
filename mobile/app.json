@@ -73,7 +73,35 @@
         }
       ],
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "text/*"
+          ],
+          "disableIOS": true
+        }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_search": {
+              "foregroundImage": "./assets/shortcut-search.png",
+              "backgroundColor": "#ffffff"
+            },
+            "shortcut_saved": {
+              "foregroundImage": "./assets/shortcut-saved.png",
+              "backgroundColor": "#ffffff"
+            },
+            "shortcut_checkprice": {
+              "foregroundImage": "./assets/shortcut-checkprice.png",
+              "backgroundColor": "#ffffff"
+            }
+          }
+        }
+      ]
     ],
     "extra": {
       "defaultServerUrl": "https://dealradar-k2hb.onrender.com",
@@ -85,6 +113,14 @@
         "style": "light"
       }
     },
-    "owner": "tanush18"
+    "owner": "tanush18",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c4e9e527-79e1-45aa-be6a-f8c3dc5a7702",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

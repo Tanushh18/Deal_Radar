@@ -10,7 +10,12 @@ import type {
   DealsPage,
   Deal,
   Facets,
+  DeviceSettings,
+  Follow,
+  FollowKind,
   Health,
+  LookupResult,
+  PriceAlert,
   MeResult,
   SendCodeResult,
   Stats,
@@ -54,8 +59,11 @@ function dealParams(q: DealQuery) {
     subcategory: q.subcategory,
     store: q.store,
     brand: q.brand,
+    min_price: q.min_price ?? undefined,
     max_price: q.max_price ?? undefined,
     min_discount: q.min_discount || undefined,
+    has_coupon: q.has_coupon || undefined,
+    archive: q.archive || undefined,
     only_lowest: q.only_lowest || undefined,
     all_channels: q.all_channels || undefined,
     sort: q.sort ?? 'newest',
@@ -80,6 +88,36 @@ export const deals = {
     request<{ results: Deal[] }>('/api/deals/trending', { query: { limit }, signal: o.signal }),
   get: (id: string, o: Sig = {}) => request<DealDetail>(`/api/deals/${enc(id)}`, o),
   history: (id: string, o: Sig = {}) => request<DealHistory>(`/api/deals/${enc(id)}/history`, o),
+  similar: (id: string, limit = 8, o: Sig = {}) =>
+    request<{ results: Deal[] }>(`/api/deals/${enc(id)}/similar`, { query: { limit }, signal: o.signal }),
+  lookup: (url: string, o: Sig = {}) =>
+    request<LookupResult>('/api/lookup', { query: { url }, signal: o.signal, timeoutMs: 45_000 }),
+};
+
+export const priceAlerts = {
+  list: (device_id: string, o: Sig = {}) =>
+    request<{ alerts: PriceAlert[] }>('/api/price-alerts', { query: { device_id }, signal: o.signal }),
+  create: (input: { device_id: string; deal_id: string; target_price: number; push_token?: string | null }) =>
+    request<{ status: string; alert: PriceAlert }>('/api/price-alerts', {
+      method: 'POST',
+      body: { ...input, push_token: input.push_token ?? '' },
+    }),
+  remove: (id: number, device_id: string) =>
+    request<{ status: string }>(`/api/price-alerts/${id}`, { method: 'DELETE', query: { device_id } }),
+};
+
+export const devices = {
+  settings: (device_id: string, o: Sig = {}) =>
+    request<DeviceSettings>('/api/devices/settings', { query: { device_id }, signal: o.signal }),
+  register: (input: { device_id: string; digest?: boolean; digest_hour?: number; push_token?: string | null }) =>
+    request<{ status: string }>('/api/devices/register', {
+      method: 'POST',
+      body: { platform: 'android', ...input, push_token: input.push_token ?? undefined },
+    }),
+  follow: (input: { device_id: string; kind: FollowKind; value: string; min_discount?: number | null }) =>
+    request<{ follow: Follow }>('/api/devices/follows', { method: 'POST', body: input }),
+  unfollow: (id: number, device_id: string) =>
+    request<{ status: string }>(`/api/devices/follows/${id}`, { method: 'DELETE', query: { device_id } }),
 };
 
 export const system = {

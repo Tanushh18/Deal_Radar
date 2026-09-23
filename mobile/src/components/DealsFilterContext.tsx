@@ -11,8 +11,10 @@ export type DealFilters = {
   subcategory: string;
   store: string;
   brand: string;
+  min_price: number | null;
   max_price: number | null;
   min_discount: number;
+  has_coupon: boolean;
   only_lowest: boolean;
   all_channels: boolean;
   sort: SortKey;
@@ -24,8 +26,10 @@ export const DEFAULT_FILTERS: DealFilters = {
   subcategory: '',
   store: '',
   brand: '',
+  min_price: null,
   max_price: null,
   min_discount: 0,
+  has_coupon: false,
   only_lowest: false,
   all_channels: false,
   sort: 'newest',
@@ -39,8 +43,10 @@ export function activeFilterCount(f: DealFilters): number {
     f.subcategory,
     f.store,
     f.brand,
+    f.min_price ? 1 : 0,
     f.max_price ? 1 : 0,
     f.min_discount ? 1 : 0,
+    f.has_coupon ? 1 : 0,
     f.only_lowest ? 1 : 0,
     f.all_channels ? 1 : 0,
   ].filter(Boolean).length;
@@ -54,8 +60,10 @@ export function activeFilterChips(f: DealFilters): { key: FilterKey; label: stri
   if (f.subcategory) chips.push({ key: 'subcategory', label: f.subcategory });
   if (f.store) chips.push({ key: 'store', label: f.store });
   if (f.brand) chips.push({ key: 'brand', label: f.brand });
+  if (f.min_price) chips.push({ key: 'min_price', label: `Over ${money(f.min_price)}` });
   if (f.max_price) chips.push({ key: 'max_price', label: `Under ${money(f.max_price)}` });
   if (f.min_discount) chips.push({ key: 'min_discount', label: `${f.min_discount}%+ off` });
+  if (f.has_coupon) chips.push({ key: 'has_coupon', label: 'Has coupon' });
   if (f.only_lowest) chips.push({ key: 'only_lowest', label: 'All-time lows' });
   if (f.all_channels) chips.push({ key: 'all_channels', label: 'All channels' });
   return chips;

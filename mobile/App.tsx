@@ -10,17 +10,20 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConnectingView, OfflineView } from './src/navigation/BootScreens';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef, type RootStackParamList } from './src/navigation/types';
-import { stopBackgroundPolling } from './src/native/backgroundTask';
 import { COLORS, getBaseUrl } from './src/native/config';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
-import { configureNotificationHandler, isSignedIn, pollNotifications, resetPollingState } from './src/native/notifications';
-import { setPublicMode } from './src/native/session';
+import { configureNotificationHandler, pollNotifications } from './src/native/notifications';
+import { useQuickActionRouting } from './src/native/quickActions';
+import { setPublicMode, startVisitorSession } from './src/native/session';
+import { useShareIntentRouting } from './src/native/shareIntent';
+import { checkForUpdateOnLaunch, stopImmediateUpdates } from './src/native/updates';
 import { AppProviders } from './src/components/AppProviders';
 import { useTheme } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SystemUI.setBackgroundColorAsync(COLORS.bg).catch(() => {});
 configureNotificationHandler();
+checkForUpdateOnLaunch();
 
 function useNavTheme(): NavTheme {
   const t = useTheme();
@@ -92,7 +95,9 @@ function Root() {
       // channels with its own account, so the app opens straight to the deals.
       await checkAuth(server);
       setPublicMode(true);
+      stopImmediateUpdates();
       setPhase({ kind: 'ready', initial: 'Main' });
+      startVisitorSession().catch((e) => console.warn('[app] visitor session failed:', e?.message ?? e));
     } catch (e: any) {
       const message = e?.name === 'AbortError' ? 'The server took too long to answer.' : e?.message ?? String(e);
       setPhase({ kind: 'offline', server, message });
@@ -112,8 +117,9 @@ function Root() {
     if (phase.kind !== 'loading') SplashScreen.hideAsync().catch(() => {});
   }, [phase.kind]);
 
-  // Notification taps (warm + cold start).
   useEffect(() => startNotificationRouting(), []);
+  useShareIntentRouting();
+  useQuickActionRouting();
 
   // Poll the alert feed every time the app comes to the foreground.
   useEffect(() => {

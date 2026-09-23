@@ -38,7 +38,11 @@ export type Deal = {
   flags: string[];
   relevance: number | null;
   price_history_url?: string;
+  price_verdict?: PriceVerdict | null;
 };
+
+export type VerdictLevel = 'great' | 'good' | 'fair' | 'high';
+export type PriceVerdict = { level: VerdictLevel; label: string };
 
 export type PriceStats = {
   min: number | null;
@@ -82,7 +86,7 @@ export type Facets = {
   price_range?: { min: number | null; max: number | null };
 };
 
-export type SortKey = 'relevance' | 'best' | 'newest' | 'discount' | 'price_low' | 'price_high';
+export type SortKey = 'relevance' | 'best' | 'newest' | 'discount' | 'price_low' | 'price_high' | 'ending';
 
 export type DealQuery = {
   q?: string;
@@ -90,8 +94,11 @@ export type DealQuery = {
   subcategory?: string;
   store?: string;
   brand?: string;
+  min_price?: number | null;
   max_price?: number | null;
   min_discount?: number;
+  has_coupon?: boolean;
+  archive?: boolean;
   only_lowest?: boolean;
   all_channels?: boolean;
   sort?: SortKey;
@@ -177,4 +184,34 @@ export type AppNotification = {
   body: string;
   url: string | null;
   created_at: number;
+};
+
+export type PriceAlert = {
+  id: number;
+  deal_id: string;
+  title: string | null;
+  target_price: number;
+  current_price: number | null;
+  triggered_at: number | null;
+  triggered_price: number | null;
+  image_url: string | null;
+  store: string | null;
+};
+
+export type LookupResult = {
+  resolved_url: string | null;
+  store: string | null;
+  deals: Deal[];
+  archive: Deal[];
+  price_stats: PriceStats | null;
+  history: PricePoint[];
+  price_history_url: string | null;
+  verdict: PriceVerdict | null;
+};
+
+export type FollowKind = 'category' | 'brand' | 'store';
+export type Follow = { id: number; kind: FollowKind; value: string; min_discount: number | null };
+export type DeviceSettings = {
+  device: { digest: boolean; digest_hour: number | null } | null;
+  follows: Follow[];
 };

@@ -6,8 +6,33 @@ import type { Deal } from '../api/types';
 import { makeStyles, useTheme } from '../theme';
 import { dealBadge, highlightParts, money, storeName, timeAgo, type BadgeKind } from './format';
 import { Icon } from './Icon';
+import { useDealActions } from './DealActions';
 import { openExternal, useImageUri } from './native';
+import { HeartButton } from './Saved';
 import { Skeleton } from './ui';
+
+const recent = new Map<string, Deal>();
+
+/** Lets the detail screen paint instantly (and show archive deals the server no longer has). */
+export function rememberDeal(deal: Deal): void {
+  recent.delete(deal.id);
+  recent.set(deal.id, deal);
+  if (recent.size > 80) recent.delete(recent.keys().next().value as string);
+}
+export const peekDeal = (id: string): Deal | undefined => recent.get(id);
+
+export const isPastDeal = (deal: Pick<Deal, 'status'>): boolean => !!deal.status && deal.status !== 'live';
+
+export function PastBadge({ small }: { small?: boolean }) {
+  const t = useTheme();
+  return (
+    <View style={{ backgroundColor: t.c.surface3, borderRadius: 7, paddingHorizontal: small ? 6 : 8, paddingVertical: 3, alignSelf: 'flex-start', borderWidth: 1, borderColor: t.c.borderStrong }}>
+      <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ color: t.c.text2, fontSize: small ? 9.5 : 10.5, fontWeight: '800', letterSpacing: 0.2 }}>
+        Past deal
+      </Text>
+    </View>
+  );
+}
 
 export function Highlight({
   text,
@@ -126,10 +151,13 @@ type CardProps = {
 export const DealCard = memo(function DealCard({ deal, layout, query = '', width, onOpen }: CardProps) {
   const s = useCardStyles();
   const t = useTheme();
-  const badge = dealBadge(deal);
+  const { open: openActions } = useDealActions();
+  const past = isPastDeal(deal);
+  const badge = past ? null : dealBadge(deal);
   const store = storeName(deal);
   const list = layout === 'list';
   const a11y = [
+    past ? 'Past deal' : '',
     deal.title,
     money(deal.price),
     deal.discount_pct >= 5 ? `${deal.discount_pct} percent off` : '',
@@ -144,18 +172,26 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={a11y}
-        accessibilityHint="Opens deal details"
-        onPress={() => onOpen(deal)}
+        accessibilityHint="Opens deal details. Long-press for quick actions"
+        accessibilityActions={[{ name: 'longpress', label: 'Quick actions' }]}
+        onAccessibilityAction={(e) => e.nativeEvent.actionName === 'longpress' && openActions(deal)}
+        onPress={() => {
+          rememberDeal(deal);
+          onOpen(deal);
+        }}
+        onLongPress={() => openActions(deal)}
+        delayLongPress={350}
         android_ripple={{ color: t.c.accentSoft, foreground: true }}
         style={({ pressed }) => [list ? s.pressList : s.pressGrid, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}
       >
         <View style={list ? s.mediaList : s.mediaGrid}>
           <DealImage deal={deal} style={{ flex: 1 }} emojiSize={list ? 26 : 34} />
-          {badge ? (
+          {badge || past ? (
             <View style={s.badges}>
-              <StatusBadge kind={badge.kind} label={badge.label} small={list} />
+              {past ? <PastBadge small={list} /> : badge ? <StatusBadge kind={badge.kind} label={badge.label} small={list} /> : null}
             </View>
           ) : null}
+          {!list ? <HeartButton deal={deal} size={17} style={s.heart} /> : null}
           {store && !list ? (
             <View style={s.storeTag}>
               <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={s.storeText}>
@@ -170,7 +206,10 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
               {store.toUpperCase()}
             </Text>
           ) : null}
-          <Highlight text={deal.title} query={query} numberOfLines={2} style={s.title} />
+          <View style={list ? s.titleRowList : undefined}>
+            <Highlight text={deal.title} query={query} numberOfLines={2} style={[s.title, list && { flex: 1 }]} />
+            {list ? <HeartButton deal={deal} size={17} style={s.heartList} /> : null}
+          </View>
           <PriceRow deal={deal} size={list ? 'sm' : 'md'} />
           {deal.saving ? (
             <View style={s.saveRow}>
@@ -241,7 +280,10 @@ const useCardStyles = makeStyles((t) => ({
   pressList: { flex: 1, flexDirection: 'row' },
   mediaGrid: { aspectRatio: 1, width: '100%' },
   mediaList: { width: 112, minHeight: 124 },
-  badges: { position: 'absolute', top: 7, left: 7, right: 7 },
+  badges: { position: 'absolute', top: 7, left: 7, right: 46 },
+  heart: { position: 'absolute', top: 6, right: 6 },
+  titleRowList: { flexDirection: 'row', alignItems: 'flex-start', gap: 4 },
+  heartList: { marginTop: -4, marginRight: -4 },
   storeTag: {
     position: 'absolute',
     bottom: 7,
@@ -309,12 +351,18 @@ export const RailCard = memo(function RailCard({
   onOpen: (deal: Deal) => void;
 }) {
   const t = useTheme();
+  const { open: openActions } = useDealActions();
   const noteColor = noteTone === 'hot' ? t.c.hot : noteTone === 'muted' ? t.c.text3 : t.c.good;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${deal.title}, ${money(deal.price)}, ${note}`}
-      onPress={() => onOpen(deal)}
+      onPress={() => {
+        rememberDeal(deal);
+        onOpen(deal);
+      }}
+      onLongPress={() => openActions(deal)}
+      delayLongPress={350}
       style={({ pressed }) => ({
         width: 156,
         borderRadius: t.r.md,
@@ -325,7 +373,14 @@ export const RailCard = memo(function RailCard({
         transform: [{ scale: pressed ? 0.97 : 1 }],
       })}
     >
-      <DealImage deal={deal} style={{ height: 124 }} emojiSize={28} />
+      <View>
+        <DealImage deal={deal} style={{ height: 124 }} emojiSize={28} />
+        {isPastDeal(deal) ? (
+          <View style={{ position: 'absolute', top: 6, left: 6 }}>
+            <PastBadge small />
+          </View>
+        ) : null}
+      </View>
       <View style={{ padding: 9, gap: 4 }}>
         <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={{ color: t.c.text, fontSize: 12.5, fontWeight: '600', lineHeight: 17, minHeight: 34 }}>
           {deal.title}

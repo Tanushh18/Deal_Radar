@@ -16,36 +16,48 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { api, errorMessage, isAbort, isOffline, type Deal, type NamedCount, type Stats } from '../api';
+import { api, errorMessage, isAbort, isOffline, type Deal, type DealsPage, type KeyCount, type NamedCount, type Stats } from '../api';
 import {
+  AnimatedBackdrop,
   BrandMark,
   Chip,
   DealCard,
   DealCardSkeleton,
+  DealRail,
   EmptyState,
+  FadeInItem,
+  GlassContent,
+  GlassHeader,
   Icon,
   IconButton,
-  RailCard,
-  RailSkeleton,
+  NewDealsPill,
+  OfflineBanner,
   SectionHead,
   activeFilterChips,
   activeFilterCount,
   categoryIcon,
   clearedFilters,
+  endsIn,
   greeting,
   haptic,
   isBrowseMode,
   money,
   num,
   plural,
+  storeName,
   timeAgo,
+  titleCase,
   toQuery,
+  useBlurTarget,
   useCategories,
   useDealFilters,
   useHideNativeHeader,
+  useOnline,
   useToast,
+  withCache,
   withoutFilter,
   type DealFilters,
+  type RailTone,
 } from '../components';
 import { isPublicMode } from '../native/session';
 import { useTheme } from '../theme';
@@ -62,6 +74,7 @@ const SORT_TABS: { key: SortKey; label: string }[] = [
   { key: 'best', label: 'Top rated' },
   { key: 'discount', label: 'Biggest discount' },
   { key: 'price_low', label: 'Lowest price' },
+  { key: 'ending', label: 'Ending soon' },
 ];
 
 const SORT_HEADINGS: Record<SortKey, [string, string]> = {
@@ -71,6 +84,7 @@ const SORT_HEADINGS: Record<SortKey, [string, string]> = {
   discount: ['⚡ Biggest discounts', 'Largest drop from the quoted MRP'],
   price_low: ['💸 Cheapest first', 'Lowest prices first'],
   price_high: ['💎 Priciest first', 'Highest prices first'],
+  ending: ['⏳ Ending soon', 'Grab these before they expire'],
 };
 
 function gridHeading(f: DealFilters): [string, string] {
@@ -79,7 +93,20 @@ function gridHeading(f: DealFilters): [string, string] {
   return SORT_HEADINGS[f.sort] ?? SORT_HEADINGS.newest;
 }
 
+type RailKey = 'trending' | 'lows' | 'ending' | 'fresh' | 'coupons';
+type Rails = Record<RailKey, Deal[] | null>;
+const EMPTY_RAILS: Rails = { trending: null, lows: null, ending: null, fresh: null, coupons: null };
+
+const RAIL_NOTES: Record<RailKey, (d: Deal) => [string, RailTone]> = {
+  trending: (d) => [`${d.repost_count}× posted`, 'hot'],
+  lows: (d) => (d.saving ? [`Save ${money(d.saving)}`, 'good'] : ['All-time low', 'good']),
+  ending: (d) => [endsIn(d.expires_at) || 'Ending soon', 'hot'],
+  fresh: (d) => [timeAgo(d.posted_at) || 'Just now', 'muted'],
+  coupons: (d) => [`🏷 ${d.coupon ?? 'Coupon'}`, 'good'],
+};
+
 type FeedStatus = 'loading' | 'ready' | 'error';
+type ArchiveState = { q: string; total: number; results: Deal[] } | null;
 
 export function DealsScreen() {
   useHideNativeHeader();
@@ -87,9 +114,12 @@ export function DealsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<TabNav<'Deals'>>();
   const toast = useToast();
+  const online = useOnline();
+  const blurTarget = useBlurTarget();
   const { width } = useWindowDimensions();
   const { filters, setFilters, patchFilters, refreshTick } = useDealFilters();
   const categories = useCategories();
+  const [headerH, setHeaderH] = useState(insets.top + 112);
 
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   useEffect(() => {
@@ -112,6 +142,7 @@ export function DealsScreen() {
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState<FeedStatus>('loading');
   const [error, setError] = useState<unknown>(null);
+  const [fromCache, setFromCache] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [resultCats, setResultCats] = useState<NamedCount[]>([]);
@@ -134,12 +165,17 @@ export function DealsScreen() {
       if (mode === 'reset') setStatus('loading');
       else setRefreshing(true);
       try {
-        const res = await api.deals.list({ ...toQuery(filters), limit: PAGE, offset: 0 }, { signal: ctrl.signal });
+        const { value: res, cached } = await withCache<DealsPage>('feed', () =>
+          api.deals.list({ ...toQuery(filters), limit: PAGE, offset: 0 }, { signal: ctrl.signal }),
+        );
+        if (ctrlRef.current !== ctrl) return;
         setItems(res.results);
-        setTotal(res.total);
+        setTotal(cached ? res.results.length : res.total);
         setResultCats(Array.isArray(res.categories) ? res.categories : []);
+        setFromCache(cached);
         setError(null);
         setStatus('ready');
+        if (cached && mode === 'refresh') toast('You’re offline — showing saved results.', 'err');
       } catch (e) {
         if (isAbort(e)) return;
         if (mode === 'refresh' && itemsRef.current.length) {
@@ -156,7 +192,7 @@ export function DealsScreen() {
   );
 
   const loadMore = useCallback(async () => {
-    if (moreBusy.current || status !== 'ready' || items.length >= total) return;
+    if (moreBusy.current || status !== 'ready' || fromCache || items.length >= total) return;
     const ctrl = ctrlRef.current;
     moreBusy.current = true;
     setLoadingMore(true);
@@ -179,7 +215,7 @@ export function DealsScreen() {
         setLoadingMore(false);
       }
     }
-  }, [filters, items.length, status, total, toast]);
+  }, [filters, items.length, status, total, toast, fromCache]);
 
   useEffect(() => {
     load('reset');
@@ -194,44 +230,72 @@ export function DealsScreen() {
     }
   }, [filters.q]);
 
-  /* ---------------- stats, user, rails ---------------- */
+  /* ---------------- archive (past deals for a search) ---------------- */
+  const [archive, setArchive] = useState<ArchiveState>(null);
+  useEffect(() => {
+    const q = filters.q.trim();
+    setArchive(null);
+    if (!q) return;
+    const ctrl = new AbortController();
+    api.deals
+      .list({ q, archive: true, sort: 'relevance', limit: 24, offset: 0 }, { signal: ctrl.signal })
+      .then((r) => setArchive({ q, total: r.total, results: r.results ?? [] }))
+      .catch(() => {});
+    return () => ctrl.abort();
+  }, [filters.q, refreshTick]);
+
+  /* ---------------- stats, rails, stores ---------------- */
   const [stats, setStats] = useState<Stats | null>(null);
   const [statusOverride, setStatusOverride] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [tracked, setTracked] = useState<number | null>(null);
-  const [trending, setTrending] = useState<Deal[] | null>(null);
-  const [lows, setLows] = useState<Deal[] | null>(null);
+  const [rails, setRails] = useState<Rails>(EMPTY_RAILS);
+  const [stores, setStores] = useState<KeyCount[]>([]);
+  const [newCount, setNewCount] = useState(0);
+  const seenLive = useRef<number | null>(null);
 
   const loadStats = useCallback(() => {
     api.system
       .stats()
-      .then(setStats)
+      .then((s) => {
+        setStats(s);
+        const live = s.deals_live || 0;
+        if (seenLive.current != null && live > seenLive.current) setNewCount(live - seenLive.current);
+        if (seenLive.current == null || live < seenLive.current) seenLive.current = live;
+      })
       .catch(() => {});
   }, []);
 
   const loadRails = useCallback(() => {
-    api.deals
-      .trending(12)
-      .then((r) => setTrending(r.results ?? []))
-      .catch(() => setTrending([]));
-    api.deals
-      .list({ only_lowest: true, sort: 'best', limit: 12, offset: 0 })
-      .then((r) => setLows(r.results ?? []))
-      .catch(() => setLows([]));
+    const put = (key: RailKey) => (r: { value: { results: Deal[] } }) =>
+      setRails((prev) => ({ ...prev, [key]: r.value.results ?? [] }));
+    const fail = (key: RailKey) => () => setRails((prev) => ({ ...prev, [key]: [] }));
+    const rail = (key: RailKey, fetcher: () => Promise<{ results: Deal[] }>) =>
+      withCache(`rail:${key}`, fetcher).then(put(key), fail(key));
+    rail('trending', () => api.deals.trending(12));
+    rail('lows', () => api.deals.list({ only_lowest: true, sort: 'best', limit: 12, offset: 0 }));
+    rail('ending', () => api.deals.list({ sort: 'ending', limit: 12, offset: 0 }));
+    rail('fresh', () => api.deals.list({ sort: 'newest', limit: 12, offset: 0 }));
+    rail('coupons', () => api.deals.list({ has_coupon: true, sort: 'best', limit: 12, offset: 0 }));
+    withCache('facets', () => api.deals.facets())
+      .then((r) => setStores((r.value.stores ?? []).filter((s) => s.key && s.key !== 'unknown').slice(0, 14)))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     loadStats();
     loadRails();
-    api.auth
-      .me()
-      .then((me) => {
-        if (me.authenticated && !isPublicMode()) {
-          setName(me.user.first_name || me.user.username || '');
-          setTracked(me.tracked_channels);
-        }
-      })
-      .catch(() => {});
+    if (!isPublicMode()) {
+      api.auth
+        .me()
+        .then((me) => {
+          if (me.authenticated) {
+            setName(me.user.first_name || me.user.username || '');
+            setTracked(me.tracked_channels);
+          }
+        })
+        .catch(() => {});
+    }
   }, [loadStats, loadRails]);
 
   const firstTick = useRef(refreshTick);
@@ -245,20 +309,43 @@ export function DealsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      loadStats();
       const id = setInterval(loadStats, 60_000);
       return () => clearInterval(id);
     }, [loadStats]),
   );
 
-  const onRefresh = () => {
-    haptic.light();
+  const wasOnline = useRef(online);
+  useEffect(() => {
+    if (online && !wasOnline.current && (fromCache || status === 'error')) {
+      load('refresh');
+      loadRails();
+      loadStats();
+    }
+    wasOnline.current = online;
+  }, [online, fromCache, status, load, loadRails, loadStats]);
+
+  const reloadAll = () => {
     setStatusOverride(null);
     load('refresh');
     loadStats();
     loadRails();
   };
 
-  /* ---------------- sync ---------------- */
+  const onRefresh = () => {
+    haptic.light();
+    reloadAll();
+  };
+
+  const showNew = () => {
+    haptic.light();
+    setNewCount(0);
+    seenLive.current = stats?.deals_live ?? seenLive.current;
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    reloadAll();
+  };
+
+  /* ---------------- sync (signed-in mode only) ---------------- */
   const [syncing, setSyncing] = useState(false);
   const spin = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -327,14 +414,21 @@ export function DealsScreen() {
     }
   };
 
+  const pickStore = (key: string) => {
+    haptic.select();
+    patchFilters({ store: filters.store === key ? '' : key });
+  };
+
   const browse = isBrowseMode(filters);
   const chips = activeFilterChips(filters);
   const filterCount = activeFilterCount(filters);
   const [gridTitle, gridSub] = gridHeading(filters);
+  const offline = !online || fromCache;
 
   /* ---------------- header ---------------- */
   const header = (
     <View style={{ gap: 16, paddingBottom: 12 }}>
+      {offline ? <OfflineBanner /> : null}
       <StatsCard stats={stats} override={statusOverride} syncing={syncing} />
 
       {tracked === 0 && !isPublicMode() ? (
@@ -378,24 +472,75 @@ export function DealsScreen() {
         ))}
       </ScrollView>
 
+      {stores.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginHorizontal: -PAD }}
+          contentContainerStyle={{ paddingHorizontal: PAD, gap: 6 }}
+          accessibilityLabel="Stores"
+        >
+          {stores.map((s) => (
+            <Chip
+              key={s.key}
+              label={storeName({ store: s.key }) || titleCase(s.key)}
+              count={s.count}
+              leading="🛍"
+              active={filters.store === s.key}
+              accessibilityLabel={`${titleCase(s.key)}, ${s.count} deals`}
+              onPress={() => pickStore(s.key)}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+
       {browse ? (
         <>
-          <Rail
+          <DealRail
             title="🔥 Trending right now"
-            sub="Reposted across your channels"
-            deals={trending}
-            note={(d) => [`${d.repost_count}× posted`, 'hot']}
+            sub="Reposted across deal channels"
+            deals={rails.trending}
+            note={RAIL_NOTES.trending}
             onOpen={openDeal}
           />
-          <Rail
+          <DealRail
+            title="⏳ Ending soon"
+            sub="Grab these before they expire"
+            deals={rails.ending}
+            note={RAIL_NOTES.ending}
+            onOpen={openDeal}
+            onSeeAll={() => {
+              haptic.select();
+              patchFilters({ sort: 'ending' });
+            }}
+          />
+          <DealRail
+            title="⚡ Just dropped"
+            sub="The newest deals, straight off the wire"
+            deals={rails.fresh}
+            note={RAIL_NOTES.fresh}
+            onOpen={openDeal}
+          />
+          <DealRail
             title="📉 All-time lows"
             sub="Cheapest we have ever recorded"
-            deals={lows}
-            note={(d) => (d.saving ? [`Save ${money(d.saving)}`, 'good'] : ['All-time low', 'good'])}
+            deals={rails.lows}
+            note={RAIL_NOTES.lows}
             onOpen={openDeal}
             onSeeAll={() => {
               haptic.select();
               patchFilters({ only_lowest: true });
+            }}
+          />
+          <DealRail
+            title="🏷 Coupons"
+            sub="Deals with a code to stack on top"
+            deals={rails.coupons}
+            note={RAIL_NOTES.coupons}
+            onOpen={openDeal}
+            onSeeAll={() => {
+              haptic.select();
+              patchFilters({ has_coupon: true });
             }}
           />
         </>
@@ -406,7 +551,7 @@ export function DealsScreen() {
         sub={gridSub}
         right={
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            {filters.q ? (
+            {filters.q && !isPublicMode() ? (
               <IconButton name="bell" label="Alert me about this search" variant="soft" onPress={saveSearchAlert} />
             ) : null}
             <IconButton
@@ -500,12 +645,7 @@ export function DealsScreen() {
         </View>
       ) : null}
 
-      <ResultCats
-        cats={resultCats}
-        active={filters.category}
-        hidden={browse}
-        onPick={(name) => pickCategory(name)}
-      />
+      <ResultCats cats={resultCats} active={filters.category} hidden={browse} onPick={(n) => pickCategory(n)} />
 
       {status === 'ready' && total > 0 && !browse ? (
         <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>
@@ -518,6 +658,7 @@ export function DealsScreen() {
 
   /* ---------------- empty / error ---------------- */
   const hasFilters = !!(filters.q || filterCount);
+  const archiveHits = archive && archive.q === filters.q.trim() ? archive : null;
   let empty: React.ReactElement | null = null;
   if (status === 'loading') {
     empty = (
@@ -528,17 +669,17 @@ export function DealsScreen() {
       </View>
     );
   } else if (status === 'error') {
-    const offline = isOffline(error);
+    const off = isOffline(error);
     empty = (
       <EmptyState
-        emoji={offline ? '📶' : '⚠️'}
-        title={offline ? 'You’re offline' : 'Something went wrong'}
-        message={offline ? 'Check your connection, then try again.' : 'We couldn’t load the deals right now.'}
+        emoji={off ? '📶' : '⚠️'}
+        title={off ? 'You’re offline' : 'Something went wrong'}
+        message={off ? 'We’ll refresh as soon as you’re back online.' : 'We couldn’t load the deals right now.'}
         detail={errorMessage(error, '')}
         actions={[{ title: 'Try again', variant: 'primary', onPress: () => load('reset') }]}
       />
     );
-  } else {
+  } else if (!archiveHits?.total) {
     empty = (
       <EmptyState
         emoji={hasFilters ? '🔎' : '📭'}
@@ -550,82 +691,150 @@ export function DealsScreen() {
         }
         actions={[
           ...(hasFilters
-            ? [{ title: 'Clear search & filters', variant: 'primary' as const, onPress: () => setFilters((f) => ({ ...clearedFilters(f), q: '' })) }]
+            ? [
+                {
+                  title: 'Clear search & filters',
+                  variant: 'primary' as const,
+                  onPress: () => setFilters((f) => ({ ...clearedFilters(f), q: '' })),
+                },
+              ]
             : []),
         ]}
       />
     );
   }
 
-  const footer =
-    loadingMore ? (
-      <View style={{ paddingVertical: 20 }}>
-        <ActivityIndicator color={t.c.accent} />
-      </View>
-    ) : status === 'ready' && items.length > 0 && items.length >= total ? (
-      <Text style={{ textAlign: 'center', color: t.c.text3, fontSize: t.f.xs, paddingVertical: 20 }}>
-        {stats?.deal_ttl_hours ? `You’re all caught up · deals are kept ${stats.deal_ttl_hours}h or until the link goes dead.` : 'You’re all caught up'}
-      </Text>
-    ) : null;
+  const footer = (
+    <View>
+      {loadingMore ? (
+        <View style={{ paddingVertical: 20 }}>
+          <ActivityIndicator color={t.c.accent} />
+        </View>
+      ) : status === 'ready' && items.length > 0 && items.length >= total && !archiveHits?.total ? (
+        <Text style={{ textAlign: 'center', color: t.c.text3, fontSize: t.f.xs, paddingVertical: 20 }}>
+          {stats?.deal_ttl_hours
+            ? `You’re all caught up · deals are kept ${stats.deal_ttl_hours}h or until the link goes dead.`
+            : 'You’re all caught up'}
+        </Text>
+      ) : null}
+      {archiveHits?.total && status === 'ready' ? (
+        <ArchiveSection
+          archive={archiveHits}
+          liveTotal={total}
+          layout={layout}
+          cols={cols}
+          cardW={cardW}
+          onOpen={openDeal}
+        />
+      ) : null}
+    </View>
+  );
 
   const data = status === 'loading' ? [] : items;
 
   const renderItem = useCallback(
-    ({ item }: { item: Deal }) => (
-      <DealCard deal={item} layout={layout} query={filters.q} width={cardW} onOpen={openDeal} />
+    ({ item, index }: { item: Deal; index: number }) => (
+      <FadeInItem index={index}>
+        <DealCard deal={item} layout={layout} query={filters.q} width={cardW} onOpen={openDeal} />
+      </FadeInItem>
     ),
     [layout, filters.q, cardW, openDeal],
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: t.c.bg }}>
-      <TopBar
-        name={name}
-        query={filters.q}
-        topInset={insets.top}
-        syncing={syncing}
-        spin={spin}
-        onSearch={() => navigation.navigate('Search')}
-        onClearQuery={() => {
-          haptic.select();
-          patchFilters({ q: '' });
-        }}
-        onSync={isPublicMode() ? undefined : syncNow}
-      />
-      <FlatList
-        ref={listRef}
-        key={`${layout}-${cols}`}
-        data={data}
-        keyExtractor={(d) => d.id}
-        renderItem={renderItem}
-        numColumns={cols}
-        columnWrapperStyle={cols > 1 ? { gap: GAP } : undefined}
-        ItemSeparatorComponent={Separator}
-        ListHeaderComponent={header}
-        ListEmptyComponent={empty}
-        ListFooterComponent={footer}
-        contentContainerStyle={{ paddingHorizontal: PAD, paddingTop: 12, paddingBottom: 24 }}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.8}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[t.c.accent]}
-            tintColor={t.c.accent}
-            progressBackgroundColor={t.c.surface}
-          />
-        }
-        keyboardShouldPersistTaps="handled"
-        initialNumToRender={8}
-        windowSize={9}
-        removeClippedSubviews
-      />
+      <GlassContent target={blurTarget}>
+        <AnimatedBackdrop />
+        <FlatList
+          ref={listRef}
+          key={`${layout}-${cols}`}
+          data={data}
+          keyExtractor={(d) => d.id}
+          renderItem={renderItem}
+          numColumns={cols}
+          columnWrapperStyle={cols > 1 ? { gap: GAP } : undefined}
+          ItemSeparatorComponent={Separator}
+          ListHeaderComponent={header}
+          ListEmptyComponent={empty}
+          ListFooterComponent={footer}
+          contentContainerStyle={{ paddingHorizontal: PAD, paddingTop: headerH + 12, paddingBottom: 24 }}
+          scrollIndicatorInsets={{ top: headerH }}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.8}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              progressViewOffset={headerH}
+              colors={[t.c.accent]}
+              tintColor={t.c.accent}
+              progressBackgroundColor={t.c.surface}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={9}
+          removeClippedSubviews
+        />
+      </GlassContent>
+      <GlassHeader target={blurTarget} onHeight={setHeaderH}>
+        <TopBar
+          name={name}
+          query={filters.q}
+          topInset={insets.top}
+          syncing={syncing}
+          spin={spin}
+          onSearch={() => navigation.navigate('Search')}
+          onCheckPrice={() => navigation.navigate('CheckPrice', {})}
+          onClearQuery={() => {
+            haptic.select();
+            patchFilters({ q: '' });
+          }}
+          onSync={isPublicMode() ? undefined : syncNow}
+        />
+      </GlassHeader>
+      <NewDealsPill count={newCount} top={headerH + 8} onPress={showNew} />
     </View>
   );
 }
 
 const Separator = () => <View style={{ height: GAP }} />;
+
+function ArchiveSection({
+  archive,
+  liveTotal,
+  layout,
+  cols,
+  cardW,
+  onOpen,
+}: {
+  archive: { q: string; total: number; results: Deal[] };
+  liveTotal: number;
+  layout: 'grid' | 'list';
+  cols: number;
+  cardW: number;
+  onOpen: (d: Deal) => void;
+}) {
+  const rows: Deal[][] = [];
+  for (let i = 0; i < archive.results.length; i += cols) rows.push(archive.results.slice(i, i + cols));
+  const n = archive.total.toLocaleString('en-IN');
+  const sub = liveTotal
+    ? `${n} earlier ${plural(archive.total, 'deal')} for “${archive.q}” — prices may have changed`
+    : `No live deal for “${archive.q}” right now — ${n} earlier ${plural(archive.total, 'deal')} from our archive`;
+  return (
+    <View style={{ gap: GAP, paddingTop: 20 }}>
+      <SectionHead title="🗂 From the deal archive" sub={sub} />
+      {rows.map((row, i) => (
+        <View key={i} style={{ flexDirection: 'row', gap: GAP }}>
+          {row.map((d) => (
+            <DealCard key={d.id} deal={{ ...d, status: d.status && d.status !== 'live' ? d.status : 'archived' }} layout={layout} width={cardW} onOpen={onOpen} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
 
 /* ============================================================ */
 
@@ -636,6 +845,7 @@ function TopBar({
   syncing,
   spin,
   onSearch,
+  onCheckPrice,
   onClearQuery,
   onSync,
 }: {
@@ -645,13 +855,14 @@ function TopBar({
   syncing: boolean;
   spin: Animated.Value;
   onSearch: () => void;
+  onCheckPrice: () => void;
   onClearQuery: () => void;
   onSync?: () => void;
 }) {
   const t = useTheme();
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   return (
-    <View style={{ paddingTop: topInset + 8, paddingHorizontal: PAD, paddingBottom: 10, gap: 10, backgroundColor: t.c.bg, borderBottomWidth: 1, borderBottomColor: t.c.border }}>
+    <View style={{ paddingTop: topInset + 8, paddingHorizontal: PAD, paddingBottom: 10, gap: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <BrandMark size={34} />
         <View style={{ flex: 1 }}>
@@ -662,6 +873,7 @@ function TopBar({
             {name ? `${greeting()}, ${name} 👋` : `${greeting()} 👋`}
           </Text>
         </View>
+        <IconButton name="link" label="Check a product’s price" variant="soft" onPress={onCheckPrice} />
         {onSync ? (
         <Pressable
           accessibilityRole="button"
@@ -828,59 +1040,6 @@ function CategoryTile({ icon, label, active, onPress }: { icon: string; label: s
         {label}
       </Text>
     </Pressable>
-  );
-}
-
-function Rail({
-  title,
-  sub,
-  deals,
-  note,
-  onOpen,
-  onSeeAll,
-}: {
-  title: string;
-  sub: string;
-  deals: Deal[] | null;
-  note: (d: Deal) => [string, 'good' | 'hot' | 'muted'];
-  onOpen: (d: Deal) => void;
-  onSeeAll?: () => void;
-}) {
-  const t = useTheme();
-  if (deals && !deals.length) return null;
-  return (
-    <View style={{ gap: 10 }}>
-      <SectionHead
-        title={title}
-        sub={sub}
-        right={
-          onSeeAll ? (
-            <Pressable accessibilityRole="button" onPress={onSeeAll} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 6 }}>
-              <Text style={{ color: t.c.accent, fontWeight: '700', fontSize: t.f.sm }}>See all</Text>
-            </Pressable>
-          ) : undefined
-        }
-      />
-      <FlatList
-        horizontal
-        data={deals ?? []}
-        keyExtractor={(d) => d.id}
-        showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -PAD }}
-        contentContainerStyle={{ paddingHorizontal: PAD, gap: 10 }}
-        ListEmptyComponent={
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {[0, 1, 2].map((i) => (
-              <RailSkeleton key={i} />
-            ))}
-          </View>
-        }
-        renderItem={({ item }) => {
-          const [text, tone] = note(item);
-          return <RailCard deal={item} note={text} noteTone={tone} onOpen={onOpen} />;
-        }}
-      />
-    </View>
   );
 }
 

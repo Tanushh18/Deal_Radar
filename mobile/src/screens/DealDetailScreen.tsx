@@ -1,12 +1,26 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
-import { api, errorMessage, isOffline, type DealDetail, type PricePoint } from '../api';
+import { api, errorMessage, isNotFound, isOffline, type Deal, type DealDetail, type PriceAlert, type PricePoint } from '../api';
 import {
   Button,
+  DealRail,
+  HeartButton,
+  PastBadge,
+  PriceVerdictMeter,
+  alertCreatedMessage,
+  alertErrorMessage,
+  createPriceAlert,
+  defaultAlertTarget,
+  isPastDeal,
+  listPriceAlerts,
+  peekDeal,
+  shareDeal,
+  snapshotToDeal,
+  useSaved,
   DealImage,
   EmptyState,
   Icon,
@@ -41,24 +55,58 @@ export function DealDetailScreen() {
   const toast = useToast();
   const { width } = useWindowDimensions();
 
-  const [deal, setDeal] = useState<DealDetail | null>(null);
+  const { saved } = useSaved();
+  const savedRef = useRef(saved);
+  savedRef.current = saved;
+
+  // Reads saved via a ref so toggling the heart doesn't refetch the deal.
+  const fallback = useCallback((): DealDetail | null => {
+    const snap = savedRef.current[params.id];
+    const d = peekDeal(params.id) ?? (snap ? snapshotToDeal(snap) : null);
+    return d ? { raw_text: null, price_history: null, ...d } : null;
+  }, [params.id]);
+
+  const [deal, setDeal] = useState<DealDetail | null>(() => fallback());
+  const [fresh, setFresh] = useState(false);
+  const [gone, setGone] = useState(false);
   const [points, setPoints] = useState<PricePoint[] | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [showRaw, setShowRaw] = useState(false);
+  const [similar, setSimilar] = useState<Deal[] | null>(null);
+  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
 
   const load = useCallback(
     (signal?: AbortSignal) => {
       setError(null);
       api.deals
         .get(params.id, { signal })
-        .then(setDeal)
-        .catch((e) => !signal?.aborted && setError(e));
+        .then((d) => {
+          setDeal(d);
+          setFresh(true);
+          setGone(false);
+        })
+        .catch((e) => {
+          if (signal?.aborted) return;
+          if (isNotFound(e)) {
+            const snap = fallback();
+            setGone(true);
+            if (snap) setDeal({ ...snap, status: isPastDeal(snap) ? snap.status : 'expired' });
+          }
+          setError(e);
+        });
       api.deals
         .history(params.id, { signal })
         .then((h) => setPoints(h.points ?? []))
         .catch(() => !signal?.aborted && setPoints([]));
+      api.deals
+        .similar(params.id, 8, { signal })
+        .then((r) => setSimilar(r.results ?? []))
+        .catch(() => !signal?.aborted && setSimilar([]));
+      listPriceAlerts(signal)
+        .then(setAlerts)
+        .catch(() => {});
     },
-    [params.id],
+    [params.id, fallback],
   );
 
   useEffect(() => {
@@ -67,20 +115,11 @@ export function DealDetailScreen() {
     return () => ctrl.abort();
   }, [load]);
 
-  const share = async () => {
-    if (!deal) return;
-    haptic.light();
-    const price = deal.price != null ? ` — ${money(deal.price)}` : '';
-    const off = deal.discount_pct >= 5 ? ` (-${deal.discount_pct}%)` : '';
-    try {
-      await Share.share({
-        title: deal.title,
-        message: `${deal.title}${price}${off}${deal.url ? `\n${deal.url}` : ''}`,
-      });
-    } catch {
-      /* user dismissed */
-    }
+  const share = () => {
+    if (deal) void shareDeal(deal);
   };
+
+  const openDeal = useCallback((d: Deal) => navigation.push('DealDetail', { id: d.id }), [navigation]);
 
   const copy = async (text: string, what: string) => {
     if (await copyText(text)) toast(`${what} copied.`, 'ok', 2200);
@@ -112,12 +151,15 @@ export function DealDetailScreen() {
         style={{ backgroundColor: t.dark ? 'rgba(17,24,39,0.82)' : 'rgba(255,255,255,0.9)', borderRadius: 22 }}
       />
       {deal ? (
-        <IconButton
-          name="share"
-          label="Share deal"
-          onPress={share}
-          style={{ backgroundColor: t.dark ? 'rgba(17,24,39,0.82)' : 'rgba(255,255,255,0.9)', borderRadius: 22 }}
-        />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <HeartButton deal={deal} size={20} style={{ width: 44, height: 44, borderRadius: 22 }} />
+          <IconButton
+            name="share"
+            label="Share deal"
+            onPress={share}
+            style={{ backgroundColor: t.dark ? 'rgba(17,24,39,0.82)' : 'rgba(255,255,255,0.9)', borderRadius: 22 }}
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -127,12 +169,21 @@ export function DealDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: t.c.bg, paddingTop: insets.top + 56 }}>
         {header}
-        <EmptyState
-          emoji={offline ? '📶' : '⚠️'}
-          title={offline ? 'You’re offline' : 'Couldn’t load this deal'}
-          message={errorMessage(error)}
-          actions={[{ title: 'Try again', variant: 'primary', onPress: () => load() }]}
-        />
+        {isNotFound(error) ? (
+          <EmptyState
+            emoji="⌛"
+            title="This deal has ended"
+            message="It’s no longer live on DealRadar. Similar deals might still be around."
+            actions={[{ title: 'Back to deals', variant: 'primary', onPress: () => navigation.goBack() }]}
+          />
+        ) : (
+          <EmptyState
+            emoji={offline ? '📶' : '⚠️'}
+            title={offline ? 'You’re offline' : 'Couldn’t load this deal'}
+            message={errorMessage(error)}
+            actions={[{ title: 'Try again', variant: 'primary', onPress: () => load() }]}
+          />
+        )}
       </View>
     );
   }
@@ -146,7 +197,10 @@ export function DealDetailScreen() {
     );
   }
 
-  const badge = dealBadge(deal);
+  const past = gone || isPastDeal(deal);
+  const badge = past ? null : dealBadge(deal);
+  const verdict = deal.price_verdict;
+  const watching = alerts.find((a) => a.deal_id === deal.id && !a.triggered_at) ?? null;
   const [label, blurb] = scoreLabel(deal.score || 0);
   const reasons = dealReasons(deal);
   const suspicious = (deal.flags || []).includes('suspicious_mrp');
@@ -175,8 +229,20 @@ export function DealDetailScreen() {
         </View>
 
         <View style={{ padding: 16, gap: 14, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
-          {badge || store ? (
+          {past ? (
+            <Note
+              kind="warn"
+              icon="clock"
+              text={
+                gone
+                  ? 'Past deal — this offer has ended. The price shown is what it was when you saw it.'
+                  : 'Past deal — this offer may have ended and the price may have changed.'
+              }
+            />
+          ) : null}
+          {badge || store || past ? (
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              {past ? <PastBadge /> : null}
               {badge ? <StatusBadge kind={badge.kind} label={badge.label} /> : null}
               {store ? (
                 <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, borderWidth: 1, borderColor: t.c.border, backgroundColor: t.c.surface }}>
@@ -231,6 +297,25 @@ export function DealDetailScreen() {
             <Note kind="warn" icon="alert" text="The quoted MRP looks inflated versus this product’s price history." />
           ) : null}
 
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <SaveButton deal={deal} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button title="Share" icon="share" variant="soft" onPress={share} />
+            </View>
+          </View>
+
+          {verdict ? <PriceVerdictMeter verdict={verdict} /> : null}
+
+          {!past && fresh && deal.price ? (
+            <PriceAlertBlock
+              deal={deal}
+              watching={watching}
+              onCreated={(a) => setAlerts((prev) => [a, ...prev.filter((x) => x.id !== a.id)])}
+            />
+          ) : null}
+
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: t.r.md, backgroundColor: t.c.surface, borderWidth: 1, borderColor: t.c.border }}>
             <ScoreRing score={deal.score} />
             <View style={{ flex: 1 }}>
@@ -261,6 +346,19 @@ export function DealDetailScreen() {
             {points ? <PriceChart points={points} /> : <ActivityIndicator color={t.c.accent} />}
           </View>
 
+          {deal.price_history_url ? (
+            <Button
+              title="Price history & stock"
+              icon="trend"
+              iconRight="external"
+              variant="soft"
+              onPress={() => {
+                haptic.light();
+                WebBrowser.openBrowserAsync(deal.price_history_url as string).catch(() => {});
+              }}
+            />
+          ) : null}
+
           <KeyValue rows={kv} />
 
           {deal.raw_text ? (
@@ -290,6 +388,17 @@ export function DealDetailScreen() {
             </View>
           ) : null}
         </View>
+
+        <View style={{ paddingHorizontal: 16, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
+          <DealRail
+            title="🧭 Similar deals"
+            sub="More like this, live right now"
+            deals={similar}
+            note={similarNote}
+            onOpen={openDeal}
+            pad={16}
+          />
+        </View>
       </ScrollView>
 
       {deal.url ? (
@@ -307,7 +416,7 @@ export function DealDetailScreen() {
         >
           <View style={{ flex: 1 }}>
             <Button
-              title={`Open on ${store || 'store'}`}
+              title={past ? `Check on ${store || 'store'}` : `Open on ${store || 'store'}`}
               iconRight="external"
               onPress={() => {
                 haptic.light();
@@ -331,7 +440,7 @@ export function DealDetailScreen() {
   );
 }
 
-function Note({ kind, icon, text }: { kind: 'good' | 'warn'; icon: 'trend' | 'alert'; text: string }) {
+function Note({ kind, icon, text }: { kind: 'good' | 'warn'; icon: 'trend' | 'alert' | 'clock'; text: string }) {
   const t = useTheme();
   const bg = kind === 'good' ? t.c.goodSoft : t.c.warnSoft;
   const fg = kind === 'good' ? t.c.good : t.c.warn;
@@ -341,6 +450,108 @@ function Note({ kind, icon, text }: { kind: 'good' | 'warn'; icon: 'trend' | 'al
         <Icon name={icon} size={16} color={fg} />
       </View>
       <Text style={{ flex: 1, color: fg, fontSize: t.f.sm, lineHeight: 19 }}>{text}</Text>
+    </View>
+  );
+}
+
+const similarNote = (d: Deal): [string, 'good' | 'hot' | 'muted'] =>
+  d.discount_pct >= 5 ? [`${d.discount_pct}% off`, 'hot'] : d.saving ? [`Save ${money(d.saving)}`, 'good'] : [storeName(d) || 'Live deal', 'muted'];
+
+function SaveButton({ deal }: { deal: Deal }) {
+  const { isSaved, toggle } = useSaved();
+  const on = isSaved(deal.id);
+  return (
+    <Button
+      title={on ? 'Saved' : 'Save'}
+      icon="heart"
+      variant={on ? 'danger' : 'soft'}
+      accessibilityLabel={on ? 'Remove from saved' : 'Save deal'}
+      onPress={() => {
+        if (toggle(deal)) haptic.success();
+        else haptic.select();
+      }}
+    />
+  );
+}
+
+function PriceAlertBlock({
+  deal,
+  watching,
+  onCreated,
+}: {
+  deal: Deal;
+  watching: PriceAlert | null;
+  onCreated: (a: PriceAlert) => void;
+}) {
+  const t = useTheme();
+  const toast = useToast();
+  const [target, setTarget] = useState(String(watching?.target_price ?? defaultAlertTarget(deal.price)));
+  const [busy, setBusy] = useState(false);
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (watching) setTarget(String(Math.round(watching.target_price)));
+  }, [watching]);
+
+  const submit = async () => {
+    const n = Number(target.replace(/[^\d.]/g, ''));
+    if (!n || n <= 0) {
+      toast('Enter a target price.', 'err');
+      return;
+    }
+    setBusy(true);
+    try {
+      const alert = await createPriceAlert(deal.id, n);
+      haptic.success();
+      toast(alertCreatedMessage(alert, n), 'ok', 5000);
+      onCreated(alert);
+    } catch (e) {
+      haptic.error();
+      toast(alertErrorMessage(e), 'err');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <View style={{ padding: 14, gap: 10, borderRadius: t.r.md, backgroundColor: t.c.accentSoft, borderWidth: 1, borderColor: t.c.accentLine }}>
+      <View style={{ gap: 2 }}>
+        <Text style={{ color: t.c.text, fontSize: t.f.md, fontWeight: '700' }}>🔔 Price-drop alert</Text>
+        <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>
+          {watching ? `Watching for ${money(watching.target_price)} or less` : 'Get notified when it gets cheaper'}
+        </Text>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+        <View
+          style={{
+            flex: 1,
+            minHeight: 48,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 12,
+            borderRadius: t.r.sm,
+            borderWidth: 1,
+            borderColor: focused ? t.c.accent : t.c.border,
+            backgroundColor: t.c.surface,
+          }}
+        >
+          <Text style={{ color: t.c.text2, fontSize: t.f.sm, fontWeight: '600' }}>Notify me below ₹</Text>
+          <TextInput
+            value={target}
+            onChangeText={setTarget}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            keyboardType="number-pad"
+            returnKeyType="done"
+            onSubmitEditing={submit}
+            selectionColor={t.c.accent}
+            accessibilityLabel="Alert me below this price, in rupees"
+            maxFontSizeMultiplier={1.4}
+            style={{ flex: 1, color: t.c.text, fontSize: t.f.base, fontWeight: '700', paddingHorizontal: 4 }}
+          />
+        </View>
+        <Button title={watching ? 'Update' : 'Notify me'} loading={busy} onPress={submit} />
+      </View>
     </View>
   );
 }

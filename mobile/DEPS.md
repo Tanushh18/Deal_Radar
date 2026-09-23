@@ -22,15 +22,27 @@ Only the infra agent runs `npx expo install`. Ask for anything missing.
 | expo-clipboard | ~57.0.2 |
 | react-native-webview | 13.16.1 |
 | expo-notifications / expo-background-task / expo-task-manager | ~57.0.20 / ~57.0.19 / ~57.0.19 |
+| expo-blur | ~57.0.3 (`BlurView` for glass; on Android pass `experimentalBlurMethod="dimezisBlurView"` for real blur, else it is a tinted view) |
+| @react-native-community/netinfo | 12.0.1 (`useNetInfo()` / `NetInfo.addEventListener` for offline detection) |
+| expo-linking | ~57.0.10 |
+| expo-updates | ~57.0.23 (infra only; OTA via `eas update --branch preview`) |
+| @notifee/react-native + @evennit/notifee-expo-plugin | ^9.1.8 / ^3.8.0 (infra only; rich notifications) |
+| expo-share-intent | ^8.0.1 (infra only; share-to-DealRadar → `CheckPrice {url}`) |
+| expo-quick-actions | ^6.0.2 (infra only; launcher shortcuts) |
 | expo-constants / expo-device / expo-status-bar / expo-system-ui / expo-navigation-bar / expo-splash-screen / expo-build-properties | 57.x |
 
 ## Contracts provided by the infra side
 
-- `src/native/session.ts`: `getServerUrl(): Promise<string>`, `onSignedIn(user)`, `onSignedOut()`.
+- `src/native/session.ts`: `getServerUrl(): Promise<string>`, `enableNotifications(): Promise<boolean>`
+  (for a Settings "notifications" toggle), legacy `onSignedIn(user)`, `onSignedOut()`.
+- `src/native/device.ts`: `getDeviceId(): Promise<string>` (`app_<uuid>`, AsyncStorage `dr-device-id`),
+  `registerDevice({digest?, digest_hour?})` to change digest prefs (returns the server `device` or null).
 - `src/native/config.ts`: `COLORS`, `joinUrl(base, path)`, `isOwnHost(base, url)`, `normalize(url)`.
 - `src/navigation/types.ts`: `RootStackParamList`, `MainTabParamList`, and the `navigationRef`.
 - Root stack routes: `Setup`, `Login`, `Main` (tabs: `Deals`, `Alerts`, `Channels`, `Account`),
-  `DealDetail {id: string}`, `Filters` (modal), `Search`, `Settings`, `Website {path?: string}`.
+  `DealDetail {id: string}`, `Filters` (modal), `Search`, `Settings`, `Website {path?: string}`,
+  `CheckPrice {url?: string}` (share-to-DealRadar + shortcut; export `CheckPriceScreen` from `src/screens/index.ts`),
+  `Saved` (launcher shortcut; export `SavedScreen`). Until exported, `src/navigation/screens.ts` uses placeholders.
 
 ## Root/navigation notes (infra)
 
@@ -41,5 +53,5 @@ Only the infra agent runs `npx expo install`. Ask for anything missing.
   native header (override with `navigation.setOptions`). Tabs have no header; screens handle top safe area.
 - `src/navigation/screens.ts` is the single switch between placeholders and `src/screens/index.ts`
   (named exports `DealsScreen`, `AlertsScreen`, … `WebsiteScreen`).
-- Notification tap → `reset([Main, DealDetail {id}])`; no deal id → `Website {path}`.
+- Notification tap → push `DealDetail {id}` on top of `Main`; no deal id → `Website {path}`. Share intent → `CheckPrice {url}`.
 - Call `onSignedOut()` before `POST /api/auth/logout` (it unregisters the push token with the cookie).

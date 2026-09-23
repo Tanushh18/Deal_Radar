@@ -8,3 +8,8 @@ export * from './native';
 export * from './OptionSheet';
 export * from './Toast';
 export * from './ui';
+export * from './DealActions';
+export * from './motion';
+export * from './offline';
+export * from './Rails';
+export * from './Saved';

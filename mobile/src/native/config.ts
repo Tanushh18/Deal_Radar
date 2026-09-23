@@ -34,8 +34,8 @@ export const COLORS = {
 const KEYS = {
   baseUrl: 'dr.baseUrl',
   signedIn: 'dr.signedIn',
-  lastSeen: 'dr.lastSeen',
-  seenIds: 'dr.seenIds',
+  lastSeen: 'dr.feed.lastSeen',
+  seenIds: 'dr.feed.seenIds',
   pushToken: 'dr.pushToken',
 };
 export { KEYS as STORAGE_KEYS };

@@ -109,3 +109,12 @@ export function avatarHues(title: string): [number, number] {
 }
 
 export const plural = (n: number, one: string, many = one + 's') => (n === 1 ? one : many);
+
+export function endsIn(ts: number | null | undefined): string {
+  if (!ts) return '';
+  const secs = ts - Date.now() / 1000;
+  if (secs <= 0) return 'Ending now';
+  if (secs < 3600) return `Ends in ${Math.max(1, Math.floor(secs / 60))}m`;
+  if (secs < 86400) return `Ends in ${Math.floor(secs / 3600)}h`;
+  return `Ends in ${Math.floor(secs / 86400)}d`;
+}

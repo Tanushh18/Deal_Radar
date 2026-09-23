@@ -16,13 +16,15 @@ shell in `legacy/android-kotlin/`.
 
 | Path | What |
 |---|---|
-| `App.tsx` | Root: boot/auth gate (`GET /api/auth/me` → `Main` or `Login`), offline screen (Retry / Change server), foreground polling, back-twice-to-exit, notification-tap routing |
+| `App.tsx` | Root: boot (server reachability → public `Main`), offline screen (Retry / Change server), visitor session, foreground feed polling, share/shortcut/notification routing, back-twice-to-exit |
 | `src/navigation/` | Root native-stack + bottom tabs, route types, `Setup` screen, placeholders |
 | `src/native/config.ts` | Server URL storage (AsyncStorage), URL normalisation (`localhost` → `10.0.2.2`, bare host → https except LAN), `/api/ping` probe, brand colours |
-| `src/native/session.ts` | Contract for screens: `getServerUrl()`, `onSignedIn(user)`, `onSignedOut()` |
-| `src/native/notifications.ts` | Channel `deal-alerts`, permission, Expo push token, `/api/notifications` poller |
-| `src/native/backgroundTask.ts` | `expo-background-task` job (≥15 min) running the poller |
-| `src/native/deepLinks.ts` | Notification tap → `DealDetail {id}` (cold start too) |
+| `src/native/session.ts` | `getServerUrl()`, `startVisitorSession()`, `enableNotifications()`, legacy `onSignedIn/onSignedOut` |
+| `src/native/device.ts` | `getDeviceId()`, `registerDevice()` |
+| `src/native/notifications.ts` | Channel `deal-alerts`, permission, Expo push token, Notifee rich display, device-feed poller, push dedupe |
+| `src/native/backgroundTask.ts` | Module-scope tasks: feed poll (≥15 min), push-received task, Notifee background press handler |
+| `src/native/deepLinks.ts` | `routeTo()` for notification taps, share intents, shortcuts (held until the navigator is ready) |
+| `src/native/shareIntent.ts`, `quickActions.ts`, `updates.ts` | Share → `CheckPrice`, launcher shortcuts, OTA update check |
 | `src/screens/`, `src/components/`, `src/api/`, `src/theme/` | The native UI screens |
 | `scripts/make-mono-icon.js` | Regenerates the white-on-transparent notification/monochrome icons |
 
@@ -71,47 +73,100 @@ The release build is signed with the debug keystore — fine for sideloading
 larger APK). `android/` is generated — configure native behaviour via
 `app.json` and config plugins, never by hand.
 
+## Visitor device (no login)
+
+The app opens straight to deals in public mode. `startVisitorSession()`
+(`src/native/session.ts`, called by `App.tsx` once the server answers):
+
+- `getDeviceId()` (`src/native/device.ts`) — `app_<uuid4>`, stored in
+  AsyncStorage `dr-device-id`. Screens use it for saved deals, price alerts, follows.
+- `POST /api/devices/register {device_id, platform, push_token?, digest?, digest_hour?}`
+  on every start; `registerDevice({digest, digest_hour})` changes digest prefs.
+- ~6 s after the first launch it asks for `POST_NOTIFICATIONS` (Android 13+),
+  once. `enableNotifications()` re-asks from a Settings toggle.
+- If an Expo push token can be obtained (needs FCM, see below) it is registered,
+  and re-registered when `addPushTokenListener` reports a new token.
+
 ## Notifications
 
-Channel id **`deal-alerts`** (high importance). After sign-in
-(`onSignedIn`), the app asks for `POST_NOTIFICATIONS` (Android 13+), then:
+Channel **`deal-alerts`**: high importance (heads-up), default sound,
+vibration, lights, brand colour `#2563eb`, small icon `notification_icon`
+(monochrome). Created by Notifee; it is also the FCM default channel, so
+remote pushes land in the same channel.
 
-1. **Remote push (when configured):** reads `extra.eas.projectId` from
-   `app.json`; if present, gets an Expo push token and `POST`s it to
-   `/api/push/register` (`{token, platform: 'android'}`) with the session cookie.
-   No projectId, or no FCM credentials in the build → skipped silently.
-2. **Polling fallback (works today, no Firebase/EAS):** on every app foreground
-   and from a background task (min 15 min, OS-scheduled, survives reboot)
-   the app calls `GET /api/notifications?since=<lastSeen>` and posts one local
-   notification per new item (deduped by id; `lastSeen` = the response's
-   `now`). The first poll after sign-in only sets the cursor, so old alerts
-   don't burst in. With push active, polls only advance the cursor.
+**Rich display (Notifee `@notifee/react-native` 9.1.8, BigPictureStyle).**
+Collapsed: title, body and the product thumbnail on the right (`largeIcon`).
+Expanded: the full product image (`picture`, large icon hidden) plus a
+**View deal** action. Items without an image use BigTextStyle. If Notifee's
+native module is missing (Expo Go) it falls back to a plain expo-notifications
+banner. No Notifee config plugin is used: Android autolinks it and its
+`build.gradle` adds its own local maven repo.
 
-Tapping a notification (push or local, warm or cold start) opens
-`DealDetail` for `data.deal_id` (falling back to `?deal=` in `data.url`, then
-to the `Website` screen at that path). `onSignedOut()` unregisters the push
-token (call it *before* `/api/auth/logout`), stops polling and clears the
-cursor.
+**Device feed.** On every foreground and from an `expo-background-task` job
+(≥ 15 min, OS-scheduled) the app calls
+`GET /api/devices/feed?device_id=&since=<lastSeen>&limit=20` and shows each
+new item (deduped by item id; `lastSeen` = response `now`). The first poll
+on an install only sets the cursor. Items whose `deal_id` already arrived as
+a remote push in the last 24 h are skipped (tracked from foreground receipt,
+taps, pushes still in the shade, and the expo-notifications background task).
+
+**Remote pushes (Expo).** Displayed by expo-notifications/FCM when the app is
+backgrounded: title, body and — with `richContent.image` — the image. While
+the app is in the foreground, a push with `data.image_url` is re-shown via
+Notifee so it gets the same big-picture layout. For the full Myntra layout
+while backgrounded too, the server would have to send data-only pushes and
+let the app render them (not done yet).
+
+**Taps** (Expo push, Notifee, warm or cold start, either the body or
+"View deal") → `DealDetail {id: data.deal_id}` (fallback `?deal=` in
+`data.url`, then `Website {path}`), pushed on top of `Main`.
 
 Test the background job on a device: `adb shell cmd jobscheduler run -f com.dealradar.app <jobId>`
 or call `BackgroundTask.triggerTaskWorkerForTestingAsync()` from a dev build.
-Server-side test: `POST /api/notifications/test` while signed in, then
-foreground the app.
 
-### Enabling true remote push later
+### Enabling remote push (needs Firebase)
 
-The server already sends via the Expo Push API to Expo tokens. To make tokens
-available:
+Without FCM credentials `getExpoPushTokenAsync` fails; the device then
+registers token-less and relies on the feed poller.
 
-1. `npx eas-cli@latest login` and `npx eas-cli@latest init` in `mobile/` —
-   this creates an EAS project and writes `extra.eas.projectId` into `app.json`.
-2. Create a Firebase project, add an Android app with package
+1. Create a Firebase project, add an Android app with package
    `com.dealradar.app`, download **`google-services.json`** into `mobile/` and
-   set `"android": { "googleServicesFile": "./google-services.json" }` in
-   `app.json`.
-3. Upload the **FCM v1 service-account key** to Expo:
-   `npx eas-cli@latest credentials` → Android → Google Service Account →
-   *FCM V1* (or via the expo.dev project page).
-4. Rebuild (`expo prebuild --clean` + Gradle, or `eas build -p android`). On
-   next sign-in the app registers its token and the server pushes instantly;
-   polling then just keeps the cursor in step.
+   set `"android": { "googleServicesFile": "./google-services.json" }` in `app.json`.
+2. Upload the **FCM v1 service-account key** to Expo:
+   `npx eas-cli@latest credentials` → Android → Google Service Account → *FCM V1*.
+3. Rebuild the APK (native change — an OTA update is not enough).
+
+## Share to DealRadar
+
+`expo-share-intent` adds a `text/*` SEND intent filter. Sharing a product
+from Amazon/Flipkart/etc. opens the app on `CheckPrice {url}` (first http(s)
+URL found in the shared text).
+
+## Launcher shortcuts
+
+Long-press the icon: *Search deals* → `Search`, *Saved deals* → `Saved`,
+*Check a price* → `CheckPrice` (`expo-quick-actions`, dynamic shortcuts; icons
+from `assets/shortcut-*.png`).
+
+## Over-the-air updates
+
+`expo-updates` with `runtimeVersion: {policy: "appVersion"}` and the EAS
+`preview` build profile on channel `preview`. JS/asset-only changes ship
+without a new APK:
+
+```bash
+cd mobile
+EAS_NO_VCS=1 npx eas-cli@latest update --branch preview --message "what changed"
+```
+
+The app checks on launch and applies the update on the next cold start (or
+immediately if it finishes downloading while the connecting screen is still
+up). Anything native — new libraries, `app.json` plugin/permission changes,
+icons — needs a new build **and** a `version` bump in `app.json` (which also
+changes the runtime version, so old APKs never receive incompatible JS).
+
+Build an APK on EAS:
+
+```bash
+EAS_NO_VCS=1 npx -y eas-cli@latest build -p android --profile preview --non-interactive --no-wait
+```

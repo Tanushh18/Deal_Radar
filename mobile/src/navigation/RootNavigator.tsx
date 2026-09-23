@@ -1,8 +1,11 @@
 import { isPublicMode } from '../native/session';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator, useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { type ComponentType } from 'react';
+import { View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { GlassTabBarBackground } from '../components';
 import { useTheme } from '../theme';
 import * as S from './screens';
 import SetupScreen from './SetupScreen';
@@ -44,6 +47,34 @@ function ChannelsIcon({ color, size }: IconProps) {
     </Svg>
   );
 }
+function SavedIcon({ color, size }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" {...stroke(color)} />
+    </Svg>
+  );
+}
+
+// The glass tab bar floats (position: absolute); keep each tab's content clear of it.
+function aboveTabBar<P extends object>(Screen: ComponentType<P>): ComponentType<P> {
+  function Inset(props: P) {
+    const h = useBottomTabBarHeight();
+    return (
+      <View style={{ flex: 1, paddingBottom: h }}>
+        <Screen {...props} />
+      </View>
+    );
+  }
+  Inset.displayName = `AboveTabBar(${Screen.displayName ?? Screen.name ?? 'Screen'})`;
+  return Inset;
+}
+
+const DealsTab = aboveTabBar(S.DealsScreen);
+const SavedTab = aboveTabBar(S.SavedScreen);
+const AlertsTab = aboveTabBar(S.AlertsScreen);
+const ChannelsTab = aboveTabBar(S.ChannelsScreen);
+const AccountTab = aboveTabBar(S.AccountScreen);
+
 function AccountIcon({ color, size }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -62,15 +93,17 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.text3,
-        tabBarStyle: { backgroundColor: c.bg, borderTopColor: c.border },
+        tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0 },
+        tabBarBackground: () => <GlassTabBarBackground />,
         sceneStyle: { backgroundColor: c.bg },
       }}
     >
-      <Tabs.Screen name="Deals" component={S.DealsScreen} options={{ tabBarIcon: DealsIcon }} />
+      <Tabs.Screen name="Deals" component={DealsTab} options={{ tabBarIcon: DealsIcon }} />
+      <Tabs.Screen name="Saved" component={SavedTab} options={{ tabBarIcon: SavedIcon }} />
       {/* Alerts and channel picking need a Telegram account; public-mode guests browse only. */}
-      {!isPublicMode() && <Tabs.Screen name="Alerts" component={S.AlertsScreen} options={{ tabBarIcon: AlertsIcon }} />}
-      {!isPublicMode() && <Tabs.Screen name="Channels" component={S.ChannelsScreen} options={{ tabBarIcon: ChannelsIcon }} />}
-      <Tabs.Screen name="Account" component={S.AccountScreen} options={{ tabBarIcon: AccountIcon }} />
+      {!isPublicMode() && <Tabs.Screen name="Alerts" component={AlertsTab} options={{ tabBarIcon: AlertsIcon }} />}
+      {!isPublicMode() && <Tabs.Screen name="Channels" component={ChannelsTab} options={{ tabBarIcon: ChannelsIcon }} />}
+      <Tabs.Screen name="Account" component={AccountTab} options={{ tabBarIcon: AccountIcon }} />
     </Tabs.Navigator>
   );
 }
@@ -109,6 +142,7 @@ export default function RootNavigator({ initialRouteName, onServerSaved }: RootN
       <Stack.Screen name="Search" component={S.SearchScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Settings" component={S.SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="Website" component={S.WebsiteScreen} options={{ title: 'DealRadar web' }} />
+      <Stack.Screen name="CheckPrice" component={S.CheckPriceScreen} />
     </Stack.Navigator>
   );
 }

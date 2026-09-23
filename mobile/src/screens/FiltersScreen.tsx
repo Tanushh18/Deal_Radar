@@ -33,10 +33,11 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'discount', label: 'Biggest discount' },
   { key: 'price_low', label: 'Price: low to high' },
   { key: 'price_high', label: 'Price: high to low' },
+  { key: 'ending', label: 'Ending soon' },
 ];
 
-const DISCOUNTS = [0, 20, 40, 60, 80];
-const PRICE_PRESETS = [500, 1000, 2000, 5000];
+const DISCOUNTS = [0, 10, 30, 50, 70];
+const PRICE_BANDS = [199, 499, 999, 1999];
 const FACET_PREVIEW = 6;
 
 export function FiltersScreen() {
@@ -53,6 +54,7 @@ export function FiltersScreen() {
   const [stores, setStores] = useState<KeyCount[]>([]);
   const [brands, setBrands] = useState<KeyCount[]>([]);
   const [priceText, setPriceText] = useState(filters.max_price ? String(filters.max_price) : '');
+  const [minText, setMinText] = useState(filters.min_price ? String(filters.min_price) : '');
 
   const patch = (p: Partial<DealFilters>) => {
     haptic.select();
@@ -89,10 +91,16 @@ export function FiltersScreen() {
     // draftKey captures every field of draft.
   }, [draftKey]);
 
-  const commitPrice = (v: string) => {
+  const parsePrice = (v: string) => {
     const n = Number(v.replace(/[^\d.]/g, ''));
-    setDraft((d) => ({ ...d, max_price: v && n > 0 ? n : null }));
+    return v && n > 0 ? n : null;
   };
+  const commitPrice = (v: string) => setDraft((d) => ({ ...d, max_price: parsePrice(v) }));
+  const commitMin = (v: string) => setDraft((d) => ({ ...d, min_price: parsePrice(v) }));
+  const priceError =
+    draft.min_price != null && draft.max_price != null && draft.min_price > draft.max_price
+      ? 'Minimum is above the maximum.'
+      : undefined;
 
   const apply = () => {
     haptic.light();
@@ -128,6 +136,7 @@ export function FiltersScreen() {
           onPress={() => {
             haptic.select();
             setPriceText('');
+            setMinText('');
             setDraft((d) => clearedFilters(d));
           }}
         />
@@ -163,30 +172,50 @@ export function FiltersScreen() {
           />
         ) : null}
 
-        <Block label="Max price (₹)">
-          <Field
-            value={priceText}
-            onChangeText={(v) => {
-              setPriceText(v);
-              commitPrice(v);
-            }}
-            placeholder="Any"
-            keyboardType="number-pad"
-            accessibilityLabel="Maximum price in rupees"
-          />
+        <Block label="Price (₹)">
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+            <Field
+              style={{ flex: 1 }}
+              value={minText}
+              onChangeText={(v) => {
+                setMinText(v);
+                commitMin(v);
+              }}
+              placeholder="Min"
+              keyboardType="number-pad"
+              accessibilityLabel="Minimum price in rupees"
+            />
+            <Text style={{ color: t.c.text3, fontSize: t.f.base, marginTop: 14 }}>–</Text>
+            <Field
+              style={{ flex: 1 }}
+              value={priceText}
+              onChangeText={(v) => {
+                setPriceText(v);
+                commitPrice(v);
+              }}
+              placeholder="Max"
+              keyboardType="number-pad"
+              accessibilityLabel="Maximum price in rupees"
+            />
+          </View>
+          {priceError ? <Text style={{ color: t.c.hot, fontSize: t.f.xs }}>{priceError}</Text> : null}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {PRICE_PRESETS.map((p) => (
-              <Chip
-                key={p}
-                label={`Under ${money(p)}`}
-                active={draft.max_price === p}
-                onPress={() => {
-                  const next = draft.max_price === p ? null : p;
-                  setPriceText(next ? String(next) : '');
-                  patch({ max_price: next });
-                }}
-              />
-            ))}
+            {PRICE_BANDS.map((p) => {
+              const on = draft.max_price === p && !draft.min_price;
+              return (
+                <Chip
+                  key={p}
+                  label={`Under ${money(p)}`}
+                  active={on}
+                  onPress={() => {
+                    const next = on ? null : p;
+                    setPriceText(next ? String(next) : '');
+                    setMinText('');
+                    patch({ max_price: next, min_price: null });
+                  }}
+                />
+              );
+            })}
           </View>
         </Block>
 
@@ -200,7 +229,7 @@ export function FiltersScreen() {
                   accessibilityRole="radio"
                   accessibilityState={{ selected: on }}
                   accessibilityLabel={d ? `${d} percent or more` : 'Any discount'}
-                  onPress={() => patch({ min_discount: d })}
+                  onPress={() => patch({ min_discount: d && draft.min_discount === d ? 0 : d })}
                   style={{
                     flex: 1,
                     minHeight: 44,
@@ -225,6 +254,7 @@ export function FiltersScreen() {
         <FacetBlock label="Brand" items={brands} value={draft.brand} onPick={(v) => patch({ brand: draft.brand === v ? '' : v })} />
 
         <View style={{ gap: 4 }}>
+          <ToggleRow label="Has a coupon code" value={draft.has_coupon} onChange={(v) => patch({ has_coupon: v })} />
           <ToggleRow label="Only all-time lows" value={draft.only_lowest} onChange={(v) => patch({ only_lowest: v })} />
         </View>
       </ScrollView>

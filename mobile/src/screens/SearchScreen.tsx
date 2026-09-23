@@ -9,8 +9,10 @@ import {
   Highlight,
   Icon,
   IconButton,
+  PastBadge,
   PriceRow,
   categoryIcon,
+  rememberDeal,
   clearRecents,
   haptic,
   loadRecents,
@@ -26,7 +28,7 @@ import type { RootNav } from './types';
 
 type Row =
   | { kind: 'recent'; text: string }
-  | { kind: 'deal'; deal: Deal }
+  | { kind: 'deal'; deal: Deal; past?: boolean }
   | { kind: 'facet'; field: 'category' | 'brand' | 'store'; value: string; label: string; count: number }
   | { kind: 'all' };
 
@@ -44,6 +46,7 @@ export function SearchScreen() {
   const [results, setResults] = useState<Suggestions | null>(null);
   const [loading, setLoading] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
+  const [archive, setArchive] = useState<{ q: string; deals: Deal[] } | null>(null);
   const inputRef = useRef<TextInput>(null);
   const ctrlRef = useRef<AbortController | null>(null);
 
@@ -86,6 +89,24 @@ export function SearchScreen() {
       ctrl.abort();
     };
   }, [typed, filters.all_channels, unsupported]);
+
+  useEffect(() => {
+    if (typed.length < 2) {
+      setArchive(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => {
+      api.deals
+        .list({ q: typed, archive: true, sort: 'relevance', limit: 4, offset: 0 }, { signal: ctrl.signal })
+        .then((r) => setArchive({ q: typed, deals: r.results ?? [] }))
+        .catch(() => {});
+    }, 260);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [typed]);
 
   const backToDeals = () => navigation.navigate('Main', { screen: 'Deals' });
 
@@ -144,6 +165,13 @@ export function SearchScreen() {
     ];
     facets.forEach(([data, title, key]) => data.length && sections.push({ title, key, data }));
   }
+  if (typed.length >= 2 && archive?.q === typed && archive.deals.length) {
+    sections.push({
+      title: 'From the deal archive',
+      key: 'archive',
+      data: archive.deals.map((d) => ({ kind: 'deal', deal: d, past: true })),
+    });
+  }
   if (typed) sections.push({ title: '', key: 'all', data: [{ kind: 'all' }] });
 
   const renderRow = ({ item }: { item: Row }) => {
@@ -168,16 +196,20 @@ export function SearchScreen() {
       const d = item.deal;
       return (
         <RowPress
-          label={`${d.title}, open deal`}
+          label={`${item.past ? 'Past deal, ' : ''}${d.title}, open deal`}
           onPress={() => {
             void pushRecent(typed);
+            rememberDeal(item.past ? { ...d, status: d.status && d.status !== 'live' ? d.status : 'archived' } : d);
             navigation.navigate('DealDetail', { id: d.id });
           }}
         >
           <DealImage deal={d} style={{ width: 52, height: 52, borderRadius: 10 }} emojiSize={20} />
           <View style={{ flex: 1, gap: 3 }}>
             <Highlight text={d.title} query={typed} numberOfLines={2} style={{ color: t.c.text, fontSize: t.f.sm, fontWeight: '600', lineHeight: 18 }} />
-            <PriceRow deal={d} size="sm" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {item.past ? <PastBadge small /> : null}
+              <PriceRow deal={d} size="sm" />
+            </View>
           </View>
         </RowPress>
       );
@@ -281,7 +313,7 @@ export function SearchScreen() {
       <SectionList<Row, Section>
         sections={sections}
         keyExtractor={(item, i) =>
-          item.kind === 'deal' ? `d-${item.deal.id}` : item.kind === 'facet' ? `${item.field}-${item.value}` : item.kind === 'recent' ? `r-${item.text}` : `all-${i}`
+          item.kind === 'deal' ? `${item.past ? 'a' : 'd'}-${item.deal.id}` : item.kind === 'facet' ? `${item.field}-${item.value}` : item.kind === 'recent' ? `r-${item.text}` : `all-${i}`
         }
         renderItem={renderRow}
         renderSectionHeader={({ section }) =>
