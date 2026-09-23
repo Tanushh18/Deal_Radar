@@ -517,25 +517,21 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             ratelimit.prune()
 
             flushed = {"updated": 0, "appended": 0}
-            deleted_from_sheets = 0
             if sheets.is_enabled():
                 loop = asyncio.get_event_loop()
                 flushed = await loop.run_in_executor(None, sheets.flush_deals)
                 # Channel watermarks move every cycle; without this a restart
                 # would re-backfill instead of resuming from where it left off.
                 await loop.run_in_executor(None, sheets.sync_channels)
-                if purged_ids:
-                    # Mirror the local purge so Sheets doesn't keep every deal
-                    # forever while the local cache quietly forgets old ones.
-                    deleted_from_sheets = await loop.run_in_executor(
-                        None, sheets.delete_deals, purged_ids
-                    )
+                await loop.run_in_executor(None, sheets.flush_price_history)
+                # The Sheet is the permanent archive of every deal ever seen:
+                # the local purge only trims the fast SQLite cache, never Sheets.
 
             result = {
                 **totals,
                 "expired": expired,
                 "purged": len(purged_ids),
-                "purged_from_sheets": deleted_from_sheets,
+                "purged_from_sheets": 0,
                 "liveness": liveness,
                 "alerts": alerts,
                 "sheets": flushed,

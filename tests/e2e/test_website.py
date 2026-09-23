@@ -37,7 +37,7 @@ def test_visitors_land_on_deals_without_login(open_page, viewport):
 def test_home_layout(open_page, viewport):
     page, errors = open_page(viewport)
     deals_loaded(page)
-    expect(page.locator(".stat-value").first).to_have_text("25")
+    expect(page.locator(".vh-stats b").first).to_have_text("25")
     overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
     assert overflow <= 0, f"horizontal overflow of {overflow}px"
     if viewport["width"] >= 1024:

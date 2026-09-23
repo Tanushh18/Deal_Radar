@@ -62,6 +62,12 @@ async def lifespan(app: FastAPI):
         except Exception as exc:  # noqa: BLE001
             log.warning("Deal restore failed: %s", exc)
 
+        try:
+            points = await loop.run_in_executor(None, sheets.restore_price_history)
+            log.info("Restored %d price-history points from Google Sheets", points)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Price history restore failed: %s", exc)
+
         meta = {"users": 0, "channels": 0, "user_channels": 0, "watchlists": 0}
         try:
             # Order matters — users before channels before user_channels/

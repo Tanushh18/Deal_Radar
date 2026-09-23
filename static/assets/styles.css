@@ -1573,3 +1573,42 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 :root.guest [data-nav="channels"], :root.guest [data-nav="alerts"], :root.guest #btn-sync,
 :root.guest #btn-bell, :root.guest #btn-save-search, :root.guest [data-action="logout"],
 :root.guest #nav-account .nav-badge { display: none !important; }
+
+/* Visitor header: logo left, search centred and wide, account pinned right.
+   With Channels/Alerts gone the lone "Deals" tab is noise, so it goes too. */
+:root.guest .topnav { display: none !important; }
+@media (min-width: 768px) {
+  :root.guest .appbar-row { gap: 20px; }
+  :root.guest .appbar-brand { flex: 0 0 auto; }
+  :root.guest .search { flex: 1 1 auto; max-width: 720px; margin-inline: auto; }
+  :root.guest .appbar-actions { margin-left: auto; }
+}
+
+/* ---------- visitor storefront headline ---------- */
+.visitor-hero {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 28px;
+  padding: 20px 22px; border-radius: var(--r-lg); border: 1px solid var(--border);
+  background:
+    radial-gradient(600px 220px at 0% 0%, var(--accent-soft), transparent 70%),
+    radial-gradient(500px 200px at 100% 100%, var(--cyan-soft), transparent 70%),
+    var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.vh-copy { min-width: 0; flex: 1 1 360px; }
+.vh-copy h1 { font-size: clamp(1.25rem, 3.2vw, 1.75rem); letter-spacing: -.03em; line-height: 1.2; }
+.vh-copy h1 span { color: var(--accent); }
+.vh-copy p { margin-top: 6px; color: var(--text-2); font-size: .92rem; max-width: 60ch; }
+.vh-stats { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.vh-stats > div { display: flex; flex-direction: column; line-height: 1.15; }
+.vh-stats b { font-size: 1.5rem; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.vh-stats b.up { color: var(--good); }
+.vh-stats span { font-size: .72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 650; }
+.vh-stats .vh-live { flex-direction: row; align-items: center; gap: 7px; padding: 7px 12px;
+  border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+.vh-stats .vh-live span:last-child { text-transform: none; letter-spacing: 0; font-size: .8rem; color: var(--text-2); }
+@media (max-width: 599px) {
+  .visitor-hero { padding: 16px; }
+  .vh-copy p { font-size: .86rem; }
+  .vh-stats { gap: 18px; }
+  .vh-stats b { font-size: 1.25rem; }
+}

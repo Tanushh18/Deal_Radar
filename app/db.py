@@ -166,6 +166,9 @@ def connect() -> sqlite3.Connection:
         cols = {r[1] for r in _conn.execute("PRAGMA table_info(deals)")}
         if "resolved_url" not in cols:
             _conn.execute("ALTER TABLE deals ADD COLUMN resolved_url TEXT DEFAULT ''")
+        ph_cols = {r[1] for r in _conn.execute("PRAGMA table_info(price_history)")}
+        if "synced" not in ph_cols:
+            _conn.execute("ALTER TABLE price_history ADD COLUMN synced INTEGER DEFAULT 0")
         _conn.commit()
         return _conn
 

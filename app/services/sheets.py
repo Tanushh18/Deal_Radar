@@ -39,6 +39,8 @@ WATCH_HEADER = ["user_telegram_id", "query", "category", "store", "max_price", "
 # autoincrement ids) so it survives a full cold start, where every local id
 # gets reassigned as rows are recreated.
 USER_CHANNELS_HEADER = ["user_telegram_id", "channel_tg_id", "enabled", "added_iso"]
+# Every price ever observed per product, so charts and all-time lows survive restarts.
+PRICE_HISTORY_HEADER = ["product_key", "price", "store", "seen_iso", "seen_at"]
 
 _lock = threading.RLock()
 _client = None
@@ -117,6 +119,7 @@ def _ensure_tabs() -> None:
         "Users": USERS_HEADER,
         "Watchlists": WATCH_HEADER,
         "UserChannels": USER_CHANNELS_HEADER,
+        "PriceHistory": PRICE_HISTORY_HEADER,
     }
     existing = {ws.title: ws for ws in _spreadsheet.worksheets()}
     for title, header in wanted.items():
@@ -646,3 +649,48 @@ def _parse_iso(value: Any) -> float:
         return time.mktime(time.strptime(str(value), "%Y-%m-%d %H:%M:%S"))
     except (ValueError, TypeError):
         return 0.0
+
+
+def flush_price_history(limit: int = 2000) -> int:
+    """Append price points not yet in the PriceHistory tab. Returns rows written."""
+    if not connect():
+        return 0
+    rows = db.query("SELECT id, product_key, price, store, seen_at FROM price_history "
+                    "WHERE synced = 0 ORDER BY id LIMIT ?", (limit,))
+    if not rows:
+        return 0
+    with _lock:
+        try:
+            _spreadsheet.worksheet("PriceHistory").append_rows(
+                [[r["product_key"], r["price"], r["store"] or "", _iso(r["seen_at"]), r["seen_at"]] for r in rows],
+                value_input_option="RAW",
+            )
+        except Exception as exc:  # noqa: BLE001
+            global _last_error
+            _last_error = f"price history flush: {exc}"
+            log.warning("Price history flush failed: %s", exc)
+            return 0
+    db.execute_many("UPDATE price_history SET synced = 1 WHERE id = ?", [(r["id"],) for r in rows])
+    return len(rows)
+
+
+def restore_price_history() -> int:
+    """Rebuild local price history from the Sheet on a cold start."""
+    if not connect():
+        return 0
+    try:
+        records = _spreadsheet.worksheet("PriceHistory").get_all_records()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Price history restore failed: %s", exc)
+        return 0
+    points = []
+    for rec in records:
+        try:
+            seen = float(rec.get("seen_at") or 0) or _parse_iso(rec.get("seen_iso"))
+            points.append((str(rec["product_key"]), float(rec["price"]), str(rec.get("store") or ""), seen))
+        except (KeyError, TypeError, ValueError):
+            continue
+    if points:
+        db.execute("DELETE FROM price_history")
+        db.execute_many("INSERT INTO price_history (product_key, price, store, seen_at, synced) VALUES (?, ?, ?, ?, 1)", points)
+    return len(points)

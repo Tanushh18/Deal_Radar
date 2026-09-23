@@ -1153,7 +1153,7 @@
           </div>` : ''}
       `, { wide: true });
       const chartHost = document.getElementById(`price-chart-${id}`);
-      if (chartHost) renderPriceChart(chartHost, fullHistory.points || []);
+      if (chartHost) renderPriceChart(chartHost, fullHistory.points || [], deal.price_history_url);
     } catch (err) {
       openModal(sheetShell('Deal', `<p class="alert alert-error">${escapeHtml(err.message)}</p>`));
     }
@@ -1168,11 +1168,17 @@
     return el;
   }
 
-  function renderPriceChart(container, rawPoints) {
+  function renderPriceChart(container, rawPoints, fallbackUrl = '') {
     const points = (rawPoints || []).filter((p) => p && p.price != null && p.at);
     if (points.length < 2) {
-      container.innerHTML = '<div class="price-chart-empty">Not enough price history yet — '
-        + 'check back once this deal has been seen a few more times.</div>';
+      // Our own history (kept in the Google Sheet) is too thin yet — hand over
+      // to BuyHatke's long-term history for this product instead of a dead end.
+      container.innerHTML = fallbackUrl
+        ? `<div class="price-chart-empty">We've only seen this price once so far.
+             <a class="btn btn-soft btn-sm" style="margin-top:10px" href="${escapeHtml(fallbackUrl)}"
+                target="_blank" rel="noopener noreferrer nofollow">${icon('trend', 'ico')} See full price history on BuyHatke</a></div>`
+        : '<div class="price-chart-empty">Not enough price history yet — '
+          + 'check back once this deal has been seen a few more times.</div>';
       return;
     }
 
@@ -1506,9 +1512,11 @@
   function renderFacet(selector, items, key) {
     const box = $(selector);
     if (!items || !items.length) {
-      box.innerHTML = '<span class="muted small">No data yet</span>';
+      box.innerHTML = '';
+      box.closest('.filter-block')?.classList.add('hidden');
       return;
     }
+    box.closest('.filter-block')?.classList.remove('hidden');
     const expanded = facetExpanded[key];
     // A selected facet must stay visible even if it sits past the preview cut.
     const selectedIdx = items.findIndex((i) => i.key === state.filters[key]);
@@ -1554,6 +1562,26 @@
     const status = statusOverride || (last
       ? `Updated ${timeAgo(last)} · scanning every ${Math.round(stats.poll_interval_seconds / 60)} min`
       : 'Waiting for the first sync…');
+
+    if (state.user?.guest) {
+      // Visitors get a storefront headline, not an operations dashboard.
+      $('#statstrip').innerHTML = `
+        <div class="visitor-hero">
+          <div class="vh-copy">
+            <h1>Today’s best deals, <span>in one place</span></h1>
+            <p>Loot deals and price drops from India’s top deal channels — duplicates merged, prices checked, ranked.</p>
+          </div>
+          <div class="vh-stats">
+            <div><b data-count="${stats.deals_live || 0}">0</b><span>live deals</span></div>
+            <div><b class="up" data-count="${stats.deals_today || 0}">0</b><span>added today</span></div>
+            <div class="vh-live"><span class="livedot ${last ? '' : 'idle'}" id="livedot" aria-hidden="true"></span>
+              <span id="radar-status">${last ? `Updated ${timeAgo(last)}` : 'Live'}</span></div>
+          </div>
+        </div>`;
+      $$('#statstrip [data-count]').forEach((el) => animateCount(el, Number(el.dataset.count)));
+      state.countersAnimated = true;
+      return;
+    }
 
     $('#statstrip').innerHTML = `
       <div class="radarcard">
