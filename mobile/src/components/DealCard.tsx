@@ -2,14 +2,40 @@ import { Image } from 'expo-image';
 import React, { memo } from 'react';
 import { Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
+import { api } from '../api';
 import type { Deal } from '../api/types';
 import { makeStyles, useTheme } from '../theme';
+import { Sparkline } from './Charts';
 import { dealBadge, highlightParts, money, storeName, timeAgo, type BadgeKind } from './format';
 import { Icon } from './Icon';
 import { useDealActions } from './DealActions';
 import { openExternal, useImageUri } from './native';
 import { HeartButton } from './Saved';
 import { Skeleton } from './ui';
+
+// A small module-level cache: cards remount on scroll (FlatList recycling),
+// and there's no reason to refetch the same product's sparkline every time.
+const sparklineCache = new Map<string, number[]>();
+
+function useCardSparkline(deal: Deal): number[] {
+  const [points, setPoints] = React.useState<number[]>(() => sparklineCache.get(deal.id) ?? []);
+  React.useEffect(() => {
+    if (isPastDeal(deal) || sparklineCache.has(deal.id)) return;
+    let live = true;
+    api.deals
+      .history(deal.id)
+      .then((h) => {
+        const series = (h.points || []).map((p) => p.price).slice(-8);
+        sparklineCache.set(deal.id, series);
+        if (live) setPoints(series);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [deal.id]);
+  return points;
+}
 
 const recent = new Map<string, Deal>();
 
@@ -156,6 +182,8 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
   const badge = past ? null : dealBadge(deal);
   const store = storeName(deal);
   const list = layout === 'list';
+  const suspicious = (deal.flags ?? []).includes('suspicious_mrp');
+  const sparkline = useCardSparkline(deal);
   const a11y = [
     past ? 'Past deal' : '',
     deal.title,
@@ -226,12 +254,23 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
               </Text>
             </View>
           ) : null}
-          <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={s.meta}>
-            {timeAgo(deal.posted_at)}
-            {deal.repost_count > 1 ? (
-              <Text style={s.reposts}>{`  ·  Posted ${deal.repost_count}×`}</Text>
-            ) : null}
-          </Text>
+          <View style={s.metaRow}>
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[s.meta, { flex: 1 }]}>
+              {timeAgo(deal.posted_at)}
+              {deal.repost_count > 1 ? (
+                <Text style={s.reposts}>{`  ·  Posted ${deal.repost_count}×`}</Text>
+              ) : null}
+            </Text>
+            {sparkline.length >= 2 ? <Sparkline points={sparkline} /> : null}
+          </View>
+          {suspicious ? (
+            <View style={s.warnRow}>
+              <Icon name="alert" size={11} color={t.c.warn} />
+              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={s.warnText}>
+                {deal.ai_mrp_reason || 'Check the MRP'}
+              </Text>
+            </View>
+          ) : null}
           {list && deal.url ? (
             <Pressable
               accessibilityRole="link"
@@ -313,7 +352,10 @@ const useCardStyles = makeStyles((t) => ({
   },
   couponText: { color: t.c.warn, fontSize: 11, fontWeight: '700', fontFamily: 'monospace' },
   meta: { color: t.c.text3, fontSize: 11 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   reposts: { color: t.c.text2, fontWeight: '600' },
+  warnRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  warnText: { color: t.c.warn, fontSize: 10.5, fontWeight: '600', flexShrink: 1 },
   actions: { paddingHorizontal: 10, paddingBottom: 10 },
   buy: {
     minHeight: 40,

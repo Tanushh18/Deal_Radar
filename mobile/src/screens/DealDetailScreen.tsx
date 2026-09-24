@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
 import { api, errorMessage, isNotFound, isOffline, type Deal, type DealDetail, type PriceAlert, type PricePoint } from '../api';
+import { getDeviceId } from '../native/device';
 import {
   Button,
   DealRail,
@@ -123,6 +124,20 @@ export function DealDetailScreen() {
 
   const copy = async (text: string, what: string) => {
     if (await copyText(text)) toast(`${what} copied.`, 'ok', 2200);
+  };
+
+  const [couponReported, setCouponReported] = useState(false);
+  const reportCouponDead = async () => {
+    if (!deal || couponReported) return;
+    haptic.select();
+    setCouponReported(true);
+    try {
+      const device_id = await getDeviceId();
+      const res = await api.deals.reportCouponDead(deal.id, device_id);
+      toast(res.suppressed ? 'Thanks — we’ve hidden that code.' : 'Thanks for letting us know.', 'ok', 2600);
+    } catch {
+      setCouponReported(false);
+    }
   };
 
   const store = deal ? storeName(deal) : '';
@@ -291,11 +306,26 @@ export function DealDetailScreen() {
               <Icon name="copy" size={15} color={t.c.warn} />
             </Pressable>
           ) : null}
+          {deal.coupon ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Report this coupon code as not working"
+              disabled={couponReported}
+              onPress={reportCouponDead}
+              hitSlop={8}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '600', textDecorationLine: couponReported ? 'none' : 'underline' }}>
+                {couponReported ? 'Reported — thanks' : 'Code not working?'}
+              </Text>
+            </Pressable>
+          ) : null}
 
           {deal.is_lowest ? <Note kind="good" icon="trend" text="Lowest price we have recorded for this product." /> : null}
           {suspicious ? (
-            <Note kind="warn" icon="alert" text="The quoted MRP looks inflated versus this product’s price history." />
+            <Note kind="warn" icon="alert" text={deal.ai_mrp_reason || 'The quoted MRP looks inflated versus this product’s price history.'} />
           ) : null}
+          {deal.ai_hook ? <Note kind="good" icon="trend" text={deal.ai_hook} /> : null}
 
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <View style={{ flex: 1 }}>

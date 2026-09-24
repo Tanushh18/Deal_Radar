@@ -26,6 +26,11 @@ function uuidv4(): string {
 let cached: string | null = null;
 let creating: Promise<string> | null = null;
 
+/** Synchronous best-effort read — '' until getDeviceId() has resolved once. */
+export function peekDeviceId(): string {
+  return cached ?? '';
+}
+
 export function getDeviceId(): Promise<string> {
   if (cached) return Promise.resolve(cached);
   if (!creating) {

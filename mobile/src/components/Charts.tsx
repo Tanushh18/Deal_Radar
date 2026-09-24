@@ -224,6 +224,35 @@ export function PriceChart({ points: raw }: { points: PricePoint[] }) {
   );
 }
 
+/** Tiny inline trend line for a card — cheap enough to render per-item in a list. */
+export function Sparkline({ points, width = 44, height = 16 }: { points: number[]; width?: number; height?: number }) {
+  const t = useTheme();
+  if (!points || points.length < 2) return null;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const coords = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * width;
+      const y = height - ((p - min) / span) * height;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+  const down = points[points.length - 1] <= points[0];
+  return (
+    <Svg width={width} height={height} accessibilityElementsHidden importantForAccessibility="no">
+      <Path
+        d={`M ${coords.replace(/ /g, ' L ')}`}
+        fill="none"
+        stroke={down ? t.c.good : t.c.hot}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function ChannelAvatar({ title, size = 44 }: { title: string; size?: number }) {
   const [h1, h2] = avatarHues(title || '?');
   const initial = (title || '').trim().slice(0, 1).toUpperCase() || '#';

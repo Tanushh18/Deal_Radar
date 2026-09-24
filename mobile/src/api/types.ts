@@ -39,6 +39,8 @@ export type Deal = {
   relevance: number | null;
   price_history_url?: string;
   price_verdict?: PriceVerdict | null;
+  ai_hook?: string;
+  ai_mrp_reason?: string;
 };
 
 export type VerdictLevel = 'great' | 'good' | 'fair' | 'high';
@@ -86,7 +88,7 @@ export type Facets = {
   price_range?: { min: number | null; max: number | null };
 };
 
-export type SortKey = 'relevance' | 'best' | 'newest' | 'discount' | 'price_low' | 'price_high' | 'ending';
+export type SortKey = 'relevance' | 'best' | 'newest' | 'discount' | 'price_low' | 'price_high' | 'ending' | 'for_you';
 
 export type DealQuery = {
   q?: string;
@@ -94,6 +96,7 @@ export type DealQuery = {
   subcategory?: string;
   store?: string;
   brand?: string;
+  size?: string;
   min_price?: number | null;
   max_price?: number | null;
   min_discount?: number;
@@ -102,9 +105,14 @@ export type DealQuery = {
   only_lowest?: boolean;
   all_channels?: boolean;
   sort?: SortKey;
+  device_id?: string;
   limit?: number;
   offset?: number;
 };
+
+export type Sparklines = Record<string, number[]>;
+
+export type CouponDeadResult = { reports: number; suppressed: boolean };
 
 export type Stats = {
   deals_total: number;

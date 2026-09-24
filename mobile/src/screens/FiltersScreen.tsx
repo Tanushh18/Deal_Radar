@@ -30,6 +30,7 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'newest', label: 'Newest first' },
   { key: 'relevance', label: 'Best match' },
   { key: 'best', label: 'Top deals' },
+  { key: 'for_you', label: 'For You' },
   { key: 'discount', label: 'Biggest discount' },
   { key: 'price_low', label: 'Price: low to high' },
   { key: 'price_high', label: 'Price: high to low' },
@@ -248,6 +249,16 @@ export function FiltersScreen() {
               );
             })}
           </View>
+        </Block>
+
+        <Block label="Size / fit">
+          <Field
+            value={draft.size}
+            onChangeText={(v) => setDraft((d) => ({ ...d, size: v }))}
+            placeholder="e.g. M, 42, UK 8"
+            accessibilityLabel="Size or fit"
+            autoCapitalize="characters"
+          />
         </Block>
 
         <FacetBlock label="Store" items={stores} value={draft.store} onPick={(v) => patch({ store: draft.store === v ? '' : v })} />

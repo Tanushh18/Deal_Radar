@@ -4,6 +4,7 @@ import type {
   AuthConfig,
   AvailableChannel,
   Category,
+  CouponDeadResult,
   DealDetail,
   DealHistory,
   DealQuery,
@@ -18,6 +19,7 @@ import type {
   PriceAlert,
   MeResult,
   SendCodeResult,
+  Sparklines,
   Stats,
   Suggestions,
   SyncResult,
@@ -59,6 +61,7 @@ function dealParams(q: DealQuery) {
     subcategory: q.subcategory,
     store: q.store,
     brand: q.brand,
+    size: q.size || undefined,
     min_price: q.min_price ?? undefined,
     max_price: q.max_price ?? undefined,
     min_discount: q.min_discount || undefined,
@@ -67,6 +70,7 @@ function dealParams(q: DealQuery) {
     only_lowest: q.only_lowest || undefined,
     all_channels: q.all_channels || undefined,
     sort: q.sort ?? 'newest',
+    device_id: q.sort === 'for_you' ? q.device_id : undefined,
     limit: q.limit ?? 30,
     offset: q.offset ?? 0,
   };
@@ -75,6 +79,12 @@ function dealParams(q: DealQuery) {
 export const deals = {
   list: (q: DealQuery, o: Sig = {}) =>
     request<DealsPage>('/api/deals', { query: dealParams(q), signal: o.signal }),
+  sparklines: (ids: string[], o: Sig = {}) =>
+    ids.length
+      ? request<{ sparklines: Sparklines }>('/api/deals/sparklines', { query: { ids: ids.join(',') }, signal: o.signal })
+      : Promise.resolve({ sparklines: {} }),
+  reportCouponDead: (id: string, device_id: string) =>
+    request<CouponDeadResult>(`/api/deals/${enc(id)}/coupon-dead`, { method: 'POST', query: { device_id } }),
   suggest: (q: string, limit = 6, allChannels = false, o: Sig = {}) =>
     request<Suggestions>('/api/deals/suggest', {
       query: { q, limit, all_channels: allChannels || undefined },

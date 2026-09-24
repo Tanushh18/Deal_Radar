@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { api } from '../api';
 import type { Category, DealQuery, SortKey } from '../api/types';
 import { money } from './format';
+import { peekDeviceId } from '../native/device';
 
 export type DealFilters = {
   q: string;
@@ -11,6 +12,7 @@ export type DealFilters = {
   subcategory: string;
   store: string;
   brand: string;
+  size: string;
   min_price: number | null;
   max_price: number | null;
   min_discount: number;
@@ -26,6 +28,7 @@ export const DEFAULT_FILTERS: DealFilters = {
   subcategory: '',
   store: '',
   brand: '',
+  size: '',
   min_price: null,
   max_price: null,
   min_discount: 0,
@@ -43,6 +46,7 @@ export function activeFilterCount(f: DealFilters): number {
     f.subcategory,
     f.store,
     f.brand,
+    f.size,
     f.min_price ? 1 : 0,
     f.max_price ? 1 : 0,
     f.min_discount ? 1 : 0,
@@ -60,6 +64,7 @@ export function activeFilterChips(f: DealFilters): { key: FilterKey; label: stri
   if (f.subcategory) chips.push({ key: 'subcategory', label: f.subcategory });
   if (f.store) chips.push({ key: 'store', label: f.store });
   if (f.brand) chips.push({ key: 'brand', label: f.brand });
+  if (f.size) chips.push({ key: 'size', label: `Size ${f.size}` });
   if (f.min_price) chips.push({ key: 'min_price', label: `Over ${money(f.min_price)}` });
   if (f.max_price) chips.push({ key: 'max_price', label: `Under ${money(f.max_price)}` });
   if (f.min_discount) chips.push({ key: 'min_discount', label: `${f.min_discount}%+ off` });
@@ -78,7 +83,10 @@ export function clearedFilters(f: DealFilters): DealFilters {
   return { ...DEFAULT_FILTERS, q: f.q, sort: f.sort };
 }
 
-export const toQuery = (f: DealFilters): DealQuery => ({ ...f });
+export const toQuery = (f: DealFilters): DealQuery => ({
+  ...f,
+  device_id: f.sort === 'for_you' ? peekDeviceId() : undefined,
+});
 
 type Ctx = {
   filters: DealFilters;

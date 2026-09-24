@@ -71,6 +71,7 @@ const VIEW_KEY = 'dr.view';
 
 const SORT_TABS: { key: SortKey; label: string }[] = [
   { key: 'newest', label: 'Newest' },
+  { key: 'for_you', label: 'For You' },
   { key: 'best', label: 'Top rated' },
   { key: 'discount', label: 'Biggest discount' },
   { key: 'price_low', label: 'Lowest price' },
@@ -81,6 +82,7 @@ const SORT_HEADINGS: Record<SortKey, [string, string]> = {
   newest: ['🕘 Latest deals', 'Freshly posted deals'],
   best: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
   relevance: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
+  for_you: ['✨ For You', 'Matched to what you follow'],
   discount: ['⚡ Biggest discounts', 'Largest drop from the quoted MRP'],
   price_low: ['💸 Cheapest first', 'Lowest prices first'],
   price_high: ['💎 Priciest first', 'Highest prices first'],
