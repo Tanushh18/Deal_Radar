@@ -204,11 +204,26 @@ def _backup_small_tables(client: httpx.Client) -> None:
 
 
 def _backup_round() -> None:
+    # BATCH_SIZE caps each table at 300 rows/round regardless of backlog
+    # size, and each sub-step is independent — one table failing (a bad
+    # row, a transient Turso error) must not also skip the others this
+    # round; it'll just be picked up again next round.
     with httpx.Client() as client:
         _ensure_schema(client)
-        deals_n = _backup_deals(client)
-        history_n = _backup_price_history(client)
-        _backup_small_tables(client)
+        deals_n = 0
+        history_n = 0
+        try:
+            deals_n = _backup_deals(client)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Turso deals backup failed: %s", exc)
+        try:
+            history_n = _backup_price_history(client)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Turso price-history backup failed: %s", exc)
+        try:
+            _backup_small_tables(client)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Turso channels/meta backup failed: %s", exc)
         if deals_n or history_n:
             log.info("Turso backup: %d deals, %d price points uploaded", deals_n, history_n)
 

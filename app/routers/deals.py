@@ -26,6 +26,13 @@ _IMAGE_CACHE_MAX = 120
 # still needs a cap to stop that being an open door to abuse that session.
 _limit_image = ratelimit.limit("deal-image", max_requests=90, window_seconds=60)
 
+# Every one of these hits the DB (or, in sheet-serving mode, the Sheets API)
+# directly. A caller hammering these repeatedly is exactly what turned a
+# traffic spike into DB/CPU pressure before — cap each per IP so one bad
+# actor or a runaway retry loop can't do that again.
+_limit_search = ratelimit.limit("deal-search", max_requests=90, window_seconds=60)
+_limit_sparklines = ratelimit.limit("deal-sparklines", max_requests=60, window_seconds=60)
+
 
 def _scope(user: Optional[dict]) -> Optional[list]:
     """Everyone sees the same catalogue: deals from the reader's channels that
@@ -61,6 +68,7 @@ async def suggest_deals(
     limit: int = Query(6, ge=1, le=20),
     all_channels: bool = False,
     user=Depends(auth.optional_user),
+    _rl=Depends(_limit_search),
 ):
     scope = None if all_channels else _scope(user)
     return search.suggest(q, channel_ids=scope, limit=limit)
@@ -87,6 +95,7 @@ async def list_deals(
     size: str = Query("", max_length=20),
     device_id: str = Query("", max_length=120, description="Required for sort=for_you"),
     user=Depends(auth.optional_user),
+    _rl=Depends(_limit_search),
 ):
     if sort not in search.SORTS:
         raise HTTPException(status_code=400, detail=f"sort must be one of {list(search.SORTS)}")
@@ -130,7 +139,7 @@ async def list_deals(
 
 
 @router.get("/sparklines")
-async def sparklines(ids: str = Query(..., max_length=2000)):
+async def sparklines(ids: str = Query(..., max_length=2000), _rl=Depends(_limit_sparklines)):
     """Batch price trend for a grid of cards: last 8 points per deal, one query.
 
     Avoids N+1 calls to /history when rendering a page of cards — the
