@@ -1,13 +1,13 @@
-"""Storage layer.
+"""Storage layer — Turso (hosted libSQL) only, no local-SQLite fallback.
 
-When TURSO_DATABASE_URL/TURSO_AUTH_TOKEN are set, this connects to Turso
-(hosted libSQL) as an embedded replica: a local file that syncs to the
-remote database, so data survives Render redeploys/restarts on the free
-plan without a paid disk. Without those env vars it falls back to a plain
-local SQLite file (ephemeral on free hosting — fine for local dev).
+Requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN. Connects as an embedded
+replica: a local file that syncs with the remote, so reads are fast but
+every write is durable in Turso — data survives Render redeploys/restarts
+on the free plan without a paid disk. If either env var is missing, or the
+initial handshake/sync fails, connect() raises and the app refuses to
+start rather than silently running on a throwaway local database.
 
-Google Sheets remains an optional export/viewer, not the source of truth,
-once Turso is configured.
+Google Sheets remains an optional export/viewer, not the source of truth.
 """
 from __future__ import annotations
 
@@ -243,29 +243,22 @@ def connect() -> Any:
         if directory:
             os.makedirs(directory, exist_ok=True)
 
-        if settings.turso_configured and libsql is not None:
-            try:
-                _conn = libsql.connect(
-                    settings.db_path,
-                    sync_url=settings.turso_url,
-                    auth_token=settings.turso_auth_token,
-                )
-                _conn.sync()
-                _using_turso = True
-                _last_sync = time.time()
-                for statement in _split_statements(SCHEMA):
-                    _conn.execute(statement)
-            except Exception as exc:  # noqa: BLE001 - a bad Turso handshake must never take the app down
-                log.warning("Turso connect/sync failed (%s) — falling back to local SQLite", exc)
-                _conn = None
-                _using_turso = False
+        if not settings.turso_configured or libsql is None:
+            raise RuntimeError(
+                "Turso is required: set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in the "
+                "environment (and make sure libsql-experimental is installed)."
+            )
 
-        if _conn is None:
-            _conn = sqlite3.connect(settings.db_path, check_same_thread=False)
-            _conn.row_factory = sqlite3.Row
-            _conn.execute("PRAGMA journal_mode=WAL")
-            _conn.execute("PRAGMA synchronous=NORMAL")
-            _conn.executescript(SCHEMA)
+        _conn = libsql.connect(
+            settings.db_path,
+            sync_url=settings.turso_url,
+            auth_token=settings.turso_auth_token,
+        )
+        _conn.sync()
+        _using_turso = True
+        _last_sync = time.time()
+        for statement in _split_statements(SCHEMA):
+            _conn.execute(statement)
         # Additive migration: the final store URL behind cuttli/bitli-style redirects.
         cols = {r[1] for r in _conn.execute("PRAGMA table_info(deals)")}
         if "resolved_url" not in cols:
