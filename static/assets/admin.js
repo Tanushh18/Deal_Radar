@@ -134,7 +134,6 @@
   }
   $('#serve-db').addEventListener('click', () => setServeMode('db'));
   $('#serve-sheet').addEventListener('click', () => setServeMode('sheet'));
-  $('#storage-turso').addEventListener('click', () => setStorageMode('turso'));
   $('#storage-sqlite').addEventListener('click', () => setStorageMode('sqlite'));
 
   async function unlock() {
