@@ -28,7 +28,7 @@ from .routers import devices as devices_router
 from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import watchlists as watchlists_router
-from .services import ingest, public_reader, sheets, store, telegram
+from .services import ingest, public_reader, sheets, store, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -52,18 +52,30 @@ async def lifespan(app: FastAPI):
     if settings.secret_key == "dev-insecure-change-me":
         log.warning("SECRET_KEY is the insecure default — set a real one before deploying.")
 
-    # Render's disk is ephemeral: rebuild the cache from Sheets on cold start.
+    # Render's disk is ephemeral: rebuild the cache on cold start. Turso (a
+    # plain background HTTP backup, never touching the event loop — see
+    # turso_backup.py) is tried first since it's the fresher, fuller copy;
+    # Sheets restore still runs for users/channels/watchlists either way,
+    # but skips re-restoring deals if Turso already provided them.
+    loop = asyncio.get_event_loop()
+    turso_deals = 0
+    try:
+        turso_deals = await loop.run_in_executor(None, turso_backup.restore)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Turso restore failed: %s", exc)
+    turso_backup.start()
+
     # Each step gets its own try/except — restore_deals() is independently
     # resilient to a single bad row now, but a step here failing for some
     # other reason (a transient Sheets error, a quota blip) must not also
     # cost every step after it in the same sequence.
     if sheets.is_enabled():
-        loop = asyncio.get_event_loop()
-        restored = 0
-        try:
-            restored = await loop.run_in_executor(None, sheets.restore_deals)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("Deal restore failed: %s", exc)
+        restored = turso_deals
+        if not turso_deals:
+            try:
+                restored = await loop.run_in_executor(None, sheets.restore_deals)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Deal restore failed: %s", exc)
 
         try:
             points = await loop.run_in_executor(None, sheets.restore_price_history)
@@ -129,6 +141,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         log.info("Shutting down…")
+        turso_backup.stop()
         for task in _tasks:
             task.cancel()
         await asyncio.gather(*_tasks, return_exceptions=True)
