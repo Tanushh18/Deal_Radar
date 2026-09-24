@@ -407,19 +407,49 @@ def purge_ancient(days: int = 400) -> List[str]:
     return []
 
 
-def purge_housekeeping(notified_days: int = 30) -> Dict[str, int]:
+def purge_housekeeping(notified_days: int = 30, coupon_report_days: int = 90) -> Dict[str, int]:
     """Clear tables that otherwise grow forever on a long-running deployment.
 
     A sent-alert record in `notified` exists purely to dedupe future alerts
     and is worthless once old enough that the same deal would have expired
     anyway. (Web sessions used to need pruning here too, but they're now a
     stateless signed cookie — see auth.py — with nothing stored server-side.)
+    A coupon report past this window is stale feedback on a deal that has
+    long since expired; the count reaching COUPON_DEAD_THRESHOLD already
+    suppressed the coupon while it mattered.
     """
     notified_cutoff = time.time() - notified_days * 86400
     notified = db.execute(
         "DELETE FROM notified WHERE sent_at < ?", (notified_cutoff,)
     ).rowcount or 0
-    return {"notified": notified}
+    coupon_cutoff = time.time() - coupon_report_days * 86400
+    coupon_reports = db.execute(
+        "DELETE FROM coupon_reports WHERE reported_at < ?", (coupon_cutoff,)
+    ).rowcount or 0
+    return {"notified": notified, "coupon_reports": coupon_reports}
+
+
+DEAL_LOCAL_RETENTION_DAYS = 270
+
+
+def purge_old_local_deals() -> int:
+    """Delete deals that expired long ago from *local* SQLite only.
+
+    Every deal that ever synced (dirty=0) already has a durable copy in
+    Turso — deleting the local row doesn't lose it, it just drops out of
+    local archive search past this window. Live deals are never touched
+    regardless of age. Skipped entirely when Turso backup isn't running,
+    since local SQLite would then be the only copy.
+    """
+    from ..config import settings
+    if not settings.turso_configured:
+        return 0
+    cutoff = time.time() - DEAL_LOCAL_RETENTION_DAYS * 86400
+    cur = db.execute(
+        "DELETE FROM deals WHERE status != 'live' AND dirty = 0 AND last_seen_at < ?",
+        (cutoff,),
+    )
+    return cur.rowcount or 0
 
 
 def backfill_channel_ids() -> int:

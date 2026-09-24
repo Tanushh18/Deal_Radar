@@ -497,6 +497,20 @@ def user_channel_ids(user_id: int) -> List[int]:
 
 
 # --- the cycle ---------------------------------------------------------
+def _purge_old_local_deals_daily() -> None:
+    """Run store.purge_old_local_deals() at most once per calendar day (UTC)."""
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    if db.get_meta("local_deals_purge_day") == today:
+        return
+    try:
+        removed = store.purge_old_local_deals()
+        if removed:
+            log.info("Local deal purge: removed %d deals already backed up to Turso", removed)
+    except Exception as exc:  # noqa: BLE001 - never break the ingest cycle
+        log.warning("Local deal purge failed: %s", exc)
+    db.set_meta("local_deals_purge_day", today)
+
+
 def _rollup_price_history_daily() -> None:
     """Run store.rollup_price_history() at most once per calendar day (UTC)."""
     today = time.strftime("%Y-%m-%d", time.gmtime())
@@ -541,6 +555,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             alerts = await run_watchlist_alerts()
             purged_ids = store.purge_ancient()
             store.purge_housekeeping()
+            _purge_old_local_deals_daily()
             push.prune_notifications()
             from . import devices
             devices.digest_tick()
