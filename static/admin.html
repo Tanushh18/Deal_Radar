@@ -37,6 +37,23 @@
     .catpick { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
       border: 1px solid var(--border); font-size: .84rem; cursor: pointer; }
     .catpick input { accent-color: var(--accent); }
+    .deal-picker { display: grid; gap: 8px; max-height: 340px; overflow-y: auto; padding: 4px 2px; }
+    .deal-picker .deal-empty { font-size: .84rem; color: var(--text-3); padding: 6px 2px; }
+    .deal-option { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 8px;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; }
+    .deal-option:hover { border-color: var(--accent); }
+    .deal-option img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--surface-2); flex: none; }
+    .deal-option .deal-option-thumb-placeholder { width: 44px; height: 44px; border-radius: 8px; background: var(--surface-2); flex: none; }
+    .deal-option-body { min-width: 0; flex: 1; }
+    .deal-option-title { font-size: .86rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .deal-option-meta { font-size: .78rem; color: var(--text-3); display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+    .deal-option-discount { color: var(--good); font-weight: 700; }
+    .deal-picked { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 10px;
+      background: var(--good-soft); border: 1px solid var(--good); }
+    .deal-picked img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex: none; }
+    .deal-picked-body { min-width: 0; flex: 1; font-size: .84rem; }
+    .deal-picked-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .deal-picked-meta { color: var(--text-3); font-size: .78rem; }
   </style>
 </head>
 <body>
@@ -116,11 +133,11 @@
       <form id="notify-form" style="display:grid;gap:12px">
         <label class="field" style="margin:0"><span>Attach a deal (optional)</span>
           <div class="row">
-            <input class="input" id="notify-deal-search" placeholder="Search a deal by name…" autocomplete="off" />
+            <input class="input" id="notify-deal-search" placeholder="Search a deal by name, store or brand…" autocomplete="off" />
             <button class="btn btn-ghost btn-sm hidden" id="notify-deal-clear" type="button">Clear</button>
           </div>
-          <div id="notify-deal-results" class="msg hidden" style="margin-top:2px"></div>
-          <div id="notify-deal-picked" class="msg ok hidden" style="margin-top:2px"></div>
+          <div id="notify-deal-picked" class="deal-picked hidden"></div>
+          <div id="notify-deal-results" class="deal-picker hidden"></div>
         </label>
         <label class="field" style="margin:0"><span>Title</span>
           <input class="input" id="notify-title" maxlength="120" placeholder="🔥 Big Billion Days is live" required /></label>

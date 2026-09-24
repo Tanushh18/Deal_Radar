@@ -17,7 +17,14 @@ log = logging.getLogger(__name__)
 
 EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 BATCH_SIZE = 100
-CHANNEL_ID = "deal-alerts"
+# Mirrors mobile/src/native/notifications.ts CHANNELS — keep both in sync.
+CHANNEL_ID = "deal-alerts"  # legacy fallback for pre-channel-split installs
+CHANNEL_BY_KIND = {
+    "price_drop": "price-drops",
+    "digest": "daily-deals",
+    "weekly_pick": "daily-deals",
+    "follow": "flash-sales",
+}
 TOKEN_PREFIXES = ("ExponentPushToken[", "ExpoPushToken[")
 RETENTION_DAYS = 30
 
@@ -94,7 +101,7 @@ async def _post_batch(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 async def send_push(
     tokens: List[str], title: str, body: str, url: str, deal_id: Optional[str] = None,
-    image: str = "", kind: str = "",
+    image: str = "", kind: str = "", expires_at: float = 0,
 ) -> int:
     """Send to every token; returns how many Expo accepted. Never raises."""
     tokens = [t for t in dict.fromkeys(tokens) if is_expo_token(t)]
@@ -107,8 +114,8 @@ async def send_push(
             "body": body,
             "sound": "default",
             "priority": "high",
-            "channelId": CHANNEL_ID,
-            "data": {"url": url, "deal_id": deal_id, "image_url": image, "kind": kind},
+            "channelId": CHANNEL_BY_KIND.get(kind, CHANNEL_ID),
+            "data": {"url": url, "deal_id": deal_id, "image_url": image, "kind": kind, "expires_at": expires_at},
             # Product photo on the notification (thumbnail on Android, like Myntra).
             **({"richContent": {"image": image}} if image else {}),
         }

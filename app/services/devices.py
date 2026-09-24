@@ -100,7 +100,7 @@ def remove_follow(device_id: str, follow_id: int) -> bool:
 
 def feed(device_id: str, since: float = 0.0, limit: int = 20) -> List[Dict[str, Any]]:
     return [dict(r) for r in db.query(
-        "SELECT id, kind, title, body, image_url, deal_id, url, created_at FROM device_notifications "
+        "SELECT id, kind, title, body, image_url, deal_id, url, expires_at, created_at FROM device_notifications "
         "WHERE device_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT ?",
         (device_id, since, limit))]
 
@@ -112,10 +112,11 @@ def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict
     image = absolute_image(deal.get("image_url"))
     deal_id = deal.get("id") or ""
     url = f"/?deal={deal_id}" if deal_id else "/"
+    expires_at = float(deal.get("expires_at") or 0)
     db.execute(
-        "INSERT INTO device_notifications (device_id, kind, title, body, image_url, deal_id, url, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (device_id, kind, title, body, image, deal_id, url, time.time()),
+        "INSERT INTO device_notifications (device_id, kind, title, body, image_url, deal_id, url, expires_at, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (device_id, kind, title, body, image, deal_id, url, expires_at, time.time()),
     )
     row = db.query_one("SELECT push_token FROM devices WHERE device_id = ?", (device_id,))
     tokens = [t for t in {(row["push_token"] if row else ""), extra_token} if t]
@@ -126,7 +127,8 @@ def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict
     except RuntimeError:
         return  # no event loop (scripts/tests): the device reads it from its feed instead
     from . import push
-    loop.create_task(push.send_push(tokens, title, body, url, deal_id or None, image=image, kind=kind))
+    loop.create_task(push.send_push(tokens, title, body, url, deal_id or None, image=image, kind=kind,
+                                     expires_at=expires_at))
 
 
 def broadcast(title: str, body: str, deal: Optional[Dict[str, Any]] = None) -> int:
@@ -196,6 +198,51 @@ def digest_tick() -> int:
                f"{count} new deals today — tap to see the top picks", top)
         db.execute("UPDATE devices SET last_digest_day = ? WHERE device_id = ?", (today, r["device_id"]))
     return len(rows)
+
+
+WEEKLY_DIGEST_SECONDS = 7 * 86400
+
+
+def _best_for_follows(device_id: str) -> Optional[Dict[str, Any]]:
+    """Best live deal matching what this device follows (category/brand/store)."""
+    rows = db.query("SELECT kind, value FROM device_follows WHERE device_id = ?", (device_id,))
+    if not rows:
+        return None
+    clauses, params = [], []
+    for r in rows:
+        clauses.append(f"LOWER({r['kind']}) = LOWER(?)")
+        params.append(r["value"])
+    sql = (
+        "SELECT * FROM deals WHERE status = 'live' AND expires_at > ? AND (" + " OR ".join(clauses) +
+        ") ORDER BY score DESC LIMIT 1"
+    )
+    row = db.query_one(sql, [time.time()] + params)
+    return dict(row) if row else None
+
+
+def weekly_digest_tick() -> int:
+    """Once a week: the best deal in each device's own followed categories/brands/stores.
+
+    Opt-in and first-party only — built from what the device explicitly follows,
+    never from any inferred trait. Devices with no follows get nothing (there is
+    nothing "personal" to show yet).
+    """
+    cutoff = time.time() - WEEKLY_DIGEST_SECONDS
+    rows = db.query(
+        "SELECT DISTINCT d.device_id FROM devices d JOIN device_follows f ON f.device_id = d.device_id "
+        "WHERE COALESCE(d.last_weekly_digest_at, 0) < ?", (cutoff,))
+    sent = 0
+    now = time.time()
+    for r in rows:
+        deal = _best_for_follows(r["device_id"])
+        db.execute("UPDATE devices SET last_weekly_digest_at = ? WHERE device_id = ?", (now, r["device_id"]))
+        if not deal:
+            continue
+        off = f" · {deal['discount_pct']}% off" if deal.get("discount_pct") else ""
+        notify(r["device_id"], "weekly_pick", f"⭐ Picked for you: {_money(deal.get('price'))}",
+               f"{(deal.get('title') or '')[:90]}{off}", deal)
+        sent += 1
+    return sent
 
 
 def prune() -> None:

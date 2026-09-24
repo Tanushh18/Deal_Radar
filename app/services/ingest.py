@@ -526,6 +526,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             push.prune_notifications()
             from . import devices
             devices.digest_tick()
+            devices.weekly_digest_tick()
             devices.prune()
             ratelimit.prune()
 

@@ -230,44 +230,93 @@
     } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
 
-  /* ---------------- send notification ---------------- */
+  /* ---------------- send notification: visual deal picker ---------------- */
   let pickedDeal = null;
   let notifySearchTimer = null;
+  let dealsById = {};
+
+  function dealOptionHtml(d) {
+    const thumb = d.image_url
+      ? `<img src="${esc(d.image_url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'deal-option-thumb-placeholder'}))" />`
+      : '<div class="deal-option-thumb-placeholder"></div>';
+    const discount = d.discount_pct ? `<span class="deal-option-discount">${Math.round(d.discount_pct)}% off</span>` : '';
+    return `<button type="button" class="deal-option" data-pick="${d.id}">
+      ${thumb}
+      <span class="deal-option-body">
+        <span class="deal-option-title">${esc(d.title)}</span>
+        <span class="deal-option-meta">₹${Math.round(d.price || 0)} ${discount} ${d.store ? '· ' + esc(d.store) : ''}</span>
+      </span>
+    </button>`;
+  }
+
+  function renderDealOptions(deals) {
+    const box = $('#notify-deal-results');
+    dealsById = {};
+    for (const d of deals) dealsById[d.id] = d;
+    if (!deals.length) {
+      box.innerHTML = '<div class="deal-empty">No matching deals.</div>';
+      box.classList.remove('hidden');
+      return;
+    }
+    box.innerHTML = deals.map(dealOptionHtml).join('');
+    box.classList.remove('hidden');
+  }
+
+  async function loadTopDeals() {
+    try {
+      const r = await api('/api/deals?sort=best&limit=8');
+      renderDealOptions(r.deals || []);
+    } catch { /* leave hidden */ }
+  }
+
+  $('#notify-deal-search').addEventListener('focus', () => {
+    if (!$('#notify-deal-search').value.trim() && !$('#notify-deal-results').innerHTML) loadTopDeals();
+    else if ($('#notify-deal-results').innerHTML) $('#notify-deal-results').classList.remove('hidden');
+  });
 
   $('#notify-deal-search').addEventListener('input', (e) => {
     clearTimeout(notifySearchTimer);
     const q = e.target.value.trim();
-    const box = $('#notify-deal-results');
-    if (!q) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+    if (!q) { loadTopDeals(); return; }
     notifySearchTimer = setTimeout(async () => {
       try {
-        const r = await api(`/api/deals/suggest?q=${encodeURIComponent(q)}&limit=6`);
-        const deals = r.deals || [];
-        if (!deals.length) { box.innerHTML = '<span class="muted small">No matching deals.</span>'; box.classList.remove('hidden'); return; }
-        box.innerHTML = deals.map((d) => `<button type="button" class="btn btn-ghost btn-sm" data-pick="${d.id}"
-          style="display:block;width:100%;text-align:left;margin-bottom:4px">${esc(d.title)} — ₹${Math.round(d.price || 0)}</button>`).join('');
-        box.classList.remove('hidden');
-      } catch { box.classList.add('hidden'); }
+        const r = await api(`/api/deals/suggest?q=${encodeURIComponent(q)}&limit=8`);
+        renderDealOptions(r.deals || []);
+      } catch { $('#notify-deal-results').classList.add('hidden'); }
     }, 250);
   });
 
   $('#notify-deal-results').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-pick]');
     if (!btn) return;
-    pickedDeal = { id: btn.dataset.pick, title: btn.textContent.split(' — ')[0] };
-    $('#notify-deal-picked').textContent = `Attached: ${pickedDeal.title}`;
+    const d = dealsById[btn.dataset.pick];
+    if (!d) return;
+    pickedDeal = d;
+    const discount = d.discount_pct ? `${Math.round(d.discount_pct)}% off · ` : '';
+    $('#notify-deal-picked').innerHTML = `
+      ${d.image_url ? `<img src="${esc(d.image_url)}" alt="" />` : ''}
+      <span class="deal-picked-body">
+        <span class="deal-picked-title">${esc(d.title)}</span>
+        <span class="deal-picked-meta">${discount}₹${Math.round(d.price || 0)} ${d.store ? '· ' + esc(d.store) : ''}</span>
+      </span>`;
     $('#notify-deal-picked').classList.remove('hidden');
     $('#notify-deal-clear').classList.remove('hidden');
     $('#notify-deal-results').classList.add('hidden');
-    $('#notify-deal-results').innerHTML = '';
     $('#notify-deal-search').value = '';
-    if (!$('#notify-title').value.trim()) $('#notify-title').value = pickedDeal.title;
+    if (!$('#notify-title').value.trim()) $('#notify-title').value = d.title;
   });
 
   $('#notify-deal-clear').addEventListener('click', () => {
     pickedDeal = null;
     $('#notify-deal-picked').classList.add('hidden');
+    $('#notify-deal-picked').innerHTML = '';
     $('#notify-deal-clear').classList.add('hidden');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#notify-deal-search') && !e.target.closest('#notify-deal-results')) {
+      $('#notify-deal-results').classList.add('hidden');
+    }
   });
 
   $('#notify-form').addEventListener('submit', async (e) => {
