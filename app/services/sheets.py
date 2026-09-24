@@ -333,38 +333,122 @@ def delete_deals(ids: List[str]) -> int:
     return len(target_rows)
 
 
+def _sheet_ts(value: str) -> float:
+    if not value:
+        return 0.0
+    try:
+        return time.mktime(time.strptime(str(value), "%Y-%m-%d %H:%M:%S"))
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def _sheet_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(str(value).strip())
+    except (ValueError, TypeError):
+        return default
+
+
+def _sheet_float(value: Any) -> Optional[float]:
+    try:
+        return float(str(value).strip()) if str(value or "").strip() else None
+    except (ValueError, TypeError):
+        return None
+
+
+def parse_deal_record(rec: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """One 'Deals' tab row -> a dict shaped like the deals table. None if unusable."""
+    from .parser import normalize_title
+
+    deal_id = str(rec.get("id") or "").strip()
+    if not deal_id:
+        return None
+    title = str(rec.get("title") or "")
+    flags = [f.strip() for f in str(rec.get("flags") or "").split(",") if f.strip()]
+    return {
+        "id": deal_id,
+        "title": title,
+        "norm_title": normalize_title(title),
+        "product_key": str(rec.get("product_key") or ""),
+        "price": _sheet_float(rec.get("price")),
+        "mrp": _sheet_float(rec.get("mrp")),
+        "discount_pct": _sheet_int(rec.get("discount_pct")),
+        "currency": "INR",
+        "store": str(rec.get("store") or ""),
+        "url": str(rec.get("url") or ""),
+        "clean_url": str(rec.get("clean_url") or ""),
+        "image_url": str(rec.get("image_url") or ""),
+        "coupon": str(rec.get("coupon") or ""),
+        "category": str(rec.get("category") or "Other"),
+        "subcategory": str(rec.get("subcategory") or "General"),
+        "brand": str(rec.get("brand") or ""),
+        "sizes": str(rec.get("sizes") or ""),
+        "channel_id": _sheet_int(rec.get("channel_tg_id")),
+        "channel_title": str(rec.get("channel_title") or ""),
+        "message_id": _sheet_int(rec.get("message_id")),
+        "posted_at": _sheet_ts(rec.get("posted_at_iso")),
+        "first_seen_at": _sheet_ts(rec.get("posted_at_iso")),
+        "last_seen_at": _sheet_ts(rec.get("posted_at_iso")),
+        "expires_at": _sheet_ts(rec.get("expires_at_iso")),
+        "repost_count": _sheet_int(rec.get("repost_count"), default=1),
+        "channels_seen": "[]",
+        "status": str(rec.get("status") or "live"),
+        "score": _sheet_float(rec.get("score")) or 0.0,
+        "is_lowest": 1 if str(rec.get("is_lowest")).lower() in {"yes", "true", "1"} else 0,
+        "flags": flags,
+        "raw_text": str(rec.get("raw_text") or ""),
+        "search_blob": " ".join(
+            filter(None, [title.lower(), str(rec.get("brand") or "").lower(),
+                          str(rec.get("category") or "").lower(),
+                          str(rec.get("subcategory") or "").lower()])
+        ),
+        "ai_hook": "",
+        "ai_mrp_reason": "",
+        "price_history_url": "",
+        "relevance": None,
+        "dirty": 0,
+    }
+
+
+_deals_cache: Dict[str, Any] = {"rows": None, "at": 0.0}
+DEALS_CACHE_SECONDS = 20
+
+
+def fetch_deals_raw(force: bool = False) -> List[Dict[str, Any]]:
+    """All rows from the 'Deals' tab, parsed and cached briefly.
+
+    Used by the admin "serve from Sheet" testing mode, which reads straight
+    from Sheets instead of the DB — this is what keeps that mode from
+    hammering the Sheets API on every request.
+    """
+    with _lock:
+        if not force and _deals_cache["rows"] is not None and time.time() - _deals_cache["at"] < DEALS_CACHE_SECONDS:
+            return _deals_cache["rows"]
+    if not connect():
+        return _deals_cache["rows"] or []
+    try:
+        ws = _spreadsheet.worksheet("Deals")
+        records = ws.get_all_records()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Sheet-mode fetch failed: %s", exc)
+        return _deals_cache["rows"] or []
+    rows = [parsed for rec in records if (parsed := parse_deal_record(rec)) is not None]
+    with _lock:
+        _deals_cache["rows"] = rows
+        _deals_cache["at"] = time.time()
+    return rows
+
+
 def restore_deals() -> int:
     """Rebuild the SQLite cache from Sheets after a cold start."""
     if not connect():
         return 0
-    from .parser import normalize_title
-
     try:
         ws = _spreadsheet.worksheet("Deals")
         records = ws.get_all_records()
     except Exception as exc:  # noqa: BLE001
         log.warning("Sheets restore failed: %s", exc)
         return 0
-
-    def _ts(value: str) -> float:
-        if not value:
-            return 0.0
-        try:
-            return time.mktime(time.strptime(str(value), "%Y-%m-%d %H:%M:%S"))
-        except (ValueError, TypeError):
-            return 0.0
-
-    def _int(value: Any, default: int = 0) -> int:
-        try:
-            return int(str(value).strip())
-        except (ValueError, TypeError):
-            return default
-
-    def _float(value: Any) -> Optional[float]:
-        try:
-            return float(str(value).strip()) if str(value or "").strip() else None
-        except (ValueError, TypeError):
-            return None
 
     restored = 0
     skipped = 0
@@ -374,50 +458,11 @@ def restore_deals() -> int:
         # includes users and channels, restored right after this in the same
         # startup sequence. Skip and keep going instead of aborting.
         try:
-            deal_id = str(rec.get("id") or "").strip()
-            if not deal_id:
+            row = parse_deal_record(rec)
+            if row is None:
                 continue
-            title = str(rec.get("title") or "")
-            flags = [f.strip() for f in str(rec.get("flags") or "").split(",") if f.strip()]
-            row = {
-                "id": deal_id,
-                "title": title,
-                "norm_title": normalize_title(title),
-                "product_key": str(rec.get("product_key") or ""),
-                "price": _float(rec.get("price")),
-                "mrp": _float(rec.get("mrp")),
-                "discount_pct": _int(rec.get("discount_pct")),
-                "currency": "INR",
-                "store": str(rec.get("store") or ""),
-                "url": str(rec.get("url") or ""),
-                "clean_url": str(rec.get("clean_url") or ""),
-                "image_url": str(rec.get("image_url") or ""),
-                "coupon": str(rec.get("coupon") or ""),
-                "category": str(rec.get("category") or "Other"),
-                "subcategory": str(rec.get("subcategory") or "General"),
-                "brand": str(rec.get("brand") or ""),
-                "sizes": str(rec.get("sizes") or ""),
-                "channel_id": _int(rec.get("channel_tg_id")),
-                "channel_title": str(rec.get("channel_title") or ""),
-                "message_id": _int(rec.get("message_id")),
-                "posted_at": _ts(rec.get("posted_at_iso")),
-                "first_seen_at": _ts(rec.get("posted_at_iso")),
-                "last_seen_at": _ts(rec.get("posted_at_iso")),
-                "expires_at": _ts(rec.get("expires_at_iso")),
-                "repost_count": _int(rec.get("repost_count"), default=1),
-                "channels_seen": "[]",
-                "status": str(rec.get("status") or "live"),
-                "score": _float(rec.get("score")) or 0.0,
-                "is_lowest": 1 if str(rec.get("is_lowest")).lower() in {"yes", "true", "1"} else 0,
-                "flags": json.dumps(flags),
-                "raw_text": str(rec.get("raw_text") or ""),
-                "search_blob": " ".join(
-                    filter(None, [title.lower(), str(rec.get("brand") or "").lower(),
-                                  str(rec.get("category") or "").lower(),
-                                  str(rec.get("subcategory") or "").lower()])
-                ),
-                "dirty": 0,
-            }
+            row["flags"] = json.dumps(row["flags"])
+            del row["price_history_url"], row["relevance"]
             db.upsert("deals", row, conflict="id")
             restored += 1
         except Exception as exc:  # noqa: BLE001

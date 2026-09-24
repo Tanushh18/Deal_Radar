@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .. import auth, db
-from ..services import ingest, priority, public_reader, sheets, taxonomy, telegram
+from ..services import ingest, priority, public_reader, sheet_mode, sheets, taxonomy, telegram
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -258,3 +258,40 @@ async def set_priority(payload: PriorityPayload):
     if sheets.is_enabled():
         sheets.save_setting(priority.META_KEY, json.dumps(rule))
     return {"status": "ok", "rule": rule}
+
+
+class ServeModePayload(BaseModel):
+    mode: str  # "db" | "sheet"
+
+
+class StorageModePayload(BaseModel):
+    mode: str  # "turso" | "sqlite" | "auto"
+
+
+@router.get("/data-source")
+async def get_data_source():
+    """What /api/deals reads from, and which DB backend is live — for the
+    admin panel's testing toggles."""
+    return {"serve_mode": sheet_mode.get_mode(), "storage_mode": db.storage_mode()}
+
+
+@router.post("/data-source/serve")
+async def set_serve_mode(payload: ServeModePayload):
+    """Testing-only: point /api/deals at the Google Sheet instead of the DB, or back."""
+    try:
+        mode = sheet_mode.set_mode(payload.mode)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", "serve_mode": mode}
+
+
+@router.post("/data-source/storage")
+async def set_storage_mode(payload: StorageModePayload):
+    """Switch the live DB backend between Turso and local SQLite (or back to auto)."""
+    try:
+        mode = db.switch_storage(payload.mode)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", "storage_mode": mode}

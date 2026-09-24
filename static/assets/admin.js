@@ -111,10 +111,37 @@
     } catch (err) { show($('#priority-msg'), err.message, 'err'); }
   });
 
+  async function loadDataSource() {
+    const d = await api('/api/admin/reader/data-source');
+    $('#serve-now').textContent = d.serve_mode === 'sheet' ? '● Sheet (testing)' : '● DB';
+    $('#serve-now').className = `status-pill ${d.serve_mode === 'sheet' ? 'bad' : 'ok'}`;
+    $('#storage-now').textContent = d.storage_mode === 'turso' ? '● Turso' : '● Local SQLite';
+    $('#storage-now').className = `status-pill ${d.storage_mode === 'turso' ? 'ok' : 'bad'}`;
+  }
+  async function setServeMode(mode) {
+    try {
+      await post('/api/admin/reader/data-source/serve', { mode });
+      await loadDataSource();
+      show($('#data-source-msg'), `Now serving deals from ${mode === 'sheet' ? 'the Sheet' : 'the DB'}.`, 'ok');
+    } catch (err) { show($('#data-source-msg'), err.message, 'err'); }
+  }
+  async function setStorageMode(mode) {
+    try {
+      await post('/api/admin/reader/data-source/storage', { mode });
+      await loadDataSource();
+      show($('#data-source-msg'), `Storage switched to ${mode === 'turso' ? 'Turso' : 'local SQLite'}. New backend starts empty until it catches up.`, 'ok');
+    } catch (err) { show($('#data-source-msg'), err.message, 'err'); }
+  }
+  $('#serve-db').addEventListener('click', () => setServeMode('db'));
+  $('#serve-sheet').addEventListener('click', () => setServeMode('sheet'));
+  $('#storage-turso').addEventListener('click', () => setStorageMode('turso'));
+  $('#storage-sqlite').addEventListener('click', () => setStorageMode('sqlite'));
+
   async function unlock() {
     try {
       await refresh();
       await loadPriority();
+      await loadDataSource();
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
     } catch (err) {

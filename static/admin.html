@@ -126,6 +126,30 @@
       <div class="msg hidden" id="priority-msg"></div>
     </section>
 
+    <section class="card" id="data-source-card">
+      <h2>Data source</h2>
+      <p class="muted">Both are testing/recovery toggles. Leave them alone in normal operation — switching storage
+        starts a fresh, empty local file until it catches up; switching serving to Sheet ignores the DB entirely
+        while active.</p>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span>Serving <code>/api/deals</code> from</span>
+        <span class="status-pill" id="serve-now">…</span>
+      </div>
+      <div class="row" style="margin-bottom:16px">
+        <button class="btn btn-soft btn-sm" id="serve-db" type="button">Serve from DB</button>
+        <button class="btn btn-soft btn-sm" id="serve-sheet" type="button">Serve from Sheet (testing)</button>
+      </div>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span>Storage backend</span>
+        <span class="status-pill" id="storage-now">…</span>
+      </div>
+      <div class="row">
+        <button class="btn btn-soft btn-sm" id="storage-turso" type="button">Use Turso</button>
+        <button class="btn btn-soft btn-sm" id="storage-sqlite" type="button">Use local SQLite</button>
+      </div>
+      <div class="msg hidden" id="data-source-msg"></div>
+    </section>
+
     <section class="card" id="notify-card">
       <h2>Send a notification</h2>
       <p class="muted">Goes to every device that has opened the site or app. Optionally attach a deal — its photo

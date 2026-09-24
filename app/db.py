@@ -259,6 +259,67 @@ def _safe_exec(conn: Any, sql: str, params: Iterable[Any] = ()) -> Any:
         raise
 
 
+# None = auto (Turso if configured, else local SQLite); "turso"/"sqlite" = admin-forced.
+_forced_mode: Optional[str] = None
+
+
+def storage_mode() -> str:
+    """The backend actually in use right now: 'turso' or 'sqlite'."""
+    return "turso" if _using_turso else "sqlite"
+
+
+def switch_storage(mode: str) -> str:
+    """Admin-only runtime switch between Turso and local SQLite.
+
+    Each backend keeps its own local file (db_path vs db_path + '.local'),
+    so switching never lets the sqlite3 module write into a file libsql's
+    embedded replica manages, or vice versa. Returns the mode now active.
+
+    A failed switch (e.g. forcing Turso when it isn't configured) leaves
+    the previously-working connection untouched instead of tearing it down
+    and then discovering the new one doesn't work — that would take the
+    whole site down until someone noticed and switched back.
+    """
+    global _conn, _using_turso, _last_sync, _forced_mode
+    if mode not in ("turso", "sqlite", "auto"):
+        raise ValueError("mode must be 'turso', 'sqlite', or 'auto'")
+    with _lock:
+        previous_conn, previous_using_turso, previous_forced = _conn, _using_turso, _forced_mode
+        _forced_mode = None if mode == "auto" else mode
+        _conn = None
+        try:
+            connect()
+        except Exception:
+            # Roll back to the connection that was working before this call.
+            _conn, _using_turso, _forced_mode = previous_conn, previous_using_turso, previous_forced
+            raise
+    return storage_mode()
+
+
+def _connect_turso() -> Any:
+    if not settings.turso_configured or libsql is None:
+        raise RuntimeError(
+            "Turso mode needs TURSO_DATABASE_URL and TURSO_AUTH_TOKEN set "
+            "(and libsql-experimental installed)."
+        )
+    conn = libsql.connect(
+        settings.db_path,
+        sync_url=settings.turso_url,
+        auth_token=settings.turso_auth_token,
+    )
+    conn.sync()
+    return conn
+
+
+def _connect_sqlite() -> Any:
+    path = settings.db_path + ".local"
+    conn = sqlite3.connect(path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    return conn
+
+
 def connect() -> Any:
     global _conn, _using_turso, _last_sync
     with _lock:
@@ -268,20 +329,15 @@ def connect() -> Any:
         if directory:
             os.makedirs(directory, exist_ok=True)
 
-        if not settings.turso_configured or libsql is None:
-            raise RuntimeError(
-                "Turso is required: set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in the "
-                "environment (and make sure libsql-experimental is installed)."
-            )
+        want_turso = _forced_mode == "turso" or (_forced_mode is None and settings.turso_configured)
+        if want_turso:
+            _conn = _connect_turso()
+            _using_turso = True
+            _last_sync = time.time()
+        else:
+            _conn = _connect_sqlite()
+            _using_turso = False
 
-        _conn = libsql.connect(
-            settings.db_path,
-            sync_url=settings.turso_url,
-            auth_token=settings.turso_auth_token,
-        )
-        _conn.sync()
-        _using_turso = True
-        _last_sync = time.time()
         for statement in _split_statements(SCHEMA):
             _safe_exec(_conn, statement)
         # Additive migration: the final store URL behind cuttli/bitli-style redirects.
