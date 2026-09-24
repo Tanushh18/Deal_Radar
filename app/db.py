@@ -331,10 +331,14 @@ def connect() -> Any:
 
         want_turso = _forced_mode == "turso" or (_forced_mode is None and settings.turso_configured)
         if want_turso:
-            _conn = _connect_turso()
-            _using_turso = True
-            _last_sync = time.time()
-        else:
+            try:
+                _conn = _connect_turso()
+                _using_turso = True
+                _last_sync = time.time()
+            except Exception as exc:  # noqa: BLE001 - a bad Turso connect must never crash boot
+                log.warning("Turso connect/sync failed (%s) — falling back to local SQLite", exc)
+                _conn = None
+        if _conn is None:
             _conn = _connect_sqlite()
             _using_turso = False
 
