@@ -234,6 +234,31 @@ CREATE INDEX IF NOT EXISTS idx_coupon_reports_deal ON coupon_reports(deal_id);
 """
 
 
+class _EmptyCursor:
+    """Stand-in for a libsql cursor when the library's own call errored spuriously."""
+    rowcount = 0
+    description = None
+
+    def fetchall(self) -> List[Any]:
+        return []
+
+
+def _safe_exec(conn: Any, sql: str, params: Iterable[Any] = ()) -> Any:
+    """conn.execute(), tolerating libsql_experimental's `ValueError: not an error`.
+
+    That specific message is a known response-handling bug in the library —
+    it's raised on statements that succeeded but returned no rows (CREATE
+    INDEX, some ALTERs, PRAGMAs with no matching column). Anything else
+    still raises normally.
+    """
+    try:
+        return conn.execute(sql, tuple(params)) if params else conn.execute(sql)
+    except ValueError as exc:
+        if str(exc) == "not an error":
+            return _EmptyCursor()
+        raise
+
+
 def connect() -> Any:
     global _conn, _using_turso, _last_sync
     with _lock:
@@ -258,25 +283,25 @@ def connect() -> Any:
         _using_turso = True
         _last_sync = time.time()
         for statement in _split_statements(SCHEMA):
-            _conn.execute(statement)
+            _safe_exec(_conn, statement)
         # Additive migration: the final store URL behind cuttli/bitli-style redirects.
-        cols = {r[1] for r in _conn.execute("PRAGMA table_info(deals)")}
+        cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)")}
         if "resolved_url" not in cols:
-            _conn.execute("ALTER TABLE deals ADD COLUMN resolved_url TEXT DEFAULT ''")
-        ph_cols = {r[1] for r in _conn.execute("PRAGMA table_info(price_history)")}
+            _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN resolved_url TEXT DEFAULT ''")
+        ph_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(price_history)")}
         if "synced" not in ph_cols:
-            _conn.execute("ALTER TABLE price_history ADD COLUMN synced INTEGER DEFAULT 0")
-        device_cols = {r[1] for r in _conn.execute("PRAGMA table_info(devices)")}
+            _safe_exec(_conn, "ALTER TABLE price_history ADD COLUMN synced INTEGER DEFAULT 0")
+        device_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(devices)")}
         if "last_weekly_digest_at" not in device_cols:
-            _conn.execute("ALTER TABLE devices ADD COLUMN last_weekly_digest_at REAL DEFAULT 0")
-        notif_cols = {r[1] for r in _conn.execute("PRAGMA table_info(device_notifications)")}
+            _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN last_weekly_digest_at REAL DEFAULT 0")
+        notif_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(device_notifications)")}
         if "expires_at" not in notif_cols:
-            _conn.execute("ALTER TABLE device_notifications ADD COLUMN expires_at REAL DEFAULT 0")
-        deal_cols = {r[1] for r in _conn.execute("PRAGMA table_info(deals)")}
+            _safe_exec(_conn, "ALTER TABLE device_notifications ADD COLUMN expires_at REAL DEFAULT 0")
+        deal_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)")}
         if "ai_hook" not in deal_cols:
-            _conn.execute("ALTER TABLE deals ADD COLUMN ai_hook TEXT DEFAULT ''")
+            _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN ai_hook TEXT DEFAULT ''")
         if "ai_mrp_reason" not in deal_cols:
-            _conn.execute("ALTER TABLE deals ADD COLUMN ai_mrp_reason TEXT DEFAULT ''")
+            _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN ai_mrp_reason TEXT DEFAULT ''")
         if not _using_turso:
             _conn.commit()
         return _conn
@@ -315,7 +340,7 @@ def _maybe_sync() -> None:
 def query(sql: str, params: Iterable[Any] = ()) -> List[Dict[str, Any]]:
     with _lock:
         conn = connect()
-        cur = conn.execute(sql, tuple(params))
+        cur = _safe_exec(conn, sql, params)
         rows = cur.fetchall()
         if _using_turso:
             columns = [d[0] for d in cur.description] if cur.description else []
@@ -331,7 +356,7 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[Dict[str, Any]]:
 def execute(sql: str, params: Iterable[Any] = ()) -> Any:
     with _lock:
         conn = connect()
-        cur = conn.execute(sql, tuple(params))
+        cur = _safe_exec(conn, sql, params)
         if not _using_turso:
             conn.commit()
         else:
@@ -348,7 +373,7 @@ def execute_many(sql: str, seq: Iterable[Iterable[Any]]) -> None:
         if _using_turso:
             # libsql_experimental has no executemany; loop instead.
             for row in rows:
-                conn.execute(sql, row)
+                _safe_exec(conn, sql, row)
             _maybe_sync()
         else:
             conn.executemany(sql, rows)
