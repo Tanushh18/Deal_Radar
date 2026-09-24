@@ -263,6 +263,28 @@
 
   <!-- ------------------------------ DEALS ------------------------------ -->
   <main id="page-deals" class="page">
+    <div class="dropcountdown hidden" id="drop-countdown">
+      <span class="dc-dot" aria-hidden="true"></span>
+      <span class="dc-label">Next drop in</span>
+      <span class="dc-time" id="dc-time">—</span>
+    </div>
+
+    <a class="spotlight hidden" id="spotlight" href="#" aria-label="Best deal of this drop">
+      <div class="spotlight-media">
+        <img id="spotlight-img" src="" alt="" loading="lazy" />
+        <span class="spotlight-badge" id="spotlight-badge"></span>
+      </div>
+      <div class="spotlight-copy">
+        <span class="spotlight-kicker" id="spotlight-kicker">Best of this drop</span>
+        <h2 class="spotlight-title" id="spotlight-title"></h2>
+        <div class="spotlight-price">
+          <span class="spotlight-now" id="spotlight-price"></span>
+          <span class="spotlight-was" id="spotlight-mrp"></span>
+        </div>
+        <span class="spotlight-cta">Grab it now →</span>
+      </div>
+    </a>
+
     <div class="statstrip" id="statstrip"></div>
 
     <div class="catrow" id="category-chips" role="tablist" aria-label="Categories"></div>
