@@ -1,6 +1,5 @@
 /**
  * Where the DealRadar backend lives, persisted across launches.
- * Port of legacy/android-kotlin/.../ServerConfig.kt.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

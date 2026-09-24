@@ -1,8 +1,7 @@
 # DealRadar — Android app (Expo)
 
 A native React Native app (Expo SDK 57, RN 0.86, New Architecture) that talks
-to the DealRadar FastAPI server's JSON API. It replaces the old Kotlin WebView
-shell in `legacy/android-kotlin/`.
+to the DealRadar FastAPI server's JSON API.
 
 - Package id `com.dealradar.app`, name **DealRadar**
 - Default server: `https://dealradar-k2hb.onrender.com` (changeable in-app)
