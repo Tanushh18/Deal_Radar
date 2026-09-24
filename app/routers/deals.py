@@ -1,6 +1,7 @@
 """Deal browsing, search, price history, and lazy image proxying."""
 from __future__ import annotations
 
+import asyncio
 import io
 import time
 from collections import OrderedDict
@@ -92,11 +93,18 @@ async def list_deals(
     if sheet_mode.get_mode() == "sheet" and not archive:
         # Admin testing toggle: bypass the DB entirely and serve straight
         # from the Sheet. No product_key channel scoping in this mode.
-        return sheet_mode.search(
-            q=q, category=category, subcategory=subcategory, store=store_name, brand=brand,
-            min_price=min_price, max_price=max_price, min_discount=min_discount,
-            include_expired=include_expired, only_lowest=only_lowest, sort=sort,
-            limit=limit, offset=offset, has_coupon=has_coupon,
+        # gspread is a blocking/synchronous client — this MUST run off the
+        # event loop, or every request stalls all other traffic (including
+        # Render's health-check ping) for as long as the Sheets call takes.
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: sheet_mode.search(
+                q=q, category=category, subcategory=subcategory, store=store_name, brand=brand,
+                min_price=min_price, max_price=max_price, min_discount=min_discount,
+                include_expired=include_expired, only_lowest=only_lowest, sort=sort,
+                limit=limit, offset=offset, has_coupon=has_coupon,
+            ),
         )
     scope = None if (all_channels or archive) else _scope(user)
     return search.search(
