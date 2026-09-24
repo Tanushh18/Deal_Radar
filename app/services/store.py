@@ -322,6 +322,42 @@ def expire_stale() -> int:
     return cur.rowcount or 0
 
 
+NO_IMAGE_MAX_SHARE = 0.20  # at most 1 in 5 live deals may be missing a photo
+
+
+def enforce_image_ratio() -> int:
+    """Keep live deals with vs without a photo at roughly 80:20.
+
+    Deals without an image convert far worse on a visual grid — this caps
+    how many can crowd out the ones with a real photo. Excess is expired
+    (never deleted; archive search and the Sheet still see it), oldest
+    first, down to NO_IMAGE_MAX_SHARE of the deals that do have an image.
+    """
+    with_image = db.query_one(
+        "SELECT COUNT(*) AS c FROM deals WHERE status = 'live' AND COALESCE(image_url, '') != ''"
+    )["c"]
+    without_image = db.query_one(
+        "SELECT COUNT(*) AS c FROM deals WHERE status = 'live' AND COALESCE(image_url, '') = ''"
+    )["c"]
+    allowed = int(with_image * NO_IMAGE_MAX_SHARE / (1 - NO_IMAGE_MAX_SHARE))
+    excess = without_image - allowed
+    if excess <= 0:
+        return 0
+    rows = db.query(
+        "SELECT id FROM deals WHERE status = 'live' AND COALESCE(image_url, '') = '' "
+        "ORDER BY last_seen_at ASC LIMIT ?",
+        (excess,),
+    )
+    ids = [r["id"] for r in rows]
+    if not ids:
+        return 0
+    placeholders = ",".join("?" * len(ids))
+    db.execute(
+        f"UPDATE deals SET status = 'expired', dirty = 1 WHERE id IN ({placeholders})", ids
+    )
+    return len(ids)
+
+
 def purge_ancient(days: int = 400) -> List[str]:
     """Every deal is kept — past ones power archive search and mirror the Sheet.
 

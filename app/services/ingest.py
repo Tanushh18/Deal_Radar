@@ -518,6 +518,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 await asyncio.sleep(0.4)  # be polite to Telegram between channels
 
             expired = store.expire_stale()
+            store.enforce_image_ratio()
             store.rescore_all()
             liveness = await verify_links(settings.liveness_batch)
             alerts = await run_watchlist_alerts()
