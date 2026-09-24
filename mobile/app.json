@@ -105,20 +105,16 @@
     ],
     "extra": {
       "defaultServerUrl": "https://dealradar-0oza.onrender.com",
-      "eas": {
-        "projectId": "c4e9e527-79e1-45aa-be6a-f8c3dc5a7702"
-      },
       "expo-navigation-bar": {
         "enforceContrast": false,
         "style": "light"
       }
     },
-    "owner": "tanush18",
+    "owner": "tanushhh18",
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/c4e9e527-79e1-45aa-be6a-f8c3dc5a7702",
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     }
