@@ -1,0 +1,55 @@
+name: EAS Init (one-off)
+
+# Creates a fresh EAS project under the current EXPO_TOKEN's account and
+# writes the resulting projectId/owner/updates.url back into app.json,
+# committing that change to main. Manual trigger only — this is a one-time
+# setup step, not part of the regular pipeline.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Create EAS project and link app.json
+        run: eas init --non-interactive --force
+
+      - name: Show resulting app.json
+        run: cat app.json
+
+      - name: Commit app.json if changed
+        run: |
+          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- mobile/app.json; then
+            echo "No changes to commit."
+          else
+            git add mobile/app.json
+            git commit -m "Link mobile app to newly created EAS project"
+            git push origin HEAD:main
+          fi
