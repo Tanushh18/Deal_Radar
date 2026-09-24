@@ -1,0 +1,45 @@
+name: EAS Build (Android)
+
+# Builds a real native Android binary via EAS — needed whenever something
+# native changed (permissions, native modules, app.json android block) that
+# an OTA (eas-update.yml) can't cover. Manual only: this consumes EAS build
+# credits, unlike the JS-only OTA workflow which runs on every push.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "eas.json build profile"
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android (${{ inputs.profile }})
+        run: |
+          eas build --platform android --profile ${{ inputs.profile }} \
+            --non-interactive --no-wait
