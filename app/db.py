@@ -329,7 +329,13 @@ def connect() -> Any:
         if directory:
             os.makedirs(directory, exist_ok=True)
 
-        want_turso = _forced_mode == "turso" or (_forced_mode is None and settings.turso_configured)
+        # Local SQLite is the default live DB. Turso's embedded replica makes
+        # every write (and each periodic sync) a blocking network round-trip,
+        # and these db.* calls run directly on the event loop — an ingest
+        # cycle of hundreds of writes froze the loop long enough for Render's
+        # health check to fail and restart the instance in a loop. Turso is
+        # only used when the admin explicitly forces it.
+        want_turso = _forced_mode == "turso"
         if want_turso:
             try:
                 _conn = _connect_turso()
