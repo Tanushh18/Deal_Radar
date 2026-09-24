@@ -83,6 +83,8 @@ async def list_deals(
     all_channels: bool = False,
     archive: bool = Query(False, description="Past deals from the Google Sheet archive instead of live ones"),
     has_coupon: bool = False,
+    size: str = Query("", max_length=20),
+    device_id: str = Query("", max_length=120, description="Required for sort=for_you"),
     user=Depends(auth.optional_user),
 ):
     if sort not in search.SORTS:
@@ -105,7 +107,46 @@ async def list_deals(
         offset=offset,
         archive=archive,
         has_coupon=has_coupon,
+        size=size,
+        device_id=device_id,
     )
+
+
+@router.get("/sparklines")
+async def sparklines(ids: str = Query(..., max_length=2000)):
+    """Batch price trend for a grid of cards: last 8 points per deal, one query.
+
+    Avoids N+1 calls to /history when rendering a page of cards — the
+    frontend collects the visible ids and calls this once per page/scroll.
+    Declared before /{deal_id} so FastAPI doesn't swallow it as a deal id.
+    """
+    deal_ids = [d.strip() for d in ids.split(",") if d.strip()][:100]
+    if not deal_ids:
+        return {"sparklines": {}}
+    rows = db.query(
+        f"SELECT id, product_key FROM deals WHERE id IN ({','.join('?' for _ in deal_ids)})",
+        deal_ids,
+    )
+    keys = {r["product_key"] for r in rows if r["product_key"]}
+    if not keys:
+        return {"sparklines": {}}
+    points = db.query(
+        f"SELECT product_key, price, seen_at FROM price_history "
+        f"WHERE product_key IN ({','.join('?' for _ in keys)}) ORDER BY seen_at ASC",
+        list(keys),
+    )
+    by_key: dict = {}
+    for p in points:
+        by_key.setdefault(p["product_key"], []).append(p["price"])
+    out = {}
+    for r in rows:
+        pk = r["product_key"]
+        series = by_key.get(pk) or []
+        if len(series) > 8:
+            step = len(series) / 8
+            series = [series[int(i * step)] for i in range(8)]
+        out[r["id"]] = series
+    return {"sparklines": out}
 
 
 def price_verdict(price, stats):
@@ -148,6 +189,36 @@ async def get_deal(deal_id: str):
     shaped["price_history"] = store.price_stats(deal.get("product_key") or "")
     shaped["price_verdict"] = price_verdict(deal.get("price"), shaped["price_history"])
     return shaped
+
+
+COUPON_DEAD_THRESHOLD = 3  # distinct devices reporting before we suppress it
+
+
+@router.post("/{deal_id}/coupon-dead")
+async def report_coupon_dead(deal_id: str, device_id: str = Query(..., max_length=120)):
+    """Lightweight crowd feedback: enough reports and we drop the coupon.
+
+    Cheaper than checking codes ourselves, and self-correcting — a code that
+    still works simply never accumulates reports.
+    """
+    row = db.query_one("SELECT coupon FROM deals WHERE id = ?", (deal_id,))
+    if not row:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+    if not row["coupon"]:
+        return {"reports": 0, "suppressed": False}
+
+    db.execute(
+        "INSERT INTO coupon_reports (deal_id, device_id, reported_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(deal_id, device_id) DO UPDATE SET reported_at = excluded.reported_at",
+        (deal_id, device_id, time.time()),
+    )
+    count = db.query_one(
+        "SELECT COUNT(*) AS c FROM coupon_reports WHERE deal_id = ?", (deal_id,)
+    )["c"]
+    suppressed = count >= COUPON_DEAD_THRESHOLD
+    if suppressed:
+        db.execute("UPDATE deals SET coupon = '', dirty = 1 WHERE id = ?", (deal_id,))
+    return {"reports": count, "suppressed": suppressed}
 
 
 @router.get("/{deal_id}/history")

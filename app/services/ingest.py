@@ -126,7 +126,7 @@ def with_hidden_links(text: str, message: Any) -> str:
 
 async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
     """Pull and store new deals from one channel."""
-    result = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0}
+    result = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "new_deal_ids": []}
     source_user = await _resolve_reader(channel)
     if not source_user:
         return result
@@ -172,6 +172,7 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
         outcome = store.save_deal(deal)
         if outcome == "new":
             result["new"] += 1
+            result["new_deal_ids"].append(deal["id"])
         elif outcome == "merged":
             result["merged"] += 1
 
@@ -496,6 +497,19 @@ def user_channel_ids(user_id: int) -> List[int]:
 
 
 # --- the cycle ---------------------------------------------------------
+def _rollup_price_history_daily() -> None:
+    """Run store.rollup_price_history() at most once per calendar day (UTC)."""
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    if db.get_meta("price_history_rollup_day") == today:
+        return
+    try:
+        removed = store.rollup_price_history()
+        log.info("Price-history rollup: removed %d rows", removed)
+    except Exception as exc:  # noqa: BLE001 - never break the ingest cycle
+        log.warning("Price-history rollup failed: %s", exc)
+    db.set_meta("price_history_rollup_day", today)
+
+
 async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
     if _cycle_lock.locked():
         return {"status": "already_running"}
@@ -504,6 +518,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
         started = time.time()
         _state["running"] = True
         totals = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "channels": 0}
+        new_deal_ids: List[str] = []
         try:
             from . import public_reader  # local: public_reader imports routers that import ingest
             await public_reader.maybe_sync_followed()
@@ -515,10 +530,12 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 totals["channels"] += 1
                 for key in ("fetched", "new", "merged", "skipped"):
                     totals[key] += result[key]
+                new_deal_ids.extend(result["new_deal_ids"])
                 await asyncio.sleep(0.4)  # be polite to Telegram between channels
 
             expired = store.expire_stale()
             store.enforce_image_ratio()
+            _rollup_price_history_daily()
             store.rescore_all()
             liveness = await verify_links(settings.liveness_batch)
             alerts = await run_watchlist_alerts()
@@ -530,6 +547,13 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             devices.weekly_digest_tick()
             devices.prune()
             ratelimit.prune()
+
+            if new_deal_ids:
+                from . import ai_enrich
+                try:
+                    await ai_enrich.enrich_new_deals(new_deal_ids)
+                except Exception as exc:  # noqa: BLE001 — best-effort, never break the cycle
+                    log.warning("AI enrichment skipped: %s", exc)
 
             flushed = {"updated": 0, "appended": 0}
             if sheets.is_enabled():

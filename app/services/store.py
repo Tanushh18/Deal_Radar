@@ -312,6 +312,45 @@ def save_deal(deal: Dict[str, Any]) -> str:
     return "merged" if is_new_channel else "updated"
 
 
+PRICE_HISTORY_FULL_RES_DAYS = 10  # keep every observation this recent
+
+
+def rollup_price_history() -> int:
+    """Collapse price_history older than 10 days to one row/product/day.
+
+    The tracker only needs daily resolution to answer "lowest in N days" —
+    keeping every poll's observation forever is pure row growth with no
+    feature benefit. Rows within the full-resolution window are untouched.
+    Returns how many rows were removed.
+    """
+    cutoff = time.time() - PRICE_HISTORY_FULL_RES_DAYS * 86400
+    rows = db.query(
+        "SELECT product_key, store, price, seen_at FROM price_history WHERE seen_at < ?",
+        (cutoff,),
+    )
+    if not rows:
+        return 0
+
+    daily: Dict[tuple, Dict[str, Any]] = {}
+    for r in rows:
+        day = int(r["seen_at"] // 86400)
+        key = (r["product_key"], r["store"], day)
+        existing = daily.get(key)
+        # keep the lowest price seen that day, with its own seen_at
+        if existing is None or r["price"] < existing["price"]:
+            daily[key] = {"product_key": r["product_key"], "store": r["store"],
+                          "price": r["price"], "seen_at": r["seen_at"]}
+
+    db.execute("DELETE FROM price_history WHERE seen_at < ?", (cutoff,))
+    db.execute_many(
+        "INSERT INTO price_history (product_key, price, store, seen_at, synced) "
+        "VALUES (?, ?, ?, ?, 0)",
+        [(d["product_key"], d["price"], d["store"], d["seen_at"]) for d in daily.values()],
+    )
+    removed = len(rows) - len(daily)
+    return max(removed, 0)
+
+
 def expire_stale() -> int:
     """Mark deals past their TTL as expired. Returns how many changed."""
     now = time.time()

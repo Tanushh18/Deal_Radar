@@ -31,6 +31,10 @@ services:
         sync: false
       - key: PUBLIC_URL
         sync: false             # e.g. https://dealradar.onrender.com — enables self-ping
+      - key: TURSO_DATABASE_URL
+        sync: false             # libsql://<db>-<org>.turso.io — durable DB, survives redeploys
+      - key: TURSO_AUTH_TOKEN
+        sync: false
 
       # --- reader account: reads every channel it follows (block in /admin) ---
       - key: TELEGRAM_SESSION

@@ -962,6 +962,11 @@ mark {
 .badge-hot  { background: #16a34a; color: #fff; }
 .badge-new  { background: var(--accent); color: #fff; }
 .badge-score { background: rgba(8, 12, 20, .74); color: #fff; backdrop-filter: blur(6px); }
+.badge-warn { background: #f59e0b; color: #2a1a02; cursor: help; }
+.sparkline-slot { display: inline-flex; align-items: center; margin-left: auto; }
+.sparkline { width: 44px; height: 16px; display: block; }
+.sparkline-down polyline { stroke: #16a34a; }
+.sparkline-up polyline { stroke: #ef4444; }
 .store-tag {
   position: absolute; bottom: 8px; left: 8px; max-width: calc(100% - 16px);
   padding: 3px 9px; border-radius: var(--r-full);

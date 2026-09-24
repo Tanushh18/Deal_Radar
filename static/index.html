@@ -307,6 +307,7 @@
               <option value="newest" selected>Newest first</option>
               <option value="relevance">Best match</option>
               <option value="best">Top deals</option>
+              <option value="for_you">For You</option>
               <option value="discount">Biggest discount</option>
               <option value="price_low">Price: low to high</option>
               <option value="price_high">Price: high to low</option>
@@ -344,6 +345,11 @@
               <button type="button" class="chip" data-off="50">50%+</button>
               <button type="button" class="chip" data-off="70">70%+</button>
             </div>
+          </div>
+
+          <div class="filter-block">
+            <label class="filter-label" for="f-size">Size / fit</label>
+            <input id="f-size" class="input" placeholder="e.g. M, 42, UK 8" maxlength="20" />
           </div>
 
           <div class="filter-block">
@@ -477,6 +483,7 @@
         <div class="sortbar">
           <div class="sorttabs" id="sort-tabs" role="tablist" aria-label="Sort deals">
             <button role="tab" data-sort="newest">Newest</button>
+            <button role="tab" data-sort="for_you">For You</button>
             <button role="tab" data-sort="best">Top rated</button>
             <button role="tab" data-sort="discount">Biggest discount</button>
             <button role="tab" data-sort="price_low">Lowest price</button>

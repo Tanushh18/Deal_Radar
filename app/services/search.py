@@ -33,7 +33,10 @@ SORTS = {
     "price_low": "price ASC",
     "price_high": "price DESC",
     "ending": "expires_at ASC",
+    "for_you": "score DESC",  # base order before _rank_for_you re-sorts by follow match
 }
+
+_FOLLOW_KINDS = {"category", "brand", "store"}
 
 _CANDIDATE_CAP = 5000
 
@@ -236,6 +239,7 @@ def _candidates(
     order: str,
     archive: bool = False,
     has_coupon: bool = False,
+    size: str = "",
 ) -> List[Dict[str, Any]]:
     """Light rows for every deal passing the hard filters (not category — that's counted)."""
     where: List[str] = []
@@ -271,6 +275,11 @@ def _candidates(
         where.append("is_lowest = 1")
     if has_coupon:
         where.append("coupon IS NOT NULL AND coupon != ''")
+    if size:
+        # sizes is stored as a JSON-ish/comma text blob; substring match is
+        # enough here since size tokens ("M", "42", "UK 8") don't collide.
+        where.append("LOWER(sizes) LIKE ?")
+        params.append(f"%{size.lower()}%")
     if channel_ids:
         where.append(f"channel_id IN ({','.join('?' for _ in channel_ids)})")
         params.extend(channel_ids)
@@ -288,6 +297,30 @@ def _rank(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         + (_W_PRIORITY if d.get("priority") else 0.0),
         reverse=True,
     )
+
+
+def _rank_for_you(rows: List[Dict[str, Any]], device_id: str) -> List[Dict[str, Any]]:
+    """"For You": deals matching this device's own follows lead, opt-in only.
+
+    Never uses inferred traits — only explicit device_follows rows the user
+    added themselves (category/brand/store), same signal weekly_digest_tick
+    already uses server-side.
+    """
+    follows = db.query(
+        "SELECT kind, value FROM device_follows WHERE device_id = ?", (device_id,)
+    )
+    wanted = {(f["kind"], (f["value"] or "").lower()) for f in follows if f["kind"] in _FOLLOW_KINDS}
+    if not wanted:
+        return rows
+
+    def matches(d: Dict[str, Any]) -> bool:
+        for kind in _FOLLOW_KINDS:
+            value = (d.get(kind) or "").lower()
+            if value and (kind, value) in wanted:
+                return True
+        return False
+
+    return sorted(rows, key=lambda d: (not matches(d), -float(d.get("score") or 0)))
 
 
 def _load(page: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -341,6 +374,8 @@ def search(
     offset: int = 0,
     archive: bool = False,
     has_coupon: bool = False,
+    size: str = "",
+    device_id: str = "",
 ) -> Dict[str, Any]:
     rows = _candidates(
         store=store, brand=brand, min_price=min_price, max_price=max_price,
@@ -348,7 +383,7 @@ def search(
         include_expired=include_expired, only_lowest=only_lowest,
         order=(f"{_priority_sql()} DESC, " if sort in _PRIORITY_SORTS and _priority_sql() != "(1 = 0)" else "")
         + (SORTS.get(sort) or SORTS["best"]),
-        archive=archive, has_coupon=has_coupon,
+        archive=archive, has_coupon=has_coupon, size=size,
     )
 
     plan = _Plan(q or "")
@@ -356,6 +391,9 @@ def search(
         rows = _match(rows, plan)
         if sort == "relevance":
             rows = _rank(rows)
+
+    if sort == "for_you" and device_id:
+        rows = _rank_for_you(rows, device_id)
 
     categories = _counts(rows, "category", "name")
     if category:
@@ -444,6 +482,8 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
         "score": deal.get("score"),
         "is_lowest": bool(deal.get("is_lowest")),
         "flags": deal.get("flags") or [],
+        "ai_hook": deal.get("ai_hook") or "",
+        "ai_mrp_reason": deal.get("ai_mrp_reason") or "",
         "price_history_url": price_history_url(deal),
         "relevance": deal.get("_relevance"),
     }

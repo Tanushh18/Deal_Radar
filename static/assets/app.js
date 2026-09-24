@@ -12,7 +12,7 @@
     user: null,
     page: 'deals',
     filters: {
-      q: '', category: '', subcategory: '', store: '', brand: '',
+      q: '', category: '', subcategory: '', store: '', brand: '', size: '',
       min_price: null, max_price: null, min_discount: 0, has_coupon: false, only_lowest: false,
       all_channels: false, sort: 'newest',
     },
@@ -616,7 +616,7 @@
   function activeFilterCount() {
     const f = state.filters;
     return [
-      f.category, f.subcategory, f.store, f.brand,
+      f.category, f.subcategory, f.store, f.brand, f.size,
       f.min_price ? 1 : 0, f.max_price ? 1 : 0, f.min_discount ? 1 : 0, f.has_coupon ? 1 : 0,
       f.only_lowest ? 1 : 0, f.all_channels ? 1 : 0,
     ].filter(Boolean).length;
@@ -639,6 +639,7 @@
     if (f.subcategory) chips.push(['subcategory', f.subcategory]);
     if (f.store)       chips.push(['store', f.store]);
     if (f.brand)       chips.push(['brand', f.brand]);
+    if (f.size)        chips.push(['size', `Size ${f.size}`]);
     if (f.min_price)   chips.push(['min_price', `Over ${money(f.min_price)}`]);
     if (f.max_price)   chips.push(['max_price', `Under ${money(f.max_price)}`]);
     if (f.has_coupon)  chips.push(['has_coupon', 'Has coupon']);
@@ -671,6 +672,7 @@
     else if (key === 'only_lowest') { f.only_lowest = false; $('#f-lowest').checked = false; }
     else if (key === 'all_channels') { f.all_channels = false; $('#f-all-channels').checked = false; loadFacets(); }
     else if (key === 'subcategory') { f.subcategory = ''; $('#f-subcategory').value = ''; }
+    else if (key === 'size') { f.size = ''; $('#f-size').value = ''; }
     else { f[key] = ''; renderFacet('#f-stores', state.facets.stores, 'store'); renderFacet('#f-brands', state.facets.brands, 'brand'); }
     refreshDeals(true);
   }
@@ -735,6 +737,7 @@
     if (f.subcategory) params.set('subcategory', f.subcategory);
     if (f.store) params.set('store', f.store);
     if (f.brand) params.set('brand', f.brand);
+    if (f.size) params.set('size', f.size);
     if (f.min_price) params.set('min_price', f.min_price);
     if (f.max_price) params.set('max_price', f.max_price);
     if (f.has_coupon) params.set('has_coupon', 'true');
@@ -744,6 +747,7 @@
     // Sent as-is: the backend already degrades "relevance" to score-order
     // by itself when there's no query to rank against (see search.py).
     params.set('sort', f.sort);
+    if (f.sort === 'for_you') params.set('device_id', deviceId());
     params.set('limit', overrides.limit ?? state.limit);
     params.set('offset', overrides.offset ?? state.offset);
     return params.toString();
@@ -848,6 +852,7 @@
         price_low: ['💸 Cheapest first', 'Lowest prices first'],
         price_high: ['💎 Priciest first', 'Highest prices first'],
         relevance: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
+        for_you: ['✨ For You', 'Matched to what you follow'],
       };
       const [t, s] = labels[state.filters.sort] || labels.newest;
       title.textContent = t;
@@ -1132,6 +1137,20 @@
         await pollPriceAlerts();
       } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
     });
+    $('#btn-coupon-dead')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      busy(btn, true);
+      try {
+        const res = await api(
+          `/api/deals/${encodeURIComponent(deal.id)}/coupon-dead?device_id=${encodeURIComponent(deviceId())}`,
+          { method: 'POST' },
+        );
+        toast(res.suppressed ? 'Thanks — we’ve hidden that code.' : 'Thanks for letting us know.', 'ok');
+        btn.classList.remove('loading');
+        btn.disabled = true;
+        btn.textContent = 'Reported';
+      } catch (err) { toast(err.message, 'err'); busy(btn, false); }
+    });
   }
   async function pollPriceAlerts() {
     try {
@@ -1217,6 +1236,16 @@
     state.filters.has_coupon = e.target.checked;
     refreshDeals(true);
   });
+  let sizeDebounce;
+  $('#f-size').addEventListener('input', (e) => {
+    clearTimeout(sizeDebounce);
+    const value = e.target.value.trim();
+    sizeDebounce = setTimeout(() => {
+      state.filters.size = value;
+      syncFilterChips();
+      refreshDeals(true);
+    }, 350);
+  });
 
   /* ---------------- deal card ---------------- */
   const FRESH_SECONDS = 5400;   // 90 min — "new" only while it genuinely is
@@ -1254,7 +1283,41 @@
     if (deal.is_lowest) badges.push('<span class="badge badge-low">🟢 LOWEST EVER</span>');
     else if (deal.score >= 80) badges.push('<span class="badge badge-hot">🏆 GREAT DEAL</span>');
     else if (isFresh(deal)) badges.push('<span class="badge badge-new">🆕 NEW</span>');
+    if (hasFlag(deal, 'suspicious_mrp')) {
+      const title = deal.ai_mrp_reason || 'The quoted MRP looks inflated versus this product’s usual price';
+      badges.push(`<span class="badge badge-warn" title="${escapeHtml(title)}">⚠️ Check MRP</span>`);
+    }
     return badges;
+  }
+
+  // 8-point sparkline as an inline SVG polyline — cheap enough to redraw per card.
+  function sparklineSvg(points) {
+    if (!points || points.length < 2) return '';
+    const min = Math.min(...points), max = Math.max(...points);
+    const span = max - min || 1;
+    const w = 64, h = 20;
+    const coords = points.map((p, i) => {
+      const x = (i / (points.length - 1)) * w;
+      const y = h - ((p - min) / span) * h;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const trend = points[points.length - 1] <= points[0] ? 'down' : 'up';
+    return `<svg class="sparkline sparkline-${trend}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points="${coords}" fill="none" stroke-width="2" />
+    </svg>`;
+  }
+
+  // Batched after a page of cards paints — one request per page instead of one per card.
+  async function loadSparklines(deals) {
+    const ids = deals.map((d) => d.id).filter(Boolean);
+    if (!ids.length) return;
+    try {
+      const res = await api(`/api/deals/sparklines?ids=${encodeURIComponent(ids.join(','))}`);
+      Object.entries(res.sparklines || {}).forEach(([id, points]) => {
+        const host = document.querySelector(`.deal[data-id="${CSS.escape(id)}"] .sparkline-slot`);
+        if (host && points.length >= 2) host.innerHTML = sparklineSvg(points);
+      });
+    } catch { /* purely decorative — a failed fetch just leaves cards without it */ }
   }
 
   function dealCard(deal) {
@@ -1282,6 +1345,7 @@
             ${deal.repost_count > 1
               ? `<span class="dot"></span><span class="reposts">Posted ${deal.repost_count}×</span>` : ''}
             ${minBuy(deal) ? `<span class="dot"></span><span>Min ${minBuy(deal)}</span>` : ''}
+            <span class="sparkline-slot" aria-hidden="true"></span>
           </div>
         </div>
         <div class="deal-actions">
@@ -1299,6 +1363,7 @@
     if (reset) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
     $('#empty-state').classList.toggle('hidden', results.length > 0 || state.total > 0);
     bindDetailTriggers(grid);
+    loadSparklines(results);
   }
 
   function bindDetailTriggers(root) {
@@ -1397,7 +1462,8 @@
 
           ${verdictChip(deal.price_verdict)}
           ${deal.is_lowest ? `<div class="detail-note good">${icon('trend')}<span>Lowest price we have recorded for this product.</span></div>` : ''}
-          ${suspicious ? `<div class="detail-note warn">${icon('alert')}<span>The quoted MRP looks inflated versus this product’s price history.</span></div>` : ''}
+          ${suspicious ? `<div class="detail-note warn">${icon('alert')}<span>${escapeHtml(deal.ai_mrp_reason || 'The quoted MRP looks inflated versus this product’s price history.')}</span></div>` : ''}
+          ${deal.ai_hook ? `<div class="detail-note good">${icon('check')}<span>${escapeHtml(deal.ai_hook)}</span></div>` : ''}
 
           <div class="scorecard">
             ${scoreDial(deal.score)}
@@ -1419,7 +1485,8 @@
             <dt>Category</dt><dd>${escapeHtml(deal.category || '—')} › ${escapeHtml(deal.subcategory || '—')}</dd>
             ${deal.brand ? `<dt>Brand</dt><dd>${escapeHtml(deal.brand)}</dd>` : ''}
             ${deal.sizes ? `<dt>Sizes</dt><dd class="raw">${escapeHtml(deal.sizes)}</dd>` : ''}
-            ${deal.coupon ? `<dt>Coupon</dt><dd><span class="coupon">${escapeHtml(deal.coupon)}</span></dd>` : ''}
+            ${deal.coupon ? `<dt>Coupon</dt><dd><span class="coupon">${escapeHtml(deal.coupon)}</span>
+              <button type="button" class="btn btn-ghost btn-xs" id="btn-coupon-dead" data-deal="${escapeHtml(deal.id)}">Code not working?</button></dd>` : ''}
             <dt>Posted</dt><dd class="raw">${timeAgo(deal.posted_at)}</dd>
             <dt>Shared</dt><dd>${deal.repost_count} time${deal.repost_count === 1 ? '' : 's'}</dd>
             <dt>Expires</dt><dd class="raw">${deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString() : '—'}</dd>
@@ -2509,11 +2576,12 @@
   });
   $('#btn-clear-filters').addEventListener('click', () => {
     Object.assign(state.filters, {
-      category: '', subcategory: '', store: '', brand: '',
+      category: '', subcategory: '', store: '', brand: '', size: '',
       min_price: null, max_price: null, min_discount: 0, has_coupon: false, only_lowest: false, all_channels: false,
     });
     $('#f-max-price').value = '';
     $('#f-min-price').value = '';
+    $('#f-size').value = '';
     $('#f-coupon').checked = false;
     syncFilterChips();
     $('#f-discount').value = 0;

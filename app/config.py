@@ -53,6 +53,13 @@ class Settings:
 
         # --- Storage ---
         self.db_path: str = os.getenv("DB_PATH", "data/deals.db")
+        # Turso (libSQL): if set, deals.db becomes a local embedded replica
+        # that syncs with this remote — durable across Render deploys/restarts
+        # without needing a paid disk. Falls back to a plain local SQLite
+        # file (ephemeral on free hosting) when unset.
+        self.turso_url: str = os.getenv("TURSO_DATABASE_URL", "").strip()
+        self.turso_auth_token: str = os.getenv("TURSO_AUTH_TOKEN", "").strip()
+        self.turso_sync_seconds: int = int(os.getenv("TURSO_SYNC_SECONDS", "60"))
 
         # --- Ingestion ---
         self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "300"))
@@ -67,6 +74,16 @@ class Settings:
         self.public_url: str = os.getenv("PUBLIC_URL", "").rstrip("/")
         self.keepalive_enabled: bool = _bool(os.getenv("KEEPALIVE_ENABLED", "true"))
         self.keepalive_seconds: int = int(os.getenv("KEEPALIVE_SECONDS", "600"))
+
+        # --- AI enrichment (Groq, optional — silently disabled if unset) ---
+        self.groq_api_key: str = os.getenv("GROQ_API_KEY", "").strip()
+        self.groq_model: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+        # Free-tier ceiling for this model is 30 RPM / 1K RPD / 8K TPM / 200K TPD;
+        # kept well under all four so a counting drift never trips the real limit.
+        self.groq_max_requests_per_day: int = int(os.getenv("GROQ_MAX_REQUESTS_PER_DAY", "900"))
+        self.groq_max_tokens_per_day: int = int(os.getenv("GROQ_MAX_TOKENS_PER_DAY", "180000"))
+        self.groq_max_requests_per_minute: int = int(os.getenv("GROQ_MAX_REQUESTS_PER_MINUTE", "25"))
+        self.groq_max_calls_per_cycle: int = int(os.getenv("GROQ_MAX_CALLS_PER_CYCLE", "20"))
 
         # --- Misc ---
         self.allowed_origins: List[str] = _split(os.getenv("ALLOWED_ORIGINS", "*"))
@@ -91,6 +108,14 @@ class Settings:
     @property
     def sheets_configured(self) -> bool:
         return bool(self.sheet_id and (self.google_sa_json or self.google_sa_b64))
+
+    @property
+    def ai_enrich_enabled(self) -> bool:
+        return bool(self.groq_api_key)
+
+    @property
+    def turso_configured(self) -> bool:
+        return bool(self.turso_url and self.turso_auth_token)
 
     def service_account_info(self) -> Optional[dict]:
         import json
