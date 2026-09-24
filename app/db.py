@@ -285,31 +285,33 @@ def connect() -> Any:
         for statement in _split_statements(SCHEMA):
             _safe_exec(_conn, statement)
         # Additive migration: the final store URL behind cuttli/bitli-style redirects.
-        cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)")}
+        cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)").fetchall()}
         if "resolved_url" not in cols:
             _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN resolved_url TEXT DEFAULT ''")
-        ph_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(price_history)")}
+        ph_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(price_history)").fetchall()}
         if "synced" not in ph_cols:
             _safe_exec(_conn, "ALTER TABLE price_history ADD COLUMN synced INTEGER DEFAULT 0")
-        device_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(devices)")}
+        device_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(devices)").fetchall()}
         if "last_weekly_digest_at" not in device_cols:
             _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN last_weekly_digest_at REAL DEFAULT 0")
-        notif_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(device_notifications)")}
+        notif_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(device_notifications)").fetchall()}
         if "expires_at" not in notif_cols:
             _safe_exec(_conn, "ALTER TABLE device_notifications ADD COLUMN expires_at REAL DEFAULT 0")
-        deal_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)")}
+        deal_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)").fetchall()}
         if "ai_hook" not in deal_cols:
             _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN ai_hook TEXT DEFAULT ''")
         if "ai_mrp_reason" not in deal_cols:
             _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN ai_mrp_reason TEXT DEFAULT ''")
-        if not _using_turso:
-            _conn.commit()
+        _conn.commit()
         return _conn
 
 
 def _split_statements(script: str) -> List[str]:
     """libsql's execute() takes one statement at a time (no executescript)."""
-    return [s.strip() for s in script.split(";") if s.strip()]
+    # Drop "--" comment lines first: a ";" inside a comment would otherwise
+    # split one statement in two.
+    code = "\n".join(line for line in script.splitlines() if not line.strip().startswith("--"))
+    return [s.strip() for s in code.split(";") if s.strip()]
 
 
 def _row_to_plain_dict(row: Any, columns: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -357,10 +359,9 @@ def execute(sql: str, params: Iterable[Any] = ()) -> Any:
     with _lock:
         conn = connect()
         cur = _safe_exec(conn, sql, params)
-        if not _using_turso:
-            conn.commit()
-        else:
-            _maybe_sync()
+        # libsql is not autocommit: without this every write is silently lost.
+        conn.commit()
+        _maybe_sync()
         return cur
 
 
@@ -374,6 +375,7 @@ def execute_many(sql: str, seq: Iterable[Iterable[Any]]) -> None:
             # libsql_experimental has no executemany; loop instead.
             for row in rows:
                 _safe_exec(conn, sql, row)
+            conn.commit()
             _maybe_sync()
         else:
             conn.executemany(sql, rows)
