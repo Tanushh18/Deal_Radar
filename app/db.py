@@ -190,6 +190,7 @@ CREATE TABLE IF NOT EXISTS device_notifications (
     image_url  TEXT,
     deal_id    TEXT,
     url        TEXT,
+    expires_at REAL DEFAULT 0,
     created_at REAL
 );
 CREATE INDEX IF NOT EXISTS idx_devnotif ON device_notifications(device_id, created_at);
@@ -221,6 +222,12 @@ def connect() -> sqlite3.Connection:
         ph_cols = {r[1] for r in _conn.execute("PRAGMA table_info(price_history)")}
         if "synced" not in ph_cols:
             _conn.execute("ALTER TABLE price_history ADD COLUMN synced INTEGER DEFAULT 0")
+        device_cols = {r[1] for r in _conn.execute("PRAGMA table_info(devices)")}
+        if "last_weekly_digest_at" not in device_cols:
+            _conn.execute("ALTER TABLE devices ADD COLUMN last_weekly_digest_at REAL DEFAULT 0")
+        notif_cols = {r[1] for r in _conn.execute("PRAGMA table_info(device_notifications)")}
+        if "expires_at" not in notif_cols:
+            _conn.execute("ALTER TABLE device_notifications ADD COLUMN expires_at REAL DEFAULT 0")
         _conn.commit()
         return _conn
 

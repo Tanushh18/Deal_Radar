@@ -329,6 +329,8 @@
       loadRails();
     }
     loadStats();
+    loadSpotlight();
+    startDropCountdown();
     loadAlertCount();
     checkUnseenNotifications();
     if (link.deal) showDealDetail(link.deal);
@@ -1993,6 +1995,74 @@
     $('#footer-status').textContent = last
       ? `Deals are kept ${stats.deal_ttl_hours}h or until the link goes dead.`
       : '';
+  }
+
+  /* ============================================================
+     DROP COUNTDOWN  (a fresh "drop" feel ~8x a day, not a permanent timer)
+     ============================================================ */
+  const DROPS_PER_DAY = 8;
+  const DROP_MS = (24 * 60 * 60 * 1000) / DROPS_PER_DAY; // 3h slots
+  let dropTimer = null;
+
+  function nextDropAt() {
+    const now = Date.now();
+    return Math.ceil(now / DROP_MS) * DROP_MS;
+  }
+
+  function renderDropCountdown() {
+    const el = $('#drop-countdown');
+    const timeEl = $('#dc-time');
+    if (!el || !timeEl) return;
+    const remaining = nextDropAt() - Date.now();
+    if (remaining <= 0) { tickDropCountdown(); return; }
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    timeEl.textContent = h > 0 ? `${h}h ${m}m` : `${m}m ${String(s).padStart(2, '0')}s`;
+    el.classList.remove('hidden');
+  }
+
+  function tickDropCountdown() {
+    const before = nextDropAt();
+    renderDropCountdown();
+    // Crossing into a new 3h slot means a new drop just landed — refresh the spotlight.
+    if (nextDropAt() !== before) loadSpotlight();
+  }
+
+  function startDropCountdown() {
+    renderDropCountdown();
+    if (dropTimer) clearInterval(dropTimer);
+    dropTimer = setInterval(tickDropCountdown, 1000);
+  }
+
+  /* ============================================================
+     SPOTLIGHT  (biggest banner: best deal of the current drop)
+     ============================================================ */
+  async function loadSpotlight() {
+    const el = $('#spotlight');
+    if (!el) return;
+    // Women Fashion / Beauty first (site focus), then whatever's best overall.
+    const tries = ['Women Fashion', 'Beauty', ''];
+    let deal = null;
+    for (const category of tries) {
+      try {
+        const qs = category ? `category=${encodeURIComponent(category)}&sort=best&limit=1` : 'sort=best&limit=1';
+        const res = await api(`/api/deals?${qs}`);
+        if (res.deals && res.deals[0]) { deal = res.deals[0]; break; }
+      } catch { /* try next */ }
+    }
+    if (!deal) { el.classList.add('hidden'); return; }
+
+    el.href = `/?deal=${deal.id}`;
+    el.onclick = (e) => { e.preventDefault(); showDealDetail(deal.id); };
+    $('#spotlight-img').src = deal.image_url || '';
+    $('#spotlight-img').alt = deal.title || '';
+    $('#spotlight-badge').textContent = deal.discount_pct ? `${Math.round(deal.discount_pct)}% OFF` : 'DEAL';
+    $('#spotlight-kicker').textContent = 'Best of this drop';
+    $('#spotlight-title').textContent = deal.title || '';
+    $('#spotlight-price').textContent = money(deal.price);
+    $('#spotlight-mrp').textContent = deal.mrp && deal.mrp > deal.price ? money(deal.mrp) : '';
+    el.classList.remove('hidden');
   }
 
   async function loadStats() {

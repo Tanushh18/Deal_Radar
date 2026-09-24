@@ -10,8 +10,12 @@
  *     24h are skipped.
  *
  * Rich display uses Notifee (BigPictureStyle: product thumbnail collapsed, full
- * image expanded, "View deal" action). If Notifee's native module is missing
+ * image expanded, "View deal" / "Track price" actions, countdown header,
+ * auto-dismiss at the deal's expiry). If Notifee's native module is missing
  * (Expo Go) it falls back to a plain expo-notifications banner.
+ *
+ * Three independently-mutable channels (see CHANNELS below): Price drops,
+ * Daily deals, Flash sales.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
@@ -21,11 +25,33 @@ import { Platform } from 'react-native';
 import { getBaseUrl, LIVE_HOST, STORAGE_KEYS } from './config';
 import { getDeviceId } from './device';
 
+/** Legacy single-channel id, kept only as an Expo-push fallback target on old installs. */
 export const CHANNEL_ID = 'deal-alerts';
 export const BRAND_COLOR = '#2563eb';
 export const VIEW_ACTION_ID = 'view-deal';
+export const TRACK_ACTION_ID = 'track-price';
 
-export type FeedKind = 'price_drop' | 'follow' | 'digest';
+export type FeedKind = 'price_drop' | 'follow' | 'digest' | 'weekly_pick' | 'broadcast';
+
+/** Three channels, each mutable independently in system settings (spec: "Behavior › Channels"). */
+export const CHANNELS = {
+  priceDrops: { id: 'price-drops', name: 'Price drops', description: 'Tracked items whose price just fell' },
+  dailyDeals: { id: 'daily-deals', name: 'Daily deals', description: "Today's top pick and your weekly picks" },
+  flashSales: { id: 'flash-sales', name: 'Flash sales', description: 'New deals in what you follow' },
+} as const;
+
+function channelForKind(kind: string | undefined): (typeof CHANNELS)[keyof typeof CHANNELS] {
+  switch (kind) {
+    case 'price_drop':
+      return CHANNELS.priceDrops;
+    case 'digest':
+    case 'weekly_pick':
+      return CHANNELS.dailyDeals;
+    case 'follow':
+    default:
+      return CHANNELS.flashSales;
+  }
+}
 
 export type FeedItem = {
   id: string | number;
@@ -35,8 +61,28 @@ export type FeedItem = {
   image_url?: string | null;
   deal_id?: string | number | null;
   url?: string | null;
+  expires_at?: number | string | null;
   created_at?: number | string;
 };
+
+/** "Ends in 2h 14m" — spec: header shows this instead of the timestamp. Null once expired or with no end time. */
+export function countdownLabel(expiresAt: number | string | null | undefined): string | null {
+  const ms = toEpochMs(expiresAt);
+  if (!ms) return null;
+  const remaining = ms - Date.now();
+  if (remaining <= 0) return null;
+  const totalMin = Math.floor(remaining / 60_000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h <= 0) return `Ends in ${m}m`;
+  return `Ends in ${h}h ${m}m`;
+}
+
+function toEpochMs(value: number | string | null | undefined): number | null {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n < 1e12 ? n * 1000 : n;
+}
 
 type NotifeeModule = typeof import('@notifee/react-native');
 
@@ -98,33 +144,38 @@ export function ensureChannel(): Promise<void> {
   if (!channelReady) {
     channelReady = (async () => {
       const nf = getNotifee();
+      const channels = Object.values(CHANNELS);
       if (nf) {
         const { default: notifee, AndroidImportance, AndroidVisibility } = nf;
-        await notifee.createChannel({
-          id: CHANNEL_ID,
-          name: 'Deal alerts',
-          description: 'Price drops, followed stores and your daily digest',
-          importance: AndroidImportance.HIGH,
-          sound: 'default',
-          vibration: true,
-          vibrationPattern: [200, 120, 200, 120],
-          lights: true,
-          lightColor: BRAND_COLOR,
-          visibility: AndroidVisibility.PUBLIC,
-          badge: true,
-        });
+        for (const c of channels) {
+          await notifee.createChannel({
+            id: c.id,
+            name: c.name,
+            description: c.description,
+            importance: AndroidImportance.HIGH,
+            sound: 'default',
+            vibration: true,
+            vibrationPattern: [200, 120, 200, 120],
+            lights: true,
+            lightColor: BRAND_COLOR,
+            visibility: AndroidVisibility.PUBLIC,
+            badge: true,
+          });
+        }
         return;
       }
-      await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-        name: 'Deal alerts',
-        description: 'Price drops, followed stores and your daily digest',
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 200, 120, 200],
-        enableLights: true,
-        lightColor: BRAND_COLOR,
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-        showBadge: true,
-      });
+      for (const c of channels) {
+        await Notifications.setNotificationChannelAsync(c.id, {
+          name: c.name,
+          description: c.description,
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 200, 120, 200],
+          enableLights: true,
+          lightColor: BRAND_COLOR,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          showBadge: true,
+        });
+      }
     })().catch((e) => {
       channelReady = null;
       console.warn('[notifications] channel failed:', (e as Error)?.message ?? e);
@@ -187,6 +238,17 @@ async function displayRich(item: FeedItem & { id: string }): Promise<boolean> {
   const image = absoluteImage(item.image_url);
   const dealId = item.deal_id != null && item.deal_id !== '' ? String(item.deal_id) : '';
   const created = Number(item.created_at);
+  const channel = channelForKind(String(item.kind ?? ''));
+  const countdown = countdownLabel(item.expires_at);
+  const expiresMs = toEpochMs(item.expires_at);
+
+  const actions = dealId
+    ? [
+        { title: 'View deal', pressAction: { id: VIEW_ACTION_ID, launchActivity: 'default' } },
+        { title: 'Track price', pressAction: { id: TRACK_ACTION_ID, launchActivity: 'default' } },
+      ]
+    : [];
+
   await notifee.displayNotification({
     id: item.id,
     title: item.title,
@@ -198,21 +260,24 @@ async function displayRich(item: FeedItem & { id: string }): Promise<boolean> {
       image_url: image ?? '',
     },
     android: {
-      channelId: CHANNEL_ID,
+      channelId: channel.id,
       smallIcon: 'notification_icon',
       color: BRAND_COLOR,
       importance: AndroidImportance.HIGH,
       visibility: AndroidVisibility.PUBLIC,
+      // Header shows a countdown instead of the timestamp when the deal has a real end time.
+      ...(countdown ? { subText: countdown, showTimestamp: false } : { showTimestamp: true }),
       ...(image ? { largeIcon: image } : {}),
       style: image
         ? // largeIcon: null hides the thumbnail once expanded so only the big picture shows.
-          { type: AndroidStyle.BIGPICTURE, picture: image, largeIcon: null }
+          { type: AndroidStyle.BIGPICTURE, picture: image, largeIcon: null, summary: item.body }
         : { type: AndroidStyle.BIGTEXT, text: item.body },
       pressAction: { id: 'default', launchActivity: 'default' },
-      actions: dealId ? [{ title: 'View deal', pressAction: { id: VIEW_ACTION_ID, launchActivity: 'default' } }] : [],
+      actions,
       autoCancel: true,
-      showTimestamp: true,
       ...(Number.isFinite(created) && created > 0 ? { timestamp: created < 1e12 ? created * 1000 : created } : {}),
+      // Auto-dismiss when the deal ends, per spec.
+      ...(expiresMs && expiresMs > Date.now() ? { timeoutAfter: expiresMs } : {}),
       lights: [BRAND_COLOR, 600, 1800],
     },
   });
@@ -237,7 +302,7 @@ export async function displayDealNotification(item: FeedItem): Promise<void> {
       },
       color: BRAND_COLOR,
     },
-    trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null,
+    trigger: Platform.OS === 'android' ? { channelId: channelForKind(String(item.kind ?? '')).id } : null,
   });
 }
 
