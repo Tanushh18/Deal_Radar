@@ -12,6 +12,7 @@ once Turso is configured.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sqlite3
 import threading
@@ -19,6 +20,8 @@ import time
 from typing import Any, Dict, Iterable, List, Optional
 
 from .config import settings
+
+log = logging.getLogger("dealradar.db")
 
 try:
     import libsql_experimental as libsql
@@ -241,17 +244,23 @@ def connect() -> Any:
             os.makedirs(directory, exist_ok=True)
 
         if settings.turso_configured and libsql is not None:
-            _conn = libsql.connect(
-                settings.db_path,
-                sync_url=settings.turso_url,
-                auth_token=settings.turso_auth_token,
-            )
-            _conn.sync()
-            _using_turso = True
-            _last_sync = time.time()
-            for statement in _split_statements(SCHEMA):
-                _conn.execute(statement)
-        else:
+            try:
+                _conn = libsql.connect(
+                    settings.db_path,
+                    sync_url=settings.turso_url,
+                    auth_token=settings.turso_auth_token,
+                )
+                _conn.sync()
+                _using_turso = True
+                _last_sync = time.time()
+                for statement in _split_statements(SCHEMA):
+                    _conn.execute(statement)
+            except Exception as exc:  # noqa: BLE001 - a bad Turso handshake must never take the app down
+                log.warning("Turso connect/sync failed (%s) — falling back to local SQLite", exc)
+                _conn = None
+                _using_turso = False
+
+        if _conn is None:
             _conn = sqlite3.connect(settings.db_path, check_same_thread=False)
             _conn.row_factory = sqlite3.Row
             _conn.execute("PRAGMA journal_mode=WAL")
