@@ -47,7 +47,7 @@ services:
       - key: PYTHON_VERSION
         value: "3.11.9"
       - key: POLL_INTERVAL_SECONDS
-        value: "300"
+        value: "120"
       - key: DEAL_TTL_HOURS
         value: "96"
       - key: BACKFILL_LIMIT

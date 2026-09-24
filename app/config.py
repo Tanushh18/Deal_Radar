@@ -62,7 +62,7 @@ class Settings:
         self.turso_sync_seconds: int = int(os.getenv("TURSO_SYNC_SECONDS", "60"))
 
         # --- Ingestion ---
-        self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "300"))
+        self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "120"))
         self.deal_ttl_hours: int = int(os.getenv("DEAL_TTL_HOURS", "96"))  # 4 days
         self.backfill_limit: int = int(os.getenv("BACKFILL_LIMIT", "120"))
         self.incremental_limit: int = int(os.getenv("INCREMENTAL_LIMIT", "60"))

@@ -48,8 +48,24 @@ _PRIORITY_SORTS = ("relevance", "best", "newest")
 def _priority_sql() -> str:
     from . import priority  # local: priority imports taxonomy, same as this module
     return priority.sql()
-_LIGHT_COLUMNS = "id, title, brand, store, category, subcategory, search_blob, score"
+_LIGHT_COLUMNS = "id, title, brand, store, category, subcategory, search_blob, score, image_url"
 _W_PRIORITY = 12.0   # search boost for the priority audience — nudges, never outranks a real match
+
+# Image quota: a feed of mostly text cards (no product photo) reads as low
+# quality. Cap image-less deals to at most 1 in _IMAGE_QUOTA_SLOT, and only
+# let a high-scoring "hot" deal take that slot — everything else without an
+# image sinks to the very end of the list instead of being dropped.
+_IMAGE_QUOTA_SLOT = 10
+_HOT_SCORE_THRESHOLD = 60.0
+
+# If ingestion stalls (Telegram flood-waits, a channel goes quiet, a deploy
+# hiccups) live deals just age out via TTL and the feed can run dry. We keep
+# no extra copies for this — expired rows already sit in the same table — we
+# just widen the query to backfill from them when live supply is thin, so
+# the app is never empty. Never fires on a filtered/narrow search: an empty
+# result for "kurta under 199" is a real answer, not a supply problem.
+_MIN_LIVE_FLOOR = 40
+_STALE_FALLBACK_GRACE_DAYS = 7
 _WORD_RE = re.compile(r"[a-z0-9&']+")
 _STOPWORDS = {"the", "and", "for", "with", "of", "in", "on", "to", "a", "an", "under", "below", "at", "by"}
 
@@ -287,7 +303,35 @@ def _candidates(
         f"SELECT {_LIGHT_COLUMNS}, {_priority_sql()} AS priority FROM deals WHERE {' AND '.join(where)} "
         f"ORDER BY {order} LIMIT {_CANDIDATE_CAP}"
     )
-    return [dict(r) for r in db.query(sql, params)]
+    rows = [dict(r) for r in db.query(sql, params)]
+
+    unfiltered_browse = (
+        not archive and not include_expired and not store and not brand
+        and min_price is None and max_price is None and not min_discount
+        and not only_lowest and not has_coupon and not size and not channel_ids
+    )
+    if unfiltered_browse and len(rows) < _MIN_LIVE_FLOOR:
+        rows.extend(_stale_fallback(order, exclude_ids={r["id"] for r in rows},
+                                     limit=_MIN_LIVE_FLOOR - len(rows)))
+    return rows
+
+
+def _stale_fallback(order: str, exclude_ids: Set[Any], limit: int) -> List[Dict[str, Any]]:
+    """Pad a thin live feed with recently-expired deals so it's never empty.
+
+    Nothing extra is stored for this — expired rows already sit in the table
+    for archive search; we just widen the read when live supply runs dry.
+    """
+    now = time.time()
+    sql = (
+        f"SELECT {_LIGHT_COLUMNS}, {_priority_sql()} AS priority FROM deals "
+        f"WHERE status = 'expired' AND expires_at > ? ORDER BY {order} LIMIT ?"
+    )
+    rows = [
+        dict(r) for r in db.query(sql, (now - _STALE_FALLBACK_GRACE_DAYS * 86400, limit))
+        if r["id"] not in exclude_ids
+    ]
+    return rows
 
 
 def _rank(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -321,6 +365,33 @@ def _rank_for_you(rows: List[Dict[str, Any]], device_id: str) -> List[Dict[str, 
         return False
 
     return sorted(rows, key=lambda d: (not matches(d), -float(d.get("score") or 0)))
+
+
+def _apply_image_quota(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Reorder so ~90% of results have a product image.
+
+    Image-less deals only fill 1-in-_IMAGE_QUOTA_SLOT, and only the hot ones
+    (score >= _HOT_SCORE_THRESHOLD) get that slot — cold image-less deals are
+    pushed after everything else rather than removed, so nothing disappears,
+    it just stops crowding out deals that actually look good.
+    """
+    with_img = [d for d in rows if d.get("image_url")]
+    without_img = [d for d in rows if not d.get("image_url")]
+    hot = [d for d in without_img if float(d.get("score") or 0) >= _HOT_SCORE_THRESHOLD]
+    cold = [d for d in without_img if float(d.get("score") or 0) < _HOT_SCORE_THRESHOLD]
+
+    merged: List[Dict[str, Any]] = []
+    wi = hi = 0
+    while wi < len(with_img) or hi < len(hot):
+        if (len(merged) + 1) % _IMAGE_QUOTA_SLOT == 0 and hi < len(hot):
+            merged.append(hot[hi]); hi += 1
+        elif wi < len(with_img):
+            merged.append(with_img[wi]); wi += 1
+        elif hi < len(hot):
+            merged.append(hot[hi]); hi += 1
+    merged.extend(hot[hi:])
+    merged.extend(cold)
+    return merged
 
 
 def _load(page: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -400,6 +471,9 @@ def search(
         rows = [d for d in rows if d.get("category") == category]
     if subcategory:
         rows = [d for d in rows if d.get("subcategory") == subcategory]
+
+    if sort in _PRIORITY_SORTS or sort == "for_you":
+        rows = _apply_image_quota(rows)
 
     total = len(rows)
     page = _load(rows[offset: offset + limit])
@@ -532,9 +606,10 @@ def trending(channel_ids: Optional[List[int]] = None, limit: int = 12) -> List[D
     if channel_ids:
         where.append(f"channel_id IN ({','.join('?' for _ in channel_ids)})")
         params.extend(channel_ids)
-    rows = db.query(
+    rows = db.rows_to_dicts(db.query(
         f"SELECT * FROM deals WHERE {' AND '.join(where)} "
         f"ORDER BY {_priority_sql()} DESC, repost_count DESC, score DESC LIMIT ?",
-        params + [limit],
-    )
-    return [shape(d) for d in db.rows_to_dicts(rows)]
+        params + [limit * 3],
+    ))
+    rows = _apply_image_quota(rows)[:limit]
+    return [shape(d) for d in rows]

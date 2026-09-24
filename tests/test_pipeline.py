@@ -191,7 +191,16 @@ def main() -> int:
     db.execute("UPDATE deals SET expires_at = ? WHERE 1", (time.time() - 10,))
     expired = store.expire_stale()
     check(f"expired {expired} stale deals", expired > 0)
-    check("expired deals leave the default search", search.search(limit=50)["total"] == 0)
+    # Nothing live left, but the feed must never go empty: recently-expired
+    # deals backfill it rather than showing a blank page (see
+    # search._stale_fallback). A real, non-stale row (from an explicit
+    # store/category filter) still returns nothing, since that's a genuine
+    # "no matches" answer, not a supply problem.
+    fallback = search.search(limit=50)
+    check("expired deals backfill the default search instead of going empty",
+          fallback["total"] > 0 and all(r["status"] == "expired" for r in fallback["results"]))
+    check("a filtered search still returns nothing once everything's expired",
+          search.search(store="amazon", limit=50)["total"] == 0)
 
     print("\n=== 9. PRODUCT IDENTITY (model-number gating) ===")
     same_cases = [
