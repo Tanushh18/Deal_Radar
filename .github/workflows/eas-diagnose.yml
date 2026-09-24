@@ -29,6 +29,9 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Who am I
+        run: eas whoami --non-interactive || true
+
       - name: Channels
         run: eas channel:list --non-interactive || true
 
