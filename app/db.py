@@ -421,12 +421,57 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[Dict[str, Any]]:
     return rows[0] if rows else None
 
 
+def _is_disk_full(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return "disk" in msg and "full" in msg
+
+
+def _emergency_free_space() -> None:
+    """Local disk is full. Delete the oldest, no-longer-live rows to make
+    room immediately — they're already mirrored to Sheets (and Turso, if
+    configured) by the normal flush cycles, so this doesn't lose data,
+    only local query access to very old history. A crash from a full disk
+    is worse than temporarily thinner local archive search."""
+    global _conn
+    log.error("Local disk is full — freeing space from oldest local rows")
+    try:
+        conn = _conn
+        if conn is None:
+            return
+        conn.execute(
+            "DELETE FROM deals WHERE id IN ("
+            "SELECT id FROM deals WHERE status != 'live' ORDER BY last_seen_at ASC LIMIT 1000)"
+        )
+        conn.execute(
+            "DELETE FROM price_history WHERE id IN ("
+            "SELECT id FROM price_history ORDER BY seen_at ASC LIMIT 5000)"
+        )
+        conn.commit()
+    except Exception as exc:  # noqa: BLE001 - this IS the last resort; nothing left to fall back to
+        log.error("Emergency space cleanup also failed: %s", exc)
+
+
 def execute(sql: str, params: Iterable[Any] = ()) -> Any:
     with _lock:
         conn = connect()
-        cur = _safe_exec(conn, sql, params)
-        # libsql is not autocommit: without this every write is silently lost.
-        conn.commit()
+        try:
+            cur = _safe_exec(conn, sql, params)
+            # libsql is not autocommit: without this every write is silently lost.
+            conn.commit()
+        except Exception as exc:  # noqa: BLE001
+            if not _is_disk_full(exc):
+                raise
+            _emergency_free_space()
+            try:
+                cur = _safe_exec(conn, sql, params)
+                conn.commit()
+            except Exception as retry_exc:  # noqa: BLE001
+                # Still full even after cleanup — drop this one write rather
+                # than crash the request. Reads and everything else keep
+                # working; the write is lost, but it also already reached
+                # Sheets/Turso via the normal flush path in most call sites.
+                log.error("Write dropped after disk-full recovery failed: %s", retry_exc)
+                return _EmptyCursor()
         _maybe_sync()
         return cur
 
