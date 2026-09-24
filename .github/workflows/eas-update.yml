@@ -1,0 +1,45 @@
+name: EAS Update (OTA)
+
+# Pushes JS/UI changes in mobile/ straight to installed app builds via
+# EAS Update — no Play Store round-trip. Only touches the JS bundle; a
+# native change (new permission, native module, app.json android block)
+# still needs a real `eas build` + store release, which this does not do.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/eas-update.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update-production
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish OTA update
+        run: |
+          eas update --branch production --non-interactive \
+            --message "${{ github.event.head_commit.message || 'Manual update' }}"
