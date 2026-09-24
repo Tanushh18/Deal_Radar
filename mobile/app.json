@@ -108,6 +108,9 @@
       "expo-navigation-bar": {
         "enforceContrast": false,
         "style": "light"
+      },
+      "eas": {
+        "projectId": "9adf154c-26d2-4c82-9981-cb73088dab99"
       }
     },
     "owner": "tanushhh18",
