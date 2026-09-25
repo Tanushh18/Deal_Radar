@@ -104,7 +104,8 @@
             }
           }
         }
-      ]
+      ],
+      "./plugins/withAbiFilter"
     ],
     "extra": {
       "defaultServerUrl": "https://dealradar-0oza.onrender.com",
