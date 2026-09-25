@@ -640,13 +640,15 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             liveness = await verify_links(settings.liveness_batch)
             alerts = await run_watchlist_alerts()
 
-            hot_deal = None
-            if settings.broadcast_hot_deal_enabled:
-                from . import devices
-                try:
-                    hot_deal = devices.broadcast_best(new_deal_ids, settings.broadcast_min_score)
-                except Exception as exc:  # noqa: BLE001 — never break the cycle over a notification
-                    log.warning("Hot-deal broadcast failed: %s", exc)
+            # Plan this window's hot-deal pushes (PUSHES_PER_CYCLE of them, each
+            # at a random moment before the next cycle starts — see hot_push.py).
+            push_plan: List[Dict[str, Any]] = []
+            try:
+                from . import hot_push
+                window = poll_interval_seconds() - (time.time() - started)
+                push_plan = hot_push.schedule_cycle(new_deal_ids, window)
+            except Exception as exc:  # noqa: BLE001 — never break the cycle over a notification
+                log.warning("Hot-push scheduling failed: %s", exc)
 
             purged_ids = store.purge_ancient()
             store.purge_housekeeping()
@@ -690,7 +692,8 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             result = {
                 **totals,
                 "filtered_reasons": reasons,
-                "hot_deal_broadcast": hot_deal,
+                "push_plan": [{"slot": p["slot"] + 1, "fires_in_s": round(p["fires_at"] - time.time())}
+                              for p in push_plan],
                 "expired": expired,
                 "purged": len(purged_ids),
                 "purged_from_sheets": 0,

@@ -170,6 +170,7 @@
       await loadPriority();
       await loadDataSource();
       await loadPollInterval();
+      await loadPushStatus().catch(() => {});
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
     } catch (err) {
@@ -383,12 +384,75 @@
     btn.disabled = true;
     try {
       const r = await post('/api/admin/reader/broadcast', { title, body, deal_id: pickedDeal?.id || null });
-      show($('#notify-msg'), `Sent to ${r.devices} device${r.devices === 1 ? '' : 's'}.`, 'ok');
+      show($('#notify-msg'), deliveryText(r), r.accepted ? 'ok' : 'err');
+      loadPushStatus().catch(() => {});
       e.target.reset();
       pickedDeal = null;
       $('#notify-deal-picked').classList.add('hidden');
       $('#notify-deal-clear').classList.add('hidden');
     } catch (err) { show($('#notify-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+  });
+
+  /* ---------------- hot-deal pushes ---------------- */
+  // Expo error codes -> what the admin should actually do about them.
+  const PUSH_FIXES = {
+    InvalidCredentials: 'the EAS project has no FCM key — upload it with `eas credentials` (Android → FCM V1).',
+    MismatchSenderId: 'the FCM key does not match this app’s google-services.json.',
+    DeviceNotRegistered: 'those phones uninstalled the app (their tokens were removed).',
+    MessageRateExceeded: 'Expo rate-limited the send — it will retry next push.',
+    RequestFailed: 'Expo could not be reached from the server.',
+  };
+  function deliveryText(r) {
+    const feed = `Saved to every device’s feed (${r.devices} registered).`;
+    if (!r.tokens) {
+      return `${feed} ⚠️ No device has a push token, so nothing buzzed — phones only see it when the app polls. `
+        + 'This means the Android build has no Firebase (google-services.json) set up.';
+    }
+    let text = `${feed} Push: ${r.accepted}/${r.tokens} accepted by Expo.`;
+    const errs = Object.entries(r.errors || {});
+    if (errs.length) {
+      text += ' Failed: ' + errs.map(([code, n]) => `${n}× ${code}${PUSH_FIXES[code] ? ' — ' + PUSH_FIXES[code] : ''}`).join('; ');
+    }
+    return text;
+  }
+  const when = (ts) => new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+  async function loadPushStatus() {
+    const s = await api('/api/admin/reader/push-status');
+    const pill = $('#push-pill');
+    pill.textContent = !s.enabled ? '● Off (BROADCAST_HOT_DEAL=false)'
+      : s.quiet_now ? `● Quiet hours (${s.quiet_hours} IST)` : `● On · ${s.pushes_per_cycle} per cycle`;
+    pill.className = `status-pill ${s.enabled && !s.quiet_now ? 'ok' : ''}`;
+    $('#push-stats').textContent = `${s.devices} registered devices · ${s.devices_with_push} can receive push`
+      + ` · deals need a score of ${s.min_score}+`;
+    const warn = $('#push-warning');
+    if (s.devices && !s.devices_with_push) {
+      show(warn, '⚠️ Devices are registering without a push token, so no phone will buzz. The Android build needs '
+        + 'Firebase: add google-services.json + an FCM key to the EAS project, then make a new build.', 'err');
+    } else {
+      show(warn, '', '');
+    }
+    const plan = (s.planned || []).map((p) => {
+      const mins = Math.round((p.fires_at - Date.now() / 1000) / 60);
+      return p.result === 'pending' ? `#${p.slot + 1} in ~${Math.max(0, mins)} min`
+        : `#${p.slot + 1} ${p.result}${p.why ? ' (' + p.why + ')' : ''}`;
+    });
+    $('#push-plan').textContent = plan.length ? `This cycle: ${plan.join(' · ')}` : 'Nothing queued yet — the next ingest cycle plans the next pushes.';
+    $('#push-recent').innerHTML = (s.recent || []).map((r) => `
+      <tr><td>${esc(r.title)}${r.women ? ' <span class="tag on">women</span>' : ''}</td>
+        <td class="num">${r.accepted}/${r.tokens}</td><td>${when(r.sent_at)}</td></tr>`).join('')
+      || '<tr><td class="muted">No hot-deal pushes sent yet.</td></tr>';
+  }
+  $('#push-refresh').addEventListener('click', () => loadPushStatus().catch((err) => show($('#push-msg'), err.message, 'err')));
+  $('#push-now').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      const r = await post('/api/admin/reader/push-now', {});
+      if (r.status === 'sent') show($('#push-msg'), `“${r.title}” — ${deliveryText(r)}`, r.accepted ? 'ok' : 'err');
+      else show($('#push-msg'), `Nothing sent: ${r.why}.`, 'err');
+      await loadPushStatus();
+    } catch (err) { show($('#push-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
 
   if (token()) unlock();

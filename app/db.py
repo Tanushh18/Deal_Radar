@@ -206,6 +206,35 @@ CREATE TABLE IF NOT EXISTS device_notifications (
 );
 CREATE INDEX IF NOT EXISTS idx_devnotif ON device_notifications(device_id, created_at);
 
+-- One row per message sent to everyone (admin or hot-deal push). Served to
+-- every device through /api/devices/feed, so a phone that was registered
+-- after the send, or lost from the table in a restart, still receives it.
+CREATE TABLE IF NOT EXISTS broadcasts (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind       TEXT,
+    title      TEXT,
+    body       TEXT,
+    image_url  TEXT,
+    deal_id    TEXT,
+    url        TEXT,
+    expires_at REAL DEFAULT 0,
+    created_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_broadcasts_created ON broadcasts(created_at);
+
+-- Every hot-deal push: stops the same product going out twice in a row.
+CREATE TABLE IF NOT EXISTS push_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_key TEXT,
+    deal_id     TEXT,
+    title       TEXT,
+    women       INTEGER DEFAULT 0,
+    tokens      INTEGER DEFAULT 0,
+    accepted    INTEGER DEFAULT 0,
+    sent_at     REAL
+);
+CREATE INDEX IF NOT EXISTS idx_push_log_key ON push_log(product_key, sent_at);
+
 CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
     value TEXT
@@ -401,6 +430,11 @@ def connect() -> Any:
         device_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(devices)").fetchall()}
         if "last_weekly_digest_at" not in device_cols:
             _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN last_weekly_digest_at REAL DEFAULT 0")
+        # Devices (and their push tokens) are backed up to Turso: Render wipes
+        # this disk on every deploy/restart, and a device that isn't in this
+        # table can't be pushed to until its owner happens to open the app.
+        if "turso_dirty" not in device_cols:
+            _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN turso_dirty INTEGER DEFAULT 1")
         notif_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(device_notifications)").fetchall()}
         if "expires_at" not in notif_cols:
             _safe_exec(_conn, "ALTER TABLE device_notifications ADD COLUMN expires_at REAL DEFAULT 0")

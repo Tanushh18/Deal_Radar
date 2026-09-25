@@ -171,8 +171,22 @@ async def broadcast(payload: BroadcastPayload):
         if not row:
             raise HTTPException(status_code=404, detail="That deal id doesn't exist.")
         deal = dict(row)
-    sent = devices.broadcast(title, body, deal)
-    return {"status": "ok", "devices": sent}
+    report = await devices.broadcast(title, body, deal)
+    return {"status": "ok", **report}
+
+
+@router.get("/push-status")
+async def push_status():
+    """Who can be reached by push, what's queued this cycle, what went out."""
+    from ..services import hot_push
+    return hot_push.status()
+
+
+@router.post("/push-now")
+async def push_now():
+    """Push the best eligible deal right now (ignores quiet hours and the gap)."""
+    from ..services import hot_push
+    return await hot_push.send_best(force=True, reason="admin")
 
 
 async def _finish(result: dict) -> dict:

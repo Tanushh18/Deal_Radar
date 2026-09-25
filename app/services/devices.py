@@ -41,8 +41,8 @@ def register(device_id: str, platform: str = "", push_token: Optional[str] = Non
              digest: Optional[bool] = None, digest_hour: Optional[int] = None) -> Dict[str, Any]:
     now = time.time()
     db.execute(
-        "INSERT INTO devices (device_id, platform, created_at, last_seen_at) VALUES (?, ?, ?, ?) "
-        "ON CONFLICT(device_id) DO UPDATE SET last_seen_at = excluded.last_seen_at, "
+        "INSERT INTO devices (device_id, platform, created_at, last_seen_at, turso_dirty) VALUES (?, ?, ?, ?, 1) "
+        "ON CONFLICT(device_id) DO UPDATE SET last_seen_at = excluded.last_seen_at, turso_dirty = 1, "
         "platform = COALESCE(NULLIF(excluded.platform, ''), devices.platform)",
         (device_id, platform or "", now, now),
     )
@@ -89,20 +89,47 @@ def add_follow(device_id: str, kind: str, value: str, min_discount: int = 0) -> 
             "INSERT INTO device_follows (device_id, kind, value, min_discount, created_at) VALUES (?, ?, ?, ?, ?)",
             (device_id, kind, value, int(min_discount or 0), time.time()),
         ).lastrowid
+    # Again after the write: follows travel inside the device row in Turso.
+    db.execute("UPDATE devices SET turso_dirty = 1 WHERE device_id = ?", (device_id,))
     return dict(db.query_one("SELECT id, kind, value, min_discount, created_at FROM device_follows WHERE id = ?",
                              (follow_id,)))
 
 
 def remove_follow(device_id: str, follow_id: int) -> bool:
-    return bool(db.execute("DELETE FROM device_follows WHERE id = ? AND device_id = ?",
-                           (follow_id, device_id)).rowcount)
+    removed = bool(db.execute("DELETE FROM device_follows WHERE id = ? AND device_id = ?",
+                              (follow_id, device_id)).rowcount)
+    if removed:
+        db.execute("UPDATE devices SET turso_dirty = 1 WHERE device_id = ?", (device_id,))
+    return removed
+
+
+BROADCAST_FEED_WINDOW = 3 * 86400  # a phone offline longer than this skips old broadcasts
 
 
 def feed(device_id: str, since: float = 0.0, limit: int = 20) -> List[Dict[str, Any]]:
-    return [dict(r) for r in db.query(
+    """The device's own items plus every broadcast (hot deals, admin messages).
+
+    Broadcasts live in one shared table rather than a copy per device, so a
+    phone that registered after the send — or was lost from `devices` in a
+    restart — still gets them the next time it polls. Their ids carry a "b"
+    prefix so they never collide with a device item's id (the app de-dupes
+    on id).
+    """
+    own = [dict(r) for r in db.query(
         "SELECT id, kind, title, body, image_url, deal_id, url, expires_at, created_at FROM device_notifications "
         "WHERE device_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT ?",
         (device_id, since, limit))]
+    floor = max(float(since or 0), time.time() - BROADCAST_FEED_WINDOW)
+    shared = []
+    for r in db.query(
+        "SELECT id, kind, title, body, image_url, deal_id, url, expires_at, created_at FROM broadcasts "
+        "WHERE created_at > ? ORDER BY created_at DESC LIMIT ?", (floor, limit)
+    ):
+        item = dict(r)
+        item["id"] = f"b{item['id']}"
+        shared.append(item)
+    items = sorted(own + shared, key=lambda i: float(i.get("created_at") or 0), reverse=True)
+    return items[:limit]
 
 
 def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict[str, Any]] = None,
@@ -131,50 +158,41 @@ def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict
                                      expires_at=expires_at))
 
 
-def broadcast(title: str, body: str, deal: Optional[Dict[str, Any]] = None) -> int:
-    """Admin-triggered: send one message to every device that has ever registered."""
-    ids = [r["device_id"] for r in db.query("SELECT device_id FROM devices")]
-    for device_id in ids:
-        notify(device_id, "broadcast", title, body, deal)
-    return len(ids)
+def _all_tokens() -> List[str]:
+    rows = db.query("SELECT push_token FROM devices WHERE COALESCE(push_token, '') != ''")
+    legacy = db.query("SELECT token FROM push_tokens")  # signed-in (older) app installs
+    return list(dict.fromkeys([r["push_token"] for r in rows] + [r["token"] for r in legacy]))
 
 
-def broadcast_best(candidate_ids: List[str], min_score: float) -> Optional[Dict[str, Any]]:
-    """Auto-triggered once per ingest cycle: the single standout new deal, to
-    every device — no digest toggle, no follow match required to receive it.
+async def broadcast(title: str, body: str, deal: Optional[Dict[str, Any]] = None,
+                    kind: str = "broadcast") -> Dict[str, Any]:
+    """Send one message to everyone: a shared feed row every device polls, plus
+    a push to every registered token (batched, 100 per Expo request).
 
-    `candidate_ids` is this cycle's own new_deal_ids, never "best deal we
-    have," so the same favourite never gets re-broadcast cycle after cycle.
-    Only fires when something actually crosses `min_score` — most cycles find
-    nothing that good, and this must not become a notification every 40 min
-    regardless of quality. Picked after liveness/scoring so a dead or
-    since-retired card is never the one pushed.
+    Returns what actually happened, for the admin panel:
+      {"devices", "tokens", "accepted", "failed", "errors": {code: n}, "broadcast_id"}
     """
-    if not candidate_ids:
-        return None
-    marks = ",".join("?" for _ in candidate_ids)
-    row = db.query_one(
-        f"SELECT * FROM deals WHERE id IN ({marks}) AND status = 'live' "
-        f"AND COALESCE(image_url, '') != '' ORDER BY score DESC LIMIT 1",
-        candidate_ids,
+    deal = deal or {}
+    image = absolute_image(deal.get("image_url"))
+    deal_id = deal.get("id") or ""
+    url = f"/?deal={deal_id}" if deal_id else "/"
+    expires_at = float(deal.get("expires_at") or 0)
+    cur = db.execute(
+        "INSERT INTO broadcasts (kind, title, body, image_url, deal_id, url, expires_at, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (kind, title, body, image, deal_id, url, expires_at, time.time()),
     )
-    if not row or float(row["score"] or 0) < min_score:
-        return None
-    deal = dict(row)
-    bits = [_money(deal.get("price"))] if deal.get("price") else []
-    if deal.get("discount_pct"):
-        bits.append(f"{deal['discount_pct']}% off")
-    if deal.get("store"):
-        bits.append(str(deal["store"]).title())
-    if deal.get("is_lowest"):
-        bits.append("lowest we've ever seen")
-    name = (deal.get("title") or "").strip()
-    if len(name) > 60:
-        name = name[:59].rstrip() + "…"
-    title = f"🔥 {name}" if name else "🔥 A deal just landed"
-    body = " · ".join(bits) or "Worth a look"
-    sent = broadcast(title, body, deal)
-    return {"deal_id": deal["id"], "score": deal["score"], "devices": sent}
+    devices_count = db.query_one("SELECT COUNT(*) AS c FROM devices")["c"]
+    from . import push
+    report = await push.send_push_detailed(_all_tokens(), title, body, url, deal_id or None,
+                                           image=image, kind=kind, expires_at=expires_at)
+    log.info("Broadcast %r: %d devices, %d tokens, %d accepted, errors=%s",
+             title, devices_count, report["tokens"], report["accepted"], report["errors"])
+    return {"devices": devices_count, "broadcast_id": cur.lastrowid, **report}
+
+
+def prune_broadcasts() -> None:
+    db.execute("DELETE FROM broadcasts WHERE created_at < ?", (time.time() - FEED_RETENTION_DAYS * 86400,))
 
 
 def _money(value: Any) -> str:
@@ -286,3 +304,4 @@ def weekly_digest_tick() -> int:
 
 def prune() -> None:
     db.execute("DELETE FROM device_notifications WHERE created_at < ?", (time.time() - FEED_RETENTION_DAYS * 86400,))
+    prune_broadcasts()
