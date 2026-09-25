@@ -435,6 +435,11 @@ def connect() -> Any:
         # table can't be pushed to until its owner happens to open the app.
         if "turso_dirty" not in device_cols:
             _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN turso_dirty INTEGER DEFAULT 1")
+        # App builds that pick their own notification times on the phone: the
+        # server stops pushing routine alerts to them directly (they read the
+        # feed instead). Not backed up — the app re-sends it on every launch.
+        if "smart_schedule" not in device_cols:
+            _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN smart_schedule INTEGER DEFAULT 0")
         notif_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(device_notifications)").fetchall()}
         if "expires_at" not in notif_cols:
             _safe_exec(_conn, "ALTER TABLE device_notifications ADD COLUMN expires_at REAL DEFAULT 0")

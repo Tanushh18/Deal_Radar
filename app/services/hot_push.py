@@ -216,14 +216,17 @@ async def send_best(fresh_ids: Iterable[str] = (), force: bool = False, reason: 
     if not force and is_quiet():
         return {"status": "skipped", "why": "quiet hours"}
     last = float(db.get_meta("last_hot_push_at") or 0)
-    if not force and time.time() - last < MIN_GAP_SECONDS:
+    min_gap = max(MIN_GAP_SECONDS, settings.hot_push_min_gap_minutes * 60)
+    if not force and time.time() - last < min_gap:
         return {"status": "skipped", "why": "too soon after the last push"}
     ranked = candidates(fresh_ids, limit=1)
     if not ranked:
         return {"status": "skipped", "why": "no eligible deal (live, with photo, above the score bar, not pushed in 48h)"}
     deal, women, rank = ranked[0]
     title, body = compose(deal, women)
-    report = await devices.broadcast(title, body, deal, kind="hot_deal")
+    # An admin pressing "send now" means now, on every phone — including the ones
+    # that otherwise pick their own moment (they treat "broadcast" as instant).
+    report = await devices.broadcast(title, body, deal, kind="broadcast" if force else "hot_deal")
     now = time.time()
     db.execute(
         "INSERT INTO push_log (product_key, deal_id, title, women, tokens, accepted, sent_at) "

@@ -38,7 +38,8 @@ def absolute_image(image_url: Optional[str]) -> str:
 
 
 def register(device_id: str, platform: str = "", push_token: Optional[str] = None,
-             digest: Optional[bool] = None, digest_hour: Optional[int] = None) -> Dict[str, Any]:
+             digest: Optional[bool] = None, digest_hour: Optional[int] = None,
+             smart_schedule: Optional[bool] = None) -> Dict[str, Any]:
     now = time.time()
     db.execute(
         "INSERT INTO devices (device_id, platform, created_at, last_seen_at, turso_dirty) VALUES (?, ?, ?, ?, 1) "
@@ -52,6 +53,8 @@ def register(device_id: str, platform: str = "", push_token: Optional[str] = Non
         db.execute("UPDATE devices SET digest = ? WHERE device_id = ?", (1 if digest else 0, device_id))
     if digest_hour is not None:
         db.execute("UPDATE devices SET digest_hour = ? WHERE device_id = ?", (int(digest_hour) % 24, device_id))
+    if smart_schedule is not None:
+        db.execute("UPDATE devices SET smart_schedule = ? WHERE device_id = ?", (1 if smart_schedule else 0, device_id))
     return get(device_id)
 
 
@@ -105,6 +108,17 @@ def remove_follow(device_id: str, follow_id: int) -> bool:
 
 BROADCAST_FEED_WINDOW = 3 * 86400  # a phone offline longer than this skips old broadcasts
 
+# Deal fields ride along so the app can write its own copy ("{brand} at {discount}% off").
+_FEED_COLS = (
+    "n.id, n.kind, n.title, n.body, n.image_url, n.deal_id, n.url, n.expires_at, n.created_at, "
+    "d.price, d.mrp, d.discount_pct, d.brand, d.category, d.subcategory, d.store, d.score, "
+    "d.title AS deal_title"
+)
+
+# Kinds the user explicitly asked to hear about the moment they happen; every
+# other kind waits for the phone's own schedule on smart_schedule devices.
+INSTANT_KINDS = ("price_drop", "broadcast")
+
 
 def feed(device_id: str, since: float = 0.0, limit: int = 20) -> List[Dict[str, Any]]:
     """The device's own items plus every broadcast (hot deals, admin messages).
@@ -116,14 +130,14 @@ def feed(device_id: str, since: float = 0.0, limit: int = 20) -> List[Dict[str, 
     on id).
     """
     own = [dict(r) for r in db.query(
-        "SELECT id, kind, title, body, image_url, deal_id, url, expires_at, created_at FROM device_notifications "
-        "WHERE device_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT ?",
+        f"SELECT {_FEED_COLS} FROM device_notifications n LEFT JOIN deals d ON d.id = n.deal_id "
+        "WHERE n.device_id = ? AND n.created_at > ? ORDER BY n.created_at DESC LIMIT ?",
         (device_id, since, limit))]
     floor = max(float(since or 0), time.time() - BROADCAST_FEED_WINDOW)
     shared = []
     for r in db.query(
-        "SELECT id, kind, title, body, image_url, deal_id, url, expires_at, created_at FROM broadcasts "
-        "WHERE created_at > ? ORDER BY created_at DESC LIMIT ?", (floor, limit)
+        f"SELECT {_FEED_COLS} FROM broadcasts n LEFT JOIN deals d ON d.id = n.deal_id "
+        "WHERE n.created_at > ? ORDER BY n.created_at DESC LIMIT ?", (floor, limit)
     ):
         item = dict(r)
         item["id"] = f"b{item['id']}"
@@ -145,7 +159,9 @@ def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (device_id, kind, title, body, image, deal_id, url, expires_at, time.time()),
     )
-    row = db.query_one("SELECT push_token FROM devices WHERE device_id = ?", (device_id,))
+    row = db.query_one("SELECT push_token, smart_schedule FROM devices WHERE device_id = ?", (device_id,))
+    if row and row["smart_schedule"] and kind not in INSTANT_KINDS:
+        return  # the phone reads it from its feed and picks the moment itself
     tokens = [t for t in {(row["push_token"] if row else ""), extra_token} if t]
     if not tokens:
         return
@@ -158,8 +174,9 @@ def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict
                                      expires_at=expires_at))
 
 
-def _all_tokens() -> List[str]:
-    rows = db.query("SELECT push_token FROM devices WHERE COALESCE(push_token, '') != ''")
+def _all_tokens(include_smart: bool = True) -> List[str]:
+    smart = "" if include_smart else " AND COALESCE(smart_schedule, 0) = 0"
+    rows = db.query(f"SELECT push_token FROM devices WHERE COALESCE(push_token, '') != ''{smart}")
     legacy = db.query("SELECT token FROM push_tokens")  # signed-in (older) app installs
     return list(dict.fromkeys([r["push_token"] for r in rows] + [r["token"] for r in legacy]))
 
@@ -184,7 +201,8 @@ async def broadcast(title: str, body: str, deal: Optional[Dict[str, Any]] = None
     )
     devices_count = db.query_one("SELECT COUNT(*) AS c FROM devices")["c"]
     from . import push
-    report = await push.send_push_detailed(_all_tokens(), title, body, url, deal_id or None,
+    tokens = _all_tokens(include_smart=kind in INSTANT_KINDS)
+    report = await push.send_push_detailed(tokens, title, body, url, deal_id or None,
                                            image=image, kind=kind, expires_at=expires_at)
     log.info("Broadcast %r: %d devices, %d tokens, %d accepted, errors=%s",
              title, devices_count, report["tokens"], report["accepted"], report["errors"])

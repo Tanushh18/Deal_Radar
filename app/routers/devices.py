@@ -18,6 +18,7 @@ class RegisterPayload(BaseModel):
     push_token: Optional[str] = None
     digest: Optional[bool] = None
     digest_hour: Optional[int] = Field(None, ge=0, le=23)
+    smart_schedule: Optional[bool] = None
 
 
 class FollowPayload(BaseModel):
@@ -46,7 +47,7 @@ async def register(payload: RegisterPayload):
     if token and not push.is_expo_token(token):
         raise HTTPException(status_code=400, detail="Not a valid Expo push token.")
     return {"device": devices.register(_device(payload.device_id), payload.platform, token,
-                                       payload.digest, payload.digest_hour)}
+                                       payload.digest, payload.digest_hour, payload.smart_schedule)}
 
 
 @router.get("/settings")

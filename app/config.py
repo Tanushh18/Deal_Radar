@@ -89,6 +89,9 @@ class Settings:
         # moments inside the cycle (never on a fixed clock), and the IST hours
         # when none go out ("23-8" = quiet from 11pm to 8am; "" = never quiet).
         self.pushes_per_cycle: int = int(os.getenv("PUSHES_PER_CYCLE", "2"))
+        # Floor between two hot-deal pushes, whatever the cycle length — a short
+        # POLL_INTERVAL_SECONDS must never turn into a push every few minutes.
+        self.hot_push_min_gap_minutes: int = int(os.getenv("HOT_PUSH_MIN_GAP_MINUTES", "60"))
         self.push_quiet_hours: str = os.getenv("PUSH_QUIET_HOURS", "23-8").strip()
 
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---

@@ -22,7 +22,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app import auth, db  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services import ingest, parser, push, store, telegram  # noqa: E402
+from app.services import devices, hot_push, ingest, parser, push, store, telegram  # noqa: E402
 
 PASS, FAIL = "\033[92m✓\033[0m", "\033[91m✗\033[0m"
 failures = []
@@ -161,6 +161,46 @@ def main() -> int:
     print("\n=== 6. PRUNE ===")
     db.execute("UPDATE notifications SET created_at = ? WHERE title = 'n0'", (time.time() - 31 * 86400,))
     check("old notifications pruned", push.prune_notifications() == 1)
+
+    print("\n=== 7. SMART-SCHEDULE DEVICES ===")
+    token_smart = "ExponentPushToken[smartsmartsmartsmart00]"
+    token_old = "ExponentPushToken[oldoldoldoldoldold0000]"
+    r = anon.post("/api/devices/register", json={"device_id": "smart-device-1", "platform": "android",
+                                                  "push_token": token_smart, "smart_schedule": True})
+    check("register accepts smart_schedule", r.status_code == 200, r.text)
+    devices.register("old-device-1", "android", token_old)
+    check("smart flag stored",
+          db.query_one("SELECT smart_schedule s FROM devices WHERE device_id='smart-device-1'")["s"] == 1)
+
+    async def notify_and_settle(device_id, kind):
+        devices.notify(device_id, kind, "t", "b", dict(db.query_one("SELECT * FROM deals WHERE id=?", (deal["id"],))))
+        await asyncio.sleep(0.05)
+
+    push_calls.clear()
+    asyncio.run(notify_and_settle("smart-device-1", "follow"))
+    check("routine alert: no direct push to a smart device", not push_calls, str(push_calls))
+    asyncio.run(notify_and_settle("smart-device-1", "price_drop"))
+    check("price_drop still pushes instantly", len(push_calls) == 1, str(len(push_calls)))
+    push_calls.clear()
+    asyncio.run(notify_and_settle("old-device-1", "follow"))
+    check("old app builds still get the direct push", len(push_calls) == 1, str(len(push_calls)))
+
+    push_calls.clear()
+    asyncio.run(devices.broadcast("hot", "b", dict(db.query_one("SELECT * FROM deals WHERE id=?", (deal["id"],))),
+                                  kind="hot_deal"))
+    sent_to = {m["to"] for batch in push_calls for m in batch}
+    check("hot_deal broadcast skips smart devices", token_smart not in sent_to and token_old in sent_to, str(sent_to))
+
+    push_calls.clear()
+    result = asyncio.run(hot_push.send_best(force=True, reason="admin"))
+    sent_to = {m["to"] for batch in push_calls for m in batch}
+    check("admin 'send now' reaches smart devices instantly too",
+          result.get("status") == "sent" and token_smart in sent_to and token_old in sent_to, f"{result} {sent_to}")
+
+    items = anon.get("/api/devices/feed", params={"device_id": "smart-device-1"}).json()["items"]
+    own = [i for i in items if i["kind"] == "follow"]
+    check("feed carries deal fields for on-phone copy",
+          own and own[0]["price"] == 1299 and own[0]["discount_pct"] == 56 and "category" in own[0], str(own[:1]))
 
     print("\n" + "=" * 52)
     if failures:
