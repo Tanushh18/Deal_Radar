@@ -252,6 +252,8 @@ async def _resolve_is_safe(url: str) -> bool:
 
 _AVAILABILITY_RE = re.compile(r'"availability"\s*:\s*"(?:https?://schema\.org/)?([A-Za-z]+)"', re.I)
 _LD_PRICE_RE = re.compile(r'"(?:price|lowPrice)"\s*:\s*"?([0-9][0-9,]*(?:\.[0-9]+)?)"?', re.I)
+_RATING_RE = re.compile(r'"ratingValue"\s*:\s*"?([0-9]+(?:\.[0-9]+)?)"?', re.I)
+_REVIEWS_RE = re.compile(r'"(?:reviewCount|ratingCount)"\s*:\s*"?([0-9][0-9,]*)"?', re.I)
 _BLOCK_MARKERS = ("captcha", "robot check", "are you a human", "access denied", "unusual traffic")
 
 
@@ -279,7 +281,74 @@ def read_product_page(html: str) -> Dict[str, Any]:
         except ValueError:
             price = None
     blocked = stock is None and any(m in low for m in _BLOCK_MARKERS)
-    return {"stock": stock, "price": price, "blocked": blocked}
+    rating = reviews = None
+    rating_match = _RATING_RE.search(html)
+    if rating_match:
+        try:
+            rating = float(rating_match.group(1))
+        except ValueError:
+            rating = None
+    count_match = _REVIEWS_RE.search(html)
+    if count_match:
+        try:
+            reviews = int(count_match.group(1).replace(",", ""))
+        except ValueError:
+            reviews = None
+    return {"stock": stock, "price": price, "blocked": blocked, "rating": rating, "reviews": reviews}
+
+
+_PROBE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/122.0 Safari/537.36",
+    "Accept-Language": "en-IN,en;q=0.9",
+}
+
+
+async def probe_product(url: str, timeout: float = 6.0) -> Dict[str, Any]:
+    """Open a product page right now and report what it says.
+
+    Returns {"status": "live"|"dead"|"unknown", "price", "rating", "reviews", "url"}.
+    "dead" only on hard evidence (404/410, schema.org OutOfStock, or a
+    dead-page marker on an unblocked page); bot walls, timeouts and odd
+    responses are "unknown", never "dead". Every redirect hop is SSRF-checked.
+    """
+    out: Dict[str, Any] = {"status": "unknown", "price": None, "rating": None, "reviews": None, "url": url}
+    if not url:
+        return out
+    try:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=timeout, headers=_PROBE_HEADERS) as client:
+            for _ in range(MAX_REDIRECT_HOPS):
+                if not await _resolve_is_safe(url):
+                    return out
+                async with client.stream("GET", url) as resp:
+                    if resp.status_code in (301, 302, 303, 307, 308) and resp.headers.get("location"):
+                        url = urljoin(url, resp.headers["location"])
+                        out["url"] = url
+                        continue
+                    if resp.status_code in (404, 410):
+                        out["status"] = "dead"
+                        return out
+                    if resp.status_code >= 400:
+                        return out
+                    body = b""
+                    async for chunk in resp.aiter_bytes():
+                        body += chunk
+                        if len(body) >= MAX_PROBE_BYTES:
+                            break
+                html = body.decode("utf-8", errors="ignore")
+                page = read_product_page(html)
+                out.update(price=page["price"], rating=page["rating"], reviews=page["reviews"])
+                if page["stock"] == "out" or (
+                    page["stock"] is None and not page["blocked"]
+                    and any(marker in html.lower() for marker in DEAD_MARKERS)
+                ):
+                    out["status"] = "dead"
+                elif page["stock"] == "in":
+                    out["status"] = "live"
+                return out
+    except (httpx.HTTPError, asyncio.TimeoutError, OSError):
+        pass
+    return out
 
 
 def _set_flag(deal_id: str, flag: str, on: bool) -> None:

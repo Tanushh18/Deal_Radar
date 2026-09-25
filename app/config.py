@@ -89,10 +89,16 @@ class Settings:
         self.tg_post_channel: str = os.getenv("TG_POST_CHANNEL", "").strip()
         # Real-time listener on the reader account (seconds, not the poll cycle).
         self.live_listener: bool = _bool(os.getenv("LIVE_LISTENER", "true"))
-        # What counts as "hot" (any one is enough; fake-MRP deals never are).
-        self.tg_hot_min_discount: int = int(os.getenv("TG_HOT_MIN_DISCOUNT", "60"))
+        # What's good enough to post (see tg_post.assess — fakes never are).
+        # Women's deals (the channel's focus) need less; everything else more.
+        self.tg_women_min_discount: int = int(os.getenv("TG_WOMEN_MIN_DISCOUNT", "50"))
+        self.tg_hot_min_discount: int = int(os.getenv("TG_HOT_MIN_DISCOUNT", "70"))
         self.tg_hot_min_reposts: int = int(os.getenv("TG_HOT_MIN_REPOSTS", "3"))
+        # "🤯 Crazy deal": a women's accessory at or under this price, 70%+ off.
+        self.tg_crazy_max_price: float = float(os.getenv("TG_CRAZY_MAX_PRICE", "299"))
         self.tg_max_posts_per_hour: int = int(os.getenv("TG_MAX_POSTS_PER_HOUR", "20"))
+        # Of those, at most this many non-women deals — the rest are kept for women's.
+        self.tg_other_max_per_hour: int = int(os.getenv("TG_OTHER_MAX_PER_HOUR", "6"))
         # Same product isn't re-posted within this window unless it got cheaper.
         self.tg_repost_cooldown_hours: float = float(os.getenv("TG_REPOST_COOLDOWN_HOURS", "48"))
         # The poll cycle only posts what the live listener missed if it's this fresh.

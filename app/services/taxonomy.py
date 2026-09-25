@@ -36,6 +36,20 @@ CATEGORIES: Dict[str, Dict[str, List[str]]] = {
         "Ethnic Set": ["suit set", "salwar suit", "ethnic set", "co ord set", "coord set"],
         "Innerwear": ["bra", "lingerie", "nightwear", "nighty", "camisole", "innerwear women"],
     },
+    "Women Accessories": {
+        "Jewellery": ["jewellery", "jewelry", "earring", "earrings", "jhumka", "jhumki", "stud earrings",
+                      "necklace", "pendant", "chain for women", "mangalsutra", "bangle", "bangles", "bracelet",
+                      "anklet", "payal", "nose pin", "nose ring", "finger ring", "ring for women", "maang tikka",
+                      "jewellery set", "jewelry set", "choker", "kada for women"],
+        "Handbags": ["handbag", "handbags", "tote bag", "clutch", "purse", "women wallet", "ladies wallet",
+                     "sling bag for women", "women sling bag", "shoulder bag", "potli"],
+        "Watches": ["women watch", "womens watch", "ladies watch", "watch for women", "watches for women",
+                    "analog watch women", "girls watch"],
+        "Sunglasses": ["women sunglasses", "sunglasses for women", "ladies sunglasses", "cat eye sunglasses"],
+        "Hair Accessories": ["hair clip", "hair clips", "claw clip", "scrunchie", "scrunchies", "hair band",
+                             "hairband", "hair pin", "hair accessories", "headband"],
+        "Scarves & Stoles": ["stole", "scarf for women", "women scarf", "shawl"],
+    },
     "Men Fashion": {
         "Shirt": ["shirt", "shirts", "formal shirt", "casual shirt", "check shirt"],
         "T-Shirt": ["tshirt", "t shirt", "t-shirt", "tee", "polo", "oversized tshirt"],
@@ -84,7 +98,7 @@ CATEGORIES: Dict[str, Dict[str, List[str]]] = {
         "Outdoor": ["cricket bat", "football", "badminton", "racket", "cycle", "bicycle", "helmet"],
     },
     "Bags & Luggage": {
-        "Bags": ["backpack", "bag", "handbag", "sling bag", "wallet", "purse", "clutch"],
+        "Bags": ["backpack", "bag", "sling bag", "wallet"],
         "Luggage": ["trolley", "suitcase", "luggage", "duffle", "travel bag"],
     },
     "Books & Stationery": {

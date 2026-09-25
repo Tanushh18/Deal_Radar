@@ -21,7 +21,7 @@ META_KEY = "priority_rule"
 PRESETS: Dict[str, Dict[str, Any]] = {
     "women": {
         "label": "Women",
-        "categories": ["Women Fashion", "Beauty"],
+        "categories": ["Women Fashion", "Women Accessories", "Beauty"],
         "keywords": ["women", "womens", "ladies", "girls", "kurti", "saree", "lehenga", "anarkali", "dupatta",
                      "salwar", "leggings", "lingerie", "handbag", "sling bag", "clutch", "heels", "lipstick",
                      "makeup", "kajal", "eyeliner", "jewellery", "jewelry", "earring", "necklace", "bangles",
