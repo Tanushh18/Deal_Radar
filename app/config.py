@@ -83,7 +83,7 @@ class Settings:
         # --- Auto-broadcast: the single best NEW deal each cycle, pushed to every
         # registered device regardless of digest/follow settings (see devices.broadcast_best). ---
         self.broadcast_hot_deal_enabled: bool = _bool(os.getenv("BROADCAST_HOT_DEAL", "true"))
-        self.broadcast_min_score: float = float(os.getenv("BROADCAST_MIN_SCORE", "80"))
+        self.broadcast_min_score: float = float(os.getenv("BROADCAST_MIN_SCORE", "30"))
 
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
         self.public_url: str = os.getenv("PUBLIC_URL", "").rstrip("/")
