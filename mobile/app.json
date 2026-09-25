@@ -10,7 +10,8 @@
     "backgroundColor": "#080b12",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dealradar.app"
+      "bundleIdentifier": "com.dealradar.app",
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.dealradar.app",
