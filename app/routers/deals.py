@@ -204,9 +204,10 @@ async def similar_deals(deal_id: str, limit: int = Query(8, ge=1, le=24)):
 @router.get("/{deal_id}")
 async def get_deal(deal_id: str):
     row = db.query_one("SELECT * FROM deals WHERE id = ?", (deal_id,))
-    if not row:
+    # Older than the local cache (e.g. opened from an old notification): Turso has it.
+    deal = db.row_to_dict(row) if row else await price_store.remote_deal(deal_id)
+    if not deal:
         raise HTTPException(status_code=404, detail="Deal not found.")
-    deal = db.row_to_dict(row) or {}
     shaped = search.shape(deal)
     shaped["raw_text"] = deal.get("raw_text")
     points = await price_store.history(deal.get("product_key") or "")
@@ -247,7 +248,8 @@ async def report_coupon_dead(deal_id: str, device_id: str = Query(..., max_lengt
 
 @router.get("/{deal_id}/history")
 async def deal_history(deal_id: str):
-    row = db.query_one("SELECT product_key FROM deals WHERE id = ?", (deal_id,))
+    row = db.query_one("SELECT product_key FROM deals WHERE id = ?", (deal_id,)) \
+        or await price_store.remote_deal(deal_id)
     if not row:
         raise HTTPException(status_code=404, detail="Deal not found.")
     # Served from Turso, the full price record (newest HISTORY_LIMIT points).

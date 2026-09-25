@@ -52,13 +52,15 @@ async def lifespan(app: FastAPI):
     if settings.secret_key == "dev-insecure-change-me":
         log.warning("SECRET_KEY is the insecure default — set a real one before deploying.")
 
-    # Render's disk is ephemeral: rebuild the cache on cold start. Turso holds
-    # only price history and price alerts (see turso_backup.py) — history is
-    # read from it on demand, alerts are copied back here. Deals, channels and
-    # settings come back from Google Sheets.
+    # Render's disk is ephemeral: rebuild the cache on cold start. Local
+    # SQLite is only a cache of the last few days: those deals and the price
+    # alerts come back from Turso (the permanent store — price history stays
+    # there and is read on demand). Channels, users and settings come back
+    # from Google Sheets. Without Turso, Sheets restores everything as before.
     loop = asyncio.get_event_loop()
+    turso = None
     try:
-        await loop.run_in_executor(None, turso_backup.restore)
+        turso = await loop.run_in_executor(None, turso_backup.restore, settings.local_cache_days)
     except Exception as exc:  # noqa: BLE001
         log.warning("Turso restore failed: %s", exc)
     turso_backup.start()
@@ -68,17 +70,26 @@ async def lifespan(app: FastAPI):
     # other reason (a transient Sheets error, a quota blip) must not also
     # cost every step after it in the same sequence.
     if sheets.is_enabled():
-        restored = 0
-        try:
-            restored = await loop.run_in_executor(None, sheets.restore_deals)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("Deal restore failed: %s", exc)
+        restored = turso["deals"] if turso else 0
+        if turso is None or turso["deals_empty"]:
+            try:
+                restored = await loop.run_in_executor(None, sheets.restore_deals)
+                if turso is not None:
+                    # Turso's deals table is brand new: seed it with the Sheet's
+                    # whole archive (uploaded in the background; the local cache
+                    # trim waits for each deal to reach Turso before dropping it).
+                    db.execute("UPDATE deals SET turso_dirty = 1")
+                    log.info("Seeding Turso with %d deals from Google Sheets", restored)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Deal restore failed: %s", exc)
 
-        try:
-            points = await loop.run_in_executor(None, sheets.restore_price_history)
-            log.info("Restored %d price-history points from Google Sheets", points)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("Price history restore failed: %s", exc)
+        if turso is None or turso["prices_empty"]:
+            try:
+                points = await loop.run_in_executor(
+                    None, sheets.restore_price_history, turso is not None)
+                log.info("Restored %d price-history points from Google Sheets", points)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Price history restore failed: %s", exc)
 
         try:
             await loop.run_in_executor(None, sheets.restore_settings)

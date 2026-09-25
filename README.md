@@ -57,14 +57,18 @@ and rate-limited (~60 writes/min). Render's free disk is wiped on every restart.
 So Sheets is the source of truth, SQLite is the query index, and the cache is
 rebuilt from Sheets on cold start.
 
-**Turso holds price history and price tracking only.** Every price change goes
-to a `price_points` table keyed `(product_key, seen_at)` (WITHOUT ROWID, so one
-product's history is a single range scan), with a `products` row per item
-carrying its all-time min/max/last price, plus visitors' price alerts. The
-history chart, sparklines and "check price" lookup read from Turso (cached for
-two minutes, falling back to local SQLite if Turso is unreachable). Set
-`TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to enable it. The first boot on
-this schema clears any older Turso data and starts fresh.
+**Turso is the permanent store; local SQLite is a 15-day cache.** Every deal
+is upserted to Turso whenever it changes, along with every price change
+(`price_points`, keyed `(product_key, seen_at)`, WITHOUT ROWID so one product's
+history is a single range scan), a `products` row per item with its all-time
+min/max/last price, and visitors' price alerts. Uploads run every 3 minutes
+from a background thread. Local SQLite keeps only the last `LOCAL_CACHE_DAYS`
+(default 15) of deals plus anything still live, and drops a row only after
+Turso has it. The price chart, sparklines, "check price" lookup, the
+ALL-TIME LOW badge and the fake-MRP check all read full history from Turso,
+and a deal older than the cache still opens from Turso. On a restart the
+cache refills from Turso. If Turso is empty (first boot) it is seeded from
+the Google Sheet. Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to enable it.
 
 ---
 

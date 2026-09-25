@@ -52,6 +52,10 @@ async def lookup(url: str = Query(..., min_length=8, max_length=2000)):
         (key, cleaned, original, resolved, time.time()),
     )
     deals = db.rows_to_dicts(rows)
+    # Past deals beyond the local few-day cache live in Turso.
+    known = {d["id"] for d in deals}
+    deals += [d for d in await price_store.remote_deals_by_key((deals[0]["product_key"] if deals else key) or key)
+              if d["id"] not in known and "not_a_deal" not in (d.get("flags") or [])]
     now = time.time()
     live = [search.shape(d) for d in deals if d.get("status") == "live" and float(d.get("expires_at") or 0) > now]
     archive = [search.shape(d) for d in deals if not (d.get("status") == "live" and float(d.get("expires_at") or 0) > now)]

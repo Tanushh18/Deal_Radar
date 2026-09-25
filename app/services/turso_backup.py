@@ -1,9 +1,10 @@
-"""Turso: the durable home of price history and price tracking — nothing else.
+"""Turso: the permanent store of every deal, its price history, and price alerts.
 
-Deals, channels and settings live in local SQLite and are mirrored to Google
-Sheets. Turso holds only what has to survive forever and be queried by
-product:
+Local SQLite is only a fast cache of the last LOCAL_CACHE_DAYS
+(store.purge_local_cache trims it); Turso keeps everything forever:
 
+  deals         every deal ever parsed, upserted whenever it changes locally;
+                the cache refills from here after a restart.
   price_points  every observed price change, keyed (product_key, seen_at) in a
                 WITHOUT ROWID table — one product's whole history is a single
                 contiguous range scan, and a read touches only the rows it
@@ -15,8 +16,8 @@ product:
                 on Render's wiped-on-restart disk.
 
 Writes go out from a background OS thread (never the asyncio loop) over
-Turso's HTTP pipeline API, many rows per statement. Reads for the history
-view are in price_store.py. If a round fails it's logged and retried next
+Turso's HTTP pipeline API, many rows per statement. Reads (history,
+aged-out deals) are in price_store.py. If a round fails it's logged and retried next
 round; the app never notices.
 """
 from __future__ import annotations
@@ -36,16 +37,32 @@ log = logging.getLogger("dealradar.turso_backup")
 
 BACKUP_INTERVAL_SECONDS = 180
 BATCH_SIZE = 500
+MAX_BATCHES_PER_ROUND = 20
 ROWS_PER_STATEMENT = 100
 REQUEST_TIMEOUT = 20.0
 
-# Bumping this wipes Turso and recreates it with _SCHEMA on the next boot.
-# v2 = price-history/tracking only (v1 mirrored deals/channels/meta too).
-SCHEMA_VERSION = 2
-_OLD_TABLES = ["deals", "price_history", "channels", "meta",
-               "price_points", "products", "price_alerts"]
+# v1 (no dr_schema table) mirrored the whole app DB with colliding ids — it is
+# wiped once. v2 -> v3 only adds the deals table, keeping all price data.
+SCHEMA_VERSION = 3
+_V1_TABLES = ["deals", "price_history", "channels", "meta",
+              "price_points", "products", "price_alerts"]
+
+_DEAL_COLS = [
+    "id", "title", "norm_title", "product_key", "price", "mrp", "discount_pct",
+    "currency", "store", "url", "clean_url", "image_url", "coupon", "category",
+    "subcategory", "brand", "sizes", "channel_id", "channel_title", "message_id",
+    "posted_at", "first_seen_at", "last_seen_at", "expires_at", "repost_count",
+    "channels_seen", "status", "score", "is_lowest", "flags", "raw_text",
+    "search_blob", "resolved_url", "ai_hook", "ai_mrp_reason",
+]
 
 _SCHEMA = [
+    f"CREATE TABLE IF NOT EXISTS deals ({', '.join(c + (' TEXT PRIMARY KEY' if c == 'id' else '') for c in _DEAL_COLS)})",
+    # Product lookups, and the boot-time "last few days" restore, are index
+    # range scans — Turso bills rows read, so no query here scans the table.
+    "CREATE INDEX IF NOT EXISTS idx_deals_pkey ON deals(product_key)",
+    "CREATE INDEX IF NOT EXISTS idx_deals_last_seen ON deals(last_seen_at)",
+    "CREATE INDEX IF NOT EXISTS idx_deals_expires ON deals(expires_at)",
     """CREATE TABLE IF NOT EXISTS price_points (
         product_key TEXT NOT NULL,
         seen_at     INTEGER NOT NULL,
@@ -148,10 +165,11 @@ def _chunks(items: List[Any], size: int) -> Iterable[List[Any]]:
 # --- schema / one-time reset -----------------------------------------
 
 def _ensure_schema(client: httpx.Client) -> None:
-    """Create the schema once per process; wipe Turso if it predates SCHEMA_VERSION.
+    """Create/upgrade the schema once per process.
 
-    The reset only runs when the version check itself *succeeded* and found an
-    older (or no) version — a network error raises before anything is dropped.
+    Only a v1 database (no dr_schema table at all) is wiped; later versions
+    upgrade in place. The version check has to *succeed* first — a network
+    error raises before anything is dropped, so a restart never clears data.
     """
     global _schema_ready
     with _schema_lock:
@@ -164,17 +182,16 @@ def _ensure_schema(client: httpx.Client) -> None:
         if rows_to_dicts(found[0]):
             rows = rows_to_dicts(_pipeline(client, [{"sql": "SELECT MAX(version) AS v FROM dr_schema"}])[0])
             version = int((rows[0].get("v") if rows else 0) or 0)
-        if version < SCHEMA_VERSION:
-            log.warning("Turso schema v%d < v%d — clearing Turso and starting fresh", version, SCHEMA_VERSION)
-            _pipeline(client, [{"sql": f"DROP TABLE IF EXISTS {t}"} for t in _OLD_TABLES + ["dr_schema"]])
-            _pipeline(client, [{"sql": s} for s in _SCHEMA] + [
-                {"sql": "INSERT INTO dr_schema (version) VALUES (?)", "args": [arg(SCHEMA_VERSION)]},
-            ])
-            # Fresh start: only prices seen from now on go up, not the local backlog.
-            db.execute("UPDATE price_history SET turso_synced = 1 WHERE turso_synced = 0")
+        if version == 0:
+            log.warning("Turso holds the old v1 layout — clearing it once and starting fresh")
+            _pipeline(client, [{"sql": f"DROP TABLE IF EXISTS {t}"} for t in _V1_TABLES + ["dr_schema"]])
             db.execute("DELETE FROM turso_outbox")
-        else:
-            _pipeline(client, [{"sql": s} for s in _SCHEMA])
+        statements = [{"sql": s} for s in _SCHEMA]
+        if version < SCHEMA_VERSION:
+            log.info("Turso schema v%d -> v%d", version, SCHEMA_VERSION)
+            statements += [{"sql": "DELETE FROM dr_schema"},
+                           {"sql": "INSERT INTO dr_schema (version) VALUES (?)", "args": [arg(SCHEMA_VERSION)]}]
+        _pipeline(client, statements)
         _schema_ready = True
 
 
@@ -261,6 +278,27 @@ def _push_price_points(client: httpx.Client) -> int:
     return len(rows)
 
 
+def _push_deals(client: httpx.Client) -> int:
+    """Upsert every deal changed locally since its last upload.
+
+    turso_dirty is a change counter bumped by triggers (db.py) whenever a
+    deal is written; it's cleared only if it still holds the value read here,
+    so an edit that lands mid-upload is sent again next round, never lost.
+    """
+    rows = db.query(f"SELECT {', '.join(_DEAL_COLS)}, turso_dirty FROM deals WHERE turso_dirty > 0 LIMIT ?",
+                    (BATCH_SIZE,))
+    if not rows:
+        return 0
+    updates = ", ".join(f"{c} = excluded.{c}" for c in _DEAL_COLS if c != "id")
+    sql = (f"INSERT INTO deals ({', '.join(_DEAL_COLS)}) VALUES ({', '.join('?' * len(_DEAL_COLS))}) "
+           f"ON CONFLICT(id) DO UPDATE SET {updates}")
+    for batch in _chunks(rows, 50):
+        _pipeline(client, [{"sql": sql, "args": [arg(r.get(c)) for c in _DEAL_COLS]} for r in batch])
+        db.execute_many("UPDATE deals SET turso_dirty = 0 WHERE id = ? AND turso_dirty = ?",
+                        [(r["id"], r["turso_dirty"]) for r in batch])
+    return len(rows)
+
+
 def _push_alerts(client: httpx.Client) -> int:
     rows = db.query(f"SELECT id, {', '.join(_ALERT_COLS)} FROM price_alerts WHERE turso_dirty = 1 LIMIT ?",
                     (BATCH_SIZE,))
@@ -282,9 +320,17 @@ def _backup_round() -> None:
     with httpx.Client() as client:
         _ensure_schema(client)
         counts = {}
-        for name, step in (("outbox", _push_outbox), ("prices", _push_price_points), ("alerts", _push_alerts)):
+        for name, step in (("outbox", _push_outbox), ("deals", _push_deals),
+                           ("prices", _push_price_points), ("alerts", _push_alerts)):
+            counts[name] = 0
             try:
-                counts[name] = step(client)
+                # Keep going while there's a backlog (e.g. the first-boot seed
+                # from Sheets), up to MAX_BATCHES_PER_ROUND batches per round.
+                for _ in range(MAX_BATCHES_PER_ROUND):
+                    n = step(client)
+                    counts[name] += n
+                    if n < BATCH_SIZE:
+                        break
             except Exception as exc:  # noqa: BLE001
                 log.warning("Turso %s upload failed: %s", name, exc)
         if any(counts.values()):
@@ -317,28 +363,70 @@ def stop() -> None:
 
 
 ALERT_RESTORE_DAYS = 30
+RESTORE_PAGE = 1000
 
 
-def restore() -> int:
-    """Bring price alerts back from Turso after a cold start. Returns how many.
+def _restore_deals(client: httpx.Client, since: float) -> int:
+    """Copy the deals the local cache should hold (seen in the retention
+    window, or still live) back down."""
+    now = time.time()
+    seen_ids: set = set()
+    count = 0
+    # Keyset-paged on the indexed column itself, so each page is a pure
+    # index range scan (paging by id would let SQLite walk the whole table).
+    for col, start in (("last_seen_at", since), ("expires_at", now)):
+        cursor = start
+        while True:
+            page = rows_to_dicts(_pipeline(client, [{
+                "sql": f"SELECT {', '.join(_DEAL_COLS)} FROM deals WHERE {col} >= ? ORDER BY {col} LIMIT ?",
+                "args": [arg(float(cursor)), arg(RESTORE_PAGE)],
+            }])[0])
+            for row in page:
+                if row["id"] in seen_ids:
+                    continue
+                # Past the window, only still-live deals belong in the cache
+                # (purge_local_cache drops expired/dead ones the same way).
+                if col == "expires_at" and row.get("status") != "live":
+                    continue
+                seen_ids.add(row["id"])
+                row["dirty"] = 0
+                row["turso_dirty"] = 0
+                db.upsert("deals", row, conflict="id")
+                count += 1
+            if len(page) < RESTORE_PAGE or page[-1][col] is None or page[-1][col] == cursor:
+                break
+            cursor = page[-1][col]
+    return count
 
-    Blocking — call via run_in_executor. Price history is *not* copied down:
-    the history view reads it straight from Turso (price_store.py).
+
+def restore(cache_days: float) -> Optional[Dict[str, Any]]:
+    """Refill the local cache from Turso after a cold start.
+
+    Blocking — call via run_in_executor. Brings back the last `cache_days` of
+    deals (plus anything still live) and recent price alerts. Price history
+    is not copied: it's read from Turso on demand (price_store.py).
+    Returns counts plus whether Turso's deals/price tables are still empty
+    (the caller then seeds them from Sheets), or None if Turso is unreachable.
     """
     if not settings.turso_configured:
-        return 0
+        return None
     try:
         with httpx.Client() as client:
             _ensure_schema(client)
-            results = _pipeline(client, [{
-                "sql": f"SELECT {', '.join(_ALERT_COLS)} FROM price_alerts "
-                       "WHERE triggered_at IS NULL OR triggered_at > ?",
-                "args": [arg(time.time() - ALERT_RESTORE_DAYS * 86400)],
-            }])
-        alerts = rows_to_dicts(results[0])
+            results = _pipeline(client, [
+                {"sql": "SELECT EXISTS (SELECT 1 FROM deals) AS e"},
+                {"sql": "SELECT EXISTS (SELECT 1 FROM price_points) AS e"},
+                {"sql": f"SELECT {', '.join(_ALERT_COLS)} FROM price_alerts "
+                        "WHERE triggered_at IS NULL OR triggered_at > ?",
+                 "args": [arg(time.time() - ALERT_RESTORE_DAYS * 86400)]},
+            ])
+            deals_empty = not rows_to_dicts(results[0])[0]["e"]
+            prices_empty = not rows_to_dicts(results[1])[0]["e"]
+            alerts = rows_to_dicts(results[2])
+            deals = 0 if deals_empty else _restore_deals(client, time.time() - cache_days * 86400)
     except Exception as exc:  # noqa: BLE001 - restore must never crash boot
         log.warning("Turso restore failed: %s", exc)
-        return 0
+        return None
 
     restored = 0
     for a in alerts:
@@ -351,6 +439,5 @@ def restore() -> int:
             [a[c] for c in _ALERT_COLS],
         )
         restored += 1
-    if restored:
-        log.info("Restored %d price alerts from Turso", restored)
-    return restored
+    log.info("Restored from Turso: %d deals, %d price alerts", deals, restored)
+    return {"deals": deals, "alerts": restored, "deals_empty": deals_empty, "prices_empty": prices_empty}

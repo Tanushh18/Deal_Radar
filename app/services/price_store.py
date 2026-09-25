@@ -1,4 +1,4 @@
-"""Price history and tracking reads, served from Turso.
+"""Price history and deal reads, served from Turso.
 
 Turso's price_points table is keyed (product_key, seen_at), so one product's
 recent history is a single range scan that reads only the rows returned —
@@ -104,6 +104,29 @@ async def history(product_key: str, limit: int = HISTORY_LIMIT) -> List[Point]:
     return (await history_many([product_key], limit)).get(product_key, [])
 
 
+async def prefetch(keys: List[str]) -> None:
+    """Warm the cache with each product's recent Turso history before ingest
+    saves a batch of deals, so store.price_stats sees more than the local
+    few days. Best-effort: on failure price_stats just uses local points."""
+    if settings.turso_configured and keys:
+        try:
+            await history_many(keys, limit=STATS_WINDOW)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Price prefetch failed: %s", exc)
+
+
+def cached_points(product_key: str) -> List[Point]:
+    """Sync view for the ingest path: prefetched Turso points (any age — they
+    only ever gain newer points, which local has) merged with local ones."""
+    local = _from_local([product_key], STATS_WINDOW, unsynced_only=False)[product_key]
+    hit = _cache.get((product_key, STATS_WINDOW)) or _cache.get((product_key, HISTORY_LIMIT))
+    if not hit:
+        return sorted(local)
+    merged = {int(t): (t, p) for t, p in hit[1]}
+    merged.update({int(t): (t, p) for t, p in local})
+    return sorted(merged.values())[-STATS_WINDOW:]
+
+
 def stats(points: List[Point]) -> Dict[str, Any]:
     """min/max/median over the most recent STATS_WINDOW points."""
     prices = [p for _, p in points[-STATS_WINDOW:] if p]
@@ -123,17 +146,44 @@ async def tracked_product(product_key: str) -> Optional[Dict[str, Any]]:
     if not settings.turso_configured or not product_key:
         return None
     try:
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
-            resp = await client.post(
-                f"{turso_backup.http_url()}/v2/pipeline", headers=turso_backup.auth_headers(),
-                json=turso_backup.pipeline_body([{
-                    "sql": "SELECT * FROM products WHERE product_key = ?",
-                    "args": [turso_backup.arg(product_key)],
-                }]),
-            )
-        resp.raise_for_status()
-        rows = turso_backup.rows_to_dicts(turso_backup.check_results(resp.json())[0])
+        rows = await _query("SELECT * FROM products WHERE product_key = ?", [product_key])
     except Exception as exc:  # noqa: BLE001
         log.warning("Turso product read failed: %s", exc)
         return None
     return rows[0] if rows else None
+
+
+async def _query(sql: str, args: List[Any]) -> List[Dict[str, Any]]:
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+        resp = await client.post(
+            f"{turso_backup.http_url()}/v2/pipeline", headers=turso_backup.auth_headers(),
+            json=turso_backup.pipeline_body([{"sql": sql, "args": [turso_backup.arg(a) for a in args]}]),
+        )
+    resp.raise_for_status()
+    return turso_backup.rows_to_dicts(turso_backup.check_results(resp.json())[0])
+
+
+async def remote_deal(deal_id: str) -> Optional[Dict[str, Any]]:
+    """A deal that has aged out of the local cache, by id (primary-key read).
+    Decoded like db.row_to_dict; None if unknown or Turso is unavailable."""
+    if not settings.turso_configured or not deal_id:
+        return None
+    try:
+        rows = await _query("SELECT * FROM deals WHERE id = ?", [deal_id])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Turso deal read failed: %s", exc)
+        return None
+    return db.row_to_dict(rows[0]) if rows else None
+
+
+async def remote_deals_by_key(product_key: str, limit: int = 20) -> List[Dict[str, Any]]:
+    """Every past deal for one product (indexed read), newest first."""
+    if not settings.turso_configured or not product_key:
+        return []
+    try:
+        rows = await _query("SELECT * FROM deals WHERE product_key = ? ORDER BY last_seen_at DESC LIMIT ?",
+                            [product_key, limit])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Turso deal read failed: %s", exc)
+        return []
+    return db.rows_to_dicts(rows)

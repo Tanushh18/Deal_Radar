@@ -1,8 +1,9 @@
-"""Storage layer — the live database is local SQLite.
+"""Storage layer — the live database is local SQLite, a fast short-term cache.
 
-Render's free disk is wiped on restart, so durable copies live elsewhere:
-deals, channels and settings in Google Sheets (sheets.py); price history and
-price alerts in Turso (turso_backup.py, read back via price_store.py).
+It holds only the last few days of deals (store.purge_local_cache). Every
+deal, its full price history and price alerts are kept permanently in Turso
+(turso_backup.py writes, price_store.py reads); channels, users and settings
+are mirrored to Google Sheets. Render's free disk is wiped on restart either way.
 """
 from __future__ import annotations
 
@@ -371,6 +372,22 @@ def connect() -> Any:
         if "turso_synced" not in ph_cols:
             _safe_exec(_conn, "ALTER TABLE price_history ADD COLUMN turso_synced INTEGER DEFAULT 1")
         _safe_exec(_conn, "CREATE INDEX IF NOT EXISTS idx_ph_turso ON price_history(id) WHERE turso_synced = 0")
+        # Change counter for the Turso deal upload: bumped by these triggers on
+        # every write that marks a deal dirty (the same writes that feed the
+        # Sheet), cleared by turso_backup only if unchanged since it read it.
+        deal_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)").fetchall()}
+        if "turso_dirty" not in deal_cols:
+            _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN turso_dirty INTEGER DEFAULT 0")
+        _safe_exec(_conn, "CREATE INDEX IF NOT EXISTS idx_deals_turso ON deals(id) WHERE turso_dirty > 0")
+        _safe_exec(_conn, "CREATE INDEX IF NOT EXISTS idx_deals_last_seen ON deals(last_seen_at)")
+        _safe_exec(_conn, (
+            "CREATE TRIGGER IF NOT EXISTS trg_deals_turso_ins AFTER INSERT ON deals WHEN NEW.dirty = 1 "
+            "BEGIN UPDATE deals SET turso_dirty = turso_dirty + 1 WHERE id = NEW.id; END"
+        ))
+        _safe_exec(_conn, (
+            "CREATE TRIGGER IF NOT EXISTS trg_deals_turso_upd AFTER UPDATE OF dirty ON deals WHEN NEW.dirty = 1 "
+            "BEGIN UPDATE deals SET turso_dirty = turso_dirty + 1 WHERE id = NEW.id; END"
+        ))
         alert_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(price_alerts)").fetchall()}
         if "turso_dirty" not in alert_cols:
             _safe_exec(_conn, "ALTER TABLE price_alerts ADD COLUMN turso_dirty INTEGER DEFAULT 1")
@@ -455,9 +472,11 @@ def _emergency_free_space() -> None:
         conn = _conn
         if conn is None:
             return
+        # Only rows Turso already has, when Turso is the permanent copy.
+        uploaded = "AND turso_dirty = 0" if settings.turso_configured else ""
         conn.execute(
             "DELETE FROM deals WHERE id IN ("
-            "SELECT id FROM deals WHERE status != 'live' ORDER BY last_seen_at ASC LIMIT 1000)"
+            f"SELECT id FROM deals WHERE status != 'live' {uploaded} ORDER BY last_seen_at ASC LIMIT 1000)"
         )
         # Never a price point Turso doesn't have yet — it's the only durable copy.
         conn.execute(

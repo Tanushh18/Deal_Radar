@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .. import db
-from ..services import price_alerts, ratelimit
+from ..services import price_alerts, price_store, ratelimit
 
 router = APIRouter(prefix="/api/price-alerts", tags=["price-alerts"])
 _limit_create = ratelimit.limit("price-alert-create", max_requests=30, window_seconds=600)
@@ -30,10 +30,11 @@ def _device(device_id: str) -> str:
 async def create_alert(payload: AlertPayload):
     device = _device(payload.device_id)
     row = db.query_one("SELECT * FROM deals WHERE id = ?", (payload.deal_id,))
-    if not row:
+    deal = dict(row) if row else await price_store.remote_deal(payload.deal_id)
+    if not deal:
         raise HTTPException(status_code=404, detail="Deal not found.")
     try:
-        alert = price_alerts.create(device, dict(row), payload.target_price, payload.push_token or "")
+        alert = price_alerts.create(device, deal, payload.target_price, payload.push_token or "")
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return {"status": "ok", "alert": alert}

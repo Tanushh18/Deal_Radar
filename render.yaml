@@ -32,7 +32,7 @@ services:
       - key: PUBLIC_URL
         sync: false             # e.g. https://dealradar.onrender.com — enables self-ping
       - key: TURSO_DATABASE_URL
-        sync: false             # libsql://<db>-<org>.turso.io — permanent price history + price alerts
+        sync: false             # libsql://<db>-<org>.turso.io — permanent store: every deal, price history, alerts
       - key: TURSO_AUTH_TOKEN
         sync: false
 
@@ -50,6 +50,8 @@ services:
         value: "120"
       - key: DEAL_TTL_HOURS
         value: "96"
+      - key: LOCAL_CACHE_DAYS
+        value: "15"             # local SQLite keeps this many days; Turso keeps everything
       - key: BACKFILL_LIMIT
         value: "120"
       - key: INCREMENTAL_LIMIT

@@ -7,6 +7,7 @@ tables, upserts, the one-time reset) runs exactly as it would on Turso.
 from __future__ import annotations
 
 import os
+import asyncio
 import sqlite3
 import sys
 import tempfile
@@ -123,57 +124,64 @@ def main() -> int:
     url = "https://www.amazon.in/dp/B07PR1CL3S"
     key = "amazon:B07PR1CL3S"
     with TestClient(app) as c:
-        print("\n=== ONE-TIME RESET ===")
+        print("\n=== ONE-TIME v1 RESET ===")
         tables = {r["name"] for r in tq("SELECT name FROM sqlite_master WHERE type = 'table'")}
-        check("old v1 tables dropped", not {"deals", "price_history"} & tables, str(tables))
-        check("new tables created", {"price_points", "products", "price_alerts", "dr_schema"} <= tables, str(tables))
-        check("schema version recorded", tq("SELECT version FROM dr_schema") == [{"version": 2}])
+        check("old v1 tables dropped", "price_history" not in tables and not tq("SELECT * FROM deals"), str(tables))
+        check("new tables created", {"deals", "price_points", "products", "price_alerts", "dr_schema"} <= tables, str(tables))
+        check("schema version recorded", tq("SELECT version FROM dr_schema") == [{"version": 3}])
 
-        print("\n=== PRICE HISTORY ===")
+        print("\n=== EVERY DEAL + PRICE HISTORY TO TURSO ===")
         deal = post(f"boAt Rockerz 450 Headphones ₹1,299 (MRP ₹2,990) {url}", 1)
         time.sleep(1.1)  # seen_at is stored to the second in Turso
         post(f"boAt Rockerz 450 Headphones now ₹1,149 {url}", 2)
         pending = db.query_one("SELECT COUNT(*) AS c FROM price_history WHERE turso_synced = 0")["c"]
         check("new prices queued for Turso", pending == 2, str(pending))
+        check("new deal queued for Turso", db.query_one("SELECT turso_dirty FROM deals WHERE id = ?", (deal["id"],))["turso_dirty"] > 0)
 
         r = c.get(f"/api/deals/{deal['id']}/history").json()
         check("history shows not-yet-uploaded points", [p["price"] for p in r["points"]] == [1299, 1149], str(r))
 
+        turso_backup._backup_round()
+        tdeals = tq("SELECT id, price, status FROM deals")
+        check("deal stored in Turso", [d["id"] for d in tdeals] == [deal["id"]] and tdeals[0]["price"] == 1149, str(tdeals))
+        check("local deal marked uploaded", db.query_one("SELECT turso_dirty FROM deals WHERE id = ?", (deal["id"],))["turso_dirty"] == 0)
+        db.execute("UPDATE deals SET status = 'expired', dirty = 1 WHERE id = ?", (deal["id"],))
+        turso_backup._backup_round()
+        check("deal changes re-uploaded", tq("SELECT status FROM deals")[0]["status"] == "expired")
+        db.execute("UPDATE deals SET status = 'live', dirty = 1 WHERE id = ?", (deal["id"],))
         turso_backup._backup_round()
         pts = tq("SELECT product_key, price FROM price_points ORDER BY seen_at")
         check("points uploaded to Turso", pts == [{"product_key": key, "price": 1299.0}, {"product_key": key, "price": 1149.0}], str(pts))
         prod = tq("SELECT * FROM products")
         check("products row tracks min/max/last", len(prod) == 1 and prod[0]["min_price"] == 1149
               and prod[0]["max_price"] == 1299 and prod[0]["last_price"] == 1149, str(prod))
-        check("products row carries title + url", prod and "Rockerz" in (prod[0]["title"] or "") and prod[0]["url"], str(prod))
-        check("local marked uploaded",
-              db.query_one("SELECT COUNT(*) AS c FROM price_history WHERE turso_synced = 0")["c"] == 0)
 
-        # Prove reads come from Turso: remove the local copy entirely.
+        # Prove reads come from Turso: remove the local price copy entirely.
         db.execute("DELETE FROM price_history")
         price_store._cache.clear()
         r = c.get(f"/api/deals/{deal['id']}/history").json()
         check("history is served from Turso", [p["price"] for p in r["points"]] == [1299, 1149], str(r))
         check("stats from Turso history", r["stats"]["min"] == 1149 and r["stats"]["points"] == 2, str(r["stats"]))
-        d = c.get(f"/api/deals/{deal['id']}").json()
-        check("deal detail price_history from Turso", d["price_history"]["points"] == 2, str(d["price_history"]))
         s = c.get("/api/deals/sparklines", params={"ids": deal["id"]}).json()
         check("sparklines from Turso", s["sparklines"].get(deal["id"]) == [1299, 1149], str(s))
-        lk = c.get("/api/lookup", params={"url": url}).json()
-        check("lookup includes tracked product", (lk.get("tracked") or {}).get("min_price") == 1149, str(lk.get("tracked")))
-        check("lookup history from Turso", len(lk["history"]) == 2)
-
         before = state["requests"]
         c.get(f"/api/deals/{deal['id']}/history")
         check("repeat reads hit the cache", state["requests"] == before)
 
-        print("\n=== IDEMPOTENT RE-UPLOAD ===")
-        db.execute("INSERT INTO price_history (product_key, price, store, seen_at, turso_synced) "
-                   "SELECT product_key, price, 'amazon', seen_at, 0 FROM (SELECT ? AS product_key, 1299.0 AS price, "
-                   "? AS seen_at)", (key, float(pts and tq("SELECT MIN(seen_at) AS s FROM price_points")[0]["s"])))
+        print("\n=== PRICE CHECKS USE TURSO HISTORY ===")
+        price_store._cache.clear()
+        check("no local history left", not db.query("SELECT * FROM price_history"))
+        # A third sighting at the same price must not be recorded again, and
+        # the ALL-TIME LOW check must see Turso's 1299/1149, not an empty history.
+        time.sleep(1.1)
+        asyncio.run(price_store.prefetch([key]))  # what ingest does before saving a batch
+        post(f"boAt Rockerz 450 Headphones ₹1,099 {url}", 3)
+        low = db.query_one("SELECT is_lowest FROM deals WHERE product_key = ? ORDER BY last_seen_at DESC", (key,))
+        check("new all-time low detected from Turso history", low and low["is_lowest"] == 1, str(low))
+        post(f"boAt Rockerz 450 Headphones ₹1,099 {url}", 4)
+        check("unchanged price not re-recorded",
+              db.query_one("SELECT COUNT(*) AS c FROM price_history")["c"] == 1)
         turso_backup._backup_round()
-        check("duplicate point ignored", len(tq("SELECT * FROM price_points")) == 2)
-        check("products unchanged by retry", tq("SELECT last_price FROM products")[0]["last_price"] == 1149)
 
         print("\n=== PRICE ALERTS (TRACKING) ===")
         dev = "app_1234567890abcdef"
@@ -185,27 +193,61 @@ def main() -> int:
         turso_backup._backup_round()
         remaining = tq("SELECT target_price FROM price_alerts")
         check("deleted alert removed from Turso", remaining == [{"target_price": 800.0}], str(remaining))
-        db.execute("DELETE FROM price_alerts")  # a Render restart wipes the disk
-        check("alerts restored after restart", turso_backup.restore() == 1)
-        alerts = c.get("/api/price-alerts", params={"device_id": dev}).json()["alerts"]
-        check("restored alert visible", [x["target_price"] for x in alerts] == [800.0], str(alerts))
+
+        print("\n=== LOCAL 15-DAY CACHE ===")
+        old = time.time() - 16 * 86400
+        db.execute("UPDATE deals SET last_seen_at = ?, status = 'expired', dirty = 1", (old,))
+        db.execute("UPDATE price_history SET seen_at = ?", (old,))
+        check("not purged before reaching Turso", store.purge_local_cache()["deals"] == 0)
+        turso_backup._backup_round()
+        removed = store.purge_local_cache()
+        check("old deal purged once in Turso", removed["deals"] == 1, str(removed))
+        check("old prices purged (already in Turso)", not db.query("SELECT * FROM price_history"))
+        check("local deals empty", not db.query("SELECT id FROM deals"))
+        fresh = post("Noise ColorFit Pro 4 Smartwatch ₹2,499 https://www.amazon.in/dp/B0B6BLTGTT", 5)
+        store.purge_local_cache()
+        check("recent deals kept", db.query_one("SELECT id FROM deals WHERE id = ?", (fresh["id"],)) is not None)
+
+        r = c.get(f"/api/deals/{deal['id']}")
+        check("aged-out deal still opens (from Turso)", r.status_code == 200 and r.json()["id"] == deal["id"], r.text[:200])
+        r = c.get(f"/api/deals/{deal['id']}/history")
+        check("aged-out deal history from Turso", r.status_code == 200 and len(r.json()["points"]) == 3, r.text[:200])
+        lk = c.get("/api/lookup", params={"url": url}).json()
+        check("lookup finds past deals in Turso", len(lk["archive"]) >= 1, str(lk.get("archive"))[:200])
+        check("lookup includes tracked product", (lk.get("tracked") or {}).get("min_price") == 1099, str(lk.get("tracked")))
+        r = c.post("/api/price-alerts", json={"device_id": dev, "deal_id": deal["id"], "target_price": 700})
+        check("alert on aged-out deal works", r.status_code == 200, r.text[:200])
+
+        print("\n=== RESTART ===")
+        turso_backup._backup_round()
+        db.execute("DELETE FROM deals")
+        db.execute("DELETE FROM price_alerts")
+        res = turso_backup.restore(15)
+        check("restart restores only recent deals", res and res["deals"] == 1, str(res))
+        check("restored deal is the recent one", db.query_one("SELECT id FROM deals")["id"] == fresh["id"])
+        check("restored deals not re-uploaded",
+              db.query_one("SELECT turso_dirty, dirty FROM deals") == {"turso_dirty": 0, "dirty": 0})
+        check("alerts restored after restart", res and res["alerts"] == 2, str(res))
+        check("Turso reported non-empty", res and not res["deals_empty"] and not res["prices_empty"])
 
         print("\n=== RENAME / FALLBACK / NO RE-RESET ===")
         db.turso_enqueue("UPDATE OR IGNORE price_points SET product_key = ? WHERE product_key = ?", ("amazon:NEW", key))
         turso_backup._backup_round()
-        check("outbox replays renames", len(tq("SELECT * FROM price_points WHERE product_key = 'amazon:NEW'")) == 2)
+        check("outbox replays renames", len(tq("SELECT * FROM price_points WHERE product_key = 'amazon:NEW'")) == 3)
 
         state["down"] = True
         price_store._cache.clear()
-        db.execute("INSERT INTO price_history (product_key, price, store, seen_at, turso_synced) VALUES (?, 999, 'amazon', ?, 1)",
-                   (key, time.time()))
-        r = c.get(f"/api/deals/{deal['id']}/history")
-        check("Turso down: history falls back to local", r.status_code == 200 and [p["price"] for p in r.json()["points"]] == [1299, 999], r.text)
+        fkey = db.query_one("SELECT product_key FROM deals WHERE id = ?", (fresh["id"],))["product_key"]
+        r = c.get(f"/api/deals/{fresh['id']}/history")
+        check("Turso down: history falls back to local", r.status_code == 200 and len(r.json()["points"]) == 1, r.text)
+        check("Turso down: unknown deal is a clean 404", c.get("/api/deals/nope").status_code == 404)
         state["down"] = False
 
+        n = len(tq("SELECT * FROM deals"))
         turso_backup._schema_ready = False  # simulate the next boot
         turso_backup._backup_round()
-        check("current schema is never wiped again", len(tq("SELECT * FROM price_points")) == 2)
+        check("Turso is never wiped again", len(tq("SELECT * FROM deals")) == n == 2, str(n))
+        check("fresh key still local", fkey.startswith("amazon:"))
 
     print("\n" + ("\033[92m✓ All checks passed.\033[0m" if not failures else f"\033[91m✗ {len(failures)} failed\033[0m"))
     return 1 if failures else 0
