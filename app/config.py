@@ -104,7 +104,7 @@ class Settings:
         # A bot (from @BotFather) that is an admin of the channel, allowed to post.
         self.tg_bot_token: str = os.getenv("TG_BOT_TOKEN", "").strip()
         # "@yourchannel" for a public channel, or its numeric id "-100…".
-        self.tg_post_channel: str = os.getenv("TG_POST_CHANNEL", "").strip()
+        self.tg_post_channel: str = _channel_id(os.getenv("TG_POST_CHANNEL", ""))
         # Link the app/website popup opens. Optional for a public channel (built
         # from @username); needed for a private one (its t.me/+invite link).
         self.tg_channel_url: str = os.getenv("TG_CHANNEL_URL", "").strip()
@@ -197,6 +197,18 @@ class Settings:
             return json.loads(raw)
         except json.JSONDecodeError:
             return None
+
+
+def _channel_id(value: str) -> str:
+    """Accept "dealradar18", "@dealradar18" or a t.me link for a public channel,
+    and "-100…" for a private one — the Bot API wants "@name" or the number."""
+    value = value.strip()
+    for prefix in ("https://t.me/", "http://t.me/", "t.me/"):
+        if value.lower().startswith(prefix):
+            value = value[len(prefix):].split("/")[0].split("?")[0]
+    if value and not value.startswith(("@", "-")) and not value.lstrip("-").isdigit():
+        value = "@" + value
+    return value
 
 
 def _bool(value: str) -> bool:
