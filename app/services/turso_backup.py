@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -113,6 +114,27 @@ _FOLLOW_COLS = ["kind", "value", "min_discount", "created_at"]
 
 _thread: Optional[threading.Thread] = None
 _stop = threading.Event()
+
+# What actually happened, for /api/health — the Render log isn't always at hand.
+_state: Dict[str, Any] = {
+    "last_restore": None, "last_restore_error": None,
+    "last_upload_at": None, "last_upload": None, "upload_errors": {},
+    "prices_db_error": None,
+}
+
+
+def _err(exc: BaseException) -> str:
+    # Public on /api/health: keep the status code and reason, drop database URLs.
+    return re.sub(r"(https?|libsql)://\S+", "<turso-url>", f"{type(exc).__name__}: {exc}")[:240]
+
+
+def status() -> Dict[str, Any]:
+    return {
+        "configured": settings.turso_configured,
+        "prices_db_configured": settings.turso2_configured,
+        "upload_thread_running": _thread is not None and _thread.is_alive(),
+        **_state,
+    }
 _schema_lock = threading.Lock()
 _schema_ready = False
 _price_migration_done = False  # set once local meta confirms the move finished
@@ -264,7 +286,9 @@ def _ensure_schema(client: httpx.Client) -> None:
             try:
                 _pipeline(client, [{"sql": _PRICE_POINTS_DDL}], target=target_prices())
                 _price_migration_done = db.get_meta("turso_price_migrated") == "1"
+                _state["prices_db_error"] = None
             except Exception as exc:  # noqa: BLE001
+                _state["prices_db_error"] = _err(exc)
                 log.warning("Turso prices database (TURSO_DB_02) unreachable — deals are unaffected, "
                             "price history won't back up until it's fixed: %s", exc)
                 _price_migration_done = True  # never migrate price points into a database we can't reach
@@ -486,6 +510,7 @@ def _backup_round() -> None:
             except Exception as exc:  # noqa: BLE001
                 log.warning("Turso price_points migration failed: %s", exc)
         counts = {}
+        errors = {}
         for name, step in (("devices", _push_devices), ("outbox", _push_outbox), ("deals", _push_deals),
                            ("prices", _push_price_points), ("alerts", _push_alerts)):
             counts[name] = 0
@@ -498,7 +523,9 @@ def _backup_round() -> None:
                     if n < BATCH_SIZE:
                         break
             except Exception as exc:  # noqa: BLE001
+                errors[name] = _err(exc)
                 log.warning("Turso %s upload failed: %s", name, exc)
+        _state.update(last_upload_at=time.time(), last_upload=counts, upload_errors=errors)
         if any(counts.values()):
             log.info("Turso upload: %s", counts)
 
@@ -511,6 +538,7 @@ def _run_loop() -> None:
         try:
             _backup_round()
         except Exception as exc:  # noqa: BLE001 - a bad round must never kill this thread
+            _state.update(last_upload_at=time.time(), upload_errors={"round": _err(exc)})
             log.warning("Turso upload round failed: %s", exc)
 
 
@@ -602,6 +630,7 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
             saved_devices = rows_to_dicts(results[2])
             deals = 0 if deals_empty else _restore_deals(client, time.time() - cache_days * 86400)
     except Exception as exc:  # noqa: BLE001 - restore must never crash boot
+        _state.update(last_restore_error=_err(exc), last_restore={"at": time.time()})
         log.warning("Turso restore failed: %s", exc)
         return None
 
@@ -618,8 +647,10 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
         restored += 1
     devices_restored = _restore_devices(saved_devices)
     log.info("Restored from Turso: %d deals, %d price alerts, %d devices", deals, restored, devices_restored)
-    return {"deals": deals, "alerts": restored, "devices": devices_restored,
-            "deals_empty": deals_empty, "prices_empty": prices_empty}
+    result = {"deals": deals, "alerts": restored, "devices": devices_restored,
+              "deals_empty": deals_empty, "prices_empty": prices_empty}
+    _state.update(last_restore={**result, "at": time.time(), "window_days": cache_days}, last_restore_error=None)
+    return result
 
 
 def _restore_devices(saved: List[Dict[str, Any]]) -> int:
