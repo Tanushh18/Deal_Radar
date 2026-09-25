@@ -259,8 +259,15 @@ def _ensure_schema(client: httpx.Client) -> None:
         _pipeline(client, statements)
 
         if _split():
-            _pipeline(client, [{"sql": _PRICE_POINTS_DDL}], target=target_prices())
-            _price_migration_done = db.get_meta("turso_price_migrated") == "1"
+            # The prices database is optional: if TURSO_DB_02 is wrong or down,
+            # deals must still upload and restore — only price history suffers.
+            try:
+                _pipeline(client, [{"sql": _PRICE_POINTS_DDL}], target=target_prices())
+                _price_migration_done = db.get_meta("turso_price_migrated") == "1"
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Turso prices database (TURSO_DB_02) unreachable — deals are unaffected, "
+                            "price history won't back up until it's fixed: %s", exc)
+                _price_migration_done = True  # never migrate price points into a database we can't reach
         _schema_ready = True
 
 
@@ -582,11 +589,15 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
                 {"sql": f"SELECT {', '.join(_DEVICE_COLS)} FROM devices WHERE last_seen_at > ?",
                  "args": [arg(time.time() - DEVICE_RESTORE_DAYS * 86400)]},
             ])
-            prices_exists = _pipeline(client, [
-                {"sql": "SELECT EXISTS (SELECT 1 FROM price_points) AS e"},
-            ], target=target_prices())
             deals_empty = not rows_to_dicts(results[0])[0]["e"]
-            prices_empty = not rows_to_dicts(prices_exists[0])[0]["e"]
+            try:
+                prices_exists = _pipeline(client, [
+                    {"sql": "SELECT EXISTS (SELECT 1 FROM price_points) AS e"},
+                ], target=target_prices())
+                prices_empty = not rows_to_dicts(prices_exists[0])[0]["e"]
+            except Exception as exc:  # noqa: BLE001 - a broken prices DB must never block the deal restore
+                log.warning("Turso prices database check failed (deal restore continues): %s", exc)
+                prices_empty = False
             alerts = rows_to_dicts(results[1])
             saved_devices = rows_to_dicts(results[2])
             deals = 0 if deals_empty else _restore_deals(client, time.time() - cache_days * 86400)
