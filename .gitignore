@@ -35,3 +35,4 @@ mobile/android/
 mobile/ios/
 mobile/dist/
 mobile/.expo/
+firebase-debug.log
