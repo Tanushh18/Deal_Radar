@@ -13,7 +13,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .. import auth, db
-from ..services import ingest, priority, public_reader, sheet_mode, sheets, taxonomy, telegram
+from ..config import settings
+from ..services import ingest, live, priority, public_reader, sheet_mode, sheets, taxonomy, telegram
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -100,7 +101,8 @@ async def status():
         (uid or 0,),
     )
     return {"connected": connected, "account": account, "channels": db.rows_to_dicts(rows),
-            "ingest": ingest.state(), "sync_paused": ingest.sync_paused()}
+            "ingest": ingest.state(), "sync_paused": ingest.sync_paused(),
+            "live": {**live.status(), "posting_to": settings.tg_post_channel if settings.tg_post_configured else None}}
 
 
 class PausePayload(BaseModel):

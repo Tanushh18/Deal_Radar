@@ -43,6 +43,18 @@ services:
       - key: TURSO_DB_02_AUTH_TOKEN
         sync: false
 
+      # --- your own Telegram channel: hot deals posted within seconds ---
+      - key: TG_BOT_TOKEN
+        sync: false             # from @BotFather; the bot must be an admin of the channel
+      - key: TG_POST_CHANNEL
+        sync: false             # "@yourchannel" or its numeric id "-100…"
+      - key: TG_HOT_MIN_DISCOUNT
+        value: "60"             # % off that counts as hot (all-time lows always do)
+      - key: TG_HOT_MIN_REPOSTS
+        value: "3"              # or: this many channels posted the same product
+      - key: TG_MAX_POSTS_PER_HOUR
+        value: "20"
+
       # --- reader account: reads every channel it follows (block in /admin) ---
       - key: TELEGRAM_SESSION
         sync: false             # from /admin after logging in (secret — full account access)

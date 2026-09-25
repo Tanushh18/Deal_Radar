@@ -28,7 +28,7 @@ from .routers import devices as devices_router
 from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import watchlists as watchlists_router
-from .services import ingest, public_reader, sheets, store, telegram, turso_backup
+from .services import ingest, live, public_reader, sheets, store, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -142,6 +142,9 @@ async def lifespan(app: FastAPI):
     if settings.telegram_configured and settings.telegram_session:
         _tasks.append(asyncio.create_task(public_reader.bootstrap()))
     _tasks.append(asyncio.create_task(ingest.scheduler_loop()))
+    # Real-time: each new post from a followed channel is handled as it's
+    # published (and hot ones go straight to your Telegram channel).
+    _tasks.append(asyncio.create_task(live.run()))
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 

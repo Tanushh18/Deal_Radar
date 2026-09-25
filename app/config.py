@@ -82,6 +82,22 @@ class Settings:
         self.keepalive_enabled: bool = _bool(os.getenv("KEEPALIVE_ENABLED", "true"))
         self.keepalive_seconds: int = int(os.getenv("KEEPALIVE_SECONDS", "600"))
 
+        # --- Your own Telegram channel: hot deals posted the moment they arrive ---
+        # A bot (from @BotFather) that is an admin of the channel, allowed to post.
+        self.tg_bot_token: str = os.getenv("TG_BOT_TOKEN", "").strip()
+        # "@yourchannel" for a public channel, or its numeric id "-100…".
+        self.tg_post_channel: str = os.getenv("TG_POST_CHANNEL", "").strip()
+        # Real-time listener on the reader account (seconds, not the poll cycle).
+        self.live_listener: bool = _bool(os.getenv("LIVE_LISTENER", "true"))
+        # What counts as "hot" (any one is enough; fake-MRP deals never are).
+        self.tg_hot_min_discount: int = int(os.getenv("TG_HOT_MIN_DISCOUNT", "60"))
+        self.tg_hot_min_reposts: int = int(os.getenv("TG_HOT_MIN_REPOSTS", "3"))
+        self.tg_max_posts_per_hour: int = int(os.getenv("TG_MAX_POSTS_PER_HOUR", "20"))
+        # Same product isn't re-posted within this window unless it got cheaper.
+        self.tg_repost_cooldown_hours: float = float(os.getenv("TG_REPOST_COOLDOWN_HOURS", "48"))
+        # The poll cycle only posts what the live listener missed if it's this fresh.
+        self.tg_post_max_age_minutes: float = float(os.getenv("TG_POST_MAX_AGE_MINUTES", "15"))
+
         # --- AI enrichment (Groq, optional — silently disabled if unset) ---
         self.groq_api_key: str = os.getenv("GROQ_API_KEY", "").strip()
         self.groq_model: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
@@ -123,6 +139,10 @@ class Settings:
     @property
     def turso_configured(self) -> bool:
         return bool(self.turso_url and self.turso_auth_token)
+
+    @property
+    def tg_post_configured(self) -> bool:
+        return bool(self.tg_bot_token and self.tg_post_channel)
 
     @property
     def turso2_configured(self) -> bool:

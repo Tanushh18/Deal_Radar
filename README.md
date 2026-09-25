@@ -82,6 +82,28 @@ then dropped from the main database. Everything else (`deals`, `products`,
 `price_alerts`) always stays in the main database. Without `TURSO_DB_02`,
 `price_points` simply stays in the main database, as it always has.
 
+### Real-time: hot deals to your own Telegram channel
+
+The poll cycle above feeds the website and app. Separately, a **live
+listener** (`app/services/live.py`) subscribes to the reader account's
+Telegram updates, so every post from a followed channel is handled the moment
+it's published: parsed, saved, and — if it's hot — posted to your own
+channel by a bot (`app/services/tg_post.py`), typically within a few seconds.
+
+A deal is **hot** if it's a new all-time low, at least `TG_HOT_MIN_DISCOUNT`
+% off (default 60), or carried by `TG_HOT_MIN_REPOSTS` channels (default 3).
+Deals flagged with a fake MRP are never posted. Each product is posted once;
+it's posted again only after `TG_REPOST_COOLDOWN_HOURS` (48) or if the price
+drops a further 3%. At most `TG_MAX_POSTS_PER_HOUR` (20) posts go out. If the
+listener was disconnected, the poll cycle posts what it missed, but only
+deals under `TG_POST_MAX_AGE_MINUTES` (15) old.
+
+Setup: create a channel, create a bot with @BotFather, add the bot to the
+channel as an admin allowed to post, then set `TG_BOT_TOKEN` and
+`TG_POST_CHANNEL` (`@yourchannel`, or `-100…` for a private channel). To add a
+source channel, follow it with the reader account; it's picked up within 30
+minutes, or immediately with **Refresh from Telegram** in `/admin`.
+
 ---
 
 ## What makes the automation effective

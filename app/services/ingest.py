@@ -30,7 +30,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import parser, price_store, push, ratelimit, search, sheets, store, telegram
+from . import parser, price_store, push, ratelimit, search, sheets, store, telegram, tg_post
 
 log = logging.getLogger(__name__)
 
@@ -169,19 +169,30 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
         # Telegram-hosted photos are fetched lazily through our own endpoint.
         if getattr(message, "photo", None):
             deal["image_url"] = f"/api/deals/{deal['id']}/image"
-        parsed.append(deal)
+        parsed.append((deal, message))
 
     # Local SQLite only keeps a few days; pull these products' longer history
     # from Turso in one round trip so the ALL-TIME LOW and fake-MRP checks in
     # save_deal see it.
-    await price_store.prefetch([d["product_key"] for d in parsed if d.get("product_key")])
-    for deal in parsed:
+    await price_store.prefetch([d["product_key"] for d, _ in parsed if d.get("product_key")])
+    fresh_after = time.time() - settings.tg_post_max_age_minutes * 60
+    for deal, message in parsed:
         outcome = store.save_deal(deal)
         if outcome == "new":
             result["new"] += 1
             result["new_deal_ids"].append(deal["id"])
         elif outcome == "merged":
             result["merged"] += 1
+        # Safety net for the live listener (live.py), which normally posts
+        # within seconds: anything fresh it missed still goes out. Dedupe in
+        # tg_post means a deal the listener already posted is skipped.
+        if settings.tg_post_configured and float(deal.get("posted_at") or 0) >= fresh_after and deal.get("product_key"):
+            saved = db.query_one("SELECT * FROM deals WHERE product_key = ? ORDER BY last_seen_at DESC LIMIT 1",
+                                 (deal["product_key"],))
+            client = await telegram.get_client(source_user)
+            if saved and client is not None:
+                from . import live
+                await tg_post.maybe_publish(db.row_to_dict(saved) or {}, live._photo_loader(client, message))
 
     if highest > watermark:
         db.execute(
@@ -560,6 +571,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             store.purge_housekeeping()
             _purge_local_cache()
             push.prune_notifications()
+            tg_post.prune()
             from . import devices
             devices.digest_tick()
             devices.weekly_digest_tick()
