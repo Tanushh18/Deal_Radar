@@ -1,13 +1,9 @@
-"""Storage layer — Turso (hosted libSQL) only, no local-SQLite fallback.
+"""Storage layer — the live database is local SQLite, a fast short-term cache.
 
-Requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN. Connects as an embedded
-replica: a local file that syncs with the remote, so reads are fast but
-every write is durable in Turso — data survives Render redeploys/restarts
-on the free plan without a paid disk. If either env var is missing, or the
-initial handshake/sync fails, connect() raises and the app refuses to
-start rather than silently running on a throwaway local database.
-
-Google Sheets remains an optional export/viewer, not the source of truth.
+It holds only the last few days of deals (store.purge_local_cache). Every
+deal, its full price history and price alerts are kept permanently in Turso
+(turso_backup.py writes, price_store.py reads); channels, users and settings
+are mirrored to Google Sheets. Render's free disk is wiped on restart either way.
 """
 from __future__ import annotations
 
@@ -231,6 +227,17 @@ CREATE TABLE IF NOT EXISTS coupon_reports (
     PRIMARY KEY (deal_id, device_id)
 );
 CREATE INDEX IF NOT EXISTS idx_coupon_reports_deal ON coupon_reports(deal_id);
+
+-- Deletes/renames waiting to be replayed on Turso (see turso_enqueue).
+-- target: which Turso database this statement runs against — 'main'
+-- (deals/products/price_alerts) or 'prices' (price_points; its own
+-- database when TURSO_DB_02 is set, else the main one).
+CREATE TABLE IF NOT EXISTS turso_outbox (
+    id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    sql    TEXT,
+    args   TEXT,
+    target TEXT DEFAULT 'main'
+);
 """
 
 
@@ -283,6 +290,11 @@ def switch_storage(mode: str) -> str:
     global _conn, _using_turso, _last_sync, _forced_mode
     if mode not in ("turso", "sqlite", "auto"):
         raise ValueError("mode must be 'turso', 'sqlite', or 'auto'")
+    if mode == "turso":
+        # The Turso database now holds only price history and alerts in its
+        # own schema (turso_backup.py); mirroring the whole app DB into it
+        # would clash with that.
+        raise ValueError("Turso stores only price history and alerts now; the live DB stays local SQLite.")
     with _lock:
         previous_conn, previous_using_turso, previous_forced = _conn, _using_turso, _forced_mode
         _forced_mode = None if mode == "auto" else mode
@@ -357,6 +369,35 @@ def connect() -> Any:
         ph_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(price_history)").fetchall()}
         if "synced" not in ph_cols:
             _safe_exec(_conn, "ALTER TABLE price_history ADD COLUMN synced INTEGER DEFAULT 0")
+        # Separate from `synced` (Sheets): each destination tracks its own
+        # progress, or whichever flushes first hides rows from the other.
+        # Defaults to 1 so restored/rolled-up rows never re-upload; only
+        # store.record_price() inserts 0.
+        if "turso_synced" not in ph_cols:
+            _safe_exec(_conn, "ALTER TABLE price_history ADD COLUMN turso_synced INTEGER DEFAULT 1")
+        _safe_exec(_conn, "CREATE INDEX IF NOT EXISTS idx_ph_turso ON price_history(id) WHERE turso_synced = 0")
+        # Change counter for the Turso deal upload: bumped by these triggers on
+        # every write that marks a deal dirty (the same writes that feed the
+        # Sheet), cleared by turso_backup only if unchanged since it read it.
+        deal_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(deals)").fetchall()}
+        if "turso_dirty" not in deal_cols:
+            _safe_exec(_conn, "ALTER TABLE deals ADD COLUMN turso_dirty INTEGER DEFAULT 0")
+        _safe_exec(_conn, "CREATE INDEX IF NOT EXISTS idx_deals_turso ON deals(id) WHERE turso_dirty > 0")
+        _safe_exec(_conn, "CREATE INDEX IF NOT EXISTS idx_deals_last_seen ON deals(last_seen_at)")
+        _safe_exec(_conn, (
+            "CREATE TRIGGER IF NOT EXISTS trg_deals_turso_ins AFTER INSERT ON deals WHEN NEW.dirty = 1 "
+            "BEGIN UPDATE deals SET turso_dirty = turso_dirty + 1 WHERE id = NEW.id; END"
+        ))
+        _safe_exec(_conn, (
+            "CREATE TRIGGER IF NOT EXISTS trg_deals_turso_upd AFTER UPDATE OF dirty ON deals WHEN NEW.dirty = 1 "
+            "BEGIN UPDATE deals SET turso_dirty = turso_dirty + 1 WHERE id = NEW.id; END"
+        ))
+        alert_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(price_alerts)").fetchall()}
+        if "turso_dirty" not in alert_cols:
+            _safe_exec(_conn, "ALTER TABLE price_alerts ADD COLUMN turso_dirty INTEGER DEFAULT 1")
+        outbox_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(turso_outbox)").fetchall()}
+        if "target" not in outbox_cols:
+            _safe_exec(_conn, "ALTER TABLE turso_outbox ADD COLUMN target TEXT DEFAULT 'main'")
         device_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(devices)").fetchall()}
         if "last_weekly_digest_at" not in device_cols:
             _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN last_weekly_digest_at REAL DEFAULT 0")
@@ -438,13 +479,16 @@ def _emergency_free_space() -> None:
         conn = _conn
         if conn is None:
             return
+        # Only rows Turso already has, when Turso is the permanent copy.
+        uploaded = "AND turso_dirty = 0" if settings.turso_configured else ""
         conn.execute(
             "DELETE FROM deals WHERE id IN ("
-            "SELECT id FROM deals WHERE status != 'live' ORDER BY last_seen_at ASC LIMIT 1000)"
+            f"SELECT id FROM deals WHERE status != 'live' {uploaded} ORDER BY last_seen_at ASC LIMIT 1000)"
         )
+        # Never a price point Turso doesn't have yet — it's the only durable copy.
         conn.execute(
             "DELETE FROM price_history WHERE id IN ("
-            "SELECT id FROM price_history ORDER BY seen_at ASC LIMIT 5000)"
+            "SELECT id FROM price_history WHERE turso_synced = 1 ORDER BY seen_at ASC LIMIT 5000)"
         )
         conn.commit()
     except Exception as exc:  # noqa: BLE001 - this IS the last resort; nothing left to fall back to
@@ -503,6 +547,16 @@ def upsert(table: str, row: Dict[str, Any], conflict: str = "id") -> None:
         f"ON CONFLICT({conflict}) DO UPDATE SET {updates}"
     )
     execute(sql, [row[c] for c in cols])
+
+
+def turso_enqueue(sql: str, args: Iterable[Any] = (), target: str = "main") -> None:
+    """Queue a statement to replay on Turso (a delete or rename the upload
+    thread can't infer from flags). target='prices' routes it at the
+    price_points database (TURSO_DB_02 if set, else the main one).
+    No-op when Turso isn't configured."""
+    if settings.turso_configured:
+        execute("INSERT INTO turso_outbox (sql, args, target) VALUES (?, ?, ?)",
+               (sql, json.dumps(list(args)), target))
 
 
 def get_meta(key: str, default: Optional[str] = None) -> Optional[str]:

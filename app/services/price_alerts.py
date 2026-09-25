@@ -55,8 +55,14 @@ def list_for(device_id: str) -> List[Dict[str, Any]]:
 
 
 def delete(device_id: str, alert_id: int) -> bool:
-    return bool(db.execute("DELETE FROM price_alerts WHERE id = ? AND device_id = ?",
-                           (alert_id, device_id)).rowcount)
+    row = db.query_one("SELECT created_at FROM price_alerts WHERE id = ? AND device_id = ?",
+                       (alert_id, device_id))
+    if not row:
+        return False
+    db.execute("DELETE FROM price_alerts WHERE id = ? AND device_id = ?", (alert_id, device_id))
+    db.turso_enqueue("DELETE FROM price_alerts WHERE device_id = ? AND created_at = ?",
+                     (device_id, row["created_at"]))
+    return True
 
 
 def check(product_key: str, price: Optional[float]) -> int:
@@ -74,7 +80,7 @@ def check(product_key: str, price: Optional[float]) -> int:
 
 def _trigger(alerts: List[Dict[str, Any]], price: float) -> None:
     now = time.time()
-    db.execute_many("UPDATE price_alerts SET triggered_at = ?, triggered_price = ? WHERE id = ?",
+    db.execute_many("UPDATE price_alerts SET triggered_at = ?, triggered_price = ?, turso_dirty = 1 WHERE id = ?",
                     [(now, price, a["id"]) for a in alerts])
     from . import devices
     for a in alerts:

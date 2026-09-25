@@ -1,6 +1,7 @@
 """Check price: paste (or share into the app) any product link."""
 from __future__ import annotations
 
+import asyncio
 import time
 from urllib.parse import urljoin
 
@@ -8,7 +9,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .. import db
-from ..services import ingest, parser, ratelimit, search, store
+from ..services import ingest, parser, price_store, ratelimit, search
 from .deals import price_verdict
 
 router = APIRouter(prefix="/api", tags=["lookup"])
@@ -51,14 +52,21 @@ async def lookup(url: str = Query(..., min_length=8, max_length=2000)):
         (key, cleaned, original, resolved, time.time()),
     )
     deals = db.rows_to_dicts(rows)
+    # Past deals beyond the local few-day cache live in Turso.
+    known = {d["id"] for d in deals}
+    deals += [d for d in await price_store.remote_deals_by_key((deals[0]["product_key"] if deals else key) or key)
+              if d["id"] not in known and "not_a_deal" not in (d.get("flags") or [])]
     now = time.time()
     live = [search.shape(d) for d in deals if d.get("status") == "live" and float(d.get("expires_at") or 0) > now]
     archive = [search.shape(d) for d in deals if not (d.get("status") == "live" and float(d.get("expires_at") or 0) > now)]
     product_key = (deals[0]["product_key"] if deals else key) or key
-    stats = store.price_stats(product_key)
-    points = db.query("SELECT price, seen_at FROM price_history WHERE product_key = ? ORDER BY seen_at ASC LIMIT 120",
-                      (product_key,))
+    points, tracked = await asyncio.gather(
+        price_store.history(product_key), price_store.tracked_product(product_key)
+    )
+    stats = price_store.stats(points)
     current = (live or archive or [{}])[0].get("price")
+    if current is None and tracked:
+        current = tracked.get("last_price")
     return {
         "resolved_url": resolved,
         "store": shop,
@@ -66,7 +74,9 @@ async def lookup(url: str = Query(..., min_length=8, max_length=2000)):
         "deals": live,
         "archive": archive,
         "price_stats": stats,
-        "history": [{"price": p["price"], "at": p["seen_at"]} for p in points],
+        "history": price_store.as_json(points),
+        # All-time record from Turso — present even once the deal itself is gone.
+        "tracked": tracked,
         "price_history_url": search.price_history_url({"resolved_url": resolved, "url": original}),
         "verdict": price_verdict(current, stats),
     }

@@ -32,8 +32,15 @@ services:
       - key: PUBLIC_URL
         sync: false             # e.g. https://dealradar.onrender.com — enables self-ping
       - key: TURSO_DATABASE_URL
-        sync: false             # libsql://<db>-<org>.turso.io — durable DB, survives redeploys
+        sync: false             # libsql://<db>-<org>.turso.io — permanent store: deals, product summaries, alerts
       - key: TURSO_AUTH_TOKEN
+        sync: false
+      # Optional second Turso database, just for price_points (every price
+      # change ever seen — by far the fastest-growing table). Without these
+      # two, price_points stays in the main Turso database above instead.
+      - key: TURSO_DB_02
+        sync: false             # libsql://<db2>-<org>.turso.io — a second, separate Turso database
+      - key: TURSO_DB_02_AUTH_TOKEN
         sync: false
 
       # --- reader account: reads every channel it follows (block in /admin) ---
@@ -50,6 +57,8 @@ services:
         value: "120"
       - key: DEAL_TTL_HOURS
         value: "96"
+      - key: LOCAL_CACHE_DAYS
+        value: "15"             # local SQLite keeps this many days; Turso keeps everything
       - key: BACKFILL_LIMIT
         value: "120"
       - key: INCREMENTAL_LIMIT

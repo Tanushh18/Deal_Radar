@@ -768,8 +768,10 @@ def flush_price_history(limit: int = 2000) -> int:
     return len(rows)
 
 
-def restore_price_history() -> int:
-    """Rebuild local price history from the Sheet on a cold start."""
+def restore_price_history(seed_turso: bool = False) -> int:
+    """Rebuild local price history from the Sheet on a cold start.
+
+    seed_turso=True queues every point for upload, to fill an empty Turso."""
     if not connect():
         return 0
     try:
@@ -785,8 +787,13 @@ def restore_price_history() -> int:
         except (KeyError, TypeError, ValueError):
             continue
     if points:
-        db.execute("DELETE FROM price_history")
-        db.execute_many("INSERT INTO price_history (product_key, price, store, seen_at, synced) VALUES (?, ?, ?, ?, 1)", points)
+        # Keep points Turso hasn't received yet; everything else is replaced.
+        db.execute("DELETE FROM price_history WHERE turso_synced = 1")
+        db.execute_many(
+            "INSERT INTO price_history (product_key, price, store, seen_at, synced, turso_synced) "
+            "VALUES (?, ?, ?, ?, 1, ?)",
+            [p + (0 if seed_turso else 1,) for p in points],
+        )
     return len(points)
 
 

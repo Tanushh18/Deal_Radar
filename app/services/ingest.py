@@ -30,7 +30,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import links, parser, push, quality, ratelimit, search, sheets, store, telegram
+from . import links, parser, price_store, push, quality, ratelimit, search, sheets, store, telegram
 
 log = logging.getLogger(__name__)
 
@@ -192,6 +192,11 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
         if getattr(message, "photo", None):
             deal["image_url"] = store.telegram_image_url(deal["id"], int(channel["tg_id"]), int(message.id))
 
+    # Local SQLite only keeps a few days; pull these products' longer history
+    # from Turso in one round trip so the ALL-TIME LOW and fake-MRP checks in
+    # save_deal see it. After resolution: resolving can change product keys.
+    await price_store.prefetch([d["product_key"] for d, _ in candidates if d.get("product_key")])
+    for deal, _ in candidates:
         outcome = store.save_deal(deal, gate=quality.reject_reason if gate_on else None)
         if outcome == "filtered":
             filtered(quality.reject_reason(deal) or "filtered")
@@ -524,18 +529,14 @@ def user_channel_ids(user_id: int) -> List[int]:
 
 
 # --- the cycle ---------------------------------------------------------
-def _purge_old_local_deals_daily() -> None:
-    """Run store.purge_old_local_deals() at most once per calendar day (UTC)."""
-    today = time.strftime("%Y-%m-%d", time.gmtime())
-    if db.get_meta("local_deals_purge_day") == today:
-        return
+def _purge_local_cache() -> None:
+    """Trim local SQLite to the last few days (store.purge_local_cache)."""
     try:
-        removed = store.purge_old_local_deals()
-        if removed:
-            log.info("Local deal purge: removed %d deals already backed up to Turso", removed)
+        removed = store.purge_local_cache()
+        if any(removed.values()):
+            log.info("Local cache trimmed: %s", removed)
     except Exception as exc:  # noqa: BLE001 - never break the ingest cycle
-        log.warning("Local deal purge failed: %s", exc)
-    db.set_meta("local_deals_purge_day", today)
+        log.warning("Local cache trim failed: %s", exc)
 
 
 def _rollup_price_history_daily() -> None:
@@ -587,7 +588,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             alerts = await run_watchlist_alerts()
             purged_ids = store.purge_ancient()
             store.purge_housekeeping()
-            _purge_old_local_deals_daily()
+            _purge_local_cache()
             push.prune_notifications()
             from . import devices
             devices.digest_tick()

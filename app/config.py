@@ -60,10 +60,17 @@ class Settings:
         self.turso_url: str = os.getenv("TURSO_DATABASE_URL", "").strip()
         self.turso_auth_token: str = os.getenv("TURSO_AUTH_TOKEN", "").strip()
         self.turso_sync_seconds: int = int(os.getenv("TURSO_SYNC_SECONDS", "60"))
+        # Second Turso database, just for price_points (the heaviest table —
+        # every price change, forever). Optional: without it, price_points
+        # stays in the main Turso database as before.
+        self.turso2_url: str = os.getenv("TURSO_DB_02", "").strip()
+        self.turso2_auth_token: str = os.getenv("TURSO_DB_02_AUTH_TOKEN", "").strip()
 
         # --- Ingestion ---
         self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "120"))
         self.deal_ttl_hours: int = int(os.getenv("DEAL_TTL_HOURS", "96"))  # 4 days
+        # Local SQLite is a short-term cache; older data lives in Turso/Sheets.
+        self.local_cache_days: float = float(os.getenv("LOCAL_CACHE_DAYS", "15"))
         self.backfill_limit: int = int(os.getenv("BACKFILL_LIMIT", "120"))
         self.incremental_limit: int = int(os.getenv("INCREMENTAL_LIMIT", "60"))
         self.max_channels_per_user: int = int(os.getenv("MAX_CHANNELS_PER_USER", "40"))
@@ -119,6 +126,10 @@ class Settings:
     @property
     def turso_configured(self) -> bool:
         return bool(self.turso_url and self.turso_auth_token)
+
+    @property
+    def turso2_configured(self) -> bool:
+        return bool(self.turso2_url and self.turso2_auth_token)
 
     def service_account_info(self) -> Optional[dict]:
         import json
