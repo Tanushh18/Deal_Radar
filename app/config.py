@@ -69,6 +69,9 @@ class Settings:
         self.max_channels_per_user: int = int(os.getenv("MAX_CHANNELS_PER_USER", "40"))
         self.liveness_check_enabled: bool = _bool(os.getenv("LIVENESS_CHECK", "true"))
         self.liveness_batch: int = int(os.getenv("LIVENESS_BATCH", "40"))
+        # Noise gate (services/quality.py): only single-product posts with a
+        # price, a store link and a photo become cards. "false" shows everything.
+        self.quality_filter: bool = _bool(os.getenv("QUALITY_FILTER", "true"))
 
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
         self.public_url: str = os.getenv("PUBLIC_URL", "").rstrip("/")

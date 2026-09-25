@@ -36,7 +36,7 @@ def check(label: str, ok: bool, detail: str = "") -> None:
 
 def post(text: str, channel: int):
     deal = parser.parse_message(text, channel_id=channel, channel_title="c", message_id=channel, posted_at=time.time())
-    deal["image_url"] = "/api/deals/x/image"
+    deal["image_url"] = store.telegram_image_url(deal["id"], channel, channel)
     store.save_deal(deal)
     return deal
 

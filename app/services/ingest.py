@@ -30,7 +30,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import parser, push, ratelimit, search, sheets, store, telegram
+from . import links, parser, push, quality, ratelimit, search, sheets, store, telegram
 
 log = logging.getLogger(__name__)
 
@@ -124,9 +124,14 @@ def with_hidden_links(text: str, message: Any) -> str:
     return f"{text}\n" + "\n".join(extra) if extra and text else text
 
 
-async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
-    """Pull and store new deals from one channel."""
-    result = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "new_deal_ids": []}
+async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
+    """Pull and store new deals from one channel.
+
+    Per post: parse → cheap text gate → resolve shortlinks (concurrently, only
+    for posts that survived) → attach photo → save through the full gate.
+    """
+    result: Dict[str, Any] = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "filtered": 0,
+                              "resolved": 0, "reasons": {}, "new_deal_ids": []}
     source_user = await _resolve_reader(channel)
     if not source_user:
         return result
@@ -145,7 +150,13 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
         log.warning("Channel %s failed: %s", channel.get("title"), exc)
         return result
 
+    def filtered(reason: str) -> None:
+        result["filtered"] += 1
+        result["reasons"][reason] = result["reasons"].get(reason, 0) + 1
+
+    gate_on = settings.quality_filter
     highest = watermark
+    candidates = []
     for message in messages:
         highest = max(highest, int(message.id or 0))
         text = with_hidden_links(message.message or getattr(message, "raw_text", "") or "", message)
@@ -164,12 +175,28 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
         if deal is None:
             result["skipped"] += 1
             continue
+        reason = quality.text_reason(deal) if gate_on else None
+        if reason:
+            filtered(reason)
+            continue
+        candidates.append((deal, message))
 
+    try:
+        result["resolved"] = await links.resolve_deals([deal for deal, _ in candidates])
+    except Exception as exc:  # noqa: BLE001 — resolution only improves dedup; never block ingest
+        log.warning("Shortlink resolution failed for %s: %s", channel.get("title"), exc)
+
+    for deal, message in candidates:
         # Telegram-hosted photos are fetched lazily through our own endpoint.
+        # Set after resolution: resolving can change the deal's id.
         if getattr(message, "photo", None):
-            deal["image_url"] = f"/api/deals/{deal['id']}/image"
+            deal["image_url"] = store.telegram_image_url(deal["id"], int(channel["tg_id"]), int(message.id))
 
-        outcome = store.save_deal(deal)
+        outcome = store.save_deal(deal, gate=quality.reject_reason if gate_on else None)
+        if outcome == "filtered":
+            filtered(quality.reject_reason(deal) or "filtered")
+            continue
+        store.remember_resolved_url(deal)
         if outcome == "new":
             result["new"] += 1
             result["new_deal_ids"].append(deal["id"])
@@ -531,24 +558,29 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
     async with _cycle_lock:
         started = time.time()
         _state["running"] = True
-        totals = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "channels": 0}
+        totals: Dict[str, Any] = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "filtered": 0,
+                                  "resolved": 0, "channels": 0}
+        reasons: Dict[str, int] = {}
         new_deal_ids: List[str] = []
         try:
             from . import public_reader  # local: public_reader imports routers that import ingest
             await public_reader.maybe_sync_followed()
+            quality.sweep_stored()  # no-op unless the rules changed (or the DB was just restored)
             channels = db.rows_to_dicts(
                 db.query("SELECT * FROM channels WHERE active = 1 ORDER BY last_fetched_at ASC")
             )
             for channel in channels:
                 result = await ingest_channel(channel)
                 totals["channels"] += 1
-                for key in ("fetched", "new", "merged", "skipped"):
-                    totals[key] += result[key]
+                for key in ("fetched", "new", "merged", "skipped", "filtered", "resolved"):
+                    totals[key] += result.get(key, 0)
+                for reason, n in result.get("reasons", {}).items():
+                    reasons[reason] = reasons.get(reason, 0) + n
                 new_deal_ids.extend(result["new_deal_ids"])
                 await asyncio.sleep(0.4)  # be polite to Telegram between channels
 
             expired = store.expire_stale()
-            store.enforce_image_ratio()
+            store.retire_imageless()
             _rollup_price_history_daily()
             store.rescore_all()
             liveness = await verify_links(settings.liveness_batch)
@@ -594,6 +626,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
 
             result = {
                 **totals,
+                "filtered_reasons": reasons,
                 "expired": expired,
                 "purged": len(purged_ids),
                 "purged_from_sheets": 0,

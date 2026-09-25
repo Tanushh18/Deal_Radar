@@ -28,7 +28,7 @@ from .routers import devices as devices_router
 from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import watchlists as watchlists_router
-from .services import ingest, public_reader, sheets, store, telegram, turso_backup
+from .services import ingest, public_reader, quality, sheets, store, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -130,6 +130,15 @@ async def lifespan(app: FastAPI):
                 await asyncio.get_event_loop().run_in_executor(None, sheets.flush_deals)
     except Exception as exc:  # noqa: BLE001
         log.warning("Re-parse of stored deals failed: %s", exc)
+
+    try:
+        swept = quality.sweep_stored()
+        if swept["removed"] or swept["recategorised"] or swept["images_cleared"]:
+            log.info("Quality sweep over stored deals: %s", swept)
+            if sheets.is_enabled():
+                await asyncio.get_event_loop().run_in_executor(None, sheets.flush_deals)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Quality sweep failed: %s", exc)
 
     if settings.telegram_configured and settings.telegram_session:
         _tasks.append(asyncio.create_task(public_reader.bootstrap()))

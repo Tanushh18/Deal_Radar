@@ -187,7 +187,7 @@ def digest_tick() -> int:
         return 0
     top = db.query_one(
         "SELECT * FROM deals WHERE status = 'live' AND expires_at > ? AND first_seen_at > ? "
-        "ORDER BY score DESC LIMIT 1", (time.time(), time.time() - 86400))
+        "AND COALESCE(image_url, '') != '' ORDER BY score DESC LIMIT 1", (time.time(), time.time() - 86400))
     count = db.query_one("SELECT COUNT(*) AS c FROM deals WHERE status = 'live' AND first_seen_at > ?",
                          (time.time() - 86400,))["c"]
     if not top:
@@ -213,7 +213,8 @@ def _best_for_follows(device_id: str) -> Optional[Dict[str, Any]]:
         clauses.append(f"LOWER({r['kind']}) = LOWER(?)")
         params.append(r["value"])
     sql = (
-        "SELECT * FROM deals WHERE status = 'live' AND expires_at > ? AND (" + " OR ".join(clauses) +
+        "SELECT * FROM deals WHERE status = 'live' AND expires_at > ? AND COALESCE(image_url, '') != '' "
+        "AND (" + " OR ".join(clauses) +
         ") ORDER BY score DESC LIMIT 1"
     )
     row = db.query_one(sql, [time.time()] + params)

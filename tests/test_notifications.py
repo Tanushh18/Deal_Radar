@@ -104,6 +104,7 @@ def main() -> int:
         channel_id=1001, channel_title="Loot", message_id=1,
         posted_at=time.time() - 60, ttl_hours=96,
     )
+    deal["image_url"] = "https://img.example/boat.jpg"  # feeds show photo cards only
     store.save_deal(deal)
     push_calls.clear()
     r = alice.post("/api/notifications/test")
