@@ -67,7 +67,7 @@ class Settings:
         self.turso2_auth_token: str = os.getenv("TURSO_DB_02_AUTH_TOKEN", "").strip()
 
         # --- Ingestion ---
-        self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "120"))
+        self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "2400"))  # 40 min
         self.deal_ttl_hours: int = int(os.getenv("DEAL_TTL_HOURS", "96"))  # 4 days
         # Local SQLite is a short-term cache; older data lives in Turso/Sheets.
         self.local_cache_days: float = float(os.getenv("LOCAL_CACHE_DAYS", "15"))
@@ -79,6 +79,11 @@ class Settings:
         # Noise gate (services/quality.py): only single-product posts with a
         # price, a store link and a photo become cards. "false" shows everything.
         self.quality_filter: bool = _bool(os.getenv("QUALITY_FILTER", "true"))
+
+        # --- Auto-broadcast: the single best NEW deal each cycle, pushed to every
+        # registered device regardless of digest/follow settings (see devices.broadcast_best). ---
+        self.broadcast_hot_deal_enabled: bool = _bool(os.getenv("BROADCAST_HOT_DEAL", "true"))
+        self.broadcast_min_score: float = float(os.getenv("BROADCAST_MIN_SCORE", "80"))
 
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
         self.public_url: str = os.getenv("PUBLIC_URL", "").rstrip("/")
