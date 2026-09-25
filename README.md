@@ -70,6 +70,18 @@ and a deal older than the cache still opens from Turso. On a restart the
 cache refills from Turso. If Turso is empty (first boot) it is seeded from
 the Google Sheet. Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to enable it.
 
+**Price history can live in its own, second Turso database.** `price_points`
+is by far the heaviest table — a row per price change, for every product,
+forever, versus one row per product for everything else. Setting
+`TURSO_DB_02` and `TURSO_DB_02_AUTH_TOKEN` to a second, separate Turso
+database moves it there, so it gets its own 5GB/500M-row-read free-tier
+allowance instead of sharing one with deals and alerts. On the first boot
+after setting them, any `price_points` already in the main database are
+migrated across in batches (resumable — safe to restart mid-migration) and
+then dropped from the main database. Everything else (`deals`, `products`,
+`price_alerts`) always stays in the main database. Without `TURSO_DB_02`,
+`price_points` simply stays in the main database, as it always has.
+
 ---
 
 ## What makes the automation effective

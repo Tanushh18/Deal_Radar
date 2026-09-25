@@ -229,10 +229,14 @@ CREATE TABLE IF NOT EXISTS coupon_reports (
 CREATE INDEX IF NOT EXISTS idx_coupon_reports_deal ON coupon_reports(deal_id);
 
 -- Deletes/renames waiting to be replayed on Turso (see turso_enqueue).
+-- target: which Turso database this statement runs against — 'main'
+-- (deals/products/price_alerts) or 'prices' (price_points; its own
+-- database when TURSO_DB_02 is set, else the main one).
 CREATE TABLE IF NOT EXISTS turso_outbox (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    sql  TEXT,
-    args TEXT
+    id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    sql    TEXT,
+    args   TEXT,
+    target TEXT DEFAULT 'main'
 );
 """
 
@@ -391,6 +395,9 @@ def connect() -> Any:
         alert_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(price_alerts)").fetchall()}
         if "turso_dirty" not in alert_cols:
             _safe_exec(_conn, "ALTER TABLE price_alerts ADD COLUMN turso_dirty INTEGER DEFAULT 1")
+        outbox_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(turso_outbox)").fetchall()}
+        if "target" not in outbox_cols:
+            _safe_exec(_conn, "ALTER TABLE turso_outbox ADD COLUMN target TEXT DEFAULT 'main'")
         device_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(devices)").fetchall()}
         if "last_weekly_digest_at" not in device_cols:
             _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN last_weekly_digest_at REAL DEFAULT 0")
@@ -542,11 +549,14 @@ def upsert(table: str, row: Dict[str, Any], conflict: str = "id") -> None:
     execute(sql, [row[c] for c in cols])
 
 
-def turso_enqueue(sql: str, args: Iterable[Any] = ()) -> None:
+def turso_enqueue(sql: str, args: Iterable[Any] = (), target: str = "main") -> None:
     """Queue a statement to replay on Turso (a delete or rename the upload
-    thread can't infer from flags). No-op when Turso isn't configured."""
+    thread can't infer from flags). target='prices' routes it at the
+    price_points database (TURSO_DB_02 if set, else the main one).
+    No-op when Turso isn't configured."""
     if settings.turso_configured:
-        execute("INSERT INTO turso_outbox (sql, args) VALUES (?, ?)", (sql, json.dumps(list(args))))
+        execute("INSERT INTO turso_outbox (sql, args, target) VALUES (?, ?, ?)",
+               (sql, json.dumps(list(args)), target))
 
 
 def get_meta(key: str, default: Optional[str] = None) -> Optional[str]:

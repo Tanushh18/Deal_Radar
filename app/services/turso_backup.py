@@ -1,23 +1,30 @@
 """Turso: the permanent store of every deal, its price history, and price alerts.
 
 Local SQLite is only a fast cache of the last LOCAL_CACHE_DAYS
-(store.purge_local_cache trims it); Turso keeps everything forever:
+(store.purge_local_cache trims it); Turso keeps everything forever, split
+across up to two physical databases:
 
-  deals         every deal ever parsed, upserted whenever it changes locally;
-                the cache refills from here after a restart.
-  price_points  every observed price change, keyed (product_key, seen_at) in a
-                WITHOUT ROWID table — one product's whole history is a single
-                contiguous range scan, and a read touches only the rows it
-                returns (Turso bills per row read).
-  products      one row per tracked product: title/store/url/image plus
-                running min/max/last price, so "what did this cost?" is one
-                primary-key lookup even after the deal left the local cache.
-  price_alerts  visitors' "tell me below ₹X" alerts, which otherwise lived only
-                on Render's wiped-on-restart disk.
+  MAIN database (TURSO_DATABASE_URL) —
+    deals         every deal ever parsed, upserted whenever it changes locally;
+                  the cache refills from here after a restart.
+    products      one row per tracked product: title/store/url/image plus
+                  running min/max/last price, so "what did this cost?" is one
+                  primary-key lookup even after the deal left the local cache.
+    price_alerts  visitors' "tell me below ₹X" alerts, which otherwise lived
+                  only on Render's wiped-on-restart disk.
+
+  PRICES database (TURSO_DB_02, optional) —
+    price_points  every observed price change, keyed (product_key, seen_at) in
+                  a WITHOUT ROWID table — one product's whole history is a
+                  single contiguous range scan, and a read touches only the
+                  rows it returns (Turso bills per row read). This is by far
+                  the fastest-growing table (a row per price change, forever),
+                  which is why it can live in its own database once TURSO_DB_02
+                  is set — otherwise it stays in the main database as before.
 
 Writes go out from a background OS thread (never the asyncio loop) over
-Turso's HTTP pipeline API, many rows per statement. Reads (history,
-aged-out deals) are in price_store.py. If a round fails it's logged and retried next
+Turso's HTTP pipeline API, many rows per statement. Reads (history, aged-out
+deals) are in price_store.py. If a round fails it's logged and retried next
 round; the app never notices.
 """
 from __future__ import annotations
@@ -26,7 +33,7 @@ import json
 import logging
 import threading
 import time
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import httpx
 
@@ -40,10 +47,13 @@ BATCH_SIZE = 500
 MAX_BATCHES_PER_ROUND = 20
 ROWS_PER_STATEMENT = 100
 REQUEST_TIMEOUT = 20.0
+MIGRATION_BATCHES_PER_ROUND = 10  # moving price_points to TURSO_DB_02, if just enabled
 
 # v1 (no dr_schema table) mirrored the whole app DB with colliding ids — it is
-# wiped once. v2 -> v3 only adds the deals table, keeping all price data.
-SCHEMA_VERSION = 3
+# wiped once. v2 -> v3 added the deals table. v3 -> v4 moves price_points out
+# to its own database when TURSO_DB_02 is configured (one-time migration,
+# resumed across restarts via the local turso_price_migrated meta flag).
+SCHEMA_VERSION = 4
 _V1_TABLES = ["deals", "price_history", "channels", "meta",
               "price_points", "products", "price_alerts"]
 
@@ -56,19 +66,13 @@ _DEAL_COLS = [
     "search_blob", "resolved_url", "ai_hook", "ai_mrp_reason",
 ]
 
-_SCHEMA = [
+_SCHEMA_MAIN = [
     f"CREATE TABLE IF NOT EXISTS deals ({', '.join(c + (' TEXT PRIMARY KEY' if c == 'id' else '') for c in _DEAL_COLS)})",
     # Product lookups, and the boot-time "last few days" restore, are index
     # range scans — Turso bills rows read, so no query here scans the table.
     "CREATE INDEX IF NOT EXISTS idx_deals_pkey ON deals(product_key)",
     "CREATE INDEX IF NOT EXISTS idx_deals_last_seen ON deals(last_seen_at)",
     "CREATE INDEX IF NOT EXISTS idx_deals_expires ON deals(expires_at)",
-    """CREATE TABLE IF NOT EXISTS price_points (
-        product_key TEXT NOT NULL,
-        seen_at     INTEGER NOT NULL,
-        price       REAL NOT NULL,
-        PRIMARY KEY (product_key, seen_at)
-    ) WITHOUT ROWID""",
     """CREATE TABLE IF NOT EXISTS products (
         product_key TEXT PRIMARY KEY,
         title TEXT, store TEXT, url TEXT, image_url TEXT, category TEXT,
@@ -85,6 +89,13 @@ _SCHEMA = [
     "CREATE TABLE IF NOT EXISTS dr_schema (version INTEGER NOT NULL)",
 ]
 
+_PRICE_POINTS_DDL = """CREATE TABLE IF NOT EXISTS price_points (
+    product_key TEXT NOT NULL,
+    seen_at     INTEGER NOT NULL,
+    price       REAL NOT NULL,
+    PRIMARY KEY (product_key, seen_at)
+) WITHOUT ROWID"""
+
 _ALERT_COLS = ["device_id", "created_at", "deal_id", "product_key", "title",
                "target_price", "start_price", "push_token", "triggered_at", "triggered_price"]
 
@@ -92,19 +103,54 @@ _thread: Optional[threading.Thread] = None
 _stop = threading.Event()
 _schema_lock = threading.Lock()
 _schema_ready = False
+_price_migration_done = False  # set once local meta confirms the move finished
+
+
+# --- targets: two independent (url, headers) pairs -----------------------
+# "main" (deals/products/price_alerts) always uses TURSO_DATABASE_URL.
+# "prices" (price_points) uses TURSO_DB_02 when set, else falls back to the
+# same database as main — in which case price_points just lives there, as it
+# always has, and the one-time migration below never triggers.
+
+def _url(raw: str) -> str:
+    # libsql://<db>-<org>.turso.io  ->  https://<db>-<org>.turso.io
+    return "https://" + raw[len("libsql://"):] if raw.startswith("libsql://") else raw
+
+
+def _headers(token: str) -> Dict[str, str]:
+    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 
 def http_url() -> str:
-    # libsql://<db>-<org>.turso.io  ->  https://<db>-<org>.turso.io
-    url = settings.turso_url
-    if url.startswith("libsql://"):
-        return "https://" + url[len("libsql://"):]
-    return url
+    return _url(settings.turso_url)
 
 
 def auth_headers() -> Dict[str, str]:
-    return {"Authorization": f"Bearer {settings.turso_auth_token}",
-            "Content-Type": "application/json"}
+    return _headers(settings.turso_auth_token)
+
+
+def prices_http_url() -> str:
+    return _url(settings.turso2_url) if settings.turso2_configured else http_url()
+
+
+def prices_auth_headers() -> Dict[str, str]:
+    return _headers(settings.turso2_auth_token) if settings.turso2_configured else auth_headers()
+
+
+Target = Tuple[str, Dict[str, str]]
+
+
+def target_main() -> Target:
+    return http_url(), auth_headers()
+
+
+def target_prices() -> Target:
+    return prices_http_url(), prices_auth_headers()
+
+
+def _split() -> bool:
+    """True once price_points has (or is getting) its own database."""
+    return settings.turso2_configured
 
 
 def arg(value: Any) -> Dict[str, Any]:
@@ -149,9 +195,11 @@ def rows_to_dicts(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     return [{cols[i]: _cell(row[i]) for i in range(len(cols))} for row in r.get("rows") or []]
 
 
-def _pipeline(client: httpx.Client, statements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _pipeline(client: httpx.Client, statements: List[Dict[str, Any]],
+              target: Optional[Target] = None) -> List[Dict[str, Any]]:
     """POST a batch of statements to Turso's HTTP pipeline API in one round trip."""
-    resp = client.post(f"{http_url()}/v2/pipeline", headers=auth_headers(),
+    url, headers = target or target_main()
+    resp = client.post(f"{url}/v2/pipeline", headers=headers,
                        json=pipeline_body(statements), timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return check_results(resp.json())
@@ -162,16 +210,17 @@ def _chunks(items: List[Any], size: int) -> Iterable[List[Any]]:
         yield items[i:i + size]
 
 
-# --- schema / one-time reset -----------------------------------------
+# --- schema / one-time reset / one-time price_points migration -----------
 
 def _ensure_schema(client: httpx.Client) -> None:
-    """Create/upgrade the schema once per process.
+    """Create/upgrade the main schema once per process, then split off
+    price_points into its own database if TURSO_DB_02 is configured.
 
     Only a v1 database (no dr_schema table at all) is wiped; later versions
     upgrade in place. The version check has to *succeed* first — a network
     error raises before anything is dropped, so a restart never clears data.
     """
-    global _schema_ready
+    global _schema_ready, _price_migration_done
     with _schema_lock:
         if _schema_ready:
             return
@@ -186,28 +235,90 @@ def _ensure_schema(client: httpx.Client) -> None:
             log.warning("Turso holds the old v1 layout — clearing it once and starting fresh")
             _pipeline(client, [{"sql": f"DROP TABLE IF EXISTS {t}"} for t in _V1_TABLES + ["dr_schema"]])
             db.execute("DELETE FROM turso_outbox")
-        statements = [{"sql": s} for s in _SCHEMA]
+        statements = [{"sql": s} for s in _SCHEMA_MAIN]
+        if not _split():
+            # No TURSO_DB_02: price_points lives in the main database, exactly
+            # as it always has.
+            statements.append({"sql": _PRICE_POINTS_DDL})
         if version < SCHEMA_VERSION:
             log.info("Turso schema v%d -> v%d", version, SCHEMA_VERSION)
             statements += [{"sql": "DELETE FROM dr_schema"},
                            {"sql": "INSERT INTO dr_schema (version) VALUES (?)", "args": [arg(SCHEMA_VERSION)]}]
         _pipeline(client, statements)
+
+        if _split():
+            _pipeline(client, [{"sql": _PRICE_POINTS_DDL}], target=target_prices())
+            _price_migration_done = db.get_meta("turso_price_migrated") == "1"
         _schema_ready = True
+
+
+def _migrate_price_points(client: httpx.Client) -> int:
+    """One-time, resumable move of price_points from the main database to
+    TURSO_DB_02, triggered by setting that env var on an existing deployment.
+
+    Each round moves up to MIGRATION_BATCHES_PER_ROUND batches: copy a batch
+    to the prices database, then delete that same batch from main — so a
+    round that's interrupted just resumes with the next SELECT next round,
+    never re-copying or losing rows. Finishes by dropping the now-empty
+    table from main and recording completion in local meta.
+    """
+    global _price_migration_done
+    if _price_migration_done or not _split():
+        return 0
+    moved = 0
+    for _ in range(MIGRATION_BATCHES_PER_ROUND):
+        rows = rows_to_dicts(_pipeline(client, [{
+            "sql": "SELECT product_key, seen_at, price FROM price_points ORDER BY product_key, seen_at LIMIT ?",
+            "args": [arg(BATCH_SIZE)],
+        }])[0])
+        if not rows:
+            _pipeline(client, [{"sql": "DROP TABLE IF EXISTS price_points"}])
+            db.set_meta("turso_price_migrated", "1")
+            _price_migration_done = True
+            log.info("Turso price_points migration to TURSO_DB_02 complete (%d rows moved this run)", moved)
+            break
+        _pipeline(client, [{
+            "sql": "INSERT OR IGNORE INTO price_points (product_key, seen_at, price) VALUES "
+                   + ", ".join("(?, ?, ?)" for _ in rows),
+            "args": [arg(v) for r in rows for v in (r["product_key"], r["seen_at"], r["price"])],
+        }], target=target_prices())
+        # Delete exactly the rows just copied, one OR'd statement — confirms
+        # the copy landed before anything is removed from the source.
+        _pipeline(client, [{
+            "sql": "DELETE FROM price_points WHERE "
+                   + " OR ".join("(product_key = ? AND seen_at = ?)" for _ in rows),
+            "args": [arg(v) for r in rows for v in (r["product_key"], r["seen_at"])],
+        }])
+        moved += len(rows)
+        if len(rows) < BATCH_SIZE:
+            _pipeline(client, [{"sql": "DROP TABLE IF EXISTS price_points"}])
+            db.set_meta("turso_price_migrated", "1")
+            _price_migration_done = True
+            log.info("Turso price_points migration to TURSO_DB_02 complete (%d rows moved this run)", moved)
+            break
+    if moved:
+        log.info("Migrated %d price_points rows to TURSO_DB_02", moved)
+    return moved
 
 
 # --- uploads ----------------------------------------------------------
 
 def _push_outbox(client: httpx.Client) -> int:
-    """Replay queued deletes/renames (see db.turso_enqueue) in order."""
-    rows = db.query("SELECT id, sql, args FROM turso_outbox ORDER BY id LIMIT ?", (BATCH_SIZE,))
+    """Replay queued deletes/renames (see db.turso_enqueue) in order, each
+    against the Turso database its `target` column names."""
+    rows = db.query("SELECT id, sql, args, target FROM turso_outbox ORDER BY id LIMIT ?", (BATCH_SIZE,))
     for batch in _chunks(rows, 50):
-        statements = [{"sql": r["sql"], "args": [arg(a) for a in json.loads(r["args"] or "[]")]} for r in batch]
-        try:
-            _pipeline(client, statements)
-        except RuntimeError as exc:
-            # A statement Turso rejected will be rejected forever — drop it
-            # rather than block every later change behind it.
-            log.warning("Dropping %d Turso outbox statements: %s", len(batch), exc)
+        for tgt_name, tgt in (("main", target_main()), ("prices", target_prices())):
+            group = [r for r in batch if (r["target"] or "main") == tgt_name]
+            if not group:
+                continue
+            statements = [{"sql": r["sql"], "args": [arg(a) for a in json.loads(r["args"] or "[]")]} for r in group]
+            try:
+                _pipeline(client, statements, target=tgt)
+            except RuntimeError as exc:
+                # A statement Turso rejected will be rejected forever — drop it
+                # rather than block every later change behind it.
+                log.warning("Dropping %d Turso outbox statements: %s", len(group), exc)
         ids = [r["id"] for r in batch]
         db.execute(f"DELETE FROM turso_outbox WHERE id IN ({','.join('?' * len(ids))})", ids)
     return len(rows)
@@ -229,6 +340,8 @@ _PRODUCT_UPSERT = (
 
 
 def _push_price_points(client: httpx.Client) -> int:
+    """price_points rows go to the prices database (TURSO_DB_02 if set, else
+    main); the products summary they feed always stays in the main database."""
     rows = db.query(
         "SELECT id, product_key, price, store, seen_at FROM price_history "
         "WHERE turso_synced = 0 ORDER BY id LIMIT ?", (BATCH_SIZE,),
@@ -245,26 +358,29 @@ def _push_price_points(client: httpx.Client) -> int:
         ):
             meta[d["product_key"]] = d  # newest deal wins
 
+    prices_target = target_prices()
     for batch in _chunks(rows, ROWS_PER_STATEMENT):
         points = [(r["product_key"], int(r["seen_at"]), float(r["price"])) for r in batch]
-        statements = [{
+        _pipeline(client, [{
             "sql": "INSERT OR IGNORE INTO price_points (product_key, seen_at, price) VALUES "
                    + ", ".join("(?, ?, ?)" for _ in points),
             "args": [arg(v) for p in points for v in p],
-        }]
+        }], target=prices_target)
+
         # One products upsert per distinct product in the batch, carrying the
         # batch's own first/last/min/max — idempotent, so a retried round
-        # can't skew the running figures.
+        # can't skew the running figures. Always against the main database.
         by_key: Dict[str, List[tuple]] = {}
         stores: Dict[str, str] = {}
         for r, (key, seen, price) in zip(batch, points):
             by_key.setdefault(key, []).append((seen, price))
             stores[key] = r["store"] or stores.get(key) or ""
+        product_statements = []
         for key, obs in by_key.items():
             obs.sort()
             d = meta.get(key) or {}
             low = min(obs, key=lambda o: o[1])
-            statements.append({
+            product_statements.append({
                 "sql": _PRODUCT_UPSERT,
                 "args": [arg(v) for v in (
                     key, d.get("title"), d.get("store") or stores[key], d.get("url"),
@@ -272,7 +388,7 @@ def _push_price_points(client: httpx.Client) -> int:
                     low[1], low[0], max(o[1] for o in obs),
                 )],
             })
-        _pipeline(client, statements)
+        _pipeline(client, product_statements)
         ids = [r["id"] for r in batch]
         db.execute(f"UPDATE price_history SET turso_synced = 1 WHERE id IN ({','.join('?' * len(ids))})", ids)
     return len(rows)
@@ -319,6 +435,13 @@ def _backup_round() -> None:
     # whatever didn't go up is still flagged and goes next round.
     with httpx.Client() as client:
         _ensure_schema(client)
+        if not _price_migration_done and _split():
+            try:
+                moved = _migrate_price_points(client)
+                if moved:
+                    log.info("Turso price_points migration: %d rows moved this round", moved)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Turso price_points migration failed: %s", exc)
         counts = {}
         for name, step in (("outbox", _push_outbox), ("deals", _push_deals),
                            ("prices", _push_price_points), ("alerts", _push_alerts)):
@@ -404,9 +527,10 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
 
     Blocking — call via run_in_executor. Brings back the last `cache_days` of
     deals (plus anything still live) and recent price alerts. Price history
-    is not copied: it's read from Turso on demand (price_store.py).
-    Returns counts plus whether Turso's deals/price tables are still empty
-    (the caller then seeds them from Sheets), or None if Turso is unreachable.
+    is not copied: it's read from Turso (either database) on demand, in
+    price_store.py. Returns counts plus whether Turso's deals/price tables
+    are still empty (the caller then seeds them from Sheets), or None if
+    Turso is unreachable.
     """
     if not settings.turso_configured:
         return None
@@ -415,14 +539,16 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
             _ensure_schema(client)
             results = _pipeline(client, [
                 {"sql": "SELECT EXISTS (SELECT 1 FROM deals) AS e"},
-                {"sql": "SELECT EXISTS (SELECT 1 FROM price_points) AS e"},
                 {"sql": f"SELECT {', '.join(_ALERT_COLS)} FROM price_alerts "
                         "WHERE triggered_at IS NULL OR triggered_at > ?",
                  "args": [arg(time.time() - ALERT_RESTORE_DAYS * 86400)]},
             ])
+            prices_exists = _pipeline(client, [
+                {"sql": "SELECT EXISTS (SELECT 1 FROM price_points) AS e"},
+            ], target=target_prices())
             deals_empty = not rows_to_dicts(results[0])[0]["e"]
-            prices_empty = not rows_to_dicts(results[1])[0]["e"]
-            alerts = rows_to_dicts(results[2])
+            prices_empty = not rows_to_dicts(prices_exists[0])[0]["e"]
+            alerts = rows_to_dicts(results[1])
             deals = 0 if deals_empty else _restore_deals(client, time.time() - cache_days * 86400)
     except Exception as exc:  # noqa: BLE001 - restore must never crash boot
         log.warning("Turso restore failed: %s", exc)

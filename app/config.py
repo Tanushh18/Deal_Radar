@@ -60,6 +60,11 @@ class Settings:
         self.turso_url: str = os.getenv("TURSO_DATABASE_URL", "").strip()
         self.turso_auth_token: str = os.getenv("TURSO_AUTH_TOKEN", "").strip()
         self.turso_sync_seconds: int = int(os.getenv("TURSO_SYNC_SECONDS", "60"))
+        # Second Turso database, just for price_points (the heaviest table —
+        # every price change, forever). Optional: without it, price_points
+        # stays in the main Turso database as before.
+        self.turso2_url: str = os.getenv("TURSO_DB_02", "").strip()
+        self.turso2_auth_token: str = os.getenv("TURSO_DB_02_AUTH_TOKEN", "").strip()
 
         # --- Ingestion ---
         self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "120"))
@@ -118,6 +123,10 @@ class Settings:
     @property
     def turso_configured(self) -> bool:
         return bool(self.turso_url and self.turso_auth_token)
+
+    @property
+    def turso2_configured(self) -> bool:
+        return bool(self.turso2_url and self.turso2_auth_token)
 
     def service_account_info(self) -> Optional[dict]:
         import json

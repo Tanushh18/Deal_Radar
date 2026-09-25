@@ -40,9 +40,9 @@ async def _from_turso(keys: List[str], limit: int) -> Dict[str, List[Point]]:
         "sql": "SELECT seen_at, price FROM price_points WHERE product_key = ? ORDER BY seen_at DESC LIMIT ?",
         "args": [turso_backup.arg(k), turso_backup.arg(limit)],
     } for k in keys]
+    url, headers = turso_backup.target_prices()
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
-        resp = await client.post(f"{turso_backup.http_url()}/v2/pipeline",
-                                 headers=turso_backup.auth_headers(),
+        resp = await client.post(f"{url}/v2/pipeline", headers=headers,
                                  json=turso_backup.pipeline_body(statements))
     resp.raise_for_status()
     results = turso_backup.check_results(resp.json())
@@ -153,10 +153,11 @@ async def tracked_product(product_key: str) -> Optional[Dict[str, Any]]:
     return rows[0] if rows else None
 
 
-async def _query(sql: str, args: List[Any]) -> List[Dict[str, Any]]:
+async def _query(sql: str, args: List[Any], target: Optional[Tuple[str, Dict[str, str]]] = None) -> List[Dict[str, Any]]:
+    url, headers = target or turso_backup.target_main()
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
         resp = await client.post(
-            f"{turso_backup.http_url()}/v2/pipeline", headers=turso_backup.auth_headers(),
+            f"{url}/v2/pipeline", headers=headers,
             json=turso_backup.pipeline_body([{"sql": sql, "args": [turso_backup.arg(a) for a in args]}]),
         )
     resp.raise_for_status()

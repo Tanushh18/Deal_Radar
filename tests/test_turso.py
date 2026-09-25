@@ -128,7 +128,7 @@ def main() -> int:
         tables = {r["name"] for r in tq("SELECT name FROM sqlite_master WHERE type = 'table'")}
         check("old v1 tables dropped", "price_history" not in tables and not tq("SELECT * FROM deals"), str(tables))
         check("new tables created", {"deals", "price_points", "products", "price_alerts", "dr_schema"} <= tables, str(tables))
-        check("schema version recorded", tq("SELECT version FROM dr_schema") == [{"version": 3}])
+        check("schema version recorded", tq("SELECT version FROM dr_schema") == [{"version": 4}])
 
         print("\n=== EVERY DEAL + PRICE HISTORY TO TURSO ===")
         deal = post(f"boAt Rockerz 450 Headphones ₹1,299 (MRP ₹2,990) {url}", 1)

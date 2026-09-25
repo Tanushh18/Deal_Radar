@@ -287,9 +287,10 @@ def save_deal(deal: Dict[str, Any]) -> str:
             "UPDATE price_history SET product_key = ? WHERE product_key = ?", (new_key, old_key)
         )
         db.turso_enqueue(
-            "UPDATE OR IGNORE price_points SET product_key = ? WHERE product_key = ?", (new_key, old_key)
+            "UPDATE OR IGNORE price_points SET product_key = ? WHERE product_key = ?", (new_key, old_key),
+            target="prices",
         )
-        db.turso_enqueue("DELETE FROM price_points WHERE product_key = ?", (old_key,))
+        db.turso_enqueue("DELETE FROM price_points WHERE product_key = ?", (old_key,), target="prices")
         db.turso_enqueue("DELETE FROM products WHERE product_key = ?", (old_key,))
         db.execute(
             "UPDATE deals SET product_key = ?, dirty = 1 WHERE product_key = ?", (new_key, old_key)
@@ -537,7 +538,7 @@ def reparse_stored_deals() -> int:
             )
             db.turso_enqueue(
                 "DELETE FROM price_points WHERE product_key = ? AND ABS(price - ?) < 0.01",
-                (old["product_key"], float(wrong_price)),
+                (old["product_key"], float(wrong_price)), target="prices",
             )
             record_price(old["product_key"], updated["price"], old.get("store") or "")
             stats = price_stats(old["product_key"])
