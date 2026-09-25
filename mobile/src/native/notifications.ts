@@ -24,6 +24,14 @@ import { Platform } from 'react-native';
 
 import { getBaseUrl, LIVE_HOST, STORAGE_KEYS } from './config';
 import { getDeviceId } from './device';
+import {
+  NOT_INTERESTED_ACTION_ID,
+  enqueue,
+  setDisplayer,
+  slotData,
+  smartTick,
+  type Scheduled,
+} from './smartNotify';
 
 /** Legacy single-channel id, kept only as an Expo-push fallback target on old installs. */
 export const CHANNEL_ID = 'deal-alerts';
@@ -63,7 +71,19 @@ export type FeedItem = {
   url?: string | null;
   expires_at?: number | string | null;
   created_at?: number | string;
+  // Deal fields the server attaches so the phone can write its own copy.
+  price?: number | null;
+  mrp?: number | null;
+  discount_pct?: number | null;
+  brand?: string | null;
+  category?: string | null;
+  store?: string | null;
+  score?: number | null;
+  deal_title?: string | null;
 };
+
+/** Shown the moment they arrive; everything else waits for the phone's own schedule (smartNotify.ts). */
+const INSTANT_KINDS = new Set(['price_drop', 'broadcast']);
 
 /** "Ends in 2h 14m" — spec: header shows this instead of the timestamp. Null once expired or with no end time. */
 export function countdownLabel(expiresAt: number | string | null | undefined): string | null {
@@ -229,31 +249,36 @@ function absoluteImage(url: string | null | undefined): string | null {
   return url && /^https?:\/\//i.test(url) ? url : null;
 }
 
-/** Returns false when Notifee isn't available (caller falls back). */
-async function displayRich(item: FeedItem & { id: string }): Promise<boolean> {
-  const nf = getNotifee();
-  if (!nf) return false;
-  const { default: notifee, AndroidImportance, AndroidStyle, AndroidVisibility } = nf;
+type RichOptions = { smartData?: Record<string, string>; fireAt?: number };
+
+async function buildRich(item: FeedItem & { id: string }, nf: NotifeeModule, opts: RichOptions = {}) {
+  const { AndroidImportance, AndroidStyle, AndroidVisibility } = nf;
   await ensureChannel();
   const image = absoluteImage(item.image_url);
   const dealId = item.deal_id != null && item.deal_id !== '' ? String(item.deal_id) : '';
-  const created = Number(item.created_at);
+  const created = opts.fireAt ?? Number(item.created_at);
   const channel = channelForKind(String(item.kind ?? ''));
-  const countdown = countdownLabel(item.expires_at);
+  const countdown = opts.fireAt ? null : countdownLabel(item.expires_at);
   const expiresMs = toEpochMs(item.expires_at);
 
-  const actions = dealId
-    ? [
-        { title: 'View deal', pressAction: { id: VIEW_ACTION_ID, launchActivity: 'default' } },
-        { title: 'Track price', pressAction: { id: TRACK_ACTION_ID, launchActivity: 'default' } },
-      ]
-    : [];
+  const actions = !dealId
+    ? []
+    : opts.smartData
+      ? [
+          { title: 'View deal', pressAction: { id: VIEW_ACTION_ID, launchActivity: 'default' } },
+          // No launchActivity: handled in the background without opening the app.
+          { title: 'Not interested', pressAction: { id: NOT_INTERESTED_ACTION_ID } },
+        ]
+      : [
+          { title: 'View deal', pressAction: { id: VIEW_ACTION_ID, launchActivity: 'default' } },
+          { title: 'Track price', pressAction: { id: TRACK_ACTION_ID, launchActivity: 'default' } },
+        ];
 
-  await notifee.displayNotification({
+  return {
     id: item.id,
     title: item.title,
     body: item.body,
-    data: {
+    data: opts.smartData ?? {
       url: item.url ?? (dealId ? `/?deal=${dealId}` : '/'),
       deal_id: dealId,
       kind: String(item.kind ?? ''),
@@ -278,11 +303,31 @@ async function displayRich(item: FeedItem & { id: string }): Promise<boolean> {
       ...(Number.isFinite(created) && created > 0 ? { timestamp: created < 1e12 ? created * 1000 : created } : {}),
       // Auto-dismiss when the deal ends, per spec.
       ...(expiresMs && expiresMs > Date.now() ? { timeoutAfter: expiresMs } : {}),
-      lights: [BRAND_COLOR, 600, 1800],
+      lights: [BRAND_COLOR, 600, 1800] as [string, number, number],
     },
-  });
+  };
+}
+
+/** Returns false when Notifee isn't available (caller falls back). */
+async function displayRich(item: FeedItem & { id: string }): Promise<boolean> {
+  const nf = getNotifee();
+  if (!nf) return false;
+  await nf.default.displayNotification((await buildRich(item, nf)) as any);
   return true;
 }
+
+setDisplayer({
+  notifee: getNotifee,
+  channelFor: (kind) => channelForKind(kind).id,
+  build: async (n: Scheduled) => {
+    const nf = getNotifee()!;
+    return (await buildRich(
+      { ...n.deal, id: n.id, title: n.title, body: n.body, deal_id: n.deal.deal_id, kind: n.deal.kind ?? undefined },
+      nf,
+      { smartData: slotData(n), fireAt: n.fireAt },
+    )) as any;
+  },
+});
 
 export async function displayDealNotification(item: FeedItem): Promise<void> {
   const id = `dr-${item.id}`;
@@ -422,13 +467,20 @@ async function doPoll(): Promise<number> {
     const seen = await readSeen();
     const canShow = !priming && (await hasPermission());
     let shown = 0;
+    const queued: FeedItem[] = [];
     const ordered = [...items].sort((a, b) => Number(a.created_at ?? 0) - Number(b.created_at ?? 0));
     for (const item of ordered) {
       const key = String(item.id);
       if (seen.has(key)) continue;
       seen.add(key);
+      const hasDeal = item.deal_id != null && item.deal_id !== '';
+      if (hasDeal && !INSTANT_KINDS.has(String(item.kind ?? ''))) {
+        // Routine alert: the phone picks the moment (smartNotify.ts), even from the priming poll.
+        queued.push(item);
+        continue;
+      }
       if (!canShow) continue;
-      if (item.deal_id != null && delivered[String(item.deal_id)]) continue;
+      if (hasDeal && delivered[String(item.deal_id)]) continue;
       try {
         await displayDealNotification(item);
         shown++;
@@ -440,6 +492,8 @@ async function doPoll(): Promise<number> {
     if (typeof body.now === 'number') {
       await AsyncStorage.setItem(STORAGE_KEYS.lastSeen, String(body.now));
     }
+    await enqueue(queued);
+    if (await hasPermission()) await smartTick();
     return shown;
   } catch (e) {
     console.warn('[notifications] poll failed:', (e as Error)?.message ?? e);

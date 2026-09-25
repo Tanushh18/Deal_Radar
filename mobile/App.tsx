@@ -13,6 +13,7 @@ import { navigationRef, type RootStackParamList } from './src/navigation/types';
 import { COLORS, LIVE_HOST, getBaseUrl, saveBaseUrl } from './src/native/config';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
 import { configureNotificationHandler, pollNotifications } from './src/native/notifications';
+import { recordOpen } from './src/native/smartNotify';
 import { useQuickActionRouting } from './src/native/quickActions';
 import { setPublicMode, startVisitorSession } from './src/native/session';
 import { useShareIntentRouting } from './src/native/shareIntent';
@@ -123,10 +124,14 @@ function Root() {
   useShareIntentRouting();
   useQuickActionRouting();
 
-  // Poll the alert feed every time the app comes to the foreground.
+  // Poll the alert feed every time the app comes to the foreground, and note the
+  // open so the phone learns when this person is usually around (smartNotify.ts).
   useEffect(() => {
+    void recordOpen();
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') pollNotifications().catch(() => {});
+      if (s !== 'active') return;
+      void recordOpen();
+      pollNotifications().catch(() => {});
     });
     return () => sub.remove();
   }, []);

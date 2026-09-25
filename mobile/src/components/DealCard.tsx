@@ -10,6 +10,7 @@ import { dealBadge, highlightParts, money, storeName, timeAgo, type BadgeKind } 
 import { Icon } from './Icon';
 import { useDealActions } from './DealActions';
 import { openExternal, useImageUri } from './native';
+import { recordDealSignal } from '../native/smartNotify';
 import { HeartButton } from './Saved';
 import { Skeleton } from './ui';
 
@@ -275,7 +276,10 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
             <Pressable
               accessibilityRole="link"
               accessibilityLabel={`Buy now on ${store || 'store'}`}
-              onPress={() => openExternal(deal.url)}
+              onPress={() => {
+                void recordDealSignal('buy', deal);
+                openExternal(deal.url);
+              }}
               hitSlop={8}
               style={({ pressed }) => [s.buyInline, { opacity: pressed ? 0.8 : 1 }]}
             >

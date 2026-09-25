@@ -9,6 +9,7 @@ import { CommonActions, StackActions } from '@react-navigation/native';
 
 import { navigationRef } from '../navigation/types';
 import { getNotifee, markPushDelivered, targetFromData, targetFromResponse, type NotificationTarget } from './notifications';
+import { NOT_INTERESTED_ACTION_ID, recordNotificationOutcome, type DealFields } from './smartNotify';
 
 export type RouteTarget =
   | { kind: 'deal'; id: string }
@@ -69,12 +70,24 @@ function once(id: string | undefined | null): boolean {
   return true;
 }
 
+/** Deal fields a phone-scheduled notification carries, for the interest weights. */
+function smartDeal(data: Record<string, unknown> | null | undefined): { slot?: string; deal: DealFields } | null {
+  if (!data || typeof data.smart_slot !== 'string' || !data.smart_slot) return null;
+  const str = (v: unknown) => (typeof v === 'string' && v ? v : null);
+  return {
+    slot: data.smart_slot,
+    deal: { deal_id: str(data.deal_id), category: str(data.category), brand: str(data.brand), store: str(data.store) },
+  };
+}
+
 function handleExpoResponse(response: Notifications.NotificationResponse | null) {
   if (!response) return;
   if (!once(`expo:${response.notification.request.identifier}`)) return;
   const data = (response.notification.request.content.data ?? {}) as Record<string, unknown>;
   const trigger = response.notification.request.trigger as any;
   if (trigger?.type === 'push') void markPushDelivered(data.deal_id);
+  const smart = smartDeal(data);
+  if (smart) void recordNotificationOutcome(smart.slot, 'tap', smart.deal);
   routeTo(fromNotification(targetFromResponse(response)));
   Notifications.clearLastNotificationResponseAsync().catch(() => {});
 }
@@ -85,7 +98,36 @@ type NotifeeLike = { id?: string; data?: Record<string, unknown> } | undefined;
 export function handleNotifeePress(notification: NotifeeLike): void {
   if (!notification) return;
   if (!once(`notifee:${notification.id ?? ''}`)) return;
+  const smart = smartDeal(notification.data);
+  if (smart) void recordNotificationOutcome(smart.slot, 'tap', smart.deal);
   routeTo(fromNotification(targetFromData(notification.data ?? null)));
+}
+
+/**
+ * Every Notifee event, foreground or background. Returns once the event is
+ * recorded, so the background handler can await it before Android kills the
+ * headless JS.
+ */
+export async function handleNotifeeEvent(
+  type: number,
+  detail: { notification?: NotifeeLike; pressAction?: { id?: string } },
+): Promise<void> {
+  const nf = getNotifee();
+  if (!nf) return;
+  const { default: notifee, EventType } = nf;
+  const n = detail.notification;
+  const smart = smartDeal(n?.data);
+  if (type === EventType.ACTION_PRESS && detail.pressAction?.id === NOT_INTERESTED_ACTION_ID) {
+    if (smart) await recordNotificationOutcome(smart.slot, 'not_interested', smart.deal);
+    if (n?.id) await notifee.cancelNotification(n.id).catch(() => {});
+    return;
+  }
+  if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
+    handleNotifeePress(n);
+    if (n?.id) await notifee.cancelNotification(n.id).catch(() => {});
+    return;
+  }
+  if (type === EventType.DISMISSED && smart) await recordNotificationOutcome(smart.slot, 'dismiss', smart.deal);
 }
 
 /** Call once at startup. Returns an unsubscribe function. */
@@ -104,10 +146,7 @@ export function startNotificationRouting(): () => void {
   if (nf) {
     const { default: notifee, EventType } = nf;
     unsubNotifee = notifee.onForegroundEvent(({ type, detail }) => {
-      if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
-        handleNotifeePress(detail.notification as NotifeeLike);
-        if (detail.notification?.id) notifee.cancelNotification(detail.notification.id).catch(() => {});
-      }
+      void handleNotifeeEvent(type, detail as any);
     });
     notifee
       .getInitialNotification()

@@ -7,7 +7,7 @@ import * as BackgroundTask from 'expo-background-task';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 
-import { handleNotifeePress } from './deepLinks';
+import { handleNotifeeEvent } from './deepLinks';
 import { getNotifee, markPushDelivered, pollNotifications } from './notifications';
 
 export const POLL_TASK = 'dealradar-poll-feed';
@@ -42,12 +42,8 @@ TaskManager.defineTask(PUSH_TASK, async ({ data }) => {
 
 const nf = getNotifee();
 if (nf) {
-  const { default: notifee, EventType } = nf;
-  notifee.onBackgroundEvent(async ({ type, detail }) => {
-    if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
-      handleNotifeePress(detail.notification as any);
-      if (detail.notification?.id) await notifee.cancelNotification(detail.notification.id).catch(() => {});
-    }
+  nf.default.onBackgroundEvent(async ({ type, detail }) => {
+    await handleNotifeeEvent(type, detail as any);
   });
 }
 

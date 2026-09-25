@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 
 import { api, errorMessage, isNotFound, isOffline, type Deal, type DealDetail, type PriceAlert, type PricePoint } from '../api';
 import { getDeviceId } from '../native/device';
+import { recordDealSignal } from '../native/smartNotify';
 import {
   Button,
   DealRail,
@@ -85,6 +86,7 @@ export function DealDetailScreen() {
           setDeal(d);
           setFresh(true);
           setGone(false);
+          void recordDealSignal('view', d);
         })
         .catch((e) => {
           if (signal?.aborted) return;
@@ -450,6 +452,7 @@ export function DealDetailScreen() {
               iconRight="external"
               onPress={() => {
                 haptic.light();
+                void recordDealSignal('buy', deal);
                 openExternal(deal.url);
               }}
             />
@@ -497,8 +500,10 @@ function SaveButton({ deal }: { deal: Deal }) {
       variant={on ? 'danger' : 'soft'}
       accessibilityLabel={on ? 'Remove from saved' : 'Save deal'}
       onPress={() => {
-        if (toggle(deal)) haptic.success();
-        else haptic.select();
+        if (toggle(deal)) {
+          haptic.success();
+          void recordDealSignal('save', deal);
+        } else haptic.select();
       }}
     />
   );

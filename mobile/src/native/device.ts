@@ -68,7 +68,13 @@ async function server(): Promise<string> {
 export async function registerDevice(opts: DeviceRegistration = {}): Promise<RegisteredDevice | null> {
   try {
     const device_id = await getDeviceId();
-    const body: Record<string, unknown> = { device_id, platform: Platform.OS === 'ios' ? 'ios' : 'android' };
+    const body: Record<string, unknown> = {
+      device_id,
+      platform: Platform.OS === 'ios' ? 'ios' : 'android',
+      // This build times routine alerts on the phone (smartNotify.ts); the server
+      // should only push price drops and announcements to it directly.
+      smart_schedule: true,
+    };
     if (opts.push_token) body.push_token = opts.push_token;
     if (typeof opts.digest === 'boolean') body.digest = opts.digest;
     if (typeof opts.digest_hour === 'number') body.digest_hour = Math.max(0, Math.min(23, Math.round(opts.digest_hour)));
