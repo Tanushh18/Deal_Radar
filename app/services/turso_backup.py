@@ -279,6 +279,15 @@ def _ensure_schema(client: httpx.Client) -> None:
             statements += [{"sql": "DELETE FROM dr_schema"},
                            {"sql": "INSERT INTO dr_schema (version) VALUES (?)", "args": [arg(SCHEMA_VERSION)]}]
         _pipeline(client, statements)
+        # CREATE TABLE IF NOT EXISTS never fixes a table that already exists
+        # in an older shape (devices was once created without `follows`, which
+        # made every restore and device upload fail) — add what's missing.
+        for table, cols in (("deals", _DEAL_COLS), ("devices", _DEVICE_COLS), ("price_alerts", _ALERT_COLS)):
+            have = {r["name"] for r in rows_to_dicts(_pipeline(client, [{"sql": f"PRAGMA table_info({table})"}])[0])}
+            missing = [c for c in cols if c not in have]
+            if missing:
+                log.warning("Turso %s is missing columns %s — adding them", table, missing)
+                _pipeline(client, [{"sql": f"ALTER TABLE {table} ADD COLUMN {c}"} for c in missing])
 
         if _split():
             # The prices database is optional: if TURSO_DB_02 is wrong or down,
@@ -606,32 +615,53 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
     """
     if not settings.turso_configured:
         return None
+    # Deals first and on their own: alerts, devices or the prices database
+    # failing must never cost the app its deals (a missing devices column
+    # once did exactly that — every restart came back empty).
+    errors: Dict[str, str] = {}
+    deals = 0
+    deals_empty = False
+    prices_empty = False
+    alerts: List[Dict[str, Any]] = []
+    saved_devices: List[Dict[str, Any]] = []
     try:
         with httpx.Client() as client:
-            _ensure_schema(client)
-            results = _pipeline(client, [
-                {"sql": "SELECT EXISTS (SELECT 1 FROM deals) AS e"},
-                {"sql": f"SELECT {', '.join(_ALERT_COLS)} FROM price_alerts "
-                        "WHERE triggered_at IS NULL OR triggered_at > ?",
-                 "args": [arg(time.time() - ALERT_RESTORE_DAYS * 86400)]},
-                {"sql": f"SELECT {', '.join(_DEVICE_COLS)} FROM devices WHERE last_seen_at > ?",
-                 "args": [arg(time.time() - DEVICE_RESTORE_DAYS * 86400)]},
-            ])
-            deals_empty = not rows_to_dicts(results[0])[0]["e"]
+            try:
+                _ensure_schema(client)
+            except Exception as exc:  # noqa: BLE001 - try the reads anyway
+                errors["schema"] = _err(exc)
+            try:
+                found = _pipeline(client, [{"sql": "SELECT EXISTS (SELECT 1 FROM deals) AS e"}])
+                deals_empty = not rows_to_dicts(found[0])[0]["e"]
+                deals = 0 if deals_empty else _restore_deals(client, time.time() - cache_days * 86400)
+            except Exception as exc:  # noqa: BLE001
+                errors["deals"] = _err(exc)
+            try:
+                alerts = rows_to_dicts(_pipeline(client, [{
+                    "sql": f"SELECT {', '.join(_ALERT_COLS)} FROM price_alerts "
+                           "WHERE triggered_at IS NULL OR triggered_at > ?",
+                    "args": [arg(time.time() - ALERT_RESTORE_DAYS * 86400)]}])[0])
+            except Exception as exc:  # noqa: BLE001
+                errors["alerts"] = _err(exc)
+            try:
+                saved_devices = rows_to_dicts(_pipeline(client, [{
+                    "sql": f"SELECT {', '.join(_DEVICE_COLS)} FROM devices WHERE last_seen_at > ?",
+                    "args": [arg(time.time() - DEVICE_RESTORE_DAYS * 86400)]}])[0])
+            except Exception as exc:  # noqa: BLE001
+                errors["devices"] = _err(exc)
             try:
                 prices_exists = _pipeline(client, [
                     {"sql": "SELECT EXISTS (SELECT 1 FROM price_points) AS e"},
                 ], target=target_prices())
                 prices_empty = not rows_to_dicts(prices_exists[0])[0]["e"]
-            except Exception as exc:  # noqa: BLE001 - a broken prices DB must never block the deal restore
-                log.warning("Turso prices database check failed (deal restore continues): %s", exc)
-                prices_empty = False
-            alerts = rows_to_dicts(results[1])
-            saved_devices = rows_to_dicts(results[2])
-            deals = 0 if deals_empty else _restore_deals(client, time.time() - cache_days * 86400)
+            except Exception as exc:  # noqa: BLE001
+                errors["prices_db"] = _err(exc)
     except Exception as exc:  # noqa: BLE001 - restore must never crash boot
-        _state.update(last_restore_error=_err(exc), last_restore={"at": time.time()})
-        log.warning("Turso restore failed: %s", exc)
+        errors["connection"] = _err(exc)
+    for part, message in errors.items():
+        log.warning("Turso restore (%s) failed: %s", part, message)
+    if "connection" in errors or ("deals" in errors and not alerts and not saved_devices):
+        _state.update(last_restore_error=errors, last_restore={"at": time.time()})
         return None
 
     restored = 0
@@ -649,7 +679,8 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
     log.info("Restored from Turso: %d deals, %d price alerts, %d devices", deals, restored, devices_restored)
     result = {"deals": deals, "alerts": restored, "devices": devices_restored,
               "deals_empty": deals_empty, "prices_empty": prices_empty}
-    _state.update(last_restore={**result, "at": time.time(), "window_days": cache_days}, last_restore_error=None)
+    _state.update(last_restore={**result, "at": time.time(), "window_days": cache_days},
+                  last_restore_error=errors or None)
     return result
 
 
