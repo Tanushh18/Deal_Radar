@@ -105,6 +105,9 @@ class Settings:
         self.tg_bot_token: str = os.getenv("TG_BOT_TOKEN", "").strip()
         # "@yourchannel" for a public channel, or its numeric id "-100…".
         self.tg_post_channel: str = os.getenv("TG_POST_CHANNEL", "").strip()
+        # Link the app/website popup opens. Optional for a public channel (built
+        # from @username); needed for a private one (its t.me/+invite link).
+        self.tg_channel_url: str = os.getenv("TG_CHANNEL_URL", "").strip()
         # Real-time listener on the reader account (seconds, not the poll cycle).
         self.live_listener: bool = _bool(os.getenv("LIVE_LISTENER", "true"))
         # What's good enough to post (see tg_post.assess — fakes never are).
@@ -163,6 +166,13 @@ class Settings:
     @property
     def turso_configured(self) -> bool:
         return bool(self.turso_url and self.turso_auth_token)
+
+    @property
+    def tg_channel_link(self) -> Optional[dict]:
+        """{"url", "username"} for the "join our channel" popup, or None."""
+        name = self.tg_post_channel.lstrip("@") if self.tg_post_channel.startswith("@") else ""
+        url = self.tg_channel_url or (f"https://t.me/{name}" if name else "")
+        return {"url": url, "username": name} if url else None
 
     @property
     def tg_post_configured(self) -> bool:

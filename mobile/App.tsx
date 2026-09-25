@@ -18,6 +18,7 @@ import { setPublicMode, startVisitorSession } from './src/native/session';
 import { useShareIntentRouting } from './src/native/shareIntent';
 import { checkForUpdateOnLaunch, stopImmediateUpdates } from './src/native/updates';
 import { AppProviders } from './src/components/AppProviders';
+import { TelegramInvite } from './src/components/TelegramInvite';
 import { useTheme } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -156,6 +157,7 @@ function Root() {
         onReady={() => setRoutingReady(phase.initial === 'Main')}
       >
         <RootNavigator initialRouteName={phase.initial} onServerSaved={() => boot()} />
+        <TelegramInvite />
       </NavigationContainer>
     );
 

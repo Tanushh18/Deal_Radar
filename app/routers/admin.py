@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, live, priority, public_reader, sheet_mode, sheets, taxonomy, telegram
+from ..services import ingest, live, priority, public_reader, sheet_mode, sheets, taxonomy, telegram, tg_post
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -348,3 +348,20 @@ async def set_storage_mode(payload: StorageModePayload):
     except RuntimeError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"status": "ok", "storage_mode": mode}
+
+
+@router.post("/telegram-test")
+async def telegram_test():
+    """Post a test message to TG_POST_CHANNEL — proves the bot token, the
+    channel id and the bot's admin rights in one tap."""
+    if not settings.tg_post_configured:
+        raise HTTPException(status_code=400, detail="Set TG_BOT_TOKEN and TG_POST_CHANNEL in Render first.")
+    try:
+        result = await tg_post._send("sendMessage", {
+            "chat_id": settings.tg_post_channel,
+            "text": "✅ DealRadar test post — the bot can post here. Verified deals will appear automatically.",
+        })
+    except Exception as exc:  # noqa: BLE001 - Telegram's own reason is the useful part
+        raise HTTPException(status_code=400, detail=f"Telegram refused: {exc}")
+    return {"status": "ok", "channel": settings.tg_post_channel, "message_id": result.get("message_id"),
+            "live": live.status()}

@@ -241,6 +241,19 @@ def main() -> int:
     run(ingest.ingest_channel(channel))
     check("cycle re-reading the same post doesn't re-post", len(calls) == 1, str(len(calls)))
 
+    print("\n=== APP POPUP CONFIG + ADMIN TEST POST ===")
+    from fastapi.testclient import TestClient
+    from app.main import app
+    web = TestClient(app)  # no context manager: skip the boot-time background tasks
+    cfg = web.get("/api/auth/config").json()
+    check("popup gets the channel link", cfg.get("telegram_channel") == {"url": "https://t.me/mydeals",
+                                                                         "username": "mydeals"}, str(cfg))
+    check("test post needs the admin token", web.post("/api/admin/reader/telegram-test").status_code in (401, 403))
+    calls.clear()
+    r = web.post("/api/admin/reader/telegram-test", headers={"X-Admin-Token": "t"})
+    check("test post goes to the channel", r.status_code == 200 and calls and calls[-1][1].get("chat_id") == "@mydeals",
+          r.text)
+
     print("\n" + ("\033[92m✓ All checks passed.\033[0m" if not failures else f"\033[91m✗ {len(failures)} failed\033[0m"))
     return 1 if failures else 0
 

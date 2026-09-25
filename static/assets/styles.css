@@ -1837,3 +1837,19 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 .storerow .chip.active .facet-count { color: inherit; }
 .check-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .similar .rail { margin-inline: 0; padding-inline: 0; }
+
+/* "Join our Telegram channel" popup */
+.tg-invite { position: relative; padding: 28px 20px 8px; text-align: center; display: grid; gap: 12px; }
+.tg-invite h2 { font-size: 1.25rem; }
+.tg-invite p { line-height: 1.5; }
+.tg-invite-icon {
+  width: 64px; height: 64px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center;
+  font-size: 30px; background: #229ED9; box-shadow: 0 8px 24px rgba(34, 158, 217, .35);
+}
+.tg-invite-join { background: #229ED9; color: #fff; justify-content: center; font-weight: 700; }
+.tg-invite-join:hover { background: #1c8cc2; }
+.tg-invite-later { justify-content: center; }
+.tg-invite-close {
+  position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer;
+}

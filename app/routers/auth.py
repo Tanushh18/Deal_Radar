@@ -38,6 +38,8 @@ async def auth_config():
         "telegram_configured": settings.telegram_configured,
         "sheets_configured": settings.sheets_configured,
         "public_mode": settings.public_mode,
+        # Our own Telegram channel, for the "join us" popup (None = no popup).
+        "telegram_channel": settings.tg_channel_link,
     }
 
 

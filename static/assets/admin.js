@@ -251,6 +251,16 @@
     } catch (err) { show($('#channel-msg'), err.message, 'err'); btn.disabled = false; }
   });
 
+  $('#tg-test').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      const r = await post('/api/admin/reader/telegram-test');
+      const live = r.live && r.live.connected ? 'live listener connected' : 'live listener NOT connected yet';
+      show($('#channel-msg'), `Test post sent to ${r.channel} (message #${r.message_id}); ${live}.`, 'ok');
+    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+  });
+
   $('#refresh').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;

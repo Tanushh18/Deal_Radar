@@ -5,7 +5,13 @@ export type User = {
   first_name?: string | null;
 };
 
-export type AuthConfig = { telegram_configured: boolean; sheets_configured: boolean; public_mode?: boolean };
+export type AuthConfig = {
+  telegram_configured: boolean;
+  sheets_configured: boolean;
+  public_mode?: boolean;
+  /** Our own Telegram channel for the "join us" popup; null when not set up. */
+  telegram_channel?: { url: string; username: string } | null;
+};
 export type SendCodeResult = { login_id: string; phone: string };
 export type VerifyResult = { status: 'password_required' } | { status: 'ok'; user: User };
 export type MeResult =

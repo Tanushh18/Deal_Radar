@@ -3099,7 +3099,37 @@
     await onSignedIn({ first_name: '', guest: true });
     updateSavedBadges();
     pollPriceAlerts();
+    offerTelegramChannel();
   })();
+
+  /* "Join our Telegram channel" — shown each visit until they tap Join.
+     The native app shows its own version, so skip it inside the app's WebView. */
+  const TG_JOINED_KEY = 'dr-tg-joined';
+  async function offerTelegramChannel() {
+    if (inNativeApp()) return;
+    try { if (localStorage.getItem(TG_JOINED_KEY)) return; } catch { /* private mode: still offer */ }
+    let channel = null;
+    try { channel = (await api('/api/auth/config')).telegram_channel; } catch { return; }
+    if (!channel || !channel.url) return;
+    await new Promise((r) => setTimeout(r, 1500));  // let the deals paint first
+    if (!$('#modal').classList.contains('hidden')) return;  // never cover a dialog they opened
+    const handle = channel.username ? `@${escapeHtml(channel.username)}` : 'our channel';
+    openModal(`
+      <div class="tg-invite">
+        <button class="tg-invite-close" type="button" data-close aria-label="Close">✕</button>
+        <div class="tg-invite-icon" aria-hidden="true">✈️</div>
+        <h2>Get the crazy deals first</h2>
+        <p class="muted">Verified loot deals — women's accessories, fashion and more — land on
+          our Telegram channel <b>${handle}</b> seconds after they go live, before anywhere else.</p>
+        <a class="btn btn-primary tg-invite-join" href="${escapeHtml(channel.url)}" target="_blank"
+           rel="noopener" id="tg-join">Join on Telegram</a>
+        <button class="btn btn-soft tg-invite-later" type="button" data-close>Maybe later</button>
+      </div>`);
+    $('#tg-join').addEventListener('click', () => {
+      try { localStorage.setItem(TG_JOINED_KEY, String(Date.now())); } catch { /* ignore */ }
+      closeModal();
+    });
+  }
 
   // Keep stats fresh while the tab is open.
   setInterval(() => {
