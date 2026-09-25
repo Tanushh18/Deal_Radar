@@ -11,7 +11,7 @@ import json
 import math
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from rapidfuzz import fuzz
 
@@ -34,6 +34,43 @@ def _encode(deal: Dict[str, Any]) -> Dict[str, Any]:
     row["flags"] = json.dumps(deal.get("flags") or [])
     row["dirty"] = 1
     return row
+
+
+# --- Telegram photo links ---------------------------------------------
+# A card's photo is proxied from the Telegram post that carried it. That post
+# isn't always the card's own: when a second channel reposts a product with a
+# photo, the card adopts that photo. The link therefore names its source
+# message explicitly — before it did, those adopted links pointed at a card id
+# that was never saved and every one of them 404'd (measured: 8 of 8 merged
+# cards sampled), which is why the best, most-reposted deals showed no image.
+_TG_IMAGE_RE = re.compile(r"^/api/deals/([^/?]+)/image(?:\?src=(-?\d+):(\d+))?$")
+
+
+def telegram_image_url(deal_id: str, channel_id: int, message_id: int) -> str:
+    return f"/api/deals/{deal_id}/image?src={int(channel_id)}:{int(message_id)}"
+
+
+def image_source(image_url: str) -> Optional[tuple]:
+    """(channel_id, message_id) named by a photo link, if it names one."""
+    match = _TG_IMAGE_RE.match(image_url or "")
+    if not match or match.group(2) is None:
+        return None
+    return int(match.group(2)), int(match.group(3))
+
+
+def rebase_image_url(image_url: str, deal_id: str) -> str:
+    """The same photo, addressed through the card `deal_id` ("" if unrecoverable).
+
+    External image URLs pass through. A legacy proxy link without a source
+    only works on the card it was minted for; anywhere else it's dead.
+    """
+    match = _TG_IMAGE_RE.match(image_url or "")
+    if not match:
+        return image_url or ""
+    source = image_source(image_url)
+    if source:
+        return telegram_image_url(deal_id, *source)
+    return image_url if match.group(1) == deal_id else ""
 
 
 def compute_score(deal: Dict[str, Any], now: Optional[float] = None) -> float:
@@ -187,8 +224,21 @@ def _match_by_title(deal: Dict[str, Any], now: float) -> Optional[Any]:
     return best
 
 
-def save_deal(deal: Dict[str, Any]) -> str:
-    """Insert or merge a parsed deal. Returns 'new' | 'merged' | 'updated'."""
+def _is_low_quality(row: Any) -> bool:
+    try:
+        return "low_quality" in json.loads(row["flags"] or "[]")
+    except (TypeError, ValueError):
+        return False
+
+
+def save_deal(deal: Dict[str, Any], gate: Optional[Callable[[Dict[str, Any]], Optional[str]]] = None) -> str:
+    """Insert or merge a parsed deal. Returns 'new' | 'merged' | 'updated' | 'filtered'.
+
+    `gate` (quality.reject_reason in production) decides whether a post may
+    become a *new* card, or revive one retired as low quality. A repost of a
+    card we already show always merges — however messy the repost is, another
+    channel carrying the product is corroboration worth counting.
+    """
     now = time.time()
     # Fold shortlink/full-URL variants of the same product onto one key first,
     # so price history (and the all-time-low flag) accumulate correctly.
@@ -215,7 +265,6 @@ def save_deal(deal: Dict[str, Any]) -> str:
         existing = _match_by_title(deal, now)
 
     history = price_stats(pkey) if pkey else {"min": None, "median": None, "points": 0}
-    record_price(pkey, price, deal.get("store", ""))
 
     flags: List[str] = list(deal.get("flags") or [])
     mrp, deal_price = deal.get("mrp"), price
@@ -229,6 +278,17 @@ def save_deal(deal: Dict[str, Any]) -> str:
     elif deal_price and history["points"] == 0:
         deal["is_lowest"] = 0
     deal["flags"] = sorted(set(flags))
+
+    if gate is not None:
+        if existing is None:
+            if gate(deal):
+                return "filtered"
+        elif _is_low_quality(existing):
+            candidate = dict(deal)
+            candidate["image_url"] = deal.get("image_url") or rebase_image_url(existing["image_url"] or "", existing["id"])
+            if gate(candidate):
+                return "filtered"
+    record_price(pkey, price, deal.get("store", ""))
 
     if existing is None:
         deal["score"] = compute_score(deal, now)
@@ -298,9 +358,12 @@ def save_deal(deal: Dict[str, Any]) -> str:
 
     # Backfill anything the earlier post was missing (price/mrp/discount_pct
     # are handled explicitly above, not here — they update, they don't just fill gaps).
+    merged["image_url"] = rebase_image_url(merged.get("image_url") or "", merged["id"])  # drop a dead link first
     for field in ("image_url", "coupon", "sizes", "brand", "url", "clean_url"):
         if not merged.get(field) and deal.get(field):
             merged[field] = deal[field]
+    if merged.get("image_url"):
+        merged["image_url"] = rebase_image_url(merged["image_url"], merged["id"])
     merged["score"] = compute_score(merged, now)
 
     db.upsert("deals", _encode(merged), conflict="id")
@@ -358,40 +421,41 @@ def expire_stale() -> int:
     return cur.rowcount or 0
 
 
-NO_IMAGE_MAX_SHARE = 0.20  # at most 1 in 5 live deals may be missing a photo
+def retire_imageless() -> int:
+    """Take every live deal without a photo out of the feed.
 
-
-def enforce_image_ratio() -> int:
-    """Keep live deals with vs without a photo at roughly 80:20.
-
-    Deals without an image convert far worse on a visual grid — this caps
-    how many can crowd out the ones with a real photo. Excess is expired
-    (never deleted; archive search and the Sheet still see it), oldest
-    first, down to NO_IMAGE_MAX_SHARE of the deals that do have an image.
+    A text-only card on a visual grid reads as noise, so none are shown. They
+    are expired, never deleted: archive search and the Sheet keep them, and a
+    later repost that carries a photo revives the card (merge fills in the
+    missing image and sets it live again).
     """
-    with_image = db.query_one(
-        "SELECT COUNT(*) AS c FROM deals WHERE status = 'live' AND COALESCE(image_url, '') != ''"
-    )["c"]
-    without_image = db.query_one(
-        "SELECT COUNT(*) AS c FROM deals WHERE status = 'live' AND COALESCE(image_url, '') = ''"
-    )["c"]
-    allowed = int(with_image * NO_IMAGE_MAX_SHARE / (1 - NO_IMAGE_MAX_SHARE))
-    excess = without_image - allowed
-    if excess <= 0:
-        return 0
-    rows = db.query(
-        "SELECT id FROM deals WHERE status = 'live' AND COALESCE(image_url, '') = '' "
-        "ORDER BY last_seen_at ASC LIMIT ?",
-        (excess,),
+    cur = db.execute(
+        "UPDATE deals SET status = 'expired', dirty = 1 "
+        "WHERE status = 'live' AND COALESCE(image_url, '') = ''"
     )
-    ids = [r["id"] for r in rows]
-    if not ids:
-        return 0
-    placeholders = ",".join("?" * len(ids))
+    return cur.rowcount or 0
+
+
+def drop_image(deal_id: str) -> None:
+    """The photo's Telegram post is gone (deleted by the channel) — retire the card.
+
+    Channels delete a post when the deal is over, so this is also a good
+    liveness signal, not just a missing picture.
+    """
     db.execute(
-        f"UPDATE deals SET status = 'expired', dirty = 1 WHERE id IN ({placeholders})", ids
+        "UPDATE deals SET image_url = '', dirty = 1, "
+        "status = CASE WHEN status = 'live' THEN 'expired' ELSE status END WHERE id = ?",
+        (deal_id,),
     )
-    return len(ids)
+
+
+def remember_resolved_url(deal: Dict[str, Any]) -> None:
+    """Keep the store URL a shortlink led to, on the card this post landed in."""
+    if deal.get("resolved_url") and deal.get("product_key"):
+        db.execute(
+            "UPDATE deals SET resolved_url = ? WHERE product_key = ? AND COALESCE(resolved_url, '') = ''",
+            (deal["resolved_url"], deal["product_key"]),
+        )
 
 
 def purge_ancient(days: int = 400) -> List[str]:

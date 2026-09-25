@@ -81,6 +81,7 @@ def main() -> int:
             message_id=5000 + i, posted_at=now - 3600, ttl_hours=96,
         )
         assert deal, text
+        deal["image_url"] = f"https://img.example/{deal['id']}.jpg"  # feeds show photo cards only
         store.save_deal(deal)
     stored = db.query_one("SELECT COUNT(*) AS c FROM deals")["c"]
     check(f"{stored} sample deals stored", stored == len(SAMPLES), str(stored))

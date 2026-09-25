@@ -22,11 +22,19 @@ PRESETS: Dict[str, Dict[str, Any]] = {
     "women": {
         "label": "Women",
         "categories": ["Women Fashion", "Beauty"],
-        "keywords": ["women", "womens", "ladies", "girls", "kurti", "saree", "lehenga", "anarkali", "dupatta",
-                     "salwar", "leggings", "lingerie", "handbag", "sling bag", "clutch", "heels", "lipstick",
-                     "makeup", "kajal", "eyeliner", "jewellery", "jewelry", "earring", "necklace", "bangles",
-                     "maxi dress", "crop top"],
+        "keywords": ["women", "womens", "woman", "ladies", "girls", "kurti", "kurta", "saree", "lehenga",
+                     "anarkali", "dupatta", "salwar", "leggings", "palazzo", "lingerie", "bra", "nightwear",
+                     "nighty", "handbag", "sling bag", "tote", "clutch", "heels", "bellies", "lipstick",
+                     "makeup", "kajal", "eyeliner", "mascara", "nail polish", "jewellery", "jewelry",
+                     "earring", "necklace", "bangles", "anklet", "mangalsutra", "maxi dress", "crop top",
+                     "gown", "blouse", "scrunchie", "hair clip"],
         "stores": [],
+        # Beauty / fashion that is plainly for men doesn't lead a women's feed —
+        # unless the post also names women ("men & women" is unisex, kept).
+        "exclude_keywords": ["men", "mens", "man", "male", "gents", "boys", "him", "beard", "trimmer",
+                             "shaver", "shaving", "razor", "axe", "beardo", "gillette", "ustraa"],
+        "unless_keywords": ["women", "womens", "woman", "ladies", "lady", "girls", "girl", "her",
+                            "female", "unisex"],
     },
     "men": {
         "label": "Men",
@@ -53,20 +61,26 @@ _SAFE_WORD = re.compile(r"^[a-z0-9 &'.+-]{2,40}$")
 _cache: Optional[Dict[str, Any]] = None
 
 
-def _clean(rule: Dict[str, Any]) -> Dict[str, Any]:
-    cats = [c for c in rule.get("categories") or [] if c in taxonomy.CATEGORIES]
-    words = []
-    for w in rule.get("keywords") or []:
+def _words(values: Any, limit: int) -> List[str]:
+    words: List[str] = []
+    for w in values or []:
         w = str(w).strip().lower()
         if _SAFE_WORD.match(w) and w not in words:
             words.append(w)
-    stores = []
-    for s in rule.get("stores") or []:
-        s = str(s).strip().lower()
-        if _SAFE_WORD.match(s) and s not in stores:
-            stores.append(s)
+    return words[:limit]
+
+
+def _clean(rule: Dict[str, Any]) -> Dict[str, Any]:
+    cats = [c for c in rule.get("categories") or [] if c in taxonomy.CATEGORIES]
+    preset = PRESETS.get(str(rule.get("preset") or ""), {})
+    # The admin form only edits categories/keywords/stores; the exclusion
+    # lists come from the preset unless a rule carries its own.
+    exclude = rule["exclude_keywords"] if "exclude_keywords" in rule else preset.get("exclude_keywords", [])
+    unless = rule["unless_keywords"] if "unless_keywords" in rule else preset.get("unless_keywords", [])
     return {"preset": str(rule.get("preset") or "custom"), "label": str(rule.get("label") or "Custom")[:40],
-            "categories": cats, "keywords": words[:60], "stores": stores[:20]}
+            "categories": cats, "keywords": _words(rule.get("keywords"), 60),
+            "stores": _words(rule.get("stores"), 20),
+            "exclude_keywords": _words(exclude, 40), "unless_keywords": _words(unless, 20)}
 
 
 def get() -> Dict[str, Any]:
@@ -75,8 +89,13 @@ def get() -> Dict[str, Any]:
         raw = db.get_meta(META_KEY)
         if raw:
             try:
-                _cache = _clean(json.loads(raw))
-            except (ValueError, TypeError):
+                stored = json.loads(raw)
+                if stored.get("preset") in PRESETS and "exclude_keywords" not in stored:
+                    # Saved before presets carried exclusions: pick up the
+                    # current preset (its keyword list has grown too).
+                    stored = {**PRESETS[stored["preset"]], "preset": stored["preset"]}
+                _cache = _clean(stored)
+            except (ValueError, TypeError, AttributeError):
                 _cache = None
         if _cache is None:
             name = settings.priority_audience if settings.priority_audience in PRESETS else "off"
@@ -113,7 +132,74 @@ def sql() -> str:
     if rule["stores"]:
         parts.append("LOWER(store) IN (" + ", ".join("'" + s.replace("'", "''") + "'" for s in rule["stores"]) + ")")
     # Never a bare "0": in ORDER BY SQLite reads an integer literal as a column number.
-    return "(" + " OR ".join(parts) + ")" if parts else "(1 = 0)"
+    if not parts:
+        return "(1 = 0)"
+    match = "(" + " OR ".join(parts) + ")"
+    if not rule["exclude_keywords"]:
+        return match
+    # Exclusions are whole words ("men" must not hit "menstrual"), on text with
+    # all punctuation spaced out so "men's" reads as "men s".
+    words = "(' ' || " + _spaced("LOWER(COALESCE(title, '') || ' ' || COALESCE(search_blob, ''))") + " || ' ')"
+
+    def any_word(ws: List[str]) -> str:
+        return "(" + " OR ".join(f"{words} LIKE '% " + w.replace("'", "''") + " %'" for w in ws) + ")"
+
+    excluded = any_word(rule["exclude_keywords"])
+    if rule["unless_keywords"]:
+        excluded = f"({excluded} AND NOT {any_word(rule['unless_keywords'])})"
+    return f"({match} AND NOT {excluded})"
+
+
+def _spaced(expr: str) -> str:
+    for ch in _WORD_CHARS:
+        expr = f"REPLACE({expr}, '{ch.replace(chr(39), chr(39) * 2)}', ' ')"
+    return expr
+
+
+_KEYWORD_CHARS = "(-/,"
+_WORD_CHARS = "()-/,.:;|&!'+"
+_compiled: Dict[str, Any] = {}
+
+
+def _spaced_text(text: str, chars: str) -> str:
+    for ch in chars:
+        text = text.replace(ch, " ")
+    return f" {text} "
+
+
+def matches(deal: Dict[str, Any]) -> bool:
+    """Python twin of sql() for rows already fetched — same rule, same result.
+
+    Evaluating sql() inline costs a chain of REPLACE()s per keyword per row
+    (~0.8s over 5,000 deals); doing it here over the light rows is ~100x
+    cheaper, so search uses this and sql() stays for small ORDER BYs.
+    """
+    rule = get()
+    key = json.dumps(rule, sort_keys=True)
+    if _compiled.get("key") != key:
+        def words(ws: List[str], whole: bool) -> Optional["re.Pattern[str]"]:
+            if not ws:
+                return None
+            tail = " " if whole else ""
+            return re.compile("|".join(" " + re.escape(w) + tail for w in ws))
+        _compiled.clear()
+        _compiled.update(key=key, cats=set(rule["categories"]), stores=set(rule["stores"]),
+                         keywords=words(rule["keywords"], False),
+                         exclude=words(rule["exclude_keywords"], True),
+                         unless=words(rule["unless_keywords"], True))
+    c = _compiled
+    blob = (deal.get("search_blob") or deal.get("title") or "").lower()
+    hit = (
+        (deal.get("category") in c["cats"])
+        or (c["keywords"] is not None and bool(c["keywords"].search(_spaced_text(blob, _KEYWORD_CHARS))))
+        or ((deal.get("store") or "").lower() in c["stores"])
+    )
+    if not hit or c["exclude"] is None:
+        return hit
+    text = _spaced_text(f"{deal.get('title') or ''} {deal.get('search_blob') or ''}".lower(), _WORD_CHARS)
+    if c["exclude"].search(text) and not (c["unless"] is not None and c["unless"].search(text)):
+        return False
+    return True
 
 
 def lead_categories() -> List[str]:
