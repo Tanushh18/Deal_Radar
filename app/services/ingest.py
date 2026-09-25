@@ -623,8 +623,13 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 totals["channels"] += 1
                 for key in ("fetched", "new", "merged", "skipped", "filtered", "resolved"):
                     totals[key] += result.get(key, 0)
-                for reason, n in result.get("reasons", {}).items():
-                    reasons[reason] = reasons.get(reason, 0) + n
+                # Named filter_reason, not reason: run_cycle's own `reason` param (why the
+                # cycle ran — "scheduled"/"admin") lives in this same scope and a `for`
+                # loop here doesn't get its own — reusing `reason` silently overwrote it
+                # with whatever filter reason a channel last hit, corrupting the result's
+                # own "reason" field with things like "no_image" instead of "scheduled".
+                for filter_reason, n in result.get("reasons", {}).items():
+                    reasons[filter_reason] = reasons.get(filter_reason, 0) + n
                 new_deal_ids.extend(result["new_deal_ids"])
                 await asyncio.sleep(0.4)  # be polite to Telegram between channels
 
