@@ -50,6 +50,10 @@ class PriorityPayload(BaseModel):
     stores: list = []
 
 
+class PollIntervalPayload(BaseModel):
+    seconds: int
+
+
 def reader_id() -> Optional[int]:
     value = db.get_meta("reader_user_id")
     if not value:
@@ -116,6 +120,39 @@ async def pause_syncing(payload: PausePayload):
     return {"status": "ok", "sync_paused": payload.paused}
 
 
+@router.get("/poll-interval")
+async def get_poll_interval():
+    return {
+        "seconds": ingest.poll_interval_seconds(),
+        "default_seconds": settings.poll_interval_seconds,
+        "is_override": ingest.poll_interval_seconds() != settings.poll_interval_seconds,
+        "min_seconds": ingest.MIN_POLL_INTERVAL_SECONDS,
+        "max_seconds": ingest.MAX_POLL_INTERVAL_SECONDS,
+    }
+
+
+@router.post("/poll-interval")
+async def set_poll_interval(payload: PollIntervalPayload):
+    """Takes effect on the scheduler's next iteration — no redeploy, no restart."""
+    if not (ingest.MIN_POLL_INTERVAL_SECONDS <= payload.seconds <= ingest.MAX_POLL_INTERVAL_SECONDS):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Must be between {ingest.MIN_POLL_INTERVAL_SECONDS} and {ingest.MAX_POLL_INTERVAL_SECONDS} seconds.",
+        )
+    seconds = ingest.set_poll_interval_seconds(payload.seconds)
+    if sheets.is_enabled():
+        sheets.save_setting(ingest.POLL_INTERVAL_META_KEY, str(seconds))
+    return {"status": "ok", "seconds": seconds}
+
+
+@router.post("/poll-interval/reset")
+async def reset_poll_interval():
+    seconds = ingest.reset_poll_interval_seconds()
+    if sheets.is_enabled():
+        sheets.save_setting(ingest.POLL_INTERVAL_META_KEY, "")
+    return {"status": "ok", "seconds": seconds}
+
+
 class BroadcastPayload(BaseModel):
     title: str
     body: str
@@ -135,8 +172,22 @@ async def broadcast(payload: BroadcastPayload):
         if not row:
             raise HTTPException(status_code=404, detail="That deal id doesn't exist.")
         deal = dict(row)
-    sent = devices.broadcast(title, body, deal)
-    return {"status": "ok", "devices": sent}
+    report = await devices.broadcast(title, body, deal)
+    return {"status": "ok", **report}
+
+
+@router.get("/push-status")
+async def push_status():
+    """Who can be reached by push, what's queued this cycle, what went out."""
+    from ..services import hot_push
+    return hot_push.status()
+
+
+@router.post("/push-now")
+async def push_now():
+    """Push the best eligible deal right now (ignores quiet hours and the gap)."""
+    from ..services import hot_push
+    return await hot_push.send_best(force=True, reason="admin")
 
 
 async def _finish(result: dict) -> dict:

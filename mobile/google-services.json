@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "880383804147",
+    "project_id": "dealradar-tanush18",
+    "storage_bucket": "dealradar-tanush18.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:880383804147:android:2ffa26cd260edc4aaa6d86",
+        "android_client_info": {
+          "package_name": "com.dealradar.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwWiyxMEowpidC7AwitXkiJSY9NkYgk2o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

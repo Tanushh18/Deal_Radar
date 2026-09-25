@@ -193,6 +193,7 @@ async def similar_deals(deal_id: str, limit: int = Query(8, ge=1, le=24)):
         raise HTTPException(status_code=404, detail="Deal not found.")
     rows = db.query(
         "SELECT * FROM deals WHERE status = 'live' AND expires_at > ? AND id != ? AND product_key != ? "
+        "AND COALESCE(image_url, '') != '' "
         "AND (subcategory = ? OR (brand != '' AND brand = ?)) "
         "ORDER BY (subcategory = ?) DESC, score DESC LIMIT ?",
         (time.time(), deal_id, row["product_key"] or "", row["subcategory"] or "", row["brand"] or "",
@@ -262,7 +263,11 @@ async def deal_history(deal_id: str):
 
 @router.get("/{deal_id}/image")
 async def deal_image(deal_id: str, request: Request):
-    """Proxy the original Telegram photo, cached in memory."""
+    """Proxy the original Telegram photo, cached in memory.
+
+    The source message comes from the card's stored image link (never from the
+    request), so a photo adopted from another channel's repost resolves too.
+    """
     if deal_id in _image_cache:
         _image_cache.move_to_end(deal_id)
         return Response(content=_image_cache[deal_id], media_type="image/jpeg",
@@ -272,12 +277,16 @@ async def deal_image(deal_id: str, request: Request):
     # needs throttling — a popular cached image shouldn't count against it.
     await _limit_image(request)
 
-    row = db.query_one("SELECT channel_id, message_id FROM deals WHERE id = ?", (deal_id,))
-    if not row or not row["channel_id"]:
+    row = db.query_one("SELECT channel_id, message_id, image_url FROM deals WHERE id = ?", (deal_id,))
+    if not row or not row["image_url"]:
+        raise HTTPException(status_code=404, detail="No image for this deal.")
+    source = store.image_source(row["image_url"]) or (row["channel_id"], row["message_id"])
+    channel_id, message_id = int(source[0] or 0), int(source[1] or 0)
+    if not channel_id:
         raise HTTPException(status_code=404, detail="No image for this deal.")
 
     channel = db.query_one(
-        "SELECT source_user_id FROM channels WHERE tg_id = ?", (row["channel_id"],)
+        "SELECT source_user_id FROM channels WHERE tg_id = ?", (channel_id,)
     )
     if not channel or not channel["source_user_id"]:
         raise HTTPException(status_code=404, detail="No image for this deal.")
@@ -287,9 +296,12 @@ async def deal_image(deal_id: str, request: Request):
         raise HTTPException(status_code=404, detail="No image for this deal.")
 
     try:
-        entity = await client.get_entity(int(row["channel_id"]))
-        message = await client.get_messages(entity, ids=int(row["message_id"]))
+        entity = await client.get_entity(channel_id)
+        message = await client.get_messages(entity, ids=message_id)
         if not message or not getattr(message, "photo", None):
+            # The channel deleted the post (or its photo): the card has no
+            # picture any more and the deal is most likely over — retire it.
+            store.drop_image(deal_id)
             raise HTTPException(status_code=404, detail="No image for this deal.")
         buffer = io.BytesIO()
         # thumb=-2 is a mid-size thumbnail: sharp enough for a card, small to fetch.

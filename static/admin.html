@@ -149,6 +149,24 @@
       <div class="msg hidden" id="data-source-msg"></div>
     </section>
 
+    <section class="card" id="push-card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Hot-deal pushes</h2>
+        <span class="status-pill" id="push-pill">…</span>
+      </div>
+      <p class="muted">Every ingest cycle picks the best live deals — women's items first — and pushes them to
+        everyone at random moments before the next cycle. Nothing goes out in quiet hours.</p>
+      <div class="msg hidden" id="push-warning"></div>
+      <div id="push-stats" class="muted small"></div>
+      <div id="push-plan" class="muted small" style="margin-top:6px"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-primary btn-sm" id="push-now" type="button">Send the top deal now</button>
+        <button class="btn btn-soft btn-sm" id="push-refresh" type="button">Refresh</button>
+      </div>
+      <div class="msg hidden" id="push-msg"></div>
+      <table style="margin-top:10px"><tbody id="push-recent"></tbody></table>
+    </section>
+
     <section class="card" id="notify-card">
       <h2>Send a notification</h2>
       <p class="muted">Goes to every device that has opened the site or app. Optionally attach a deal — its photo
@@ -182,6 +200,14 @@
       </div>
       <p class="muted small hidden" id="pause-note" style="margin-top:-6px">
         ⏸ Automatic syncing is paused — the site is showing what it already has. "Sync now" still works.</p>
+      <div class="row" style="align-items:center;gap:8px;margin-top:4px">
+        <span class="muted small">Check for new deals every</span>
+        <input class="input" id="poll-minutes" type="number" min="5" max="360" step="5" style="width:76px" />
+        <span class="muted small">min</span>
+        <button class="btn btn-soft btn-sm" id="poll-save" type="button">Save</button>
+        <button class="btn btn-ghost btn-sm" id="poll-reset" type="button">Reset to default</button>
+      </div>
+      <p class="muted small" id="poll-note" style="margin-top:-4px"></p>
       <p class="muted">Every channel the reader account follows on Telegram is read automatically.
         Block any you don't want on the site — blocked channels stay blocked. To add one, join it in Telegram
         (then "Refresh from Telegram") or paste its @username below.</p>

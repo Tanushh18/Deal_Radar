@@ -2065,41 +2065,48 @@
   }
 
   /* ============================================================
-     DROP COUNTDOWN  (a fresh "drop" feel ~8x a day, not a permanent timer)
+     DROP COUNTDOWN  (live countdown to the server's real next ingest cycle —
+     not a decorative schedule; /api/ping is the cheapest route in the app,
+     so polling it every 30s to stay honest costs nothing extra)
      ============================================================ */
-  const DROPS_PER_DAY = 8;
-  const DROP_MS = (24 * 60 * 60 * 1000) / DROPS_PER_DAY; // 3h slots
+  const DROP_RESYNC_MS = 30_000;
   let dropTimer = null;
+  let dropResyncTimer = null;
+  let nextIngestAt = null;   // ms epoch from the server, or null before the first sync
+  let lastIngestAt = null;   // ms epoch of the last cycle we've observed complete
 
-  function nextDropAt() {
-    const now = Date.now();
-    return Math.ceil(now / DROP_MS) * DROP_MS;
+  async function syncIngestTiming() {
+    try {
+      const p = await api('/api/ping');
+      const before = lastIngestAt;
+      if (p.next_ingest_at) nextIngestAt = p.next_ingest_at * 1000;
+      if (p.last_ingest_at) lastIngestAt = p.last_ingest_at * 1000;
+      // A cycle actually finished since our last check — the spotlight (best
+      // deal of the latest batch) is worth refreshing now, not on a fixed timer.
+      if (before && lastIngestAt && lastIngestAt > before) loadSpotlight();
+    } catch { /* keep ticking on the last known value; we'll resync again shortly */ }
   }
 
   function renderDropCountdown() {
     const el = $('#drop-countdown');
     const timeEl = $('#dc-time');
     if (!el || !timeEl) return;
-    const remaining = nextDropAt() - Date.now();
-    if (remaining <= 0) { tickDropCountdown(); return; }
+    if (!nextIngestAt) { el.classList.add('hidden'); return; }
+    const remaining = nextIngestAt - Date.now();
+    el.classList.remove('hidden');
+    if (remaining <= 0) { timeEl.textContent = 'checking now'; return; }
     const h = Math.floor(remaining / 3600000);
     const m = Math.floor((remaining % 3600000) / 60000);
     const s = Math.floor((remaining % 60000) / 1000);
     timeEl.textContent = h > 0 ? `${h}h ${m}m` : `${m}m ${String(s).padStart(2, '0')}s`;
-    el.classList.remove('hidden');
-  }
-
-  function tickDropCountdown() {
-    const before = nextDropAt();
-    renderDropCountdown();
-    // Crossing into a new 3h slot means a new drop just landed — refresh the spotlight.
-    if (nextDropAt() !== before) loadSpotlight();
   }
 
   function startDropCountdown() {
-    renderDropCountdown();
+    syncIngestTiming().then(renderDropCountdown);
     if (dropTimer) clearInterval(dropTimer);
-    dropTimer = setInterval(tickDropCountdown, 1000);
+    if (dropResyncTimer) clearInterval(dropResyncTimer);
+    dropTimer = setInterval(renderDropCountdown, 1000);
+    dropResyncTimer = setInterval(syncIngestTiming, DROP_RESYNC_MS);
   }
 
   /* ============================================================

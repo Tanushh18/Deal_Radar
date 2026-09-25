@@ -91,7 +91,7 @@ client = FakeClient()
 _mid = [100]
 
 
-def msg(text: str, channel: int, photo: bool = False, age_minutes: float = 0):
+def msg(text: str, channel: int, photo: bool = True, age_minutes: float = 0):
     _mid[0] += 1
     return SimpleNamespace(
         peer_id=SimpleNamespace(channel_id=channel), message=text, raw_text=text, id=_mid[0],

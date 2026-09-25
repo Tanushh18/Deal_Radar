@@ -95,6 +95,9 @@ SIZE_RE = re.compile(
 ASIN_RE = re.compile(r"/(?:dp|gp/product|gp/aw/d|d)/([A-Z0-9]{10})", re.IGNORECASE)
 FK_PID_RE = re.compile(r"[?&]pid=([A-Z0-9]+)", re.IGNORECASE)
 FK_ITM_RE = re.compile(r"/p/(itm[a-z0-9]+)", re.IGNORECASE)
+MYNTRA_ID_RE = re.compile(r"myntra\.com/.*?/(\d{6,})(?:/buy)?/?(?:[?#]|$)", re.IGNORECASE)
+AJIO_ID_RE = re.compile(r"ajio\.com/(?:.*/)?p/([0-9a-z_]{6,})", re.IGNORECASE)
+NYKAA_ID_RE = re.compile(r"nykaa\.com/.*/p/(\d{4,})", re.IGNORECASE)
 EMOJI_RE = re.compile(
     "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF←-⇿⬀-⯿️‍]+"
 )
@@ -202,6 +205,10 @@ def product_key(url: str, store: str, norm_title: str) -> str:
     itm = FK_ITM_RE.search(url)
     if itm:
         return f"flipkart:{itm.group(1).lower()}"
+    for store_name, pattern in (("myntra", MYNTRA_ID_RE), ("ajio", AJIO_ID_RE), ("nykaa", NYKAA_ID_RE)):
+        found = pattern.search(url)
+        if found:
+            return f"{store_name}:{found.group(1).lower()}"
     if norm_title:
         digest = hashlib.sha1(norm_title.encode("utf-8")).hexdigest()[:16]
         return f"{store}:t:{digest}"
@@ -272,6 +279,33 @@ def extract_coupon(text: str) -> str:
         if any(c.isdigit() for c in code) or code.isupper():
             return code
     return ""
+
+
+def deal_id(pkey: str, price: Optional[float]) -> str:
+    return hashlib.sha1(f"{pkey}|{int(price or 0)}".encode("utf-8")).hexdigest()[:20]
+
+
+def build_search_blob(deal: Dict[str, Any]) -> str:
+    return " ".join(filter(None, [
+        (deal.get("title") or "").lower(), deal.get("norm_title") or "", (deal.get("brand") or "").lower(),
+        (deal.get("category") or "").lower(), (deal.get("subcategory") or "").lower(), deal.get("store") or "",
+    ]))
+
+
+def rebase_on_url(deal: Dict[str, Any], final_url: str) -> None:
+    """Re-derive store / product identity from a resolved store URL, in place.
+
+    The posted link (deal["url"]) is kept — it is what the channel shared and
+    it works; the resolved one only fixes the store and, when it carries an
+    ASIN / Flipkart pid, the product key that dedup and price history hang on.
+    """
+    store = detect_store(final_url)
+    deal["resolved_url"] = final_url
+    deal["store"] = store
+    deal["clean_url"] = clean_url(final_url)
+    deal["product_key"] = product_key(final_url, store, deal.get("norm_title") or "")
+    deal["id"] = deal_id(deal["product_key"], deal.get("price"))
+    deal["search_blob"] = build_search_blob(deal)
 
 
 def parse_message(
@@ -361,12 +395,13 @@ def parse_message(
     pkey = product_key(url or title, store, norm)
 
     now = time.time()
-    search_blob = " ".join(
-        filter(None, [title.lower(), norm, brand.lower(), category.lower(), subcategory.lower(), store])
+    search_blob = build_search_blob(
+        {"title": title, "norm_title": norm, "brand": brand, "category": category,
+         "subcategory": subcategory, "store": store}
     )
 
     return {
-        "id": hashlib.sha1(f"{pkey}|{int(price or 0)}".encode("utf-8")).hexdigest()[:20],
+        "id": deal_id(pkey, price),
         "title": title,
         "norm_title": norm,
         "product_key": pkey,

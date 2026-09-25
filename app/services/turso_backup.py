@@ -12,6 +12,10 @@ across up to two physical databases:
                   primary-key lookup even after the deal left the local cache.
     price_alerts  visitors' "tell me below ₹X" alerts, which otherwise lived
                   only on Render's wiped-on-restart disk.
+    devices       every app install that registered: its push token, digest
+                  choice and follows (as JSON). Without this a restart left
+                  the server unable to push to anyone until they reopened the
+                  app — "Sent to 0 devices".
 
   PRICES database (TURSO_DB_02, optional) —
     price_points  every observed price change, keyed (product_key, seen_at) in
@@ -86,6 +90,11 @@ _SCHEMA_MAIN = [
         triggered_at REAL, triggered_price REAL,
         PRIMARY KEY (device_id, created_at)
     ) WITHOUT ROWID""",
+    """CREATE TABLE IF NOT EXISTS devices (
+        device_id TEXT PRIMARY KEY,
+        platform TEXT, push_token TEXT, digest INTEGER, digest_hour INTEGER,
+        follows TEXT, created_at REAL, last_seen_at REAL
+    ) WITHOUT ROWID""",
     "CREATE TABLE IF NOT EXISTS dr_schema (version INTEGER NOT NULL)",
 ]
 
@@ -98,6 +107,9 @@ _PRICE_POINTS_DDL = """CREATE TABLE IF NOT EXISTS price_points (
 
 _ALERT_COLS = ["device_id", "created_at", "deal_id", "product_key", "title",
                "target_price", "start_price", "push_token", "triggered_at", "triggered_price"]
+_DEVICE_COLS = ["device_id", "platform", "push_token", "digest", "digest_hour",
+                "follows", "created_at", "last_seen_at"]
+_FOLLOW_COLS = ["kind", "value", "min_discount", "created_at"]
 
 _thread: Optional[threading.Thread] = None
 _stop = threading.Event()
@@ -430,6 +442,30 @@ def _push_alerts(client: httpx.Client) -> int:
     return len(rows)
 
 
+def _push_devices(client: httpx.Client) -> int:
+    """Upsert changed devices, each with its follows folded in as JSON."""
+    rows = db.query(
+        "SELECT device_id, platform, push_token, digest, digest_hour, created_at, last_seen_at, turso_dirty "
+        "FROM devices WHERE turso_dirty > 0 LIMIT ?", (BATCH_SIZE,))
+    if not rows:
+        return 0
+    updates = ", ".join(f"{c} = excluded.{c}" for c in _DEVICE_COLS[1:])
+    sql = (f"INSERT INTO devices ({', '.join(_DEVICE_COLS)}) VALUES ({', '.join('?' * len(_DEVICE_COLS))}) "
+           f"ON CONFLICT(device_id) DO UPDATE SET {updates}")
+    for batch in _chunks(rows, 50):
+        statements = []
+        for r in batch:
+            follows = [dict(f) for f in db.query(
+                f"SELECT {', '.join(_FOLLOW_COLS)} FROM device_follows WHERE device_id = ?", (r["device_id"],))]
+            values = dict(r)
+            values["follows"] = json.dumps(follows)
+            statements.append({"sql": sql, "args": [arg(values.get(c)) for c in _DEVICE_COLS]})
+        _pipeline(client, statements)
+        db.execute_many("UPDATE devices SET turso_dirty = 0 WHERE device_id = ? AND turso_dirty = ?",
+                        [(r["device_id"], r["turso_dirty"]) for r in batch])
+    return len(rows)
+
+
 def _backup_round() -> None:
     # Each sub-step is independent — one failing must not skip the others;
     # whatever didn't go up is still flagged and goes next round.
@@ -443,7 +479,7 @@ def _backup_round() -> None:
             except Exception as exc:  # noqa: BLE001
                 log.warning("Turso price_points migration failed: %s", exc)
         counts = {}
-        for name, step in (("outbox", _push_outbox), ("deals", _push_deals),
+        for name, step in (("devices", _push_devices), ("outbox", _push_outbox), ("deals", _push_deals),
                            ("prices", _push_price_points), ("alerts", _push_alerts)):
             counts[name] = 0
             try:
@@ -486,6 +522,7 @@ def stop() -> None:
 
 
 ALERT_RESTORE_DAYS = 30
+DEVICE_RESTORE_DAYS = 120   # an install not opened in 4 months is almost certainly gone
 RESTORE_PAGE = 1000
 
 
@@ -542,6 +579,8 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
                 {"sql": f"SELECT {', '.join(_ALERT_COLS)} FROM price_alerts "
                         "WHERE triggered_at IS NULL OR triggered_at > ?",
                  "args": [arg(time.time() - ALERT_RESTORE_DAYS * 86400)]},
+                {"sql": f"SELECT {', '.join(_DEVICE_COLS)} FROM devices WHERE last_seen_at > ?",
+                 "args": [arg(time.time() - DEVICE_RESTORE_DAYS * 86400)]},
             ])
             prices_exists = _pipeline(client, [
                 {"sql": "SELECT EXISTS (SELECT 1 FROM price_points) AS e"},
@@ -549,6 +588,7 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
             deals_empty = not rows_to_dicts(results[0])[0]["e"]
             prices_empty = not rows_to_dicts(prices_exists[0])[0]["e"]
             alerts = rows_to_dicts(results[1])
+            saved_devices = rows_to_dicts(results[2])
             deals = 0 if deals_empty else _restore_deals(client, time.time() - cache_days * 86400)
     except Exception as exc:  # noqa: BLE001 - restore must never crash boot
         log.warning("Turso restore failed: %s", exc)
@@ -565,5 +605,34 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
             [a[c] for c in _ALERT_COLS],
         )
         restored += 1
-    log.info("Restored from Turso: %d deals, %d price alerts", deals, restored)
-    return {"deals": deals, "alerts": restored, "deals_empty": deals_empty, "prices_empty": prices_empty}
+    devices_restored = _restore_devices(saved_devices)
+    log.info("Restored from Turso: %d deals, %d price alerts, %d devices", deals, restored, devices_restored)
+    return {"deals": deals, "alerts": restored, "devices": devices_restored,
+            "deals_empty": deals_empty, "prices_empty": prices_empty}
+
+
+def _restore_devices(saved: List[Dict[str, Any]]) -> int:
+    """Bring devices (push tokens + follows) back after a cold start. A device
+    that already re-registered locally since boot keeps its fresher row."""
+    count = 0
+    for d in saved:
+        if db.query_one("SELECT 1 FROM devices WHERE device_id = ?", (d["device_id"],)):
+            continue
+        db.execute(
+            "INSERT INTO devices (device_id, platform, push_token, digest, digest_hour, created_at, last_seen_at, "
+            "turso_dirty) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
+            (d["device_id"], d.get("platform") or "", d.get("push_token") or "", int(d.get("digest") or 0),
+             int(d.get("digest_hour") if d.get("digest_hour") is not None else 19),
+             d.get("created_at"), d.get("last_seen_at")),
+        )
+        try:
+            follows = json.loads(d.get("follows") or "[]")
+        except (TypeError, ValueError):
+            follows = []
+        for f in follows if isinstance(follows, list) else []:
+            db.execute(
+                "INSERT INTO device_follows (device_id, kind, value, min_discount, created_at) VALUES (?, ?, ?, ?, ?)",
+                (d["device_id"], f.get("kind"), f.get("value"), int(f.get("min_discount") or 0), f.get("created_at")),
+            )
+        count += 1
+    return count

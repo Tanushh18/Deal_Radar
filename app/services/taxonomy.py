@@ -125,10 +125,10 @@ KNOWN_BRANDS: List[str] = [
 ]
 
 STORE_DOMAINS = {
-    "amazon": ["amazon.in", "amazon.com", "amzn.to", "amzn.in", "amzn.eu"],
-    "flipkart": ["flipkart.com", "fkrt.it", "fkrt.cc", "dl.flipkart.com", "fkrt.co"],
-    "myntra": ["myntra.com", "myntr.it"],
-    "ajio": ["ajio.com", "ajiio.in"],
+    "amazon": ["amazon.in", "amazon.com", "amzn.to", "amzn.in", "amzn.eu", "link.amazon", "amzn-to.co"],
+    "flipkart": ["flipkart.com", "fkrt.it", "fkrt.cc", "dl.flipkart.com", "fkrt.co", "fkrt.site", "fkrt.to", "fktr.in"],
+    "myntra": ["myntra.com", "myntr.it", "myntr.in", "mynt.ro"],
+    "ajio": ["ajio.com", "ajiio.in", "ajiio.co", "ajiotrk."],
     "meesho": ["meesho.com", "meesho.io"],
     "jiomart": ["jiomart.com"],
     "tatacliq": ["tatacliq.com", "tcl.sn"],
@@ -136,7 +136,7 @@ STORE_DOMAINS = {
     "croma": ["croma.com"],
     "reliancedigital": ["reliancedigital.in"],
     "snapdeal": ["snapdeal.com"],
-    "shopsy": ["shopsy.in"],
+    "shopsy": ["shopsy.in", "shpsy.cc"],
     "firstcry": ["firstcry.com"],
     "bigbasket": ["bigbasket.com"],
     "zepto": ["zepto.co", "zeptonow.com"],
@@ -190,13 +190,38 @@ def category_list() -> List[Dict[str, object]]:
     return [{"name": cat, "subcategories": sorted(CATEGORIES[cat].keys())} for cat in ordered]
 
 
+_WOMEN_RE = re.compile(r"\b(?:women|womens|woman|ladies|lady|girls?|female|her)\b", re.IGNORECASE)
+_MEN_RE = re.compile(r"\b(?:men|mens|man|male|gents|boys?|him)\b", re.IGNORECASE)
+
+# The same garment word ("t-shirt", "kurta") files under either gender; which
+# one is decided by who it's for. Subcategory equivalents across the two.
+_TO_WOMEN = {"Shirt": "Top", "T-Shirt": "Top", "Outerwear": "Top", "Ethnic": "Kurta",
+             "Bottomwear": "Bottomwear", "Innerwear": "Innerwear"}
+_TO_MEN = {"Top": "T-Shirt", "Kurta": "Ethnic", "Ethnic Set": "Ethnic",
+           "Bottomwear": "Bottomwear", "Innerwear": "Innerwear"}
+
+
+def gender(text: str) -> str:
+    """"women" | "men" | "" (neither, or both — unisex) from explicit words only."""
+    women, men = bool(_WOMEN_RE.search(text or "")), bool(_MEN_RE.search(text or ""))
+    if women == men:
+        return ""
+    return "women" if women else "men"
+
+
 def classify(text: str) -> tuple:
     """Return (category, subcategory) for a blob of deal text."""
     blob = f" {text.lower()} "
     for term in _SORTED_TERMS:
         needle = term if len(term) > 3 else f" {term} "
         if needle in blob:
-            return TERM_TO_CATEGORY[term]
+            category, subcategory = TERM_TO_CATEGORY[term]
+            who = gender(text)
+            if category == "Men Fashion" and who == "women" and subcategory in _TO_WOMEN:
+                return ("Women Fashion", _TO_WOMEN[subcategory])
+            if category == "Women Fashion" and who == "men" and subcategory in _TO_MEN:
+                return ("Men Fashion", _TO_MEN[subcategory])
+            return category, subcategory
     return ("Other", "General")
 
 

@@ -30,7 +30,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import parser, price_store, push, ratelimit, search, sheets, store, telegram, tg_post
+from . import links, parser, price_store, push, quality, ratelimit, search, sheets, store, telegram, tg_post
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +65,54 @@ def sync_paused() -> bool:
 
 def set_sync_paused(paused: bool) -> None:
     db.set_meta("sync_paused", "1" if paused else "0")
+
+
+# --- runtime-adjustable poll interval (admin panel) ---------------------
+# Overrides settings.poll_interval_seconds without a redeploy. Stored in meta
+# (and mirrored to the Sheet's Settings tab like every other admin setting —
+# see admin.py), so it survives a restart on Render's ephemeral disk. Cached
+# in memory after the first read: /api/ping advertises itself as DB-free
+# (an uptime pinger shouldn't cost a real query on every hit), and this
+# keeps that true after the first call — the cache is only ever written by
+# the two setters below, both called from the admin endpoint.
+POLL_INTERVAL_META_KEY = "poll_interval_seconds_override"
+MIN_POLL_INTERVAL_SECONDS = 300      # 5 min floor — protects Telegram/Sheets/Turso from being hammered
+MAX_POLL_INTERVAL_SECONDS = 21600    # 6 h ceiling — past this it's not really "ingesting" any more
+_poll_interval_cache: Optional[int] = None
+
+
+def poll_interval_seconds() -> int:
+    """The cadence actually in effect: an admin override if one's set and valid, else the env default."""
+    global _poll_interval_cache
+    if _poll_interval_cache is None:
+        raw = db.get_meta(POLL_INTERVAL_META_KEY)
+        value = None
+        if raw:
+            try:
+                value = int(raw)
+            except (TypeError, ValueError):
+                value = None
+            if value is not None and not (MIN_POLL_INTERVAL_SECONDS <= value <= MAX_POLL_INTERVAL_SECONDS):
+                value = None
+        _poll_interval_cache = value or settings.poll_interval_seconds
+    return _poll_interval_cache
+
+
+def set_poll_interval_seconds(seconds: int) -> int:
+    """Clamped to the safe range; the scheduler picks it up on its next iteration, no restart needed."""
+    global _poll_interval_cache
+    seconds = max(MIN_POLL_INTERVAL_SECONDS, min(MAX_POLL_INTERVAL_SECONDS, int(seconds)))
+    db.set_meta(POLL_INTERVAL_META_KEY, str(seconds))
+    _poll_interval_cache = seconds
+    return seconds
+
+
+def reset_poll_interval_seconds() -> int:
+    """Clear the override — back to whatever POLL_INTERVAL_SECONDS is set to."""
+    global _poll_interval_cache
+    db.set_meta(POLL_INTERVAL_META_KEY, "")
+    _poll_interval_cache = settings.poll_interval_seconds
+    return _poll_interval_cache
 
 
 async def _resolve_reader(channel: Dict[str, Any]) -> Optional[int]:
@@ -124,9 +172,14 @@ def with_hidden_links(text: str, message: Any) -> str:
     return f"{text}\n" + "\n".join(extra) if extra and text else text
 
 
-async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
-    """Pull and store new deals from one channel."""
-    result = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "new_deal_ids": []}
+async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
+    """Pull and store new deals from one channel.
+
+    Per post: parse → cheap text gate → resolve shortlinks (concurrently, only
+    for posts that survived) → attach photo → save through the full gate.
+    """
+    result: Dict[str, Any] = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "filtered": 0,
+                              "resolved": 0, "reasons": {}, "new_deal_ids": []}
     source_user = await _resolve_reader(channel)
     if not source_user:
         return result
@@ -145,8 +198,13 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
         log.warning("Channel %s failed: %s", channel.get("title"), exc)
         return result
 
+    def filtered(reason: str) -> None:
+        result["filtered"] += 1
+        result["reasons"][reason] = result["reasons"].get(reason, 0) + 1
+
+    gate_on = settings.quality_filter
     highest = watermark
-    parsed: List[Dict[str, Any]] = []
+    candidates = []
     for message in messages:
         highest = max(highest, int(message.id or 0))
         text = with_hidden_links(message.message or getattr(message, "raw_text", "") or "", message)
@@ -165,19 +223,34 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, int]:
         if deal is None:
             result["skipped"] += 1
             continue
+        reason = quality.text_reason(deal) if gate_on else None
+        if reason:
+            filtered(reason)
+            continue
+        candidates.append((deal, message))
 
+    try:
+        result["resolved"] = await links.resolve_deals([deal for deal, _ in candidates])
+    except Exception as exc:  # noqa: BLE001 — resolution only improves dedup; never block ingest
+        log.warning("Shortlink resolution failed for %s: %s", channel.get("title"), exc)
+
+    for deal, message in candidates:
         # Telegram-hosted photos are fetched lazily through our own endpoint.
+        # Set after resolution: resolving can change the deal's id.
         if getattr(message, "photo", None):
-            deal["image_url"] = f"/api/deals/{deal['id']}/image"
-        parsed.append((deal, message))
+            deal["image_url"] = store.telegram_image_url(deal["id"], int(channel["tg_id"]), int(message.id))
 
     # Local SQLite only keeps a few days; pull these products' longer history
     # from Turso in one round trip so the ALL-TIME LOW and fake-MRP checks in
-    # save_deal see it.
-    await price_store.prefetch([d["product_key"] for d, _ in parsed if d.get("product_key")])
+    # save_deal see it. After resolution: resolving can change product keys.
+    await price_store.prefetch([d["product_key"] for d, _ in candidates if d.get("product_key")])
     fresh_after = time.time() - settings.tg_post_max_age_minutes * 60
-    for deal, message in parsed:
-        outcome = store.save_deal(deal)
+    for deal, message in candidates:
+        outcome = store.save_deal(deal, gate=quality.reject_reason if gate_on else None)
+        if outcome == "filtered":
+            filtered(quality.reject_reason(deal) or "filtered")
+            continue
+        store.remember_resolved_url(deal)
         if outcome == "new":
             result["new"] += 1
             result["new_deal_ids"].append(deal["id"])
@@ -614,28 +687,49 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
     async with _cycle_lock:
         started = time.time()
         _state["running"] = True
-        totals = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "channels": 0}
+        totals: Dict[str, Any] = {"fetched": 0, "new": 0, "merged": 0, "skipped": 0, "filtered": 0,
+                                  "resolved": 0, "channels": 0}
+        reasons: Dict[str, int] = {}
         new_deal_ids: List[str] = []
         try:
             from . import public_reader  # local: public_reader imports routers that import ingest
             await public_reader.maybe_sync_followed()
+            quality.sweep_stored()  # no-op unless the rules changed (or the DB was just restored)
             channels = db.rows_to_dicts(
                 db.query("SELECT * FROM channels WHERE active = 1 ORDER BY last_fetched_at ASC")
             )
             for channel in channels:
                 result = await ingest_channel(channel)
                 totals["channels"] += 1
-                for key in ("fetched", "new", "merged", "skipped"):
-                    totals[key] += result[key]
+                for key in ("fetched", "new", "merged", "skipped", "filtered", "resolved"):
+                    totals[key] += result.get(key, 0)
+                # Named filter_reason, not reason: run_cycle's own `reason` param (why the
+                # cycle ran — "scheduled"/"admin") lives in this same scope and a `for`
+                # loop here doesn't get its own — reusing `reason` silently overwrote it
+                # with whatever filter reason a channel last hit, corrupting the result's
+                # own "reason" field with things like "no_image" instead of "scheduled".
+                for filter_reason, n in result.get("reasons", {}).items():
+                    reasons[filter_reason] = reasons.get(filter_reason, 0) + n
                 new_deal_ids.extend(result["new_deal_ids"])
                 await asyncio.sleep(0.4)  # be polite to Telegram between channels
 
             expired = store.expire_stale()
-            store.enforce_image_ratio()
+            store.retire_imageless()
             _rollup_price_history_daily()
             store.rescore_all()
             liveness = await verify_links(settings.liveness_batch)
             alerts = await run_watchlist_alerts()
+
+            # Plan this window's hot-deal pushes (PUSHES_PER_CYCLE of them, each
+            # at a random moment before the next cycle starts — see hot_push.py).
+            push_plan: List[Dict[str, Any]] = []
+            try:
+                from . import hot_push
+                window = poll_interval_seconds() - (time.time() - started)
+                push_plan = hot_push.schedule_cycle(new_deal_ids, window)
+            except Exception as exc:  # noqa: BLE001 — never break the cycle over a notification
+                log.warning("Hot-push scheduling failed: %s", exc)
+
             purged_ids = store.purge_ancient()
             store.purge_housekeeping()
             _purge_local_cache()
@@ -678,6 +772,9 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
 
             result = {
                 **totals,
+                "filtered_reasons": reasons,
+                "push_plan": [{"slot": p["slot"] + 1, "fires_in_s": round(p["fires_at"] - time.time())}
+                              for p in push_plan],
                 "expired": expired,
                 "purged": len(purged_ids),
                 "purged_from_sheets": 0,
@@ -719,9 +816,9 @@ async def scheduler_loop() -> None:
             raise
         except Exception as exc:  # noqa: BLE001
             log.warning("Scheduler iteration failed: %s", exc)
-        # Fixed cadence: a new cycle starts every POLL_INTERVAL_SECONDS (5 min),
-        # however long the last one took.
-        await asyncio.sleep(max(30, settings.poll_interval_seconds - (time.time() - started)))
+        # A new cycle starts every poll_interval_seconds() (admin-adjustable —
+        # see set_poll_interval_seconds), however long the last one took.
+        await asyncio.sleep(max(30, poll_interval_seconds() - (time.time() - started)))
 
 
 async def keepalive_loop() -> None:

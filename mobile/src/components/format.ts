@@ -110,6 +110,17 @@ export function avatarHues(title: string): [number, number] {
 
 export const plural = (n: number, one: string, many = one + 's') => (n === 1 ? one : many);
 
+/** Live "next check in Xm Ys" from a unix-seconds target — real server timing, not decorative. */
+export function nextCheckIn(nextAtSeconds: number | null | undefined, nowMs: number = Date.now()): string {
+  if (!nextAtSeconds) return '';
+  const remainingMs = nextAtSeconds * 1000 - nowMs;
+  if (remainingMs <= 0) return 'checking now';
+  const h = Math.floor(remainingMs / 3600000);
+  const m = Math.floor((remainingMs % 3600000) / 60000);
+  const s = Math.floor((remainingMs % 60000) / 1000);
+  return h > 0 ? `${h}h ${m}m` : `${m}m ${String(s).padStart(2, '0')}s`;
+}
+
 export function endsIn(ts: number | null | undefined): string {
   if (!ts) return '';
   const secs = ts - Date.now() / 1000;

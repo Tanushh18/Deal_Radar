@@ -20,7 +20,7 @@ from telethon import events
 
 from .. import db
 from ..config import settings
-from . import parser, price_store, store, telegram, tg_post
+from . import links, parser, price_store, quality, store, telegram, tg_post
 
 log = logging.getLogger("dealradar.live")
 
@@ -73,12 +73,24 @@ async def handle_message(client: Any, message: Any) -> Optional[str]:
     )
     if deal is None:
         return None
+    # Same steps as the poll cycle (ingest.ingest_channel), so a post is
+    # judged identically whichever path sees it first.
+    gate_on = settings.quality_filter
+    if gate_on and quality.text_reason(deal):
+        return "filtered"
+    try:
+        await links.resolve_deals([deal])
+    except Exception as exc:  # noqa: BLE001 — resolution only improves dedup
+        log.info("Shortlink resolution failed: %s", exc)
     if getattr(message, "photo", None):
-        deal["image_url"] = f"/api/deals/{deal['id']}/image"
+        deal["image_url"] = store.telegram_image_url(deal["id"], int(tg_id), int(message.id))
 
     # Full Turso history first, so the all-time-low and fake-MRP checks are right.
     await price_store.prefetch([deal["product_key"]] if deal.get("product_key") else [])
-    outcome = store.save_deal(deal)
+    outcome = store.save_deal(deal, gate=quality.reject_reason if gate_on else None)
+    if outcome == "filtered":
+        return outcome
+    store.remember_resolved_url(deal)
     _stats["deals"] += 1
     _stats["last_at"] = time.time()
 

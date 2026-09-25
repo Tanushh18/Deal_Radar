@@ -127,6 +127,8 @@ def main() -> int:
     check("face wash -> Beauty", parsed[8]["category"] == "Beauty", parsed[8]["category"])
 
     print("\n=== 2. DEDUP & STORAGE ===")
+    for d in real:
+        d["image_url"] = f"https://img.example/{d['id']}.jpg"  # feeds show photo cards only
     outcomes = [store.save_deal(d) for d in real]
     print(f"  outcomes: {outcomes}")
     live = db.query_one("SELECT COUNT(*) AS c FROM deals")["c"]
