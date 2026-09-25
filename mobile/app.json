@@ -10,11 +10,11 @@
     "backgroundColor": "#080b12",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dealradar.app",
+      "bundleIdentifier": "com.tanush.dealradar",
       "buildNumber": "1"
     },
     "android": {
-      "package": "com.dealradar.app",
+      "package": "com.tanush.dealradar",
       "versionCode": 2,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
@@ -32,7 +32,10 @@
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.ACCESS_NOTIFICATION_POLICY"
       ],
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false

@@ -3,7 +3,7 @@
 A native React Native app (Expo SDK 57, RN 0.86, New Architecture) that talks
 to the DealRadar FastAPI server's JSON API.
 
-- Package id `com.dealradar.app`, name **DealRadar**
+- Package id `com.tanush.dealradar`, name **DealRadar**
 - Default server: `https://dealradar-0oza.onrender.com` (changeable in-app)
 - Auth: the server's `tgdeals_session` cookie. On Android, RN `fetch` goes
   through OkHttp + `ForwardingCookieHandler`, which is backed by
@@ -120,7 +120,7 @@ let the app render them (not done yet).
 "View deal") → `DealDetail {id: data.deal_id}` (fallback `?deal=` in
 `data.url`, then `Website {path}`), pushed on top of `Main`.
 
-Test the background job on a device: `adb shell cmd jobscheduler run -f com.dealradar.app <jobId>`
+Test the background job on a device: `adb shell cmd jobscheduler run -f com.tanush.dealradar <jobId>`
 or call `BackgroundTask.triggerTaskWorkerForTestingAsync()` from a dev build.
 
 ### Enabling remote push (needs Firebase)
@@ -129,7 +129,7 @@ Without FCM credentials `getExpoPushTokenAsync` fails; the device then
 registers token-less and relies on the feed poller.
 
 1. Create a Firebase project, add an Android app with package
-   `com.dealradar.app`, download **`google-services.json`** into `mobile/` and
+   `com.tanush.dealradar`, download **`google-services.json`** into `mobile/` and
    set `"android": { "googleServicesFile": "./google-services.json" }` in `app.json`.
 2. Upload the **FCM v1 service-account key** to Expo:
    `npx eas-cli@latest credentials` → Android → Google Service Account → *FCM V1*.
