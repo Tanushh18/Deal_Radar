@@ -108,6 +108,26 @@ def main() -> int:
         check("attached-deal broadcast carries the deal id and image", after2[0]["deal_id"] == deal["id"] and after2[0]["image_url"])
         check("broadcast rejects an unknown deal id",
               c.post("/api/admin/reader/broadcast", json={"title": "x", "body": "y", "deal_id": "does-not-exist"}, headers=ADMIN).status_code == 404)
+
+        print("\n=== AUTO-BROADCAST: BEST NEW DEAL PER CYCLE ===")
+        check("below the score bar: nothing sent", devices.broadcast_best([deal["id"]], min_score=999) is None)
+        weak = post("Random Cheap Item ₹49 https://www.amazon.in/dp/B0WEAKONE1", 4)
+        db.execute("UPDATE deals SET score = 20 WHERE id = ?", (weak["id"],))
+        hot = post("boAt Rockerz 255 Pro+ Earbuds ₹899 (MRP ₹3,999) https://www.amazon.in/dp/B0HOTDEAL01", 4)
+        db.execute("UPDATE deals SET score = 91, is_lowest = 1 WHERE id = ?", (hot["id"],))
+        before = len(c.get("/api/devices/feed", params={"device_id": dev}).json()["items"])
+        result = devices.broadcast_best([weak["id"], hot["id"]], min_score=80)
+        check("picks the higher scorer, not just the latest post", result is not None and result["deal_id"] == hot["id"], str(result))
+        after = c.get("/api/devices/feed", params={"device_id": dev}).json()["items"]
+        check("reaches every device with no follow/digest match needed", len(after) == before + 1)
+        check("carries the deal's own image", after[0]["deal_id"] == hot["id"] and after[0]["image_url"])
+        check("only this cycle's new ids are eligible, not the whole table",
+              devices.broadcast_best(["id-not-in-this-cycle"], min_score=0) is None)
+        check("a dead card is never broadcast even if it scored high",
+              devices.broadcast_best([], min_score=0) is None)
+        db.execute("UPDATE deals SET status = 'dead' WHERE id = ?", (hot["id"],))
+        check("retired between scoring and broadcast: skipped",
+              devices.broadcast_best([hot["id"]], min_score=0) is None)
     print("\n" + ("\033[92m✓ All checks passed.\033[0m" if not failures else f"\033[91m✗ {len(failures)} failed\033[0m"))
     return 1 if failures else 0
 

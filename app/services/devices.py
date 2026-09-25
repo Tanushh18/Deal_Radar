@@ -139,6 +139,44 @@ def broadcast(title: str, body: str, deal: Optional[Dict[str, Any]] = None) -> i
     return len(ids)
 
 
+def broadcast_best(candidate_ids: List[str], min_score: float) -> Optional[Dict[str, Any]]:
+    """Auto-triggered once per ingest cycle: the single standout new deal, to
+    every device — no digest toggle, no follow match required to receive it.
+
+    `candidate_ids` is this cycle's own new_deal_ids, never "best deal we
+    have," so the same favourite never gets re-broadcast cycle after cycle.
+    Only fires when something actually crosses `min_score` — most cycles find
+    nothing that good, and this must not become a notification every 40 min
+    regardless of quality. Picked after liveness/scoring so a dead or
+    since-retired card is never the one pushed.
+    """
+    if not candidate_ids:
+        return None
+    marks = ",".join("?" for _ in candidate_ids)
+    row = db.query_one(
+        f"SELECT * FROM deals WHERE id IN ({marks}) AND status = 'live' "
+        f"AND COALESCE(image_url, '') != '' ORDER BY score DESC LIMIT 1",
+        candidate_ids,
+    )
+    if not row or float(row["score"] or 0) < min_score:
+        return None
+    deal = dict(row)
+    bits = [_money(deal.get("price"))] if deal.get("price") else []
+    if deal.get("discount_pct"):
+        bits.append(f"{deal['discount_pct']}% off")
+    if deal.get("store"):
+        bits.append(str(deal["store"]).title())
+    if deal.get("is_lowest"):
+        bits.append("lowest we've ever seen")
+    name = (deal.get("title") or "").strip()
+    if len(name) > 60:
+        name = name[:59].rstrip() + "…"
+    title = f"🔥 {name}" if name else "🔥 A deal just landed"
+    body = " · ".join(bits) or "Worth a look"
+    sent = broadcast(title, body, deal)
+    return {"deal_id": deal["id"], "score": deal["score"], "devices": sent}
+
+
 def _money(value: Any) -> str:
     return f"₹{int(float(value)):,}" if value not in (None, "") else ""
 

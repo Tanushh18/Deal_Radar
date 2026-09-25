@@ -22,12 +22,23 @@ BOOT_TIME = time.time()
 
 @router.get("/ping")
 async def ping():
-    """Liveness probe / keepalive target."""
+    """Liveness probe / keepalive target.
+
+    Also carries ingest timing (in-memory only — ingest.state() touches no DB,
+    no Telegram, no Sheets) so the frontend's "next check in" countdown can
+    stay cheap to poll: no dedicated endpoint, no extra load on a hot path.
+    """
+    ingest_state = ingest.state()
+    last_run = ingest_state.get("last_run") or None
     return {
         "status": "ok",
         "service": "dealradar",
         "timestamp": int(time.time()),
         "uptime_seconds": int(time.time() - BOOT_TIME),
+        "poll_interval_seconds": settings.poll_interval_seconds,
+        "last_ingest_at": last_run,
+        "next_ingest_at": (last_run + settings.poll_interval_seconds) if last_run else None,
+        "ingest_running": bool(ingest_state.get("running")),
     }
 
 

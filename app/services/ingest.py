@@ -586,6 +586,15 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             store.rescore_all()
             liveness = await verify_links(settings.liveness_batch)
             alerts = await run_watchlist_alerts()
+
+            hot_deal = None
+            if settings.broadcast_hot_deal_enabled:
+                from . import devices
+                try:
+                    hot_deal = devices.broadcast_best(new_deal_ids, settings.broadcast_min_score)
+                except Exception as exc:  # noqa: BLE001 — never break the cycle over a notification
+                    log.warning("Hot-deal broadcast failed: %s", exc)
+
             purged_ids = store.purge_ancient()
             store.purge_housekeeping()
             _purge_local_cache()
@@ -628,6 +637,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             result = {
                 **totals,
                 "filtered_reasons": reasons,
+                "hot_deal_broadcast": hot_deal,
                 "expired": expired,
                 "purged": len(purged_ids),
                 "purged_from_sheets": 0,

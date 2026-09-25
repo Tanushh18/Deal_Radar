@@ -42,6 +42,7 @@ import {
   haptic,
   isBrowseMode,
   money,
+  nextCheckIn,
   num,
   plural,
   storeName,
@@ -933,12 +934,20 @@ function TopBar({
 function StatsCard({ stats, override, syncing }: { stats: Stats | null; override: string | null; syncing: boolean }) {
   const t = useTheme();
   const last = stats?.ingest?.last_run ?? null;
+  // Live, ticking, and tied to the server's real cycle — never a fixed decorative
+  // schedule. Re-rendering once a second is cheap: this is the only thing it drives.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const nextAt = last && stats?.poll_interval_seconds ? last + stats.poll_interval_seconds : null;
   const status =
     override ??
     (stats == null
       ? 'Tuning the radar…'
       : last
-        ? `Updated ${timeAgo(last)} · scanning every ${Math.round((stats.poll_interval_seconds ?? 0) / 60)} min`
+        ? `Updated ${timeAgo(last)} · next check in ${nextCheckIn(nextAt, now)}`
         : 'Waiting for the first sync…');
   const cells: [string, number | undefined, boolean][] = [
     ['Live deals', stats?.deals_live, false],
