@@ -1,7 +1,7 @@
 # 📡 DealRadar
 
 Turns the firehose of Telegram marketplace-deal channels into a searchable,
-de-duplicated catalog backed by Google Sheets.
+de-duplicated catalog backed by Turso and MongoDB.
 
 You sign in with your own Telegram account, pick the deal channels you already
 follow, and DealRadar reads them on a schedule: parsing each post into a
@@ -16,7 +16,7 @@ something you're watching shows up.
 - [How it works](#how-it-works)
 - [What makes the automation effective](#what-makes-the-automation-effective)
 - [Quick start (local)](#quick-start-local)
-- [Google Sheets setup](#google-sheets-setup)
+- [MongoDB setup](#mongodb-setup)
 - [Deploying to Render (free tier)](#deploying-to-render-free-tier)
 - [Keeping it awake — the ping API](#keeping-it-awake--the-ping-api)
 - [API reference](#api-reference)
@@ -39,11 +39,11 @@ Telegram channels                 DealRadar                        You
                            │ 4. expire  → TTL     │        │  search      │
                            │ 5. verify  → live?   │        │  filters     │
                            │ 6. alert   → Saved   │───────►│  alerts      │
-                           │ 7. flush   → Sheets  │        └──────────────┘
+                           │ 7. flush   → Turso   │        └──────────────┘
                            └──────────┬───────────┘
                                       ▼
                             ┌──────────────────┐
-                            │  Google Sheets   │  ← durable source of truth
+                            │  Turso + Mongo   │  ← durable source of truth
                             │  + SQLite cache  │  ← fast local index
                             └──────────────────┘
 ```
@@ -52,10 +52,12 @@ Telegram channels                 DealRadar                        You
 admin. Public deal channels aren't yours, so the only way to read what you already
 follow is to act as your own account — that's what the phone-code login is for.
 
-**Why two storage layers.** Google Sheets is durable and human-readable, but slow
-and rate-limited (~60 writes/min). Render's free disk is wiped on every restart.
-So Sheets is the source of truth, SQLite is the query index, and the cache is
-rebuilt from Sheets on cold start.
+**Why two storage layers.** Render's free disk is wiped on every restart, so
+nothing there can be the source of truth. Turso holds every deal, its full
+price history and price alerts, permanently. MongoDB holds users, channels,
+channel-tracking links, watchlists and admin settings — the smaller, less
+write-heavy state. Local SQLite is just a fast cache the app reads from,
+rebuilt from Turso/MongoDB on cold start.
 
 **Turso is the permanent store; local SQLite is a 15-day cache.** Every deal
 is upserted to Turso whenever it changes, along with every price change
@@ -67,8 +69,8 @@ from a background thread. Local SQLite keeps only the last `LOCAL_CACHE_DAYS`
 Turso has it. The price chart, sparklines, "check price" lookup, the
 ALL-TIME LOW badge and the fake-MRP check all read full history from Turso,
 and a deal older than the cache still opens from Turso. On a restart the
-cache refills from Turso. If Turso is empty (first boot) it is seeded from
-the Google Sheet. Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to enable it.
+cache refills from Turso. Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to
+enable it.
 
 **Price history can live in its own, second Turso database.** `price_points`
 is by far the heaviest table — a row per price change, for every product,
@@ -215,56 +217,45 @@ open http://localhost:8000/api/docs
 
 ---
 
-## Google Sheets setup
+## MongoDB setup
 
-Optional — without it the app runs SQLite-only, which is fine locally but loses
-data on every Render restart. **On Render, set this up.**
+Optional — without it users, channels, channel-tracking links and watchlists
+don't survive a Render restart (deals/price history/alerts always do — they
+live in Turso regardless). **On Render, set this up.**
 
-### 1. Create a Google Cloud service account
+### 1. Create a free MongoDB Atlas cluster
 
-1. Go to <https://console.cloud.google.com/> → create or pick a project.
-2. **APIs & Services → Library** → enable **Google Sheets API** and **Google Drive API**.
-3. **APIs & Services → Credentials → Create credentials → Service account**.
-   - Name it `dealradar`, click through, no roles needed.
-4. Open the service account → **Keys → Add key → Create new key → JSON**.
-   A `.json` file downloads. Keep it secret.
-5. Note the `client_email` inside — something like
-   `dealradar@yourproject.iam.gserviceaccount.com`.
+1. Go to <https://www.mongodb.com/cloud/atlas/register> and create a free account.
+2. Create a free (M0) cluster — any cloud/region.
+3. **Database Access** → add a database user with a username and password.
+4. **Network Access** → add `0.0.0.0/0` (allow access from anywhere) — Render's
+   outbound IP isn't fixed on the free plan.
+5. **Connect → Drivers** → copy the connection string, which looks like:
+   `mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/`
 
-### 2. Create and share the spreadsheet
+### 2. Wire it up
 
-1. Create a new Google Sheet (any name).
-2. **Share** it with the service account's `client_email`, with **Editor** access.
-3. Copy the sheet id from the URL:
-   `https://docs.google.com/spreadsheets/d/`**`THIS_LONG_ID`**`/edit`
-
-### 3. Wire it up
+Put it in `.env` (or Render's environment), with your actual username and
+password substituted in — not the `<username>`/`<password>` placeholders:
 
 ```bash
-# macOS
-base64 -i ~/Downloads/dealradar-abc123.json | tr -d '\n' > sa.b64
-# Linux
-base64 -w0 ~/Downloads/dealradar-abc123.json > sa.b64
+MONGODB_URI=mongodb+srv://user1:yourpassword@cluster0.xxxxx.mongodb.net/
 ```
 
-Put it in `.env`:
+Restart. The app creates five collections automatically, each indexed on its
+natural key (never a clear-and-rewrite like Sheets needed):
 
-```bash
-GOOGLE_SHEET_ID=THIS_LONG_ID
-GOOGLE_SERVICE_ACCOUNT_B64=<contents of sa.b64>
-```
+| Collection | Contents | Indexed on |
+|---|---|---|
+| **users** | Signed-in accounts (id, username, login times — **never** session secrets) | `telegram_id` |
+| **channels** | Tracked channels with their fetch watermarks | `tg_id` |
+| **user_channels** | Who tracks what | `(user_telegram_id, channel_tg_id)` |
+| **watchlists** | Saved searches | `(user_telegram_id, query)` |
+| **settings** | Admin settings (priority rule, upcoming-sales calendar, poll interval) | `key` |
 
-Restart. The app creates four tabs automatically:
-
-| Tab | Contents |
-|-----|----------|
-| **Deals** | Every deal — 25 columns: title, price, MRP, discount, store, category, brand, url, coupon, expiry, repost count, score, flags |
-| **Channels** | Tracked channels with their fetch watermarks |
-| **Users** | Signed-in accounts (id, username, login times — **never** session secrets) |
-| **Watchlists** | Saved searches |
-
-Base64 is recommended over pasting raw JSON: the private key contains newlines
-that env-var UIs mangle.
+If your MongoDB password contains characters like `@`, `:`, `/` or `#`,
+URL-encode them in the connection string (e.g. `#` → `%23`), or the URI won't
+parse correctly.
 
 ---
 
@@ -276,8 +267,8 @@ that env-var UIs mangle.
 2. Render dashboard → **New → Blueprint** → select the repo.
    `render.yaml` is detected automatically.
 3. Fill in the variables marked `sync: false`:
-   `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `GOOGLE_SHEET_ID`,
-   `GOOGLE_SERVICE_ACCOUNT_B64`.
+   `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TURSO_DATABASE_URL`,
+   `TURSO_AUTH_TOKEN`, `MONGODB_URI`.
 4. Deploy. After the first boot, copy your URL
    (`https://dealradar-xxxx.onrender.com`) into the **`PUBLIC_URL`** env var and
    redeploy — this enables the self-ping keepalive and secure cookies.
@@ -299,11 +290,12 @@ Then add every variable from `.env.example` under **Environment**.
 - **512 MB RAM / 0.1 CPU.** Fine for ~40 channels. The image cache is capped at
   120 thumbnails and link probing is bounded to 8 concurrent requests.
 - **Ephemeral disk.** SQLite is wiped on every restart (sleep/wake, every deploy).
-  This is why **Google Sheets setup isn't optional on Render** — without it,
-  restarting means starting over: no deals, no tracked channels, no alerts.
-  With it, on boot the app restores deals, users, channels, channel-tracking
-  links, and watchlists from Sheets automatically.
-  **One thing Sheets deliberately does not restore: the Telegram session
+  Deals, price history and price alerts always survive it — they live in Turso.
+  **MongoDB setup isn't optional if you want everything else to survive too**
+  — without it, restarting loses tracked channels, watchlists and signed-in
+  accounts. With it, on boot the app restores users, channels, channel-tracking
+  links and watchlists from MongoDB automatically.
+  **One thing MongoDB deliberately does not restore: the Telegram session
   itself** — it's a secret and is never written there. So after a restart,
   each user needs to sign in again (same phone number), but the moment they
   do, their tracked channels and saved alerts are exactly as they left them —
@@ -316,7 +308,7 @@ Then add every variable from `.env.example` under **Environment**.
 ## Keeping it awake — the ping API
 
 `GET /api/ping` is deliberately the cheapest endpoint in the app: no database,
-no Telegram, no Sheets. Just a timestamp.
+no Telegram, no Mongo. Just a timestamp.
 
 ```bash
 curl https://your-app.onrender.com/api/ping
@@ -425,9 +417,8 @@ curl -X POST https://your-app.onrender.com/api/admin/ingest -H "X-Admin-Token: $
 | `TELEGRAM_API_HASH` | — | **Required.** |
 | `SECRET_KEY` | `dev-insecure-change-me` | **Set this.** Signs cookies and encrypts stored sessions. Changing it logs everyone out. |
 | `ADMIN_TOKEN` | empty | Admin routes stay disabled while empty |
-| `GOOGLE_SHEET_ID` | empty | Sheet id from its URL |
-| `GOOGLE_SERVICE_ACCOUNT_B64` | empty | Base64 of the service-account JSON |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | empty | Raw JSON alternative |
+| `MONGODB_URI` | empty | `mongodb+srv://user:pass@cluster.mongodb.net/` |
+| `MONGODB_DB_NAME` | `dealradar` | Database name within the cluster |
 | `PUBLIC_URL` | empty | Enables self-ping + secure cookies |
 | `POLL_INTERVAL_SECONDS` | `300` | Seconds between ingest cycles |
 | `DEAL_TTL_HOURS` | `96` | 4 days. Live links get extended beyond this. |
@@ -464,7 +455,8 @@ curl -X POST https://your-app.onrender.com/api/admin/ingest -H "X-Admin-Token: $
 │       ├── taxonomy.py       categories, synonyms, brands, spam patterns
 │       ├── store.py          dedup, price history, scoring, expiry
 │       ├── search.py         query engine + facets
-│       ├── sheets.py         Google Sheets read/write
+│       ├── mongo_store.py    MongoDB read/write (users, channels, watchlists, settings)
+│       ├── turso_backup.py   Turso read/write (deals, price history, alerts)
 │       └── ingest.py         the automation cycle + schedulers
 ├── static/
 │   ├── index.html
@@ -512,7 +504,7 @@ and skips affected channels rather than crashing.
 ## Security & limits
 
 - Your Telegram **session string is encrypted with Fernet** (key derived from
-  `SECRET_KEY`) before it's written anywhere. It is never sent to Google Sheets.
+  `SECRET_KEY`) before it's written anywhere. It is never sent to MongoDB.
 - Your **login code and 2FA password are never stored** — they live in memory
   only for the seconds a sign-in takes.
 - Sessions are used to **read channel history and message your own Saved

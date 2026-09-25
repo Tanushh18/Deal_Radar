@@ -12,7 +12,7 @@ import time
 
 from .. import db
 from ..config import settings
-from . import telegram
+from . import mongo_store, telegram
 
 log = logging.getLogger("dealradar.public")
 
@@ -84,11 +84,10 @@ async def sync_followed(user_id: int) -> dict:
 
     New follows are read automatically; channels the admin blocked (a
     user_channels row with enabled=0) stay blocked; channels the account has
-    left are dropped. Blocks persist through Sheets' UserChannels tab.
+    left are dropped. Blocks persist through MongoDB's user_channels collection.
     """
     global _last_follow_sync
     from ..routers.channels import _deactivate_orphans, _register_channel
-    from . import sheets
 
     followed = await telegram.list_user_channels(user_id)
     now = time.time()
@@ -112,13 +111,13 @@ async def sync_followed(user_id: int) -> dict:
         removed = 0
     _deactivate_orphans()
     _last_follow_sync = now
-    if sheets.is_enabled():
+    if mongo_store.is_enabled():
         loop = asyncio.get_event_loop()
         try:
-            await loop.run_in_executor(None, sheets.sync_channels)
-            await loop.run_in_executor(None, sheets.sync_user_channels)
+            await loop.run_in_executor(None, mongo_store.sync_channels)
+            await loop.run_in_executor(None, mongo_store.sync_user_channels)
         except Exception as exc:  # noqa: BLE001
-            log.warning("Saving channel list to Sheets failed: %s", exc)
+            log.warning("Saving channel list to MongoDB failed: %s", exc)
     blocked = db.query_one("SELECT COUNT(*) AS c FROM user_channels WHERE user_id = ? AND enabled = 0", (user_id,))["c"]
     log.info("Reader follows %d channels: %d new, %d left, %d blocked", len(followed), added, removed, blocked)
     return {"followed": len(followed), "added": added, "removed": removed, "blocked": blocked}

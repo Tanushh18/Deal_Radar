@@ -504,19 +504,17 @@
     openModal(sheetShell('System status', '<p class="muted">Loading system status…</p>'));
     try {
       const health = await api('/api/health');
-      const sheetsInfo = health.checks.sheets || {};
+      const mongoInfo = health.checks.mongo || {};
       const ingestInfo = health.checks.ingest || {};
       openModal(sheetShell('System status', `
         <dl class="kv">
           <dt>Service</dt><dd>${escapeHtml(health.status)} · up ${Math.floor(health.uptime_seconds / 60)} min</dd>
           <dt>Database</dt><dd>${escapeHtml(health.checks.database)}</dd>
           <dt>Telegram API</dt><dd>${health.checks.telegram_configured ? 'configured' : 'not configured'}</dd>
-          <dt>Google Sheets</dt><dd>${sheetsInfo.configured ? (sheetsInfo.connected ? 'connected' : 'configured, not connected') : 'not configured'}</dd>
-          <dt>Rows in Sheets</dt><dd>${sheetsInfo.rows_tracked ?? 0}</dd>
-          <dt>Last sheet flush</dt><dd class="raw">${escapeHtml(sheetsInfo.last_flush || 'never')}</dd>
+          <dt>MongoDB</dt><dd>${mongoInfo.configured ? (mongoInfo.connected ? 'connected' : 'configured, not connected') : 'not configured'}</dd>
           <dt>Ingest cycles</dt><dd>${ingestInfo.cycles ?? 0}</dd>
           <dt>Last sync</dt><dd>${ingestInfo.last_run_ago_seconds != null ? Math.floor(ingestInfo.last_run_ago_seconds / 60) + ' min ago' : 'not yet'}</dd>
-          <dt>Last error</dt><dd class="raw">${escapeHtml(ingestInfo.last_error || sheetsInfo.last_error || 'none')}</dd>
+          <dt>Last error</dt><dd class="raw">${escapeHtml(ingestInfo.last_error || mongoInfo.last_error || 'none')}</dd>
         </dl>
         <p class="fineprint">Ping endpoint: <code>/api/ping</code> · API docs: <a href="/api/docs" target="_blank" rel="noopener">/api/docs</a></p>
       `));

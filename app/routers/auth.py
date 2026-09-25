@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from .. import auth, db
 from ..config import settings
-from ..services import ratelimit, sheets, telegram
+from ..services import mongo_store, ratelimit, telegram
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -36,7 +36,7 @@ async def auth_config():
     """Lets the UI explain what's missing before the user tries to sign in."""
     return {
         "telegram_configured": settings.telegram_configured,
-        "sheets_configured": settings.sheets_configured,
+        "mongo_configured": settings.mongo_configured,
         "public_mode": settings.public_mode,
         # Our own Telegram channel, for the "join us" popup (None = no popup).
         "telegram_channel": settings.tg_channel_link,
@@ -76,17 +76,17 @@ def _complete(result: dict, response: Response) -> dict:
     user = result["user"]
     token = auth.create_session(user["telegram_id"])
     auth.set_session_cookie(response, token)
-    if sheets.is_enabled():
+    if mongo_store.is_enabled():
         try:
-            sheets.sync_users()
+            mongo_store.sync_users()
             # If the local cache was ever rebuilt from scratch (a Render
             # restart, or this user's row simply didn't exist yet locally),
-            # their tracked-channel selections still live in the
-            # UserChannels sheet keyed by telegram_id. Re-linking on every
-            # login is cheap and idempotent, and means "sign in again" never
-            # also means "re-pick every channel by hand."
-            sheets.restore_user_channels()
-        except Exception:  # noqa: BLE001 - a Sheets hiccup must not block login
+            # their tracked-channel selections still live in MongoDB keyed
+            # by telegram_id. Re-linking on every login is cheap and
+            # idempotent, and means "sign in again" never also means
+            # "re-pick every channel by hand."
+            mongo_store.restore_user_channels()
+        except Exception:  # noqa: BLE001 - a Mongo hiccup must not block login
             pass
     return {"status": "ok", "user": user}
 

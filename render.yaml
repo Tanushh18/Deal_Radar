@@ -25,10 +25,9 @@ services:
         sync: false
       - key: TELEGRAM_API_HASH
         sync: false
-      - key: GOOGLE_SHEET_ID
-        sync: false
-      - key: GOOGLE_SERVICE_ACCOUNT_B64
-        sync: false
+      - key: MONGODB_URI
+        sync: false             # mongodb+srv://user:password@cluster.mongodb.net/ — durable store for
+                                 # users, channels, watchlists and admin settings
       - key: PUBLIC_URL
         sync: false             # e.g. https://dealradar.onrender.com — enables self-ping
       - key: TURSO_DATABASE_URL
@@ -83,8 +82,6 @@ services:
         value: "true"
       - key: KEEPALIVE_SECONDS
         value: "600"
-      - key: SHEETS_FLUSH_SECONDS
-        value: "120"
       - key: DB_PATH
         value: "data/deals.db"
       - key: SESSION_TTL_DAYS

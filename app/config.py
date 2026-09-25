@@ -42,14 +42,13 @@ class Settings:
         self.session_cookie: str = os.getenv("SESSION_COOKIE", "tgdeals_session")
         self.session_ttl_days: int = int(os.getenv("SESSION_TTL_DAYS", "180"))
 
-        # --- Google Sheets ---
-        # Either paste the service-account JSON into GOOGLE_SERVICE_ACCOUNT_JSON
-        # or base64 it into GOOGLE_SERVICE_ACCOUNT_B64 (easier for Render).
-        self.google_sa_json: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
-        self.google_sa_b64: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_B64", "")
-        self.sheet_id: str = os.getenv("GOOGLE_SHEET_ID", "")
-        self.sheet_name: str = os.getenv("GOOGLE_SHEET_NAME", "Telegram Deals")
-        self.sheets_flush_seconds: int = int(os.getenv("SHEETS_FLUSH_SECONDS", "120"))
+        # --- MongoDB ---
+        # Durable store for users, channels, channel-tracking links, watchlists
+        # and admin settings — everything that used to live in Google Sheets.
+        # Deals, price history and price alerts stay in Turso; MongoDB never
+        # touches those. A mongodb+srv:// Atlas URI works as-is.
+        self.mongo_uri: str = os.getenv("MONGODB_URI", "").strip()
+        self.mongo_db_name: str = os.getenv("MONGODB_DB_NAME", "dealradar")
 
         # --- Storage ---
         self.db_path: str = os.getenv("DB_PATH", "data/deals.db")
@@ -156,8 +155,8 @@ class Settings:
         return bool(self.telegram_configured and self.telegram_session and self.public_channels)
 
     @property
-    def sheets_configured(self) -> bool:
-        return bool(self.sheet_id and (self.google_sa_json or self.google_sa_b64))
+    def mongo_configured(self) -> bool:
+        return bool(self.mongo_uri)
 
     @property
     def ai_enrich_enabled(self) -> bool:
@@ -182,21 +181,6 @@ class Settings:
     def turso2_configured(self) -> bool:
         return bool(self.turso2_url and self.turso2_auth_token)
 
-    def service_account_info(self) -> Optional[dict]:
-        import json
-
-        raw = self.google_sa_json
-        if not raw and self.google_sa_b64:
-            try:
-                raw = base64.b64decode(self.google_sa_b64).decode("utf-8")
-            except Exception:
-                return None
-        if not raw:
-            return None
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            return None
 
 
 def _channel_id(value: str) -> str:

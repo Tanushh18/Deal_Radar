@@ -8,7 +8,7 @@ this ships with a seed calendar of the recurring annual sales (approximate
 dates, clearly marked, matching each store's usual month), editable from
 /admin as real dates are confirmed.
 
-Stored as one JSON blob in meta (mirrored to the Sheet like priority.py's
+Stored as one JSON blob in meta (mirrored to MongoDB like priority.py's
 rule), not a table — a few dozen rows at most, read far more than written.
 """
 from __future__ import annotations
@@ -106,10 +106,10 @@ def _persist(events: List[Dict[str, Any]]) -> None:
     global _cache
     _cache = events
     db.set_meta(META_KEY, json.dumps(events))
-    if settings.sheets_configured:
-        from . import sheets
-        if sheets.is_enabled():
-            sheets.save_setting(META_KEY, json.dumps(events))
+    if settings.mongo_configured:
+        from . import mongo_store
+        if mongo_store.is_enabled():
+            mongo_store.save_setting(META_KEY, json.dumps(events))
 
 
 def reset_cache() -> None:

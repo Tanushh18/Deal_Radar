@@ -1,7 +1,6 @@
 """Deal browsing, search, price history, and lazy image proxying."""
 from __future__ import annotations
 
-import asyncio
 import io
 import time
 from collections import OrderedDict
@@ -11,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from .. import auth, db
 
-from ..services import price_store, ratelimit, search, sheet_mode, store, taxonomy, telegram
+from ..services import price_store, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -90,7 +89,7 @@ async def list_deals(
     limit: int = Query(48, ge=1, le=100),
     offset: int = Query(0, ge=0),
     all_channels: bool = False,
-    archive: bool = Query(False, description="Past deals from the Google Sheet archive instead of live ones"),
+    archive: bool = Query(False, description="Past (non-live) deals instead of live ones"),
     has_coupon: bool = False,
     size: str = Query("", max_length=20),
     device_id: str = Query("", max_length=120, description="Required for sort=for_you"),
@@ -99,22 +98,6 @@ async def list_deals(
 ):
     if sort not in search.SORTS:
         raise HTTPException(status_code=400, detail=f"sort must be one of {list(search.SORTS)}")
-    if sheet_mode.get_mode() == "sheet" and not archive:
-        # Admin testing toggle: bypass the DB entirely and serve straight
-        # from the Sheet. No product_key channel scoping in this mode.
-        # gspread is a blocking/synchronous client — this MUST run off the
-        # event loop, or every request stalls all other traffic (including
-        # Render's health-check ping) for as long as the Sheets call takes.
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None,
-            lambda: sheet_mode.search(
-                q=q, category=category, subcategory=subcategory, store=store_name, brand=brand,
-                min_price=min_price, max_price=max_price, min_discount=min_discount,
-                include_expired=include_expired, only_lowest=only_lowest, sort=sort,
-                limit=limit, offset=offset, has_coupon=has_coupon,
-            ),
-        )
     scope = None if (all_channels or archive) else _scope(user)
     return search.search(
         q=q,

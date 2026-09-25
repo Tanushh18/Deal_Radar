@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, live, priority, public_reader, sale_events, sheet_mode, sheets, taxonomy, telegram, tg_post
+from ..services import ingest, live, mongo_store, priority, public_reader, sale_events, taxonomy, telegram, tg_post
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -158,16 +158,16 @@ async def set_poll_interval(payload: PollIntervalPayload):
             detail=f"Must be between {ingest.MIN_POLL_INTERVAL_SECONDS} and {ingest.MAX_POLL_INTERVAL_SECONDS} seconds.",
         )
     seconds = ingest.set_poll_interval_seconds(payload.seconds)
-    if sheets.is_enabled():
-        sheets.save_setting(ingest.POLL_INTERVAL_META_KEY, str(seconds))
+    if mongo_store.is_enabled():
+        mongo_store.save_setting(ingest.POLL_INTERVAL_META_KEY, str(seconds))
     return {"status": "ok", "seconds": seconds}
 
 
 @router.post("/poll-interval/reset")
 async def reset_poll_interval():
     seconds = ingest.reset_poll_interval_seconds()
-    if sheets.is_enabled():
-        sheets.save_setting(ingest.POLL_INTERVAL_META_KEY, "")
+    if mongo_store.is_enabled():
+        mongo_store.save_setting(ingest.POLL_INTERVAL_META_KEY, "")
     return {"status": "ok", "seconds": seconds}
 
 
@@ -305,10 +305,10 @@ async def block_channel(tg_id: int, payload: BlockPayload):
     if not cur.rowcount:
         raise HTTPException(status_code=404, detail="Channel not found.")
     _deactivate_orphans()
-    if sheets.is_enabled():
+    if mongo_store.is_enabled():
         try:
-            sheets.sync_channels()
-            sheets.sync_user_channels()
+            mongo_store.sync_channels()
+            mongo_store.sync_user_channels()
         except Exception:  # noqa: BLE001
             pass
     return {"status": "ok", "blocked": payload.blocked}
@@ -326,13 +326,9 @@ async def get_priority():
 async def set_priority(payload: PriorityPayload):
     import json
     rule = priority.save(payload.model_dump())
-    if sheets.is_enabled():
-        sheets.save_setting(priority.META_KEY, json.dumps(rule))
+    if mongo_store.is_enabled():
+        mongo_store.save_setting(priority.META_KEY, json.dumps(rule))
     return {"status": "ok", "rule": rule}
-
-
-class ServeModePayload(BaseModel):
-    mode: str  # "db" | "sheet"
 
 
 class StorageModePayload(BaseModel):
@@ -341,19 +337,8 @@ class StorageModePayload(BaseModel):
 
 @router.get("/data-source")
 async def get_data_source():
-    """What /api/deals reads from, and which DB backend is live — for the
-    admin panel's testing toggles."""
-    return {"serve_mode": sheet_mode.get_mode(), "storage_mode": db.storage_mode()}
-
-
-@router.post("/data-source/serve")
-async def set_serve_mode(payload: ServeModePayload):
-    """Testing-only: point /api/deals at the Google Sheet instead of the DB, or back."""
-    try:
-        mode = sheet_mode.set_mode(payload.mode)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {"status": "ok", "serve_mode": mode}
+    """Which DB backend is live — for the admin panel's testing toggle."""
+    return {"storage_mode": db.storage_mode()}
 
 
 @router.post("/data-source/storage")

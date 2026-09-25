@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, ratelimit, sheets, telegram
+from ..services import ingest, mongo_store, ratelimit, telegram
 
 router = APIRouter(prefix="/api/channels", tags=["channels"])
 
@@ -151,13 +151,13 @@ async def track_channels(payload: TrackPayload, user=Depends(auth.current_user))
 
 def _sync_meta_safely() -> None:
     """Best-effort push of channels + tracking links so a Render restart
-    doesn't lose the user's channel selection. Never let a Sheets hiccup
+    doesn't lose the user's channel selection. Never let a Mongo hiccup
     fail the request that triggered it."""
-    if not sheets.is_enabled():
+    if not mongo_store.is_enabled():
         return
     try:
-        sheets.sync_channels()
-        sheets.sync_user_channels()
+        mongo_store.sync_channels()
+        mongo_store.sync_user_channels()
     except Exception:  # noqa: BLE001
         pass
 

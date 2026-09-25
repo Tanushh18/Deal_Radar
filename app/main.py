@@ -29,7 +29,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import ingest, live, public_reader, quality, sheets, store, telegram, turso_backup
+from .services import ingest, live, mongo_store, public_reader, quality, store, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -54,10 +54,11 @@ async def lifespan(app: FastAPI):
         log.warning("SECRET_KEY is the insecure default — set a real one before deploying.")
 
     # Render's disk is ephemeral: rebuild the cache on cold start. Local
-    # SQLite is only a cache of the last few days: those deals and the price
-    # alerts come back from Turso (the permanent store — price history stays
-    # there and is read on demand). Channels, users and settings come back
-    # from Google Sheets. Without Turso, Sheets restores everything as before.
+    # SQLite is only a cache of the last few days: those deals, their price
+    # history and price alerts come back from Turso (the permanent store —
+    # history is read on demand, not copied down). Channels, users,
+    # channel-tracking links, watchlists and admin settings come back from
+    # MongoDB, which mirrors that state the same way Sheets used to.
     loop = asyncio.get_event_loop()
     turso = None
     try:
@@ -66,34 +67,11 @@ async def lifespan(app: FastAPI):
         log.warning("Turso restore failed: %s", exc)
     turso_backup.start()
 
-    # Each step gets its own try/except — restore_deals() is independently
-    # resilient to a single bad row now, but a step here failing for some
-    # other reason (a transient Sheets error, a quota blip) must not also
-    # cost every step after it in the same sequence.
-    if sheets.is_enabled():
-        restored = turso["deals"] if turso else 0
-        if turso is None or turso["deals_empty"]:
-            try:
-                restored = await loop.run_in_executor(None, sheets.restore_deals)
-                if turso is not None:
-                    # Turso's deals table is brand new: seed it with the Sheet's
-                    # whole archive (uploaded in the background; the local cache
-                    # trim waits for each deal to reach Turso before dropping it).
-                    db.execute("UPDATE deals SET turso_dirty = 1")
-                    log.info("Seeding Turso with %d deals from Google Sheets", restored)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("Deal restore failed: %s", exc)
-
-        if turso is None or turso["prices_empty"]:
-            try:
-                points = await loop.run_in_executor(
-                    None, sheets.restore_price_history, turso is not None)
-                log.info("Restored %d price-history points from Google Sheets", points)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("Price history restore failed: %s", exc)
-
+    # Each step gets its own try/except — a step failing (a transient Mongo
+    # error, a network blip) must not also cost every step after it.
+    if mongo_store.is_enabled():
         try:
-            await loop.run_in_executor(None, sheets.restore_settings)
+            await loop.run_in_executor(None, mongo_store.restore_settings)
         except Exception as exc:  # noqa: BLE001
             log.warning("Settings restore failed: %s", exc)
 
@@ -102,41 +80,35 @@ async def lifespan(app: FastAPI):
             # Order matters — users before channels before user_channels/
             # watchlists, since the latter are resolved by looking up the
             # former's local ids.
-            meta = await loop.run_in_executor(None, sheets.restore_all_meta)
+            meta = await loop.run_in_executor(None, mongo_store.restore_all_meta)
         except Exception as exc:  # noqa: BLE001
             log.warning("Meta restore failed: %s", exc)
 
         log.info(
-            "Restored from Google Sheets: %d deals, %d users, %d channels, "
-            "%d tracking links, %d watchlists",
-            restored, meta["users"], meta["channels"],
-            meta["user_channels"], meta["watchlists"],
+            "Restored from MongoDB: %d users, %d channels, %d tracking links, %d watchlists",
+            meta["users"], meta["channels"], meta["user_channels"], meta["watchlists"],
         )
         if meta["users"]:
             log.info("Restored users hold no session — each needs to sign in again.")
 
         try:
-            # Deals restored above ran before channels existed locally to
-            # match against, and rows written before the Deals tab tracked
-            # channel_tg_id (anything from before this fix shipped) came back
-            # as channel_id=0 — invisible to a signed-in user's own
-            # channel-scoped view. Runs after meta so the channels table is
-            # actually populated to resolve against.
+            # Deals restored from Turso above may predate channels existing
+            # locally to match against — anything from before this fix
+            # shipped came back as channel_id=0, invisible to a signed-in
+            # user's own channel-scoped view. Runs after meta so the
+            # channels table is actually populated to resolve against.
             fixed = store.backfill_channel_ids()
             if fixed:
-                log.info("Backfilled channel_id on %d deals restored from Sheets", fixed)
-                await loop.run_in_executor(None, sheets.flush_deals)
+                log.info("Backfilled channel_id on %d restored deals", fixed)
         except Exception as exc:  # noqa: BLE001
             log.warning("channel_id backfill failed: %s", exc)
     else:
-        log.info("Google Sheets not configured — running in SQLite-only mode.")
+        log.info("MongoDB not configured — users/channels/watchlists won't survive a restart.")
 
     try:
         repaired = store.reparse_stored_deals()
         if repaired:
             log.info("Re-parsed %d stored deals with the current parser", repaired)
-            if sheets.is_enabled():
-                await asyncio.get_event_loop().run_in_executor(None, sheets.flush_deals)
     except Exception as exc:  # noqa: BLE001
         log.warning("Re-parse of stored deals failed: %s", exc)
 
@@ -144,8 +116,6 @@ async def lifespan(app: FastAPI):
         swept = quality.sweep_stored()
         if swept["removed"] or swept["recategorised"] or swept["images_cleared"]:
             log.info("Quality sweep over stored deals: %s", swept)
-            if sheets.is_enabled():
-                await asyncio.get_event_loop().run_in_executor(None, sheets.flush_deals)
     except Exception as exc:  # noqa: BLE001
         log.warning("Quality sweep failed: %s", exc)
 
@@ -166,11 +136,6 @@ async def lifespan(app: FastAPI):
         for task in _tasks:
             task.cancel()
         await asyncio.gather(*_tasks, return_exceptions=True)
-        if sheets.is_enabled():
-            try:
-                sheets.flush_deals()  # don't lose the last cycle's work
-            except Exception:  # noqa: BLE001
-                pass
         await telegram.shutdown_all()
 
 

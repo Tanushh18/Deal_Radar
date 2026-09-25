@@ -38,16 +38,14 @@ def main() -> int:
     # --- configuration ---
     print("\n\033[1mConfiguration\033[0m")
     print(f"  {OK if settings.telegram_configured else BAD} Telegram API credentials")
-    if settings.sheets_configured:
-        print(f"  {OK} Google Sheets configured")
+    if settings.turso_configured:
+        print(f"  {OK} Turso configured (deals/price history/alerts survive a restart)")
     else:
-        sheet_id = settings.sheet_id
-        if sheet_id and sheet_id.startswith("1AbC"):
-            print(f"  {WARN} GOOGLE_SHEET_ID is still the placeholder from .env.example")
-        elif sheet_id:
-            print(f"  {WARN} Sheet id set, but no service-account JSON")
-        else:
-            print(f"  {WARN} Google Sheets not configured (SQLite-only: data is lost on restart)")
+        print(f"  {WARN} Turso not configured (SQLite-only: deals are lost on restart)")
+    if settings.mongo_configured:
+        print(f"  {OK} MongoDB configured (users/channels/watchlists survive a restart)")
+    else:
+        print(f"  {WARN} MongoDB not configured (users/channels/watchlists are lost on restart)")
     secure = settings.secret_key != "dev-insecure-change-me"
     print(f"  {OK if secure else BAD} SECRET_KEY set to a real value")
 

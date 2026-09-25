@@ -1,7 +1,7 @@
 """Ping, health, stats, and admin maintenance.
 
 /api/ping is deliberately the cheapest endpoint in the app: no DB, no Telegram,
-no Sheets. It exists so an uptime pinger can keep a Render free instance awake
+no Mongo. It exists so an uptime pinger can keep a Render free instance awake
 without doing real work on every hit.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Response
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, sheets, store
+from ..services import ingest, mongo_store, store
 
 router = APIRouter(prefix="/api", tags=["system"])
 
@@ -25,7 +25,7 @@ async def ping():
     """Liveness probe / keepalive target.
 
     Also carries ingest timing (in-memory only — ingest.state() touches no DB,
-    no Telegram, no Sheets) so the frontend's "next check in" countdown can
+    no Telegram, no Mongo) so the frontend's "next check in" countdown can
     stay cheap to poll: no dedicated endpoint, no extra load on a hot path.
     """
     ingest_state = ingest.state()
@@ -60,7 +60,7 @@ async def health():
         checks["database"] = f"error: {exc}"
 
     checks["telegram_configured"] = settings.telegram_configured
-    checks["sheets"] = sheets.status()
+    checks["mongo"] = mongo_store.status()
 
     ingest_state = ingest.state()
     last_run = ingest_state.get("last_run") or 0
@@ -98,26 +98,15 @@ async def admin_ingest():
     return await ingest.run_cycle("admin")
 
 
-@router.post("/admin/sheets/flush", dependencies=[Depends(auth.require_admin)])
-async def admin_flush():
-    return sheets.flush_deals()
-
-
-@router.post("/admin/sheets/restore", dependencies=[Depends(auth.require_admin)])
-async def admin_restore():
-    return {"restored": sheets.restore_deals()}
-
-
 @router.post("/admin/backfill-channel-ids", dependencies=[Depends(auth.require_admin)])
 async def admin_backfill_channel_ids():
-    """Repairs deals restored before the Deals sheet tracked channel_tg_id —
-    those came back as channel_id=0, invisible to any signed-in user's own
+    """Repairs deals restored before channel_tg_id was tracked — those came
+    back as channel_id=0, invisible to any signed-in user's own
     channel-scoped view. Safe to call repeatedly."""
     fixed = store.backfill_channel_ids()
-    flushed = sheets.flush_deals() if fixed else {"updated": 0, "appended": 0}
-    return {"fixed": fixed, "flushed": flushed}
+    return {"fixed": fixed}
 
 
-@router.post("/admin/sheets/sync-meta", dependencies=[Depends(auth.require_admin)])
+@router.post("/admin/mongo/sync-meta", dependencies=[Depends(auth.require_admin)])
 async def admin_sync_meta():
-    return {"channels": sheets.sync_channels(), "users": sheets.sync_users()}
+    return {"channels": mongo_store.sync_channels(), "users": mongo_store.sync_users()}

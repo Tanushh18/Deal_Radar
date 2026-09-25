@@ -30,7 +30,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import links, parser, price_store, push, quality, ratelimit, sale_events, search, sheets, store, telegram, tg_post
+from . import links, mongo_store, parser, price_store, push, quality, ratelimit, sale_events, search, store, telegram, tg_post
 
 log = logging.getLogger(__name__)
 
@@ -754,27 +754,13 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 except Exception as exc:  # noqa: BLE001 — best-effort, never break the cycle
                     log.warning("AI enrichment skipped: %s", exc)
 
-            flushed = {"updated": 0, "appended": 0}
-            if sheets.is_enabled():
+            if mongo_store.is_enabled():
                 loop = asyncio.get_event_loop()
-                # Push every changed deal each cycle (batches of 400), so the
-                # Sheet always holds everything fetched from Telegram.
-                flushed = {"updated": 0, "appended": 0}
-                for _ in range(25):
-                    batch = await loop.run_in_executor(None, sheets.flush_deals)
-                    flushed["updated"] += batch.get("updated", 0)
-                    flushed["appended"] += batch.get("appended", 0)
-                    if batch.get("skipped") or not (batch.get("updated") or batch.get("appended")):
-                        break
-                    # Each batch is ≤2 Google write calls; pacing keeps a big
-                    # backlog under Sheets' 60 writes/minute quota.
-                    await asyncio.sleep(1.5)
                 # Channel watermarks move every cycle; without this a restart
                 # would re-backfill instead of resuming from where it left off.
-                await loop.run_in_executor(None, sheets.sync_channels)
-                await loop.run_in_executor(None, sheets.flush_price_history)
-                # The Sheet is the permanent archive of every deal ever seen:
-                # the local purge only trims the fast SQLite cache, never Sheets.
+                # Deals and price history are Turso's job (its own background
+                # thread already picks up every dirty write) — never Mongo's.
+                await loop.run_in_executor(None, mongo_store.sync_channels)
 
             result = {
                 **totals,
@@ -783,10 +769,8 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                               for p in push_plan],
                 "expired": expired,
                 "purged": len(purged_ids),
-                "purged_from_sheets": 0,
                 "liveness": liveness,
                 "alerts": alerts,
-                "sheets": flushed,
                 "reason": reason,
             }
             _state["last_result"] = result

@@ -494,18 +494,16 @@ def purge_local_cache() -> Dict[str, int]:
     """Keep local SQLite to the last LOCAL_CACHE_DAYS (default 15) of data.
 
     Local SQLite is only the fast cache the app and website read from; the
-    permanent copy of every deal and price point is in Turso (or, without
-    Turso, the Google Sheet). A row is dropped only once it's safely there —
-    a deal Turso hasn't received yet stays until it has. Deals that are still
-    live are kept whatever their age, so the feed never loses them.
+    permanent copy of every deal and price point is in Turso. A row is
+    dropped only once Turso has it — a deal it hasn't received yet stays
+    until it has. Deals that are still live are kept whatever their age, so
+    the feed never loses them. Without Turso, local SQLite is the only copy
+    of deals, so nothing here is ever deleted.
     """
     uploaded = {"deals": 0, "prices": 0}
-    if settings.turso_configured:
-        deal_safe = "turso_dirty = 0"
-    elif settings.sheets_configured:
-        deal_safe = "dirty = 0"
-    else:
+    if not settings.turso_configured:
         return uploaded  # local SQLite is the only copy — never delete
+    deal_safe = "turso_dirty = 0"
     now = time.time()
     cutoff = now - settings.local_cache_days * 86400
     uploaded["deals"] = db.execute(

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .. import auth, db
-from ..services import ingest, sheets, telegram
+from ..services import ingest, mongo_store, telegram
 
 router = APIRouter(prefix="/api/watchlists", tags=["watchlists"])
 
@@ -17,10 +17,10 @@ MAX_PER_USER = 20
 
 
 def _sync_meta_safely() -> None:
-    if not sheets.is_enabled():
+    if not mongo_store.is_enabled():
         return
     try:
-        sheets.sync_watchlists()
+        mongo_store.sync_watchlists()
     except Exception:  # noqa: BLE001
         pass
 

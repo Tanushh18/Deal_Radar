@@ -17,7 +17,7 @@ export type SaleEvent = {
 
 export type AuthConfig = {
   telegram_configured: boolean;
-  sheets_configured: boolean;
+  mongo_configured: boolean;
   public_mode?: boolean;
   /** Our own Telegram channel for the "join us" popup; null when not set up. */
   telegram_channel?: { url: string; username: string } | null;
@@ -147,11 +147,9 @@ export type Health = {
   checks: {
     database: string;
     telegram_configured: boolean;
-    sheets?: {
+    mongo?: {
       configured?: boolean;
       connected?: boolean;
-      rows_tracked?: number;
-      last_flush?: string | null;
       last_error?: string | null;
     };
     ingest?: {
