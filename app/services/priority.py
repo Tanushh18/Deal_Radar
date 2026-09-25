@@ -158,7 +158,7 @@ def _spaced(expr: str) -> str:
 
 _KEYWORD_CHARS = "(-/,"
 _WORD_CHARS = "()-/,.:;|&!'+"
-_compiled: Dict[str, Any] = {}
+_compiled: Dict[str, Dict[str, Any]] = {}   # rule json -> compiled patterns
 
 
 def _spaced_text(text: str, chars: str) -> str:
@@ -167,27 +167,33 @@ def _spaced_text(text: str, chars: str) -> str:
     return f" {text} "
 
 
-def matches(deal: Dict[str, Any]) -> bool:
-    """Python twin of sql() for rows already fetched — same rule, same result.
-
-    Evaluating sql() inline costs a chain of REPLACE()s per keyword per row
-    (~0.8s over 5,000 deals); doing it here over the light rows is ~100x
-    cheaper, so search uses this and sql() stays for small ORDER BYs.
-    """
-    rule = get()
+def _compile(rule: Dict[str, Any]) -> Dict[str, Any]:
     key = json.dumps(rule, sort_keys=True)
-    if _compiled.get("key") != key:
+    if key not in _compiled:
         def words(ws: List[str], whole: bool) -> Optional["re.Pattern[str]"]:
             if not ws:
                 return None
             tail = " " if whole else ""
             return re.compile("|".join(" " + re.escape(w) + tail for w in ws))
-        _compiled.clear()
-        _compiled.update(key=key, cats=set(rule["categories"]), stores=set(rule["stores"]),
-                         keywords=words(rule["keywords"], False),
-                         exclude=words(rule["exclude_keywords"], True),
-                         unless=words(rule["unless_keywords"], True))
-    c = _compiled
+        if len(_compiled) > 8:  # only ever a couple of rules live at once
+            _compiled.clear()
+        _compiled[key] = dict(cats=set(rule["categories"]), stores=set(rule["stores"]),
+                              keywords=words(rule["keywords"], False),
+                              exclude=words(rule["exclude_keywords"], True),
+                              unless=words(rule["unless_keywords"], True))
+    return _compiled[key]
+
+
+def matches(deal: Dict[str, Any], rule: Optional[Dict[str, Any]] = None) -> bool:
+    """Python twin of sql() for rows already fetched — same rule, same result.
+
+    Evaluating sql() inline costs a chain of REPLACE()s per keyword per row
+    (~0.8s over 5,000 deals); doing it here over the light rows is ~100x
+    cheaper, so search uses this and sql() stays for small ORDER BYs.
+    `rule` defaults to the admin's "show on top" rule; pass another to test
+    against it instead (hot pushes always favour the women preset).
+    """
+    c = _compile(rule or get())
     blob = (deal.get("search_blob") or deal.get("title") or "").lower()
     hit = (
         (deal.get("category") in c["cats"])
@@ -200,6 +206,11 @@ def matches(deal: Dict[str, Any]) -> bool:
     if c["exclude"].search(text) and not (c["unless"] is not None and c["unless"].search(text)):
         return False
     return True
+
+
+def is_women(deal: Dict[str, Any]) -> bool:
+    """Is this a women's deal? Always the women preset, whatever the admin's rule."""
+    return matches(deal, _clean({**PRESETS["women"], "preset": "women"}))
 
 
 def lead_categories() -> List[str]:

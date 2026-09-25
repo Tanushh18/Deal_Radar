@@ -4,6 +4,7 @@ Run:  python -m tests.test_devices
 """
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 import tempfile
@@ -20,7 +21,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app import db  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services import devices, ingest, parser, store  # noqa: E402
+from app.services import devices, hot_push, ingest, parser, push, store, turso_backup  # noqa: E402
 
 ADMIN = {"X-Admin-Token": "test-admin-token"}
 
@@ -128,25 +129,102 @@ def main() -> int:
         check("broadcast rejects an unknown deal id",
               c.post("/api/admin/reader/broadcast", json={"title": "x", "body": "y", "deal_id": "does-not-exist"}, headers=ADMIN).status_code == 404)
 
-        print("\n=== AUTO-BROADCAST: BEST NEW DEAL PER CYCLE ===")
-        check("below the score bar: nothing sent", devices.broadcast_best([deal["id"]], min_score=999) is None)
-        weak = post("Random Cheap Item ₹49 https://www.amazon.in/dp/B0WEAKONE1", 4)
-        db.execute("UPDATE deals SET score = 20 WHERE id = ?", (weak["id"],))
-        hot = post("boAt Rockerz 255 Pro+ Earbuds ₹899 (MRP ₹3,999) https://www.amazon.in/dp/B0HOTDEAL01", 4)
-        db.execute("UPDATE deals SET score = 91, is_lowest = 1 WHERE id = ?", (hot["id"],))
-        before = len(c.get("/api/devices/feed", params={"device_id": dev}).json()["items"])
-        result = devices.broadcast_best([weak["id"], hot["id"]], min_score=80)
-        check("picks the higher scorer, not just the latest post", result is not None and result["deal_id"] == hot["id"], str(result))
-        after = c.get("/api/devices/feed", params={"device_id": dev}).json()["items"]
-        check("reaches every device with no follow/digest match needed", len(after) == before + 1)
-        check("carries the deal's own image", after[0]["deal_id"] == hot["id"] and after[0]["image_url"])
-        check("only this cycle's new ids are eligible, not the whole table",
-              devices.broadcast_best(["id-not-in-this-cycle"], min_score=0) is None)
-        check("a dead card is never broadcast even if it scored high",
-              devices.broadcast_best([], min_score=0) is None)
-        db.execute("UPDATE deals SET status = 'dead' WHERE id = ?", (hot["id"],))
-        check("retired between scoring and broadcast: skipped",
-              devices.broadcast_best([hot["id"]], min_score=0) is None)
+        print("\n=== BROADCAST DELIVERY REPORT ===")
+        token_ok, token_bad = "ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]", "ExponentPushToken[bbbbbbbbbbbbbbbbbbbbbb]"
+        c.post("/api/devices/register", json={"device_id": "app_tokenholder000001", "push_token": token_ok})
+        c.post("/api/devices/register", json={"device_id": "app_tokenholder000002", "push_token": token_bad})
+        sent_batches = []
+
+        async def fake_expo(batch):
+            sent_batches.append(batch)
+            return [{"status": "ok"} if m["to"] == token_ok else
+                    {"status": "error", "message": "no fcm", "details": {"error": "InvalidCredentials"}}
+                    for m in batch]
+
+        real_post = push._post_batch
+        push._post_batch = fake_expo
+        try:
+            r = c.post("/api/admin/reader/broadcast", json={"title": "Test", "body": "Hello"}, headers=ADMIN).json()
+            check("report counts tokens", r["tokens"] == 2, str(r))
+            check("report counts Expo acceptances", r["accepted"] == 1, str(r))
+            check("report names the failure reason", r["errors"].get("InvalidCredentials") == 1, str(r))
+            check("all tokens go in one batched request", len(sent_batches) == 1 and len(sent_batches[0]) == 2)
+
+            print("\n=== BROADCASTS REACH DEVICES REGISTERED LATER ===")
+            late = "app_registeredafter0001"
+            c.post("/api/devices/register", json={"device_id": late})
+            items = c.get("/api/devices/feed", params={"device_id": late}).json()["items"]
+            check("a device registered after the send still gets it", any(i["title"] == "Test" for i in items), str(items))
+            check("broadcast ids can't collide with device item ids", all(
+                str(i["id"]).startswith("b") for i in items if i["kind"] == "broadcast"))
+
+            print("\n=== HOT-DEAL PUSHES ===")
+            db.execute("DELETE FROM push_log")
+            now = time.time()
+            women = post("Libas Women Printed Kurta Set ₹649 (MRP ₹2,199) https://www.myntra.com/kurtas/libas/x/11111111/buy", 11)
+            gadget = post("Samsung 25W USB-C Charger ₹899 (MRP ₹1,999) https://www.amazon.in/dp/B0CHARGE01", 12)
+            db.execute("UPDATE deals SET score = 70, last_seen_at = ? WHERE id = ?", (now, women["id"]))
+            db.execute("UPDATE deals SET score = 85, last_seen_at = ? WHERE id = ?", (now, gadget["id"]))
+            ranked = hot_push.candidates()
+            check("women's item outranks a higher-scored gadget", ranked and ranked[0][0]["id"] == women["id"],
+                  str([(d["title"][:20], round(r, 1)) for d, _, r in ranked[:3]]))
+            check("it's recognised as a women's item", ranked and ranked[0][1] is True)
+            title, body = hot_push.compose(ranked[0][0], True)
+            check("title carries an emoji hook and the product", title[0] not in "abcdefghijklmnopqrstuvwxyz" and "Libas" in title, title)
+            check("body quotes the price and what it was", "₹649" in body and "₹2,199" in body, body)
+            check("title never repeats the price or channel hype", "₹" not in title and "Loot" not in title, title)
+            for raw, want in [("Loot: AGEasy Relief Compact Massage Gun @799", "AGEasy Relief Compact Massage Gun"),
+                              ("86% Off - Kamiliant Large Suitcase (78 cm) At Rs.1,899", "Kamiliant Large Suitcase (78 cm)"),
+                              ("Flat Iron Hair Straightener at Rs 499", "Flat Iron Hair Straightener"),
+                              ("Cashews - ₹289 +36 supercoins", "Cashews"),
+                              ("Formal Shirts for Men", "Formal Shirts for Men")]:
+                check(f"clean title: {want}", hot_push.clean_title(raw) == want, hot_push.clean_title(raw))
+            for _ in range(20):
+                d1, d2 = hot_push.random_delays(2, 2400)
+                if not (60 <= d1 < 1200 <= d2 <= 2400):
+                    check("two pushes land one in each half of the cycle", False, f"{d1:.0f}, {d2:.0f}")
+                    break
+            else:
+                check("two pushes land one in each half of the cycle", True)
+            spread = {round(hot_push.random_delays(2, 2400)[0]) for _ in range(10)}
+            check("push times vary cycle to cycle (never a fixed clock)", len(spread) > 5, str(spread))
+            check("quiet hours respected (23-8 IST)", hot_push.is_quiet(datetime(2026, 1, 1, 2, 0)) is True
+                  and hot_push.is_quiet(datetime(2026, 1, 1, 14, 0)) is False)
+
+            first = asyncio.run(hot_push.send_best(force=True))
+            check("admin 'send now' pushes the women's item", first.get("deal_id") == women["id"], str(first))
+            check("…and reports delivery", first.get("tokens") == 2 and first.get("accepted") == 1, str(first))
+            second = asyncio.run(hot_push.send_best(force=True))
+            check("the same product is never pushed twice in a row", second.get("deal_id") == gadget["id"], str(second))
+            check("respects the minimum gap between automatic pushes",
+                  asyncio.run(hot_push.send_best()).get("why", "").startswith("too soon")
+                  or hot_push.is_quiet())
+            r = c.get("/api/admin/reader/push-status", headers=ADMIN).json()
+            check("admin status lists what went out", len(r["recent"]) == 2 and r["devices_with_push"] == 2, str(r))
+            r = c.post("/api/admin/reader/push-now", headers=ADMIN).json()
+            check("admin push-now endpoint works", r.get("status") in ("sent", "skipped"), str(r))
+
+            async def plan_and_cancel():
+                plan = hot_push.schedule_cycle([women["id"]], 2400)
+                hot_push._cancel_pending()
+                return plan
+            plan = asyncio.run(plan_and_cancel())
+            check("each cycle plans PUSHES_PER_CYCLE pushes", len(plan) == 2, str(plan))
+        finally:
+            push._post_batch = real_post
+
+        print("\n=== DEVICES SURVIVE A RESTART (TURSO RESTORE) ===")
+        saved = [{"device_id": "app_restoredfromturso1", "platform": "android",
+                  "push_token": "ExponentPushToken[cccccccccccccccccccccc]", "digest": 1, "digest_hour": 9,
+                  "follows": '[{"kind": "brand", "value": "Libas", "min_discount": 20, "created_at": 1}]',
+                  "created_at": 1.0, "last_seen_at": time.time()}]
+        check("restores a device", turso_backup._restore_devices(saved) == 1)
+        row = db.query_one("SELECT push_token, digest_hour FROM devices WHERE device_id = 'app_restoredfromturso1'")
+        check("with its push token", row and row["push_token"].startswith("ExponentPushToken["))
+        check("with its follows", devices.follows("app_restoredfromturso1")[0]["value"] == "Libas")
+        check("a device already re-registered locally keeps its own row", turso_backup._restore_devices(saved) == 0)
+        check("registering marks a device for backup", db.query_one(
+            "SELECT turso_dirty FROM devices WHERE device_id = ?", (dev,))["turso_dirty"] > 0)
     print("\n" + ("\033[92m✓ All checks passed.\033[0m" if not failures else f"\033[91m✗ {len(failures)} failed\033[0m"))
     return 1 if failures else 0
 

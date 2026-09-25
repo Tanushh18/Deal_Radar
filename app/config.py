@@ -80,13 +80,23 @@ class Settings:
         # price, a store link and a photo become cards. "false" shows everything.
         self.quality_filter: bool = _bool(os.getenv("QUALITY_FILTER", "true"))
 
-        # --- Auto-broadcast: the single best NEW deal each cycle, pushed to every
-        # registered device regardless of digest/follow settings (see devices.broadcast_best). ---
+        # --- Hot-deal pushes: the best live deals (women's items first), pushed to
+        # every registered device regardless of digest/follow settings, at random
+        # moments inside each cycle (see hot_push.py). BROADCAST_MIN_SCORE is the
+        # floor a deal's 0-100 score must clear to be eligible at all. ---
         self.broadcast_hot_deal_enabled: bool = _bool(os.getenv("BROADCAST_HOT_DEAL", "true"))
         self.broadcast_min_score: float = float(os.getenv("BROADCAST_MIN_SCORE", "30"))
+        # How many "hot deal" pushes each ingest cycle schedules, fired at random
+        # moments inside the cycle (never on a fixed clock), and the IST hours
+        # when none go out ("23-8" = quiet from 11pm to 8am; "" = never quiet).
+        self.pushes_per_cycle: int = int(os.getenv("PUSHES_PER_CYCLE", "2"))
+        self.push_quiet_hours: str = os.getenv("PUSH_QUIET_HOURS", "23-8").strip()
 
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
-        self.public_url: str = os.getenv("PUBLIC_URL", "").rstrip("/")
+        # Render sets RENDER_EXTERNAL_URL on every web service. Falling back to it
+        # means notification images (which need an absolute URL) and the
+        # keep-awake self-ping both work even when PUBLIC_URL was never set.
+        self.public_url: str = (os.getenv("PUBLIC_URL", "") or os.getenv("RENDER_EXTERNAL_URL", "")).rstrip("/")
         self.keepalive_enabled: bool = _bool(os.getenv("KEEPALIVE_ENABLED", "true"))
         self.keepalive_seconds: int = int(os.getenv("KEEPALIVE_SECONDS", "600"))
 

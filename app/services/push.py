@@ -24,6 +24,8 @@ CHANNEL_BY_KIND = {
     "digest": "daily-deals",
     "weekly_pick": "daily-deals",
     "follow": "flash-sales",
+    "hot_deal": "flash-sales",
+    "broadcast": "flash-sales",
 }
 TOKEN_PREFIXES = ("ExponentPushToken[", "ExpoPushToken[")
 RETENTION_DAYS = 30
@@ -99,14 +101,25 @@ async def _post_batch(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return data if isinstance(data, list) else []
 
 
-async def send_push(
+async def send_push_detailed(
     tokens: List[str], title: str, body: str, url: str, deal_id: Optional[str] = None,
     image: str = "", kind: str = "", expires_at: float = 0,
-) -> int:
-    """Send to every token; returns how many Expo accepted. Never raises."""
+) -> Dict[str, Any]:
+    """Send to every token (batched, 100 per Expo request). Never raises.
+
+    Returns {"tokens", "accepted", "failed", "errors": {expo error code: count}}
+    so a caller (the admin panel) can say *why* nothing arrived — e.g.
+    InvalidCredentials means the EAS project has no FCM key uploaded.
+    """
     tokens = [t for t in dict.fromkeys(tokens) if is_expo_token(t)]
+    report: Dict[str, Any] = {"tokens": len(tokens), "accepted": 0, "failed": 0, "errors": {}}
     if not tokens:
-        return 0
+        return report
+
+    def _error(code: str) -> None:
+        report["failed"] += 1
+        report["errors"][code] = report["errors"].get(code, 0) + 1
+
     messages = [
         {
             "to": token,
@@ -121,7 +134,6 @@ async def send_push(
         }
         for token in tokens
     ]
-    sent = 0
     dead: List[str] = []
     for i in range(0, len(messages), BATCH_SIZE):
         batch = messages[i : i + BATCH_SIZE]
@@ -129,24 +141,40 @@ async def send_push(
             tickets = await _post_batch(batch)
         except Exception as exc:  # noqa: BLE001
             log.warning("Expo push failed for %d message(s): %s", len(batch), exc)
+            for _ in batch:
+                _error("RequestFailed")
             continue
         # Expo returns tickets in the same order as the messages sent.
         for message, ticket in zip(batch, tickets):
             if not isinstance(ticket, dict):
+                _error("BadTicket")
                 continue
             if ticket.get("status") == "ok":
-                sent += 1
-            elif (ticket.get("details") or {}).get("error") == "DeviceNotRegistered":
+                report["accepted"] += 1
+                continue
+            code = (ticket.get("details") or {}).get("error") or "Unknown"
+            _error(code)
+            if code == "DeviceNotRegistered":
                 dead.append(message["to"])
             else:
-                log.info("Expo push error: %s", ticket.get("message"))
+                log.info("Expo push error %s: %s", code, ticket.get("message"))
     for token in dead:
         try:
             db.execute("DELETE FROM push_tokens WHERE token = ?", (token,))
-            db.execute("UPDATE devices SET push_token = '' WHERE push_token = ?", (token,))
+            db.execute("UPDATE devices SET push_token = '', turso_dirty = 1 WHERE push_token = ?", (token,))
         except Exception as exc:  # noqa: BLE001
             log.warning("Couldn't drop dead push token: %s", exc)
-    return sent
+    return report
+
+
+async def send_push(
+    tokens: List[str], title: str, body: str, url: str, deal_id: Optional[str] = None,
+    image: str = "", kind: str = "", expires_at: float = 0,
+) -> int:
+    """Send to every token; returns how many Expo accepted. Never raises."""
+    report = await send_push_detailed(tokens, title, body, url, deal_id, image=image, kind=kind,
+                                      expires_at=expires_at)
+    return report["accepted"]
 
 
 async def notify(
