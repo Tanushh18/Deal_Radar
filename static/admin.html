@@ -182,6 +182,14 @@
       </div>
       <p class="muted small hidden" id="pause-note" style="margin-top:-6px">
         ⏸ Automatic syncing is paused — the site is showing what it already has. "Sync now" still works.</p>
+      <div class="row" style="align-items:center;gap:8px;margin-top:4px">
+        <span class="muted small">Check for new deals every</span>
+        <input class="input" id="poll-minutes" type="number" min="5" max="360" step="5" style="width:76px" />
+        <span class="muted small">min</span>
+        <button class="btn btn-soft btn-sm" id="poll-save" type="button">Save</button>
+        <button class="btn btn-ghost btn-sm" id="poll-reset" type="button">Reset to default</button>
+      </div>
+      <p class="muted small" id="poll-note" style="margin-top:-4px"></p>
       <p class="muted">Every channel the reader account follows on Telegram is read automatically.
         Block any you don't want on the site — blocked channels stay blocked. To add one, join it in Telegram
         (then "Refresh from Telegram") or paste its @username below.</p>

@@ -30,14 +30,15 @@ async def ping():
     """
     ingest_state = ingest.state()
     last_run = ingest_state.get("last_run") or None
+    interval = ingest.poll_interval_seconds()  # cached after the first call — see ingest.py
     return {
         "status": "ok",
         "service": "dealradar",
         "timestamp": int(time.time()),
         "uptime_seconds": int(time.time() - BOOT_TIME),
-        "poll_interval_seconds": settings.poll_interval_seconds,
+        "poll_interval_seconds": interval,
         "last_ingest_at": last_run,
-        "next_ingest_at": (last_run + settings.poll_interval_seconds) if last_run else None,
+        "next_ingest_at": (last_run + interval) if last_run else None,
         "ingest_running": bool(ingest_state.get("running")),
     }
 
@@ -63,7 +64,7 @@ async def health():
 
     ingest_state = ingest.state()
     last_run = ingest_state.get("last_run") or 0
-    stale = bool(last_run) and (time.time() - last_run) > settings.poll_interval_seconds * 3
+    stale = bool(last_run) and (time.time() - last_run) > ingest.poll_interval_seconds() * 3
     checks["ingest"] = {
         "running": ingest_state.get("running"),
         "cycles": ingest_state.get("cycles"),
@@ -86,7 +87,7 @@ async def health():
 async def stats():
     data = db.stats()
     data["ingest"] = ingest.state()
-    data["poll_interval_seconds"] = settings.poll_interval_seconds
+    data["poll_interval_seconds"] = ingest.poll_interval_seconds()
     data["deal_ttl_hours"] = settings.deal_ttl_hours
     return data
 

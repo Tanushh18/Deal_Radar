@@ -67,6 +67,54 @@ def set_sync_paused(paused: bool) -> None:
     db.set_meta("sync_paused", "1" if paused else "0")
 
 
+# --- runtime-adjustable poll interval (admin panel) ---------------------
+# Overrides settings.poll_interval_seconds without a redeploy. Stored in meta
+# (and mirrored to the Sheet's Settings tab like every other admin setting —
+# see admin.py), so it survives a restart on Render's ephemeral disk. Cached
+# in memory after the first read: /api/ping advertises itself as DB-free
+# (an uptime pinger shouldn't cost a real query on every hit), and this
+# keeps that true after the first call — the cache is only ever written by
+# the two setters below, both called from the admin endpoint.
+POLL_INTERVAL_META_KEY = "poll_interval_seconds_override"
+MIN_POLL_INTERVAL_SECONDS = 300      # 5 min floor — protects Telegram/Sheets/Turso from being hammered
+MAX_POLL_INTERVAL_SECONDS = 21600    # 6 h ceiling — past this it's not really "ingesting" any more
+_poll_interval_cache: Optional[int] = None
+
+
+def poll_interval_seconds() -> int:
+    """The cadence actually in effect: an admin override if one's set and valid, else the env default."""
+    global _poll_interval_cache
+    if _poll_interval_cache is None:
+        raw = db.get_meta(POLL_INTERVAL_META_KEY)
+        value = None
+        if raw:
+            try:
+                value = int(raw)
+            except (TypeError, ValueError):
+                value = None
+            if value is not None and not (MIN_POLL_INTERVAL_SECONDS <= value <= MAX_POLL_INTERVAL_SECONDS):
+                value = None
+        _poll_interval_cache = value or settings.poll_interval_seconds
+    return _poll_interval_cache
+
+
+def set_poll_interval_seconds(seconds: int) -> int:
+    """Clamped to the safe range; the scheduler picks it up on its next iteration, no restart needed."""
+    global _poll_interval_cache
+    seconds = max(MIN_POLL_INTERVAL_SECONDS, min(MAX_POLL_INTERVAL_SECONDS, int(seconds)))
+    db.set_meta(POLL_INTERVAL_META_KEY, str(seconds))
+    _poll_interval_cache = seconds
+    return seconds
+
+
+def reset_poll_interval_seconds() -> int:
+    """Clear the override — back to whatever POLL_INTERVAL_SECONDS is set to."""
+    global _poll_interval_cache
+    db.set_meta(POLL_INTERVAL_META_KEY, "")
+    _poll_interval_cache = settings.poll_interval_seconds
+    return _poll_interval_cache
+
+
 async def _resolve_reader(channel: Dict[str, Any]) -> Optional[int]:
     """Pick a user whose Telegram session can actually read this channel.
 
@@ -679,9 +727,9 @@ async def scheduler_loop() -> None:
             raise
         except Exception as exc:  # noqa: BLE001
             log.warning("Scheduler iteration failed: %s", exc)
-        # Fixed cadence: a new cycle starts every POLL_INTERVAL_SECONDS (5 min),
-        # however long the last one took.
-        await asyncio.sleep(max(30, settings.poll_interval_seconds - (time.time() - started)))
+        # A new cycle starts every poll_interval_seconds() (admin-adjustable —
+        # see set_poll_interval_seconds), however long the last one took.
+        await asyncio.sleep(max(30, poll_interval_seconds() - (time.time() - started)))
 
 
 async def keepalive_loop() -> None:

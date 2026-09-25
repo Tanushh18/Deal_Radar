@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .. import auth, db
+from ..config import settings
 from ..services import ingest, priority, public_reader, sheet_mode, sheets, taxonomy, telegram
 from .channels import _deactivate_orphans, _register_channel
 
@@ -47,6 +48,10 @@ class PriorityPayload(BaseModel):
     categories: list = []
     keywords: list = []
     stores: list = []
+
+
+class PollIntervalPayload(BaseModel):
+    seconds: int
 
 
 def reader_id() -> Optional[int]:
@@ -112,6 +117,39 @@ async def pause_syncing(payload: PausePayload):
     """Stops the automatic 5-min ingest loop; "Sync now" still works as a manual override."""
     ingest.set_sync_paused(payload.paused)
     return {"status": "ok", "sync_paused": payload.paused}
+
+
+@router.get("/poll-interval")
+async def get_poll_interval():
+    return {
+        "seconds": ingest.poll_interval_seconds(),
+        "default_seconds": settings.poll_interval_seconds,
+        "is_override": ingest.poll_interval_seconds() != settings.poll_interval_seconds,
+        "min_seconds": ingest.MIN_POLL_INTERVAL_SECONDS,
+        "max_seconds": ingest.MAX_POLL_INTERVAL_SECONDS,
+    }
+
+
+@router.post("/poll-interval")
+async def set_poll_interval(payload: PollIntervalPayload):
+    """Takes effect on the scheduler's next iteration — no redeploy, no restart."""
+    if not (ingest.MIN_POLL_INTERVAL_SECONDS <= payload.seconds <= ingest.MAX_POLL_INTERVAL_SECONDS):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Must be between {ingest.MIN_POLL_INTERVAL_SECONDS} and {ingest.MAX_POLL_INTERVAL_SECONDS} seconds.",
+        )
+    seconds = ingest.set_poll_interval_seconds(payload.seconds)
+    if sheets.is_enabled():
+        sheets.save_setting(ingest.POLL_INTERVAL_META_KEY, str(seconds))
+    return {"status": "ok", "seconds": seconds}
+
+
+@router.post("/poll-interval/reset")
+async def reset_poll_interval():
+    seconds = ingest.reset_poll_interval_seconds()
+    if sheets.is_enabled():
+        sheets.save_setting(ingest.POLL_INTERVAL_META_KEY, "")
+    return {"status": "ok", "seconds": seconds}
 
 
 class BroadcastPayload(BaseModel):

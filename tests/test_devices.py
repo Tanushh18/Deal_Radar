@@ -93,6 +93,25 @@ def main() -> int:
         r = c.post("/api/admin/reader/pause", json={"paused": False}, headers=ADMIN)
         check("resume works", r.status_code == 200 and r.json()["sync_paused"] is False and ingest.sync_paused() is False)
 
+        print("\n=== ADMIN: POLL INTERVAL ===")
+        r = c.get("/api/admin/reader/poll-interval", headers=ADMIN).json()
+        check("default reported before any override", r["seconds"] == r["default_seconds"] and r["is_override"] is False, str(r))
+        check("get requires admin token", c.get("/api/admin/reader/poll-interval").status_code == 403)
+        check("set requires admin token", c.post("/api/admin/reader/poll-interval", json={"seconds": 900}).status_code == 403)
+        check("below the floor is rejected",
+              c.post("/api/admin/reader/poll-interval", json={"seconds": 60}, headers=ADMIN).status_code == 400)
+        check("above the ceiling is rejected",
+              c.post("/api/admin/reader/poll-interval", json={"seconds": 999999}, headers=ADMIN).status_code == 400)
+        r = c.post("/api/admin/reader/poll-interval", json={"seconds": 900}, headers=ADMIN)
+        check("set to 15 min", r.status_code == 200 and r.json()["seconds"] == 900, str(r.json()))
+        check("takes effect immediately", ingest.poll_interval_seconds() == 900)
+        r = c.get("/api/admin/reader/poll-interval", headers=ADMIN).json()
+        check("now reports itself as an override", r["seconds"] == 900 and r["is_override"] is True, str(r))
+        check("/api/ping reflects the override", c.get("/api/ping").json()["poll_interval_seconds"] == 900)
+        r = c.post("/api/admin/reader/poll-interval/reset", headers=ADMIN)
+        check("reset back to default", r.status_code == 200 and r.json()["seconds"] == r.json()["seconds"] and
+              ingest.poll_interval_seconds() == ingest.settings.poll_interval_seconds)
+
         print("\n=== ADMIN: BROADCAST NOTIFICATION ===")
         check("broadcast requires admin token", c.post("/api/admin/reader/broadcast", json={"title": "hi", "body": "hi"}).status_code == 403)
         check("broadcast needs title+body", c.post("/api/admin/reader/broadcast", json={"title": "", "body": ""}, headers=ADMIN).status_code == 400)

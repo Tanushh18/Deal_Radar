@@ -70,6 +70,34 @@
       </tr>`).join('') : '<tr><td colspan="6" class="muted">No channels yet — connect the reader, then “Refresh from Telegram”.</td></tr>';
   }
 
+  function fmtMinutes(seconds) {
+    const m = Math.round(seconds / 60);
+    return m % 60 === 0 && m >= 60 ? `${m / 60}h` : `${m}m`;
+  }
+  async function loadPollInterval() {
+    const r = await api('/api/admin/reader/poll-interval');
+    $('#poll-minutes').value = Math.round(r.seconds / 60);
+    $('#poll-note').textContent = r.is_override
+      ? `Custom — the built-in default is ${fmtMinutes(r.default_seconds)}.`
+      : `Default (${fmtMinutes(r.default_seconds)}) — no override set.`;
+  }
+  $('#poll-save').addEventListener('click', async () => {
+    const minutes = Number($('#poll-minutes').value);
+    if (!Number.isFinite(minutes) || minutes <= 0) { show($('#channel-msg'), 'Enter a number of minutes.', 'err'); return; }
+    try {
+      const r = await post('/api/admin/reader/poll-interval', { seconds: Math.round(minutes * 60) });
+      await loadPollInterval();
+      show($('#channel-msg'), `Ingest cycle set to every ${fmtMinutes(r.seconds)} — takes effect on the next cycle, no restart needed.`, 'ok');
+    } catch (err) { show($('#channel-msg'), err.message, 'err'); }
+  });
+  $('#poll-reset').addEventListener('click', async () => {
+    try {
+      const r = await post('/api/admin/reader/poll-interval/reset', {});
+      await loadPollInterval();
+      show($('#channel-msg'), `Back to the default — every ${fmtMinutes(r.seconds)}.`, 'ok');
+    } catch (err) { show($('#channel-msg'), err.message, 'err'); }
+  });
+
   let presets = {};
   async function loadPriority() {
     const r = await api('/api/admin/reader/priority');
@@ -141,6 +169,7 @@
       await refresh();
       await loadPriority();
       await loadDataSource();
+      await loadPollInterval();
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
     } catch (err) {
