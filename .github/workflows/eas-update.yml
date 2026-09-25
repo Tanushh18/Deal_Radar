@@ -43,11 +43,17 @@ jobs:
       # (preview -> sideloaded/internal APKs, production -> Play Store builds).
       # Publish to both so an update reaches whichever one is actually installed.
       - name: Publish OTA update (preview)
+        # The message goes in through an env var, never pasted into the script:
+        # a commit message with quotes broke the command (and could inject shell).
+        env:
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message || 'Manual update' }}
         run: |
-          eas update --branch preview --non-interactive \
-            --message "${{ github.event.head_commit.message || 'Manual update' }}"
+          eas update --branch preview --non-interactive --message "${UPDATE_MESSAGE%%$'\n'*}"
 
       - name: Publish OTA update (production)
+        # The message goes in through an env var, never pasted into the script:
+        # a commit message with quotes broke the command (and could inject shell).
+        env:
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message || 'Manual update' }}
         run: |
-          eas update --branch production --non-interactive \
-            --message "${{ github.event.head_commit.message || 'Manual update' }}"
+          eas update --branch production --non-interactive --message "${UPDATE_MESSAGE%%$'\n'*}"
