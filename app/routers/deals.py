@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from .. import auth, db
 
-from ..services import ratelimit, search, sheet_mode, store, taxonomy, telegram
+from ..services import price_store, ratelimit, search, sheet_mode, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -138,6 +138,9 @@ async def list_deals(
     )
 
 
+SPARKLINE_POINTS = 30  # recent points fetched per card, downsampled to 8 below
+
+
 @router.get("/sparklines")
 async def sparklines(ids: str = Query(..., max_length=2000), _rl=Depends(_limit_sparklines)):
     """Batch price trend for a grid of cards: last 8 points per deal, one query.
@@ -153,17 +156,11 @@ async def sparklines(ids: str = Query(..., max_length=2000), _rl=Depends(_limit_
         f"SELECT id, product_key FROM deals WHERE id IN ({','.join('?' for _ in deal_ids)})",
         deal_ids,
     )
-    keys = {r["product_key"] for r in rows if r["product_key"]}
+    keys = [r["product_key"] for r in rows if r["product_key"]]
     if not keys:
         return {"sparklines": {}}
-    points = db.query(
-        f"SELECT product_key, price, seen_at FROM price_history "
-        f"WHERE product_key IN ({','.join('?' for _ in keys)}) ORDER BY seen_at ASC",
-        list(keys),
-    )
-    by_key: dict = {}
-    for p in points:
-        by_key.setdefault(p["product_key"], []).append(p["price"])
+    history = await price_store.history_many(keys, limit=SPARKLINE_POINTS)
+    by_key = {k: [p for _, p in pts] for k, pts in history.items()}
     out = {}
     for r in rows:
         pk = r["product_key"]
@@ -212,7 +209,8 @@ async def get_deal(deal_id: str):
     deal = db.row_to_dict(row) or {}
     shaped = search.shape(deal)
     shaped["raw_text"] = deal.get("raw_text")
-    shaped["price_history"] = store.price_stats(deal.get("product_key") or "")
+    points = await price_store.history(deal.get("product_key") or "")
+    shaped["price_history"] = price_store.stats(points)
     shaped["price_verdict"] = price_verdict(deal.get("price"), shaped["price_history"])
     return shaped
 
@@ -252,13 +250,11 @@ async def deal_history(deal_id: str):
     row = db.query_one("SELECT product_key FROM deals WHERE id = ?", (deal_id,))
     if not row:
         raise HTTPException(status_code=404, detail="Deal not found.")
-    points = db.query(
-        "SELECT price, seen_at FROM price_history WHERE product_key = ? ORDER BY seen_at ASC LIMIT 120",
-        (row["product_key"],),
-    )
+    # Served from Turso, the full price record (newest HISTORY_LIMIT points).
+    points = await price_store.history(row["product_key"] or "")
     return {
-        "stats": store.price_stats(row["product_key"]),
-        "points": [{"price": p["price"], "at": p["seen_at"]} for p in points],
+        "stats": price_store.stats(points),
+        "points": price_store.as_json(points),
     }
 
 

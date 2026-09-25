@@ -505,7 +505,7 @@ def _purge_old_local_deals_daily() -> None:
     try:
         removed = store.purge_old_local_deals()
         if removed:
-            log.info("Local deal purge: removed %d deals already backed up to Turso", removed)
+            log.info("Local deal purge: removed %d deals already saved to Google Sheets", removed)
     except Exception as exc:  # noqa: BLE001 - never break the ingest cycle
         log.warning("Local deal purge failed: %s", exc)
     db.set_meta("local_deals_purge_day", today)

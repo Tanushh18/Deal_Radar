@@ -32,7 +32,7 @@ services:
       - key: PUBLIC_URL
         sync: false             # e.g. https://dealradar.onrender.com — enables self-ping
       - key: TURSO_DATABASE_URL
-        sync: false             # libsql://<db>-<org>.turso.io — durable DB, survives redeploys
+        sync: false             # libsql://<db>-<org>.turso.io — permanent price history + price alerts
       - key: TURSO_AUTH_TOKEN
         sync: false
 

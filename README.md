@@ -57,6 +57,15 @@ and rate-limited (~60 writes/min). Render's free disk is wiped on every restart.
 So Sheets is the source of truth, SQLite is the query index, and the cache is
 rebuilt from Sheets on cold start.
 
+**Turso holds price history and price tracking only.** Every price change goes
+to a `price_points` table keyed `(product_key, seen_at)` (WITHOUT ROWID, so one
+product's history is a single range scan), with a `products` row per item
+carrying its all-time min/max/last price, plus visitors' price alerts. The
+history chart, sparklines and "check price" lookup read from Turso (cached for
+two minutes, falling back to local SQLite if Turso is unreachable). Set
+`TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to enable it. The first boot on
+this schema clears any older Turso data and starts fresh.
+
 ---
 
 ## What makes the automation effective

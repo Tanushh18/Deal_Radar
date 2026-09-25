@@ -52,15 +52,13 @@ async def lifespan(app: FastAPI):
     if settings.secret_key == "dev-insecure-change-me":
         log.warning("SECRET_KEY is the insecure default — set a real one before deploying.")
 
-    # Render's disk is ephemeral: rebuild the cache on cold start. Turso (a
-    # plain background HTTP backup, never touching the event loop — see
-    # turso_backup.py) is tried first since it's the fresher, fuller copy;
-    # Sheets restore still runs for users/channels/watchlists either way,
-    # but skips re-restoring deals if Turso already provided them.
+    # Render's disk is ephemeral: rebuild the cache on cold start. Turso holds
+    # only price history and price alerts (see turso_backup.py) — history is
+    # read from it on demand, alerts are copied back here. Deals, channels and
+    # settings come back from Google Sheets.
     loop = asyncio.get_event_loop()
-    turso_deals = 0
     try:
-        turso_deals = await loop.run_in_executor(None, turso_backup.restore)
+        await loop.run_in_executor(None, turso_backup.restore)
     except Exception as exc:  # noqa: BLE001
         log.warning("Turso restore failed: %s", exc)
     turso_backup.start()
@@ -70,12 +68,11 @@ async def lifespan(app: FastAPI):
     # other reason (a transient Sheets error, a quota blip) must not also
     # cost every step after it in the same sequence.
     if sheets.is_enabled():
-        restored = turso_deals
-        if not turso_deals:
-            try:
-                restored = await loop.run_in_executor(None, sheets.restore_deals)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("Deal restore failed: %s", exc)
+        restored = 0
+        try:
+            restored = await loop.run_in_executor(None, sheets.restore_deals)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Deal restore failed: %s", exc)
 
         try:
             points = await loop.run_in_executor(None, sheets.restore_price_history)

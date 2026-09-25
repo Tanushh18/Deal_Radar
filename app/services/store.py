@@ -75,8 +75,8 @@ def record_price(product_key: str, price: Optional[float], store: str) -> None:
     if last and abs(float(last["price"]) - float(price)) < 0.01:
         return
     db.execute(
-        "INSERT INTO price_history (product_key, price, store, seen_at) VALUES (?, ?, ?, ?)",
-        (product_key, float(price), store, time.time()),
+        "INSERT INTO price_history (product_key, price, store, seen_at, turso_synced) VALUES (?, ?, ?, ?, ?)",
+        (product_key, float(price), store, time.time(), 0 if settings.turso_configured else 1),
     )
     from . import price_alerts  # local: price_alerts -> push -> db only, but keep store import-light
     price_alerts.check(product_key, price)
@@ -297,6 +297,11 @@ def save_deal(deal: Dict[str, Any]) -> str:
         db.execute(
             "UPDATE price_history SET product_key = ? WHERE product_key = ?", (new_key, old_key)
         )
+        db.turso_enqueue(
+            "UPDATE OR IGNORE price_points SET product_key = ? WHERE product_key = ?", (new_key, old_key)
+        )
+        db.turso_enqueue("DELETE FROM price_points WHERE product_key = ?", (old_key,))
+        db.turso_enqueue("DELETE FROM products WHERE product_key = ?", (old_key,))
         db.execute(
             "UPDATE deals SET product_key = ?, dirty = 1 WHERE product_key = ?", (new_key, old_key)
         )
@@ -325,7 +330,7 @@ def rollup_price_history() -> int:
     """
     cutoff = time.time() - PRICE_HISTORY_FULL_RES_DAYS * 86400
     rows = db.query(
-        "SELECT product_key, store, price, seen_at FROM price_history WHERE seen_at < ?",
+        "SELECT product_key, store, price, seen_at FROM price_history WHERE seen_at < ? AND turso_synced = 1",
         (cutoff,),
     )
     if not rows:
@@ -341,10 +346,12 @@ def rollup_price_history() -> int:
             daily[key] = {"product_key": r["product_key"], "store": r["store"],
                           "price": r["price"], "seen_at": r["seen_at"]}
 
-    db.execute("DELETE FROM price_history WHERE seen_at < ?", (cutoff,))
+    db.execute("DELETE FROM price_history WHERE seen_at < ? AND turso_synced = 1", (cutoff,))
+    # Each kept row is an original observation already in Sheets and Turso —
+    # re-flagging it unsynced would append a duplicate row to the Sheet.
     db.execute_many(
-        "INSERT INTO price_history (product_key, price, store, seen_at, synced) "
-        "VALUES (?, ?, ?, ?, 0)",
+        "INSERT INTO price_history (product_key, price, store, seen_at, synced, turso_synced) "
+        "VALUES (?, ?, ?, ?, 1, 1)",
         [(d["product_key"], d["price"], d["store"], d["seen_at"]) for d in daily.values()],
     )
     removed = len(rows) - len(daily)
@@ -435,14 +442,13 @@ DEAL_LOCAL_RETENTION_DAYS = 270
 def purge_old_local_deals() -> int:
     """Delete deals that expired long ago from *local* SQLite only.
 
-    Every deal that ever synced (dirty=0) already has a durable copy in
-    Turso — deleting the local row doesn't lose it, it just drops out of
-    local archive search past this window. Live deals are never touched
-    regardless of age. Skipped entirely when Turso backup isn't running,
-    since local SQLite would then be the only copy.
+    Every deal that ever flushed (dirty=0) already has a durable copy in the
+    Google Sheet — deleting the local row doesn't lose it, it just drops out
+    of local archive search past this window. Its price history stays in
+    Turso. Live deals are never touched regardless of age. Skipped entirely
+    when Sheets isn't configured, since local SQLite would then be the only copy.
     """
-    from ..config import settings
-    if not settings.turso_configured:
+    if not settings.sheets_configured:
         return 0
     cutoff = time.time() - DEAL_LOCAL_RETENTION_DAYS * 86400
     cur = db.execute(
@@ -529,6 +535,10 @@ def reparse_stored_deals() -> int:
         if "price" in changes and wrong_price is not None and old.get("product_key"):
             db.execute(
                 "DELETE FROM price_history WHERE product_key = ? AND ABS(price - ?) < 0.01",
+                (old["product_key"], float(wrong_price)),
+            )
+            db.turso_enqueue(
+                "DELETE FROM price_points WHERE product_key = ? AND ABS(price - ?) < 0.01",
                 (old["product_key"], float(wrong_price)),
             )
             record_price(old["product_key"], updated["price"], old.get("store") or "")

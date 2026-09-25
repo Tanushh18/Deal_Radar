@@ -785,7 +785,8 @@ def restore_price_history() -> int:
         except (KeyError, TypeError, ValueError):
             continue
     if points:
-        db.execute("DELETE FROM price_history")
+        # Keep points Turso hasn't received yet; everything else is replaced.
+        db.execute("DELETE FROM price_history WHERE turso_synced = 1")
         db.execute_many("INSERT INTO price_history (product_key, price, store, seen_at, synced) VALUES (?, ?, ?, ?, 1)", points)
     return len(points)
 
