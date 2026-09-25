@@ -27,6 +27,7 @@ from .routers import notifications as notifications_router
 from .routers import devices as devices_router
 from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
+from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
 from .services import ingest, live, public_reader, quality, sheets, store, telegram, turso_backup
 
@@ -206,6 +207,7 @@ app.include_router(watchlists_router.router)
 app.include_router(notifications_router.router)
 app.include_router(admin_router.router)
 app.include_router(price_alerts_router.router)
+app.include_router(sale_events_router.router)
 app.include_router(devices_router.router)
 app.include_router(lookup_router.router)
 

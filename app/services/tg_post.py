@@ -327,9 +327,20 @@ async def _send(method: str, data: Dict[str, Any], files: Optional[Dict[str, Any
 PhotoLoader = Callable[[], Awaitable[Optional[bytes]]]
 
 
+PAUSE_META_KEY = "tg_post_paused"
+
+
+def posting_paused() -> bool:
+    return db.get_meta(PAUSE_META_KEY) == "1"
+
+
+def set_posting_paused(paused: bool) -> None:
+    db.set_meta(PAUSE_META_KEY, "1" if paused else "0")
+
+
 async def maybe_publish(deal: Dict[str, Any], photo: Optional[PhotoLoader] = None) -> bool:
     """Post `deal` if it passes assess() and wasn't posted already. Never raises."""
-    if not settings.tg_post_configured or not deal or not deal.get("product_key"):
+    if not settings.tg_post_configured or not deal or not deal.get("product_key") or posting_paused():
         return False
     try:
         _ensure_schema()

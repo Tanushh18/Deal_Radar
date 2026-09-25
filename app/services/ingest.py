@@ -30,7 +30,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import links, parser, price_store, push, quality, ratelimit, search, sheets, store, telegram, tg_post
+from . import links, parser, price_store, push, quality, ratelimit, sale_events, search, sheets, store, telegram, tg_post
 
 log = logging.getLogger(__name__)
 
@@ -735,6 +735,12 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             _purge_local_cache()
             push.prune_notifications()
             tg_post.prune()
+            try:
+                announced = await sale_events.run_heads_up_check()
+                if announced:
+                    log.info("Sale-event heads-up posted: %d", announced)
+            except Exception as exc:  # noqa: BLE001 — never break the cycle over this
+                log.warning("Sale-event heads-up check failed: %s", exc)
             from . import devices
             devices.digest_tick()
             devices.weekly_digest_tick()

@@ -58,10 +58,14 @@
     $('#pause-sync').textContent = s.sync_paused ? 'Resume syncing' : 'Pause syncing';
     $('#pause-sync').classList.toggle('on', !!s.sync_paused);
     $('#pause-note').classList.toggle('hidden', !s.sync_paused);
+    const tgPaused = !!(s.live && s.live.posting_paused);
+    $('#tg-pause').textContent = tgPaused ? 'Resume posting to Telegram' : 'Pause posting to Telegram';
+    $('#tg-pause').classList.toggle('on', tgPaused);
     $('#channels').innerHTML = s.channels.length ? s.channels.map((c) => `
       <tr class="${c.enabled ? '' : 'blocked'}">
         <td><b>${esc(c.title)}</b><br><span class="muted small">${c.username ? '@' + esc(c.username) : 'private'}</span></td>
-        <td><span class="tag ${c.enabled ? 'on' : 'off'}">${c.enabled ? 'Reading' : 'Blocked'}</span></td>
+        <td><span class="tag ${c.enabled ? 'on' : 'off'}">${c.enabled ? 'Reading' : 'Blocked'}</span>${
+          c.stale ? ' <span class="tag off" title="No new deal from this channel in 10+ days">⚠ stale</span>' : ''}</td>
         <td class="num">${(c.participants || 0).toLocaleString('en-IN')}</td>
         <td class="num">${(c.live_deals || 0).toLocaleString('en-IN')}</td>
         <td>${ago(c.last_fetched_at)}</td>
@@ -171,6 +175,7 @@
       await loadDataSource();
       await loadPollInterval();
       await loadPushStatus().catch(() => {});
+      await loadSaleEvents().catch(() => {});
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
     } catch (err) {
@@ -249,6 +254,19 @@
       show($('#channel-msg'), blocking ? 'Blocked — its deals are hidden from the site and app.' : 'Unblocked — it is read from the next sync.', 'ok');
       await refresh();
     } catch (err) { show($('#channel-msg'), err.message, 'err'); btn.disabled = false; }
+  });
+
+  $('#tg-pause').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const pausing = !btn.classList.contains('on');
+    btn.disabled = true;
+    try {
+      await post('/api/admin/reader/telegram-pause', { paused: pausing });
+      await refresh();
+      show($('#channel-msg'), pausing
+        ? 'Telegram posting paused — the site/app keep working, nothing new goes to the channel.'
+        : 'Telegram posting resumed.', 'ok');
+    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
 
   $('#tg-test').addEventListener('click', async (e) => {
@@ -463,6 +481,102 @@
       else show($('#push-msg'), `Nothing sent: ${r.why}.`, 'err');
       await loadPushStatus();
     } catch (err) { show($('#push-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+  });
+
+  /* -------------------- Upcoming sales calendar -------------------- */
+  function fmtDay(ts) {
+    return ts ? new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  }
+  function toDateInput(ts) {
+    return ts ? new Date(ts * 1000).toISOString().slice(0, 10) : '';
+  }
+  function fromDateInput(value) {
+    return value ? Math.floor(new Date(`${value}T00:00:00Z`).getTime() / 1000) : null;
+  }
+  async function loadSaleEvents() {
+    const { events } = await api('/api/admin/reader/sale-events');
+    $('#sale-events-list').innerHTML = events.length ? events.map((e) => `
+      <div class="sale-event-row">
+        <div class="sev-main">
+          <div class="sev-name">${esc(e.name)}
+            <span class="sev-badge ${e.approximate ? '' : 'confirmed'}">${e.approximate ? 'approx' : 'confirmed'}</span>
+            ${e.heads_up_posted ? '<span class="sev-badge posted">posted</span>' : ''}
+          </div>
+          <div class="sev-meta">${esc(e.store || '—')} · ${fmtDay(e.starts_at)}${e.ends_at ? ' – ' + fmtDay(e.ends_at) : ''}</div>
+          ${e.hype ? `<div class="sev-hype">“${esc(e.hype)}”</div>` : ''}
+        </div>
+        <button class="btn btn-soft btn-xs" data-se-edit="${e.id}">Edit</button>
+        <button class="btn btn-soft btn-xs" data-se-hype="${e.id}">Regen AI blurb</button>
+        <button class="btn btn-soft btn-xs" data-se-post="${e.id}" ${e.heads_up_posted ? 'disabled' : ''}>Post now</button>
+        <button class="btn btn-ghost btn-xs" data-se-delete="${e.id}">Delete</button>
+      </div>`).join('') : '<p class="muted">No upcoming sales — add one below.</p>';
+    window._saleEvents = events;
+  }
+  function resetSaleForm() {
+    $('#se-id').value = '';
+    $('#se-name').value = '';
+    $('#se-store').value = '';
+    $('#se-start').value = '';
+    $('#se-end').value = '';
+    $('#se-approx').checked = true;
+    $('#se-save').textContent = 'Save event';
+  }
+  $('#se-cancel-edit').addEventListener('click', resetSaleForm);
+  $('#sale-event-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      id: $('#se-id').value || undefined,
+      name: $('#se-name').value.trim(),
+      store: $('#se-store').value.trim().toLowerCase(),
+      starts_at: fromDateInput($('#se-start').value),
+      ends_at: fromDateInput($('#se-end').value),
+      approximate: $('#se-approx').checked,
+    };
+    if (!payload.name) { show($('#sale-events-msg'), 'Name is required.', 'err'); return; }
+    try {
+      await post('/api/admin/reader/sale-events', payload);
+      resetSaleForm();
+      await loadSaleEvents();
+      show($('#sale-events-msg'), 'Saved.', 'ok');
+    } catch (err) { show($('#sale-events-msg'), err.message, 'err'); }
+  });
+  $('#sale-events-list').addEventListener('click', async (e) => {
+    const editId = e.target.dataset.seEdit;
+    const hypeId = e.target.dataset.seHype;
+    const postId = e.target.dataset.sePost;
+    const delId = e.target.dataset.seDelete;
+    try {
+      if (editId) {
+        const ev = (window._saleEvents || []).find((x) => x.id === editId);
+        if (!ev) return;
+        $('#se-id').value = ev.id;
+        $('#se-name').value = ev.name;
+        $('#se-store').value = ev.store;
+        $('#se-start').value = toDateInput(ev.starts_at);
+        $('#se-end').value = toDateInput(ev.ends_at);
+        $('#se-approx').checked = !!ev.approximate;
+        $('#se-save').textContent = 'Update event';
+        $('#se-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (hypeId) {
+        e.target.disabled = true;
+        await post(`/api/admin/reader/sale-events/${hypeId}/hype`, {});
+        await loadSaleEvents();
+        show($('#sale-events-msg'), 'New AI blurb generated.', 'ok');
+      } else if (postId) {
+        e.target.disabled = true;
+        await post(`/api/admin/reader/sale-events/${postId}/post-now`, {});
+        await loadSaleEvents();
+        show($('#sale-events-msg'), 'Posted to Telegram.', 'ok');
+      } else if (delId) {
+        if (!confirm('Delete this event?')) return;
+        await api(`/api/admin/reader/sale-events/${delId}`, { method: 'DELETE' });
+        await loadSaleEvents();
+        show($('#sale-events-msg'), 'Deleted.', 'ok');
+      }
+    } catch (err) {
+      show($('#sale-events-msg'), err.message, 'err');
+      await loadSaleEvents();
+    }
   });
 
   if (token()) unlock();

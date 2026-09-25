@@ -17,6 +17,7 @@ import type {
   Health,
   LookupResult,
   PriceAlert,
+  SaleEvent,
   MeResult,
   SendCodeResult,
   Sparklines,
@@ -33,6 +34,10 @@ import type {
 type Sig = { signal?: AbortSignal };
 
 const enc = encodeURIComponent;
+
+export const saleEvents = {
+  list: (o: Sig = {}) => request<{ events: SaleEvent[] }>('/api/sale-events', o),
+};
 
 export const auth = {
   config: (o: Sig = {}) => request<AuthConfig>('/api/auth/config', o),

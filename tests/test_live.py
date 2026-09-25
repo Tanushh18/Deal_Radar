@@ -254,6 +254,38 @@ def main() -> int:
     check("test post goes to the channel", r.status_code == 200 and calls and calls[-1][1].get("chat_id") == "@mydeals",
           r.text)
 
+    print("\n=== ADMIN: STALE-CHANNEL DETECTION ===")
+    db.set_meta("reader_user_id", str(reader))
+    db.execute("INSERT INTO channels (tg_id, username, title, active) VALUES (50, 'oldnews', 'oldnews', 1)")
+    for tg in (1, 50):
+        db.execute("INSERT INTO user_channels (user_id, channel_id, enabled, added_at) "
+                   "SELECT ?, id, 1, ? FROM channels WHERE tg_id = ? AND NOT EXISTS ("
+                   "SELECT 1 FROM user_channels WHERE user_id = ? AND channel_id = "
+                   "(SELECT id FROM channels WHERE tg_id = ?))",
+                   (reader, time.time(), tg, reader, tg))
+    r = web.get("/api/admin/reader", headers={"X-Admin-Token": "t"}).json()
+    by_tg = {ch["tg_id"]: ch for ch in r["channels"]}
+    check("channel with a recent deal is not stale", by_tg.get(1) is not None and by_tg[1]["stale"] is False,
+          str(by_tg.get(1)))
+    check("channel that never produced a deal is stale", by_tg.get(50) is not None and by_tg[50]["stale"] is True,
+          str(by_tg.get(50)))
+
+    print("\n=== ADMIN: PAUSE TELEGRAM POSTING ===")
+    check("pause needs admin token", web.post("/api/admin/reader/telegram-pause", json={"paused": True}).status_code in (401, 403))
+    r = web.post("/api/admin/reader/telegram-pause", json={"paused": True}, headers={"X-Admin-Token": "t"})
+    check("pause takes effect", r.status_code == 200 and r.json()["posting_paused"] is True)
+    status = web.get("/api/admin/reader", headers={"X-Admin-Token": "t"}).json()
+    check("status reflects paused", status["live"]["posting_paused"] is True, str(status["live"]))
+    before = len(calls)
+    ok = feed("Titan Raga Wristwatch for Women ₹129 (MRP ₹999) https://www.amazon.in/dp/B0PAUSED01")
+    check("no post while paused, even though it qualifies", ok is False and len(calls) == before)
+    check("deal is still saved (site/app unaffected)",
+          db.query_one("SELECT 1 FROM deals WHERE product_key = 'amazon:B0PAUSED01'") is not None)
+    r = web.post("/api/admin/reader/telegram-pause", json={"paused": False}, headers={"X-Admin-Token": "t"})
+    check("resume takes effect", r.status_code == 200 and r.json()["posting_paused"] is False)
+    check("posting works again after resume",
+          feed("Titan Raga Wristwatch for Women now ₹99 (MRP ₹999) https://www.amazon.in/dp/B0PAUSED01"))
+
     print("\n" + ("\033[92m✓ All checks passed.\033[0m" if not failures else f"\033[91m✗ {len(failures)} failed\033[0m"))
     return 1 if failures else 0
 

@@ -3100,7 +3100,36 @@
     updateSavedBadges();
     pollPriceAlerts();
     offerTelegramChannel();
+    loadSaleRail();
   })();
+
+  /* Upcoming sales rail (Big Billion Days, Great Indian Festival…), above the
+     category chips. Silently hidden if there are none — never an empty strip. */
+  async function loadSaleRail() {
+    let events = [];
+    try { events = (await api('/api/sale-events')).events || []; } catch { return; }
+    const rail = $('#sale-rail');
+    if (!events.length) { rail.classList.add('hidden'); return; }
+    const fmtDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    const countdown = (ts) => {
+      const days = Math.round((ts * 1000 - Date.now()) / 86400000);
+      if (days <= 0) return 'Live now';
+      if (days === 1) return 'Tomorrow';
+      return `In ${days}d`;
+    };
+    rail.innerHTML = events.map((e) => `
+      <div class="salecard">
+        <div class="salecard-top">
+          <span class="salecard-store">${escapeHtml(e.store || 'Sale')}</span>
+          <span class="salecard-when">${escapeHtml(countdown(e.starts_at))}</span>
+        </div>
+        <div class="salecard-name">${escapeHtml(e.name)}</div>
+        ${e.hype ? `<div class="salecard-hype">${escapeHtml(e.hype)}</div>` : ''}
+        <div class="salecard-approx">${e.approximate ? 'Approx. ' : ''}${escapeHtml(fmtDate(e.starts_at))}${
+          e.ends_at ? `–${escapeHtml(fmtDate(e.ends_at))}` : ''}</div>
+      </div>`).join('');
+    rail.classList.remove('hidden');
+  }
 
   /* "Join our Telegram channel" — shown each visit until they tap Join.
      The native app shows its own version, so skip it inside the app's WebView. */

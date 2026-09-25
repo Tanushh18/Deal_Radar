@@ -5,6 +5,16 @@ export type User = {
   first_name?: string | null;
 };
 
+export type SaleEvent = {
+  id: string;
+  name: string;
+  store: string;
+  starts_at: number | null;
+  ends_at: number | null;
+  approximate: boolean;
+  hype: string;
+};
+
 export type AuthConfig = {
   telegram_configured: boolean;
   sheets_configured: boolean;

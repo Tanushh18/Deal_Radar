@@ -1853,3 +1853,37 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%;
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer;
 }
+
+/* ============================================================
+   UPCOMING SALES RAIL  (Big Billion Days, Great Indian Festival…)
+   ============================================================ */
+.salerail { display: flex; gap: 10px; overflow-x: auto; padding: 10px 2px 2px; scrollbar-width: none; }
+.salerail::-webkit-scrollbar { display: none; }
+.salecard {
+  flex: none; min-width: 220px; max-width: 260px;
+  padding: 12px 14px; border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface-2));
+  border: 1px solid var(--accent-line);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.salecard-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.salecard-store { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+.salecard-when { font-size: .72rem; font-weight: 700; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.salecard-name { font-size: .92rem; font-weight: 700; line-height: 1.25; color: var(--text); }
+.salecard-hype { font-size: .76rem; color: var(--text-2); line-height: 1.35; }
+.salecard-approx { font-size: .68rem; color: var(--text-3); }
+
+/* Admin: upcoming sales editor */
+.sale-events-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.sale-event-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border);
+}
+.sale-event-row .sev-main { flex: 1; min-width: 0; }
+.sale-event-row .sev-name { font-weight: 700; font-size: .9rem; }
+.sale-event-row .sev-meta { font-size: .76rem; color: var(--text-2); margin-top: 2px; }
+.sale-event-row .sev-hype { font-size: .76rem; color: var(--text-2); margin-top: 2px; font-style: italic; }
+.sev-badge { font-size: .66rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); }
+.sev-badge.confirmed { background: var(--accent-soft); color: var(--accent); }
+.sev-badge.posted { background: rgba(16,185,129,.15); color: #10b981; }
+.sale-event-form { display: flex; flex-direction: column; gap: 8px; }

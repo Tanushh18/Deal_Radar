@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, live, priority, public_reader, sheet_mode, sheets, taxonomy, telegram, tg_post
+from ..services import ingest, live, priority, public_reader, sale_events, sheet_mode, sheets, taxonomy, telegram, tg_post
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -99,14 +99,24 @@ async def status():
         connected = await telegram.get_client(uid) is not None
     rows = db.query(
         "SELECT c.tg_id, c.username, c.title, c.participants, c.last_fetched_at, uc.enabled, "
-        "(SELECT COUNT(*) FROM deals d WHERE d.channel_id = c.tg_id AND d.status = 'live') AS live_deals "
+        "(SELECT COUNT(*) FROM deals d WHERE d.channel_id = c.tg_id AND d.status = 'live') AS live_deals, "
+        "(SELECT MAX(first_seen_at) FROM deals d WHERE d.channel_id = c.tg_id) AS last_new_deal_at "
         "FROM channels c JOIN user_channels uc ON uc.channel_id = c.id "
         "WHERE uc.user_id = ? ORDER BY uc.enabled DESC, live_deals DESC, c.title",
         (uid or 0,),
     )
-    return {"connected": connected, "account": account, "channels": db.rows_to_dicts(rows),
+    # A channel checked repeatedly but never producing a new card is either
+    # dead or off-topic for this app's parser — surfaced so it can be dropped.
+    STALE_DAYS = 10
+    now = time.time()
+    channels = db.rows_to_dicts(rows)
+    for ch in channels:
+        last = ch.get("last_new_deal_at")
+        ch["stale"] = bool(ch["enabled"]) and (now - float(last or 0)) > STALE_DAYS * 86400
+    return {"connected": connected, "account": account, "channels": channels,
             "ingest": ingest.state(), "sync_paused": ingest.sync_paused(),
-            "live": {**live.status(), "posting_to": settings.tg_post_channel if settings.tg_post_configured else None}}
+            "live": {**live.status(), "posting_to": settings.tg_post_channel if settings.tg_post_configured else None,
+                     "posting_paused": tg_post.posting_paused()}}
 
 
 class PausePayload(BaseModel):
@@ -118,6 +128,14 @@ async def pause_syncing(payload: PausePayload):
     """Stops the automatic 5-min ingest loop; "Sync now" still works as a manual override."""
     ingest.set_sync_paused(payload.paused)
     return {"status": "ok", "sync_paused": payload.paused}
+
+
+@router.post("/telegram-pause")
+async def pause_telegram_posting(payload: PausePayload):
+    """Stops new deals (and sale-event heads-ups) going to the Telegram channel —
+    ingest and the website/app keep working; only outgoing Telegram posts stop."""
+    tg_post.set_posting_paused(payload.paused)
+    return {"status": "ok", "posting_paused": payload.paused}
 
 
 @router.get("/poll-interval")
@@ -365,3 +383,63 @@ async def telegram_test():
         raise HTTPException(status_code=400, detail=f"Telegram refused: {exc}")
     return {"status": "ok", "channel": settings.tg_post_channel, "message_id": result.get("message_id"),
             "live": live.status()}
+
+
+class SaleEventPayload(BaseModel):
+    id: Optional[str] = None
+    name: str
+    store: str = ""
+    starts_at: Optional[float] = None
+    ends_at: Optional[float] = None
+    approximate: bool = True
+    hype: str = ""
+
+
+@router.get("/sale-events")
+async def list_sale_events():
+    """Full calendar (past + upcoming) for the admin editor."""
+    return {"events": sale_events.list_all()}
+
+
+@router.post("/sale-events")
+async def upsert_sale_event(payload: SaleEventPayload):
+    event = sale_events.upsert(payload.model_dump())
+    if not event.get("hype"):
+        event = await sale_events.ensure_hype(event)
+    return {"status": "ok", "event": event}
+
+
+@router.delete("/sale-events/{event_id}")
+async def delete_sale_event(event_id: str):
+    if not sale_events.delete(event_id):
+        raise HTTPException(status_code=404, detail="Event not found.")
+    return {"status": "ok"}
+
+
+@router.post("/sale-events/{event_id}/hype")
+async def regenerate_sale_event_hype(event_id: str):
+    """Force a fresh AI blurb, e.g. after the dates were confirmed."""
+    events = sale_events.list_all()
+    event = next((e for e in events if e["id"] == event_id), None)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found.")
+    hype = await sale_events.generate_hype(event)
+    if not hype:
+        raise HTTPException(status_code=400, detail="AI enrichment is off or the daily budget is used up.")
+    event = sale_events.upsert({**event, "hype": hype, "hype_generated_at": __import__("time").time()})
+    return {"status": "ok", "event": event}
+
+
+@router.post("/sale-events/{event_id}/post-now")
+async def post_sale_event_now(event_id: str):
+    """Send the Telegram heads-up immediately, skipping the days-before window."""
+    events = sale_events.list_all()
+    event = next((e for e in events if e["id"] == event_id), None)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found.")
+    if not settings.tg_post_configured:
+        raise HTTPException(status_code=400, detail="Set TG_BOT_TOKEN and TG_POST_CHANNEL first.")
+    ok = await sale_events.post_heads_up(event)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Telegram post failed — check the bot/channel setup.")
+    return {"status": "ok"}

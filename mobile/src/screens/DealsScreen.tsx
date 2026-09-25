@@ -61,6 +61,7 @@ import {
   type RailTone,
 } from '../components';
 import { isPublicMode } from '../native/session';
+import { SaleEventsRail } from '../components/SaleEventsRail';
 import { useTheme } from '../theme';
 import type { SortKey } from '../api/types';
 import type { TabNav } from './types';
@@ -433,6 +434,8 @@ export function DealsScreen() {
     <View style={{ gap: 16, paddingBottom: 12 }}>
       {offline ? <OfflineBanner /> : null}
       <StatsCard stats={stats} override={statusOverride} syncing={syncing} />
+
+      <SaleEventsRail />
 
       {tracked === 0 && !isPublicMode() ? (
         <Pressable

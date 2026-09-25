@@ -126,6 +126,34 @@
       <div class="msg hidden" id="priority-msg"></div>
     </section>
 
+    <section class="card" id="sale-events-card">
+      <h2>Upcoming sales</h2>
+      <p class="muted">Big Billion Days, Great Indian Festival, End of Reason Sale… A heads-up posts to Telegram
+        automatically 2 days before each event, once. Dates ship approximate — confirm the real ones here as
+        stores announce them.</p>
+      <div id="sale-events-list" class="sale-events-list"></div>
+      <form id="sale-event-form" class="sale-event-form">
+        <input type="hidden" id="se-id" />
+        <div class="row">
+          <input type="text" id="se-name" placeholder="Event name (e.g. Flipkart Big Billion Days)" required
+                 style="flex:2" />
+          <input type="text" id="se-store" placeholder="Store (amazon, flipkart…)" style="flex:1" />
+        </div>
+        <div class="row">
+          <input type="date" id="se-start" required />
+          <input type="date" id="se-end" />
+          <label class="row" style="gap:6px;align-items:center;white-space:nowrap">
+            <input type="checkbox" id="se-approx" checked /> Approximate
+          </label>
+        </div>
+        <div class="row">
+          <button class="btn btn-primary btn-sm" type="submit" id="se-save">Save event</button>
+          <button class="btn btn-soft btn-sm" type="button" id="se-cancel-edit">Cancel edit</button>
+        </div>
+      </form>
+      <div class="msg hidden" id="sale-events-msg"></div>
+    </section>
+
     <section class="card" id="data-source-card">
       <h2>Data source</h2>
       <p class="muted">Both are testing/recovery toggles. Leave them alone in normal operation — switching storage
@@ -197,6 +225,7 @@
           <button class="btn btn-soft btn-sm" id="sync">Sync now</button>
           <button class="btn btn-soft btn-sm" id="pause-sync">Pause syncing</button>
           <button class="btn btn-soft btn-sm" id="tg-test">Send test post to Telegram</button>
+          <button class="btn btn-soft btn-sm" id="tg-pause">Pause posting to Telegram</button>
         </div>
       </div>
       <p class="muted small hidden" id="pause-note" style="margin-top:-6px">
