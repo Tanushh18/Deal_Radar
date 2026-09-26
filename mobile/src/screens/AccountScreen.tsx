@@ -1,7 +1,8 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, Switch, View } from 'react-native';
+import { Text } from '../components/Text';
 
 import { api, errorMessage, isNotFound, type Follow, type FollowKind, type KeyCount, type User } from '../api';
 import {
@@ -145,11 +146,6 @@ export function AccountScreen() {
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: t.c.text, fontSize: t.f.lg, fontWeight: '700' }}>{name}</Text>
             {user?.username ? <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>@{user.username}</Text> : null}
-            {tracked != null ? (
-              <Text style={{ color: t.c.text3, fontSize: t.f.xs }}>
-                Tracking {tracked} {tracked === 1 ? 'channel' : 'channels'}
-              </Text>
-            ) : null}
           </View>
         </Card>
         )}
@@ -158,7 +154,7 @@ export function AccountScreen() {
           <Row
             icon="heart"
             title="Saved deals & price alerts"
-            sub={savedCount ? `${savedCount} saved` : 'Tap ♡ on any deal to keep it here'}
+            sub={savedCount ? `${savedCount} saved` : 'Tap the heart on any deal to keep it here'}
             onPress={() => navigation.navigate('Saved')}
           />
           <Divider />
@@ -402,7 +398,7 @@ function FollowsAndDigest({ notifGranted, onNeedPermission }: { notifGranted: bo
             value={digest}
             onValueChange={(v) => saveDigest(v, hour)}
             disabled={savingDigest}
-            trackColor={{ false: t.c.surface3, true: t.c.accent }}
+            trackColor={{ false: t.c.borderStrong, true: t.c.good }}
             thumbColor="#ffffff"
             accessibilityLabel="Daily deal digest"
           />
@@ -434,7 +430,7 @@ function FollowsAndDigest({ notifGranted, onNeedPermission }: { notifGranted: bo
               <Chip
                 key={f.id}
                 removable
-                leading={f.kind === 'category' ? categoryIcon(f.value) : f.kind === 'store' ? '🛍' : '🏷'}
+                leading={categoryIcon(f.value)}
                 label={`${followLabel(f)}${f.min_discount ? ` · ${f.min_discount}%+` : ''}`}
                 accessibilityLabel={`Stop following ${followLabel(f)}`}
                 onPress={() => removeFollow(f)}

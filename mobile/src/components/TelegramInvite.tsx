@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { Linking, Modal, Pressable, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import { api } from '../api';
 import { useTheme } from '../theme';
 import { Button, Txt } from './ui';
+import { Icon } from './Icon';
 import { haptic, openExternal } from './native';
 
 const JOINED_KEY = 'dr-tg-joined';
@@ -71,7 +73,7 @@ export function TelegramInvite() {
       <Pressable
         accessibilityLabel="Close"
         onPress={close}
-        style={{ flex: 1, backgroundColor: 'rgba(3,7,15,0.6)', justifyContent: 'center', padding: 24 }}
+        style={{ flex: 1, backgroundColor: 't.c.overlay', justifyContent: 'center', padding: 24 }}
       >
         <Pressable
           // Taps inside the card must not fall through to the backdrop's close.
@@ -103,7 +105,7 @@ export function TelegramInvite() {
               backgroundColor: t.c.surface2,
             }}
           >
-            <Text style={{ color: t.c.text, fontSize: 16, fontWeight: '700' }}>✕</Text>
+            <Icon name="close" size={18} color={t.c.text} />
           </Pressable>
           <View
             style={{
@@ -116,14 +118,13 @@ export function TelegramInvite() {
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 30 }}>✈️</Text>
+            <Icon name="zap" size={28} color="#ffffff" />
           </View>
           <Txt variant="h2" style={{ textAlign: 'center' }}>
             Get the crazy deals first
           </Txt>
           <Txt variant="muted" style={{ textAlign: 'center' }}>
-            Verified loot deals — women's accessories, fashion and more — land on our Telegram channel
-            {channel.username ? ` @${channel.username}` : ''} seconds after they go live, before anywhere else.
+            Our best finds go out on Telegram seconds after our price checks catch them — before anywhere else.
           </Txt>
           <Button title="Join on Telegram" onPress={join} style={{ backgroundColor: TELEGRAM_BLUE }} block />
           <Button title="Maybe later" variant="soft" onPress={close} block />

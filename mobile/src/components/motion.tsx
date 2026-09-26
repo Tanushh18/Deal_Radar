@@ -1,5 +1,3 @@
-import { BlurTargetView, BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { memo, useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -8,13 +6,13 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { Text } from './Text';
 
 import { useTheme } from '../theme';
 import { Icon } from './Icon';
@@ -43,76 +41,10 @@ export function useReduceMotion(): boolean {
   return reduce;
 }
 
-/** Two slow-drifting colour blobs behind the content, like the website's backdrop. */
+/** Plain page background. (The old drifting colour blobs are gone on purpose.) */
 export const AnimatedBackdrop = memo(function AnimatedBackdrop() {
   const t = useTheme();
-  const reduce = useReduceMotion();
-  const { width, height } = useWindowDimensions();
-  const drift = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (reduce) {
-      drift.setValue(0.5);
-      return;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(drift, { toValue: 1, duration: 14000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(drift, { toValue: 0, duration: 14000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [reduce, drift]);
-
-  const blob = Math.max(width, 360) * 1.1;
-  const a = t.dark ? 0.22 : 0.14;
-  return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: t.c.bg, overflow: 'hidden' }]}>
-      <Animated.View
-        style={{
-          position: 'absolute',
-          width: blob,
-          height: blob,
-          top: -blob * 0.45,
-          left: -blob * 0.35,
-          opacity: a * 4,
-          transform: [
-            { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [0, width * 0.25] }) },
-            { translateY: drift.interpolate({ inputRange: [0, 1], outputRange: [0, height * 0.08] }) },
-          ],
-        }}
-      >
-        <LinearGradient
-          colors={[t.dark ? 'rgba(91,147,247,0.30)' : 'rgba(37,99,235,0.16)', 'transparent']}
-          start={{ x: 0.5, y: 0.5 }}
-          end={{ x: 1, y: 1 }}
-          style={{ flex: 1, borderRadius: blob / 2 }}
-        />
-      </Animated.View>
-      <Animated.View
-        style={{
-          position: 'absolute',
-          width: blob,
-          height: blob,
-          top: height * 0.35,
-          right: -blob * 0.5,
-          opacity: a * 3.5,
-          transform: [
-            { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [0, -width * 0.2] }) },
-            { translateY: drift.interpolate({ inputRange: [0, 1], outputRange: [0, -height * 0.1] }) },
-          ],
-        }}
-      >
-        <LinearGradient
-          colors={[t.dark ? 'rgba(34,211,238,0.22)' : 'rgba(6,182,212,0.12)', 'transparent']}
-          start={{ x: 0.5, y: 0.5 }}
-          end={{ x: 0, y: 1 }}
-          style={{ flex: 1, borderRadius: blob / 2 }}
-        />
-      </Animated.View>
-    </View>
-  );
+  return <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: t.c.bg }]} />;
 });
 
 /**
@@ -159,18 +91,13 @@ export function useBlurTarget(): BlurTargetRef {
   return useRef<View | null>(null);
 }
 
-/** Content the glass header blurs. Android blur needs an explicit target sibling. */
-export function GlassContent({ target, children, style }: { target: BlurTargetRef; children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
-  return (
-    <BlurTargetView ref={target} style={[{ flex: 1 }, style]}>
-      {children}
-    </BlurTargetView>
-  );
+/** Wrapper the header sits over. Kept as a component so screens don't change shape. */
+export function GlassContent({ children, style }: { target?: BlurTargetRef; children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[{ flex: 1 }, style]}>{children}</View>;
 }
 
-/** Frosted bar pinned over the top of a GlassContent. */
+/** Solid header pinned over the top of a GlassContent, with a hairline under it. */
 export function GlassHeader({
-  target,
   children,
   onHeight,
   style,
@@ -183,46 +110,37 @@ export function GlassHeader({
   const t = useTheme();
   const onLayout = (e: LayoutChangeEvent) => onHeight?.(Math.round(e.nativeEvent.layout.height));
   return (
-    <View onLayout={onLayout} style={[{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 }, style]}>
-      <BlurView
-        blurTarget={target}
-        blurMethod={Platform.OS === 'android' && target ? 'dimezisBlurViewSdk31Plus' : 'none'}
-        intensity={t.dark ? 60 : 70}
-        tint={t.dark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: t.dark ? 'rgba(8,11,18,0.62)' : 'rgba(247,248,250,0.72)',
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: t.c.border,
-          },
-        ]}
-      />
+    <View
+      onLayout={onLayout}
+      style={[
+        {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 20,
+          backgroundColor: t.c.bg,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: t.c.border,
+        },
+        style,
+      ]}
+    >
       {children}
     </View>
   );
 }
 
-/** For INFRA: `tabBarBackground: () => <GlassTabBarBackground />` with an absolute tab bar. */
+/** Tab bar background: solid page colour and a hairline, no frosted glass. */
 export function GlassTabBarBackground() {
   const t = useTheme();
   return (
-    <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={t.dark ? 60 : 70} tint={t.dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: t.dark ? 'rgba(8,11,18,0.82)' : 'rgba(255,255,255,0.86)',
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: t.c.border,
-          },
-        ]}
-      />
-    </View>
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: t.c.bg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.c.borderStrong },
+      ]}
+    />
   );
 }
 
@@ -276,7 +194,7 @@ export function NewDealsPill({ count, top, onPress }: { count: number; top: numb
       >
         <Icon name="up" size={15} color={t.c.accentText} strokeWidth={2.6} />
         <Text maxFontSizeMultiplier={1.3} style={{ color: t.c.accentText, fontWeight: '800', fontSize: t.f.sm }}>
-          {count} new {count === 1 ? 'deal' : 'deals'} — tap to see
+          {count} new {count === 1 ? 'deal' : 'deals'}
         </Text>
       </Pressable>
     </Animated.View>
@@ -296,8 +214,6 @@ export function OfflineBanner({ text = 'Offline — showing saved results' }: { 
         paddingVertical: 9,
         borderRadius: t.r.sm,
         backgroundColor: t.c.warnSoft,
-        borderWidth: 1,
-        borderColor: t.c.warn,
       }}
     >
       <Icon name="wifiOff" size={16} color={t.c.warn} />

@@ -1,13 +1,15 @@
 import React, { useCallback } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
+import { Text } from './Text';
 
 import type { Deal, PriceVerdict, VerdictLevel } from '../api/types';
-import { useTheme, type Theme } from '../theme';
+import { MONO_FAMILY, useTheme, type Theme } from '../theme';
+import { Icon } from './Icon';
 import { RailCard, RailSkeleton } from './DealCard';
 import { SectionHead } from './ui';
 
-const RAIL_ITEM = 166;
-const PAD = 14;
+const RAIL_ITEM = 160;
+const PAD = 16;
 
 export type RailTone = 'good' | 'hot' | 'muted';
 
@@ -55,7 +57,7 @@ export function DealRail({
               hitSlop={10}
               style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 6 }}
             >
-              <Text style={{ color: t.c.accent, fontWeight: '700', fontSize: t.f.sm }}>See all</Text>
+              <Text style={{ color: t.c.text2, fontWeight: '600', fontSize: t.f.sm }}>See all</Text>
             </Pressable>
           ) : undefined
         }
@@ -96,45 +98,93 @@ export function verdictColors(t: Theme, level: VerdictLevel): { fg: string; bg: 
   }
 }
 
-const LEVELS: VerdictLevel[] = ['high', 'fair', 'good', 'great'];
-const LEVEL_NAME: Record<VerdictLevel, string> = { great: 'Great', good: 'Good', fair: 'Fair', high: 'High' };
+const HEADLINE: Record<VerdictLevel, string> = {
+  great: 'Great time to buy',
+  good: 'Good price',
+  fair: 'Fair price — it has been lower',
+  high: 'Higher than usual',
+};
 
-/** Four-step "is this a good price?" meter from the server's price_verdict. */
-export function PriceVerdictMeter({ verdict }: { verdict: PriceVerdict }) {
+export type PriceRange = { low: number; high: number; usual: number | null; current: number };
+
+const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+
+/**
+ * "Is this a good price?" — the server's verdict in plain words, plus where
+ * today's price sits between the lowest and highest we've recorded.
+ */
+export function PriceVerdictMeter({
+  verdict,
+  range,
+  lowest,
+}: {
+  verdict: PriceVerdict | null;
+  range?: PriceRange | null;
+  lowest?: boolean;
+}) {
   const t = useTheme();
-  const { fg, bg } = verdictColors(t, verdict.level);
-  const at = LEVELS.indexOf(verdict.level);
+  const pos = range ? Math.max(0, Math.min(1, (range.current - range.low) / (range.high - range.low))) : 0;
+  // Without a server verdict, judge from where today's price sits in its own history.
+  const atLow = !!range && range.current <= range.low;
+  const level: VerdictLevel =
+    verdict?.level ?? (lowest || atLow || pos <= 0.15 ? 'great' : pos <= 0.4 ? 'good' : pos <= 0.7 ? 'fair' : 'high');
+  const fg = level === 'great' || level === 'good' ? t.c.good : level === 'fair' ? t.c.warn : t.c.hot;
+  const headline = (lowest || atLow) && (level === 'great' || level === 'good') ? 'Lowest price we’ve seen' : HEADLINE[level];
+  const sub =
+    verdict?.label ??
+    (range && range.usual != null && range.current < range.usual
+      ? `${inr(range.usual - range.current)} below its usual price of ${inr(range.usual)}.`
+      : range && range.usual != null && range.current > range.usual
+        ? `Usually around ${inr(range.usual)} — it has been cheaper.`
+        : null);
+  const icon = level === 'great' || level === 'good' ? 'check' : level === 'fair' ? 'info' : 'alert';
   return (
     <View
       accessible
-      accessibilityLabel={`Price check: ${LEVEL_NAME[verdict.level]} price. ${verdict.label}`}
-      style={{ padding: 14, borderRadius: t.r.md, backgroundColor: bg, borderWidth: 1, borderColor: fg + '55', gap: 10 }}
+      accessibilityLabel={`${headline}. ${verdict?.label ?? ''}${range ? ` Lowest ${inr(range.low)}, highest ${inr(range.high)}.` : ''}`}
+      style={{ padding: 14, borderRadius: t.r.md, backgroundColor: t.c.surface, borderWidth: 1, borderColor: t.c.border, gap: 4 }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Text style={{ color: fg, fontSize: t.f.xs, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' }}>
-          Good-price meter
-        </Text>
-        <View style={{ flex: 1 }} />
-        <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: fg }}>
-          <Text style={{ color: t.dark ? '#06101f' : '#ffffff', fontSize: 11, fontWeight: '800' }}>
-            {LEVEL_NAME[verdict.level].toUpperCase()}
-          </Text>
+        <Icon name={icon} size={17} color={fg} strokeWidth={2.4} />
+        <Text style={{ color: fg, fontSize: t.f.base, fontWeight: '700' }}>{headline}</Text>
+      </View>
+      {sub ? <Text style={{ color: t.c.text2, fontSize: t.f.sm, lineHeight: 19 }}>{sub}</Text> : null}
+      {range ? (
+        <View style={{ marginTop: 12, gap: 8 }}>
+          <View style={{ height: 6, borderRadius: 3, backgroundColor: t.c.surface3 }}>
+            <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pos * 100}%`, borderRadius: 3, backgroundColor: fg }} />
+            <View
+              style={{
+                position: 'absolute',
+                top: -5,
+                left: `${pos * 100}%`,
+                marginLeft: -8,
+                width: 16,
+                height: 16,
+                borderRadius: 8,
+                borderWidth: 3,
+                borderColor: t.c.text,
+                backgroundColor: t.c.surface,
+              }}
+            />
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            {([
+              ['Low', range.low],
+              ['Usual', range.usual],
+              ['High', range.high],
+            ] as const).map(([k, v]) =>
+              v == null ? (
+                <View key={k} />
+              ) : (
+                <Text key={k} style={{ color: t.c.text3, fontSize: 11, fontFamily: MONO_FAMILY }}>
+                  {k} <Text style={{ color: t.c.text, fontFamily: MONO_FAMILY, fontWeight: '600' }}>{inr(v)}</Text>
+                </Text>
+              ),
+            )}
+          </View>
         </View>
-      </View>
-      <View style={{ flexDirection: 'row', gap: 4 }}>
-        {LEVELS.map((l, i) => {
-          const c = verdictColors(t, l).fg;
-          return (
-            <View key={l} style={{ flex: 1, gap: 4 }}>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: i <= at ? c : t.c.border, opacity: i === at ? 1 : i < at ? 0.55 : 1 }} />
-              <Text style={{ color: i === at ? c : t.c.text3, fontSize: 10.5, fontWeight: i === at ? '800' : '600', textAlign: 'center' }}>
-                {LEVEL_NAME[l]}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
-      <Text style={{ color: t.c.text, fontSize: t.f.sm, lineHeight: 19, fontWeight: '600' }}>{verdict.label}</Text>
+      ) : null}
     </View>
   );
 }

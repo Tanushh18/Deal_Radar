@@ -1,11 +1,11 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useState } from 'react';
-import { Text, View, type GestureResponderEvent } from 'react-native';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+import { View, type GestureResponderEvent } from 'react-native';
+import { Text } from './Text';
+import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import type { PricePoint } from '../api/types';
 import { useTheme } from '../theme';
-import { avatarHues, money } from './format';
+import { money } from './format';
 import { haptic } from './native';
 
 export function ScoreRing({ score, size = 62 }: { score: number; size?: number }) {
@@ -22,7 +22,7 @@ export function ScoreRing({ score, size = 62 }: { score: number; size?: number }
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={t.c.accent}
+          stroke={pct >= 60 ? t.c.good : pct >= 40 ? t.c.text : t.c.text3}
           strokeWidth={stroke}
           fill="none"
           strokeLinecap="round"
@@ -105,7 +105,8 @@ export function PriceChart({ points: raw }: { points: PricePoint[] }) {
   const gridVals = rawMin === rawMax ? [rawMin] : [rawMin, (rawMin + rawMax) / 2, rawMax];
   const last = points.length - 1;
   const lowIdx = prices.indexOf(rawMin);
-  const endIsLow = lowIdx === last;
+  // Today counts as the low when it ties it — no second marker for an older equal price.
+  const endIsLow = prices[last] <= rawMin;
 
   const pick = (e: GestureResponderEvent) => {
     const x = e.nativeEvent.locationX;
@@ -148,7 +149,7 @@ export function PriceChart({ points: raw }: { points: PricePoint[] }) {
               </SvgText>
             </React.Fragment>
           ))}
-          <Path d={area} fill={t.c.accent} fillOpacity={0.1} />
+          <Path d={area} fill={t.c.accent} fillOpacity={0.05} />
           <Path d={line} fill="none" stroke={t.c.accent} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
           <SvgText x={x0} y={H - 7} fontSize={10} fill={t.c.text3} textAnchor="start">
             {fmtDate(times[0])}
@@ -159,17 +160,7 @@ export function PriceChart({ points: raw }: { points: PricePoint[] }) {
 
           {!endIsLow ? (
             <>
-              <Circle cx={xs(times[lowIdx])} cy={ys(rawMin)} r={5} fill={t.c.gold} stroke={t.c.surface} strokeWidth={2} />
-              <SvgText
-                x={xs(times[lowIdx])}
-                y={ys(rawMin) - 10}
-                fontSize={10}
-                fontWeight="700"
-                fill={t.c.gold}
-                textAnchor={lowIdx < points.length / 2 ? 'start' : 'end'}
-              >
-                {`Lowest ${money(rawMin)}`}
-              </SvgText>
+              <Circle cx={xs(times[lowIdx])} cy={ys(rawMin)} r={5} fill={t.c.good} stroke={t.c.surface} strokeWidth={2} />
             </>
           ) : null}
 
@@ -177,20 +168,10 @@ export function PriceChart({ points: raw }: { points: PricePoint[] }) {
             cx={xs(times[last])}
             cy={ys(prices[last])}
             r={5}
-            fill={endIsLow ? t.c.gold : t.c.accent}
+            fill={endIsLow ? t.c.good : t.c.accent}
             stroke={t.c.surface}
             strokeWidth={2}
           />
-          <SvgText
-            x={xs(times[last]) - 8}
-            y={ys(prices[last]) - 10}
-            fontSize={10}
-            fontWeight="700"
-            fill={endIsLow ? t.c.gold : t.c.text}
-            textAnchor="end"
-          >
-            {(endIsLow ? 'Lowest · ' : '') + money(prices[last])}
-          </SvgText>
 
           {active != null ? (
             <>
@@ -253,35 +234,14 @@ export function Sparkline({ points, width = 44, height = 16 }: { points: number[
   );
 }
 
-export function ChannelAvatar({ title, size = 44 }: { title: string; size?: number }) {
-  const [h1, h2] = avatarHues(title || '?');
-  const initial = (title || '').trim().slice(0, 1).toUpperCase() || '#';
-  return (
-    <LinearGradient
-      colors={[`hsl(${h1}, 72%, 52%)`, `hsl(${h2}, 72%, 44%)`]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{ width: size, height: size, borderRadius: size * 0.32, alignItems: 'center', justifyContent: 'center' }}
-    >
-      <Text maxFontSizeMultiplier={1.1} style={{ color: '#fff', fontWeight: '800', fontSize: size * 0.4 }}>
-        {initial}
-      </Text>
-    </LinearGradient>
-  );
-}
-
 export function BrandMark({ size = 30 }: { size?: number }) {
   const t = useTheme();
   return (
-    <LinearGradient
-      colors={[t.c.accent, t.c.cyan]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{ width: size, height: size, borderRadius: size * 0.3, alignItems: 'center', justifyContent: 'center' }}
-    >
-      <Text maxFontSizeMultiplier={1} style={{ fontSize: size * 0.5 }}>
-        📡
-      </Text>
-    </LinearGradient>
+    <Svg width={size} height={size} viewBox="0 0 32 32" accessible={false}>
+      <Rect width={32} height={32} rx={9} fill={t.c.text} />
+      <Path d="M9 21a9 9 0 0 1 14 0" stroke={t.c.bg} strokeWidth={2.4} fill="none" strokeLinecap="round" />
+      <Path d="M12.5 17.5a5 5 0 0 1 7 0" stroke={t.c.bg} strokeWidth={2.4} fill="none" strokeLinecap="round" />
+      <Circle cx={16} cy={21.5} r={2} fill={t.c.hot} />
+    </Svg>
   );
 }

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, Share, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, Share, View } from 'react-native';
+import { Text, TextInput } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, errorMessage, isNotFound, resolveServerUrl, type Deal, type PriceAlert } from '../api';
@@ -136,7 +137,7 @@ function QuickActionsSheet({ deal, onClose }: { deal: Deal; onClose: () => void 
           </Text>
           {alertMode ? (
             <View style={{ gap: 10 }}>
-              <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>🔔 Notify me when the price drops below</Text>
+              <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>Notify me when the price drops below</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View
                   style={{
@@ -170,7 +171,7 @@ function QuickActionsSheet({ deal, onClose }: { deal: Deal; onClose: () => void 
             <>
               <ActionRow
                 label={saved ? 'Remove from saved' : 'Save deal'}
-                leading={<HeartGlyph on={saved} size={20} color={t.c.text2} fill="#ef4444" />}
+                leading={<HeartGlyph on={saved} size={20} color={t.c.text2} fill={t.c.hot} />}
                 onPress={() => {
                   if (toggle(deal)) haptic.success();
                   onClose();

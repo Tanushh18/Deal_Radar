@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, isAbort, type KeyCount, type SortKey } from '../api';
@@ -158,7 +159,7 @@ export function FiltersScreen() {
           onChange={(v) => patch({ category: v, subcategory: '' })}
           placeholder="All deals"
           options={[
-            { value: '', label: 'All deals', leading: '✨' },
+            { value: '', label: 'All deals' },
             ...categories.map((c) => ({ value: c.name, label: c.name, leading: categoryIcon(c.name) })),
           ]}
         />
@@ -362,7 +363,7 @@ function ToggleRow({ label, value, onChange }: { label: string; value: boolean; 
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: t.c.surface3, true: t.c.accent }}
+        trackColor={{ false: t.c.borderStrong, true: t.c.good }}
         thumbColor="#ffffff"
         importantForAccessibility="no"
       />

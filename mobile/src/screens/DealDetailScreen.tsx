@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -23,6 +24,7 @@ import {
   HeartButton,
   PastBadge,
   PriceVerdictMeter,
+  type PriceRange,
   alertCreatedMessage,
   alertErrorMessage,
   createPriceAlert,
@@ -44,6 +46,7 @@ import {
   StatusBadge,
   copyText,
   dealBadge,
+  displayTitle,
   dealReasons,
   haptic,
   money,
@@ -55,7 +58,7 @@ import {
   useHideNativeHeader,
   useToast,
 } from '../components';
-import { useTheme } from '../theme';
+import { MONO_FAMILY, useTheme } from '../theme';
 import type { RootNav, RootRoute } from './types';
 
 export function DealDetailScreen() {
@@ -75,7 +78,7 @@ export function DealDetailScreen() {
   const fallback = useCallback((): DealDetail | null => {
     const snap = savedRef.current[params.id];
     const d = peekDeal(params.id) ?? (snap ? snapshotToDeal(snap) : null);
-    return d ? { raw_text: null, price_history: null, ...d } : null;
+    return d ? { raw_text: null, price_history: null, ...d } : null; // raw_text is never shown
   }, [params.id]);
 
   const [deal, setDeal] = useState<DealDetail | null>(() => fallback());
@@ -83,7 +86,6 @@ export function DealDetailScreen() {
   const [gone, setGone] = useState(false);
   const [points, setPoints] = useState<PricePoint[] | null>(null);
   const [error, setError] = useState<unknown>(null);
-  const [showRaw, setShowRaw] = useState(false);
   const [similar, setSimilar] = useState<Deal[] | null>(null);
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
 
@@ -229,7 +231,7 @@ export function DealDetailScreen() {
         label="Back"
         size={24}
         onPress={() => navigation.goBack()}
-        style={{ backgroundColor: t.dark ? 'rgba(17,24,39,0.82)' : 'rgba(255,255,255,0.9)', borderRadius: 22 }}
+        style={{ backgroundColor: t.c.surface, borderRadius: 22 }}
       />
       {deal ? (
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -238,7 +240,7 @@ export function DealDetailScreen() {
             name="share"
             label="Share deal"
             onPress={share}
-            style={{ backgroundColor: t.dark ? 'rgba(17,24,39,0.82)' : 'rgba(255,255,255,0.9)', borderRadius: 22 }}
+            style={{ backgroundColor: t.c.surface, borderRadius: 22 }}
           />
         </View>
       ) : null}
@@ -252,14 +254,14 @@ export function DealDetailScreen() {
         {header}
         {isNotFound(error) ? (
           <EmptyState
-            emoji="⌛"
+            icon="clock"
             title="This deal has ended"
             message="It’s no longer live on DealRadar. Similar deals might still be around."
             actions={[{ title: 'Back to deals', variant: 'primary', onPress: () => navigation.goBack() }]}
           />
         ) : (
           <EmptyState
-            emoji={offline ? '📶' : '⚠️'}
+            icon={offline ? 'wifiOff' : 'alert'}
             title={offline ? 'You’re offline' : 'Couldn’t load this deal'}
             message={errorMessage(error)}
             actions={[{ title: 'Try again', variant: 'primary', onPress: () => load() }]}
@@ -285,28 +287,36 @@ export function DealDetailScreen() {
   const [label, blurb] = scoreLabel(deal.score || 0);
   const reasons = dealReasons(deal);
   const suspicious = (deal.flags || []).includes('suspicious_mrp');
-  const history = deal.price_history;
+  const range = priceRange(chartPoints, deal.price_history, deal.price);
 
   const kv: [string, React.ReactNode][] = [
-    ['Store', deal.store || '—'],
-    ['Category', `${deal.category || '—'} › ${deal.subcategory || '—'}`],
+    ['Store', store || '—'],
+    ['Category', deal.subcategory ? `${deal.category || '—'} › ${deal.subcategory}` : deal.category || '—'],
   ];
   if (deal.brand) kv.push(['Brand', deal.brand]);
   if (deal.sizes) kv.push(['Sizes', deal.sizes]);
-  kv.push(['Posted', timeAgo(deal.posted_at)]);
-  kv.push(['Shared', `${deal.repost_count} ${plural(deal.repost_count, 'time')}`]);
-  kv.push(['Expires', deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString('en-IN') : '—']);
-  if (history?.points) {
-    kv.push(['History', `${history.points} points · low ${money(history.min)} · high ${money(history.max)}`]);
+  kv.push(['Found', timeAgo(deal.posted_at)]);
+  if (deal.expires_at) {
+    const at = new Date(deal.expires_at * 1000);
+    kv.push(['Expires', `${at.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, ${at.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`]);
   }
   kv.push(['Deal score', `${Math.round(deal.score ?? 0)} / 100`]);
+
+  const card = { padding: 14, borderRadius: t.r.md, backgroundColor: t.c.surface, borderWidth: 1, borderColor: t.c.border } as const;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.c.bg }}>
       {header}
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }} onScroll={onScroll} scrollEventThrottle={32}>
-        <View style={{ paddingTop: insets.top + 44, backgroundColor: t.c.mediaBg, borderBottomWidth: 1, borderBottomColor: t.c.border }}>
-          <DealImage deal={deal} emojiSize={56} style={{ height: heroH }} />
+        <View style={{ paddingTop: insets.top + 56, paddingHorizontal: 16, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
+          <View style={{ borderRadius: t.r.lg, overflow: 'hidden', borderWidth: 1, borderColor: t.c.border, backgroundColor: t.c.mediaBg }}>
+            <DealImage deal={deal} style={{ height: heroH * 0.78 }} />
+            {badge || past ? (
+              <View style={{ position: 'absolute', top: 10, left: 10 }}>
+                {past ? <PastBadge /> : badge ? <StatusBadge kind={badge.kind} label={badge.label} /> : null}
+              </View>
+            ) : null}
+          </View>
         </View>
 
         <View style={{ padding: 16, gap: 14, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
@@ -316,93 +326,86 @@ export function DealDetailScreen() {
               icon="clock"
               text={
                 gone
-                  ? 'Past deal — this offer has ended. The price shown is what it was when you saw it.'
-                  : 'Past deal — this offer may have ended and the price may have changed.'
+                  ? 'This offer has ended. The price shown is what it was when you saw it.'
+                  : 'This offer may have ended and the price may have changed.'
               }
             />
           ) : null}
-          {badge || store || past ? (
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              {past ? <PastBadge /> : null}
-              {badge ? <StatusBadge kind={badge.kind} label={badge.label} /> : null}
-              {store ? (
-                <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, borderWidth: 1, borderColor: t.c.border, backgroundColor: t.c.surface }}>
-                  <Text style={{ color: t.c.text, fontSize: 11, fontWeight: '700' }}>{store}</Text>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
 
-          <Text accessibilityRole="header" selectable style={{ color: t.c.text, fontSize: t.f.lg, fontWeight: '700', lineHeight: 25, letterSpacing: -0.3 }}>
-            {deal.title}
-          </Text>
+          <View style={{ gap: 6 }}>
+            <Text numberOfLines={1} style={{ color: t.c.text3, fontSize: 11.5, fontFamily: MONO_FAMILY, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+              {store ? <Text style={{ color: t.c.text2, fontFamily: MONO_FAMILY, fontWeight: '600' }}>{store}</Text> : null}
+              {store ? '  ·  ' : ''}
+              {`Found ${timeAgo(deal.posted_at)}`}
+            </Text>
+            <Text accessibilityRole="header" selectable style={{ color: t.c.text, fontSize: 21, fontWeight: '600', lineHeight: 27, letterSpacing: -0.3 }}>
+              {displayTitle(deal.title)}
+            </Text>
+          </View>
 
-          <PriceRow deal={deal} size="lg" />
-          {deal.saving ? (
-            <View style={{ flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: t.c.goodSoft }}>
-              <Icon name="down" size={14} color={t.c.good} strokeWidth={2.4} />
-              <Text style={{ color: t.c.good, fontWeight: '700', fontSize: t.f.sm }}>
-                You save {money(deal.saving)}
-                {deal.discount_pct ? ` · ${deal.discount_pct}% off` : ''}
-              </Text>
-            </View>
-          ) : null}
+          <View style={{ gap: 6 }}>
+            <PriceRow deal={deal} size="lg" />
+            {deal.saving ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <Icon name="down" size={14} color={t.c.good} strokeWidth={2.4} />
+                <Text style={{ color: t.c.good, fontWeight: '600', fontSize: t.f.sm }}>You save {money(deal.saving)}</Text>
+              </View>
+            ) : null}
+          </View>
 
-          {deal.coupon ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Coupon ${deal.coupon}. Tap to copy`}
-              onPress={() => copy(deal.coupon ?? '', 'Coupon')}
-              style={({ pressed }) => ({
-                flexDirection: 'row',
-                alignItems: 'center',
-                alignSelf: 'flex-start',
-                gap: 8,
-                minHeight: 44,
-                paddingHorizontal: 12,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderStyle: 'dashed',
-                borderColor: t.c.warn,
-                backgroundColor: t.c.warnSoft,
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <Text style={{ color: t.c.warn, fontFamily: 'monospace', fontWeight: '800', fontSize: t.f.md }}>🏷 {deal.coupon}</Text>
-              <Icon name="copy" size={15} color={t.c.warn} />
-            </Pressable>
-          ) : null}
-          {deal.coupon ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Report this coupon code as not working"
-              disabled={couponReported}
-              onPress={reportCouponDead}
-              hitSlop={8}
-              style={{ alignSelf: 'flex-start' }}
-            >
-              <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '600', textDecorationLine: couponReported ? 'none' : 'underline' }}>
-                {couponReported ? 'Reported — thanks' : 'Code not working?'}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {deal.is_lowest ? <Note kind="good" icon="trend" text="Lowest price we have recorded for this product." /> : null}
+          {deal.ai_hook ? <Note kind="good" icon="trend" text={deal.ai_hook} /> : null}
           {suspicious ? (
             <Note kind="warn" icon="alert" text={deal.ai_mrp_reason || 'The quoted MRP looks inflated versus this product’s price history.'} />
           ) : null}
-          {deal.ai_hook ? <Note kind="good" icon="trend" text={deal.ai_hook} /> : null}
 
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <SaveButton deal={deal} />
+          {verdict || range ? <PriceVerdictMeter verdict={verdict ?? null} range={range} lowest={deal.is_lowest} /> : null}
+
+          {deal.coupon ? (
+            <View style={{ padding: 14, borderRadius: t.r.md, borderWidth: 1.5, borderStyle: 'dashed', borderColor: t.c.borderStrong, backgroundColor: t.c.surface, gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: t.c.text3, fontSize: 11, fontFamily: MONO_FAMILY, letterSpacing: 0.4 }}>COUPON</Text>
+                  <Text selectable style={{ color: t.c.text, fontSize: 19, fontFamily: MONO_FAMILY, fontWeight: '600', letterSpacing: 1 }}>
+                    {deal.coupon}
+                  </Text>
+                </View>
+                <Button title="Copy" icon="copy" size="sm" onPress={() => copy(deal.coupon ?? '', 'Coupon')} />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Report this coupon code as not working"
+                disabled={couponReported}
+                onPress={reportCouponDead}
+                hitSlop={8}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '500', textDecorationLine: couponReported ? 'none' : 'underline' }}>
+                  {couponReported ? 'Reported — thanks' : 'Code not working?'}
+                </Text>
+              </Pressable>
             </View>
-            <View style={{ flex: 1 }}>
-              <Button title="Share" icon="share" variant="soft" onPress={share} />
-            </View>
+          ) : null}
+
+          <View style={[card, { gap: 12 }]}>
+            <Text style={{ color: t.c.text, fontSize: t.f.base, fontWeight: '700' }}>Price history</Text>
+            <FullHistoryCard state={bhState} history={bh} merged={chartPoints} current={deal.price} lookupUrl={lookup} />
+            {bhState === 'browser' && lookup ? (
+              <HiddenPageReader url={lookup} onPage={onBrowserPage} onGiveUp={onBrowserGiveUp} />
+            ) : null}
+            {chartPoints ? <PriceChart points={chartPoints} /> : <ActivityIndicator color={t.c.text3} />}
+            {deal.price_history_url ? (
+              <Button
+                title="Price history & stock"
+                iconRight="external"
+                variant="soft"
+                size="sm"
+                onPress={() => {
+                  haptic.light();
+                  WebBrowser.openBrowserAsync(deal.price_history_url as string).catch(() => {});
+                }}
+              />
+            ) : null}
           </View>
-
-          {verdict ? <PriceVerdictMeter verdict={verdict} /> : null}
 
           {!past && fresh && deal.price ? (
             <PriceAlertBlock
@@ -412,92 +415,33 @@ export function DealDetailScreen() {
             />
           ) : null}
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: t.r.md, backgroundColor: t.c.surface, borderWidth: 1, borderColor: t.c.border }}>
-            <ScoreRing score={deal.score} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: t.c.text, fontSize: t.f.base, fontWeight: '700' }}>{label}</Text>
-              <Text style={{ color: t.c.text2, fontSize: t.f.sm, marginTop: 2, lineHeight: 18 }}>
-                Deal score {Math.round(deal.score || 0)} / 100 — {blurb}
-              </Text>
+          <View style={[card, { gap: 12 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <ScoreRing score={deal.score} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: t.c.text, fontSize: t.f.base, fontWeight: '700' }}>{label}</Text>
+                <Text style={{ color: t.c.text2, fontSize: t.f.sm, marginTop: 2, lineHeight: 18 }}>{blurb}</Text>
+              </View>
             </View>
-          </View>
-
-          {reasons.length ? (
-            <View style={{ gap: 8 }}>
-              {reasons.map((r) => (
-                <View key={r} style={{ flexDirection: 'row', gap: 9 }}>
-                  <View style={{ paddingTop: 2 }}>
-                    <Icon name="check" size={15} color={t.c.good} strokeWidth={2.4} />
+            {reasons.length ? (
+              <View style={{ gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: t.c.border }}>
+                {reasons.map((r) => (
+                  <View key={r} style={{ flexDirection: 'row', gap: 9 }}>
+                    <View style={{ paddingTop: 2 }}>
+                      <Icon name="check" size={15} color={t.c.good} strokeWidth={2.4} />
+                    </View>
+                    <Text style={{ flex: 1, color: t.c.text2, fontSize: t.f.sm, lineHeight: 19 }}>{r}</Text>
                   </View>
-                  <Text style={{ flex: 1, color: t.c.text2, fontSize: t.f.sm, lineHeight: 19 }}>{r}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          <View style={{ gap: 10, marginTop: 6 }}>
-            <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' }}>
-              Price history
-            </Text>
-            <FullHistoryCard state={bhState} history={bh} merged={chartPoints} current={deal.price} lookupUrl={lookup} />
-            {bhState === 'browser' && lookup ? (
-              <HiddenPageReader url={lookup} onPage={onBrowserPage} onGiveUp={onBrowserGiveUp} />
+                ))}
+              </View>
             ) : null}
-            {chartPoints ? <PriceChart points={chartPoints} /> : <ActivityIndicator color={t.c.accent} />}
           </View>
-
-          {deal.price_history_url ? (
-            <Button
-              title="Price history & stock"
-              icon="trend"
-              iconRight="external"
-              variant="soft"
-              onPress={() => {
-                haptic.light();
-                WebBrowser.openBrowserAsync(deal.price_history_url as string).catch(() => {});
-              }}
-            />
-          ) : null}
 
           <KeyValue rows={kv} />
-
-          {deal.raw_text ? (
-            <View style={{ borderRadius: t.r.sm, borderWidth: 1, borderColor: t.c.border, overflow: 'hidden', backgroundColor: t.c.surface }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showRaw }}
-                onPress={() => {
-                  haptic.select();
-                  setShowRaw(!showRaw);
-                }}
-                style={{ minHeight: 48, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}
-              >
-                <Text style={{ flex: 1, color: t.c.text, fontWeight: '600', fontSize: t.f.sm }}>Original post</Text>
-                <View style={{ transform: [{ rotate: showRaw ? '180deg' : '0deg' }] }}>
-                  <Icon name="chevDown" size={18} color={t.c.text3} />
-                </View>
-              </Pressable>
-              {showRaw ? (
-                <View style={{ borderTopWidth: 1, borderTopColor: t.c.border, padding: 14, gap: 10, backgroundColor: t.c.surface2 }}>
-                  <Text selectable style={{ color: t.c.text2, fontFamily: 'monospace', fontSize: 12.5, lineHeight: 19 }}>
-                    {deal.raw_text}
-                  </Text>
-                  <Button title="Copy post" icon="copy" variant="soft" size="sm" onPress={() => copy(deal.raw_text ?? '', 'Post')} style={{ alignSelf: 'flex-start' }} />
-                </View>
-              ) : null}
-            </View>
-          ) : null}
         </View>
 
-        <View style={{ paddingHorizontal: 16, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
-          <DealRail
-            title="🧭 Similar deals"
-            sub="More like this, live right now"
-            deals={similar}
-            note={similarNote}
-            onOpen={openDeal}
-            pad={16}
-          />
+        <View style={{ paddingHorizontal: 16, paddingTop: 8, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
+          <DealRail title="Similar, live now" deals={similar} note={similarNote} onOpen={openDeal} pad={16} />
         </View>
       </ScrollView>
 
@@ -514,31 +458,44 @@ export function DealDetailScreen() {
             gap: 10,
           }}
         >
+          <IconButton name="copy" label="Copy link" variant="soft" onPress={() => copy(deal.url ?? '', 'Link')} style={{ width: 52, height: 52, borderRadius: t.r.md }} />
           <View style={{ flex: 1 }}>
             <Button
-              title={past ? `Check on ${store || 'store'}` : `Open on ${store || 'store'}`}
+              title={past ? `Check on ${store || 'store'}` : `Buy on ${store || 'store'}`}
               iconRight="external"
               onPress={() => {
                 haptic.light();
                 void recordDealSignal('buy', deal);
                 openExternal(deal.url);
               }}
+              style={{ minHeight: 52, borderRadius: t.r.md }}
             />
           </View>
-          {deal.price_history_url ? (
-            <IconButton
-              name="trend"
-              label="Price history and stock"
-              variant="soft"
-              onPress={() => WebBrowser.openBrowserAsync(deal.price_history_url as string)}
-              style={{ width: 48, height: 48 }}
-            />
-          ) : null}
-          <IconButton name="copy" label="Copy link" variant="soft" onPress={() => copy(deal.url ?? '', 'Link')} style={{ width: 48, height: 48 }} />
         </View>
       ) : null}
     </View>
   );
+}
+
+/** Low / usual / high for the verdict bar, from the chart points or the server's stats. */
+function priceRange(
+  points: PricePoint[] | null,
+  stats: DealDetail['price_history'],
+  current: number | null,
+): PriceRange | null {
+  if (current == null) return null;
+  const prices = (points ?? []).map((p) => p.price).filter((p) => p > 0);
+  if (prices.length >= 3) {
+    const sorted = [...prices].sort((a, b) => a - b);
+    const low = Math.min(sorted[0], current);
+    const high = Math.max(sorted[sorted.length - 1], current);
+    if (high - low < 1) return null;
+    return { low, high, usual: sorted[Math.floor(sorted.length / 2)], current };
+  }
+  if (stats && stats.points >= 3 && stats.min != null && stats.max != null && stats.max - stats.min >= 1) {
+    return { low: Math.min(stats.min, current), high: Math.max(stats.max, current), usual: stats.median ?? null, current };
+  }
+  return null;
 }
 
 const monthYear = (sec: number) =>
@@ -564,9 +521,9 @@ function FullHistoryCard({
   const openBuyHatke = (url: string | null) => url && WebBrowser.openBrowserAsync(url).catch(() => {});
   if (state === 'loading' || state === 'browser') {
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: t.r.sm, backgroundColor: t.c.surface2 }}>
-        <ActivityIndicator size="small" color={t.c.good} />
-        <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>Fetching full price history…</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <ActivityIndicator size="small" color={t.c.text3} />
+        <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>Pulling the full price history…</Text>
       </View>
     );
   }
@@ -587,7 +544,7 @@ function FullHistoryCard({
         <Icon name="alert" size={16} color={t.c.text3} />
         <Text style={{ flex: 1, color: t.c.text2, fontSize: t.f.sm }}>
           Couldn't load the full history right now.{' '}
-          <Text style={{ color: t.c.accent, fontWeight: '700' }}>Open on BuyHatke ↗</Text>
+          <Text style={{ color: t.c.text, fontWeight: '600', textDecorationLine: 'underline' }}>Open on BuyHatke</Text>
         </Text>
       </Pressable>
     );
@@ -603,19 +560,12 @@ function FullHistoryCard({
   const atLowest = current != null && current <= lowest;
   const stat = (label: string, value: string, color: string) => (
     <View style={{ flex: 1, gap: 2 }}>
-      <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '700' }}>{label}</Text>
-      <Text style={{ color, fontSize: t.f.md, fontWeight: '800' }}>{value}</Text>
+      <Text style={{ color: t.c.text3, fontSize: 11, fontFamily: MONO_FAMILY }}>{label.toUpperCase()}</Text>
+      <Text style={{ color, fontSize: t.f.md, fontWeight: '700' }}>{value}</Text>
     </View>
   );
   return (
-    <View style={{ gap: 12, padding: 14, borderRadius: t.r.md, borderWidth: 1, borderColor: t.c.goodLine, backgroundColor: t.c.goodSoft }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: t.c.good }}>
-          <Icon name="check" size={14} color={t.c.bg} strokeWidth={3} />
-        </View>
-        <Text style={{ flex: 1, color: t.c.text, fontSize: t.f.md, fontWeight: '800' }}>Full price history</Text>
-        <Text style={{ color: t.c.good, fontSize: t.f.xs, fontWeight: '700' }}>{all.length} points</Text>
-      </View>
+    <View style={{ gap: 10 }}>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         {stat('Lowest ever', money(lowest), t.c.good)}
         {stat('Highest', money(highest), t.c.text)}
@@ -624,8 +574,8 @@ function FullHistoryCard({
       {atLowest ? (
         <Text style={{ color: t.c.good, fontSize: t.f.sm, fontWeight: '700' }}>
           {current != null && current < history.lowest
-            ? `🎉 Lowest price ever — below the previous low of ${money(history.lowest)}`
-            : "🎉 Today's price matches the lowest ever"}
+            ? `Lowest price ever — below the previous low of ${money(history.lowest)}`
+            : "Today's price matches the lowest ever"}
         </Text>
       ) : null}
       <Pressable
@@ -634,7 +584,7 @@ function FullHistoryCard({
         hitSlop={8}
       >
         <Text style={{ color: t.c.text3, fontSize: t.f.xs }}>
-          History by <Text style={{ color: t.c.accent, fontWeight: '700' }}>BuyHatke</Text> ↗
+          {all.length} price points · history by <Text style={{ color: t.c.text2, fontWeight: '600', textDecorationLine: 'underline' }}>BuyHatke</Text>
         </Text>
       </Pressable>
     </View>
@@ -656,7 +606,7 @@ function Note({ kind, icon, text }: { kind: 'good' | 'warn'; icon: 'trend' | 'al
 }
 
 const similarNote = (d: Deal): [string, 'good' | 'hot' | 'muted'] =>
-  d.discount_pct >= 5 ? [`${d.discount_pct}% off`, 'hot'] : d.saving ? [`Save ${money(d.saving)}`, 'good'] : [storeName(d) || 'Live deal', 'muted'];
+  d.saving ? [`Save ${money(d.saving)}`, 'good'] : [storeName(d) || 'Live deal', 'muted'];
 
 function SaveButton({ deal }: { deal: Deal }) {
   const { isSaved, toggle } = useSaved();
@@ -716,12 +666,15 @@ function PriceAlertBlock({
     }
   };
 
+  const picks = alertPicks(deal.price);
   return (
-    <View style={{ padding: 14, gap: 10, borderRadius: t.r.md, backgroundColor: t.c.accentSoft, borderWidth: 1, borderColor: t.c.accentLine }}>
+    <View style={{ padding: 14, gap: 12, borderRadius: t.r.md, backgroundColor: t.c.surface, borderWidth: 1, borderColor: t.c.border }}>
       <View style={{ gap: 2 }}>
-        <Text style={{ color: t.c.text, fontSize: t.f.md, fontWeight: '700' }}>🔔 Price-drop alert</Text>
+        <Text style={{ color: t.c.text, fontSize: t.f.base, fontWeight: '700' }}>
+          {watching ? 'You’re watching this price' : 'Tell me if it gets cheaper'}
+        </Text>
         <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>
-          {watching ? `Watching for ${money(watching.target_price)} or less` : 'Get notified when it gets cheaper'}
+          {watching ? `We’ll notify you at ${money(watching.target_price)} or less.` : 'We keep checking the price and notify you when it drops.'}
         </Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -734,11 +687,11 @@ function PriceAlertBlock({
             paddingHorizontal: 12,
             borderRadius: t.r.sm,
             borderWidth: 1,
-            borderColor: focused ? t.c.accent : t.c.border,
+            borderColor: focused ? t.c.text : t.c.borderStrong,
             backgroundColor: t.c.surface,
           }}
         >
-          <Text style={{ color: t.c.text2, fontSize: t.f.sm, fontWeight: '600' }}>Notify me below ₹</Text>
+          <Text style={{ color: t.c.text3, fontSize: t.f.base }}>Below ₹</Text>
           <TextInput
             value={target}
             onChangeText={setTarget}
@@ -747,14 +700,50 @@ function PriceAlertBlock({
             keyboardType="number-pad"
             returnKeyType="done"
             onSubmitEditing={submit}
-            selectionColor={t.c.accent}
+            selectionColor={t.c.text}
             accessibilityLabel="Alert me below this price, in rupees"
             maxFontSizeMultiplier={1.4}
-            style={{ flex: 1, color: t.c.text, fontSize: t.f.base, fontWeight: '700', paddingHorizontal: 4 }}
+            style={{ flex: 1, color: t.c.text, fontSize: 17, fontWeight: '700', paddingHorizontal: 4 }}
           />
         </View>
-        <Button title={watching ? 'Update' : 'Notify me'} loading={busy} onPress={submit} />
+        <Button title={watching ? 'Update' : 'Set alert'} loading={busy} onPress={submit} />
       </View>
+      {picks.length ? (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {picks.map((p) => {
+            const on = Number(target) === p;
+            return (
+              <Pressable
+                key={p}
+                accessibilityRole="button"
+                accessibilityLabel={`Set target to ${money(p)}`}
+                onPress={() => {
+                  haptic.select();
+                  setTarget(String(p));
+                }}
+                style={{
+                  minHeight: 34,
+                  paddingHorizontal: 12,
+                  borderRadius: 17,
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: on ? t.c.text : t.c.borderStrong,
+                }}
+              >
+                <Text style={{ color: on ? t.c.text : t.c.text2, fontSize: t.f.sm, fontWeight: on ? '700' : '500' }}>{money(p)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
     </View>
   );
+}
+
+/** Three sensible targets: roughly 10%, 20% and 30% under today's price, rounded to a price people type. */
+function alertPicks(price: number | null): number[] {
+  if (!price || price < 50) return [];
+  const step = price >= 10000 ? 500 : price >= 1000 ? 50 : 10;
+  const out = [0.9, 0.8, 0.7].map((f) => Math.floor((price * f) / step) * step - (step >= 50 ? 1 : 0));
+  return [...new Set(out.filter((n) => n > 0 && n < price))];
 }

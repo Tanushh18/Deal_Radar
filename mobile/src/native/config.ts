@@ -7,20 +7,20 @@ export const LIVE_HOST: string = 'https://dealradar-0oza.onrender.com';
 export const EMULATOR_HOST = 'http://10.0.2.2:8765';
 
 export const COLORS = {
-  bg: '#080b12',
-  bgSunk: '#05070c',
-  surface: '#111827',
-  surface2: '#172033',
-  border: '#1f2a3c',
-  borderStrong: '#33405a',
-  text: '#e9eef7',
-  text2: '#9ba7bc',
-  text3: '#6b7789',
-  accent: '#5b93f7',
-  accentStrong: '#2563eb',
-  accentText: '#06101f',
-  hot: '#f87171',
-  good: '#34d399',
+  bg: '#14120e',
+  bgSunk: '#0f0d0a',
+  surface: '#1c1914',
+  surface2: '#24201a',
+  border: '#2d2922',
+  borderStrong: '#3b362d',
+  text: '#f1ece2',
+  text2: '#b4ad9f',
+  text3: '#857f73',
+  accent: '#f1ece2',
+  accentStrong: '#ffffff',
+  accentText: '#14120e',
+  hot: '#ff7a45',
+  good: '#52c48c',
 };
 
 const KEYS = {

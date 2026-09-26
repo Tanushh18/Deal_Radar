@@ -4,7 +4,6 @@ export type MainTabParamList = {
   Deals: undefined;
   Saved: undefined;
   Alerts: undefined;
-  Channels: undefined;
   Account: undefined;
 };
 

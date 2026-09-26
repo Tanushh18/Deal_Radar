@@ -10,10 +10,10 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Text } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, errorMessage, isAbort, isOffline, type Deal, type DealsPage, type KeyCount, type NamedCount, type Stats } from '../api';
@@ -62,12 +62,12 @@ import {
 } from '../components';
 import { isPublicMode } from '../native/session';
 import { SaleEventsRail } from '../components/SaleEventsRail';
-import { useTheme } from '../theme';
+import { MONO_FAMILY, useTheme } from '../theme';
 import type { SortKey } from '../api/types';
 import type { TabNav } from './types';
 
 const PAGE = 30;
-const PAD = 14;
+const PAD = 16;
 const GAP = 10;
 const VIEW_KEY = 'dr.view';
 
@@ -81,19 +81,19 @@ const SORT_TABS: { key: SortKey; label: string }[] = [
 ];
 
 const SORT_HEADINGS: Record<SortKey, [string, string]> = {
-  newest: ['🕘 Latest deals', 'Freshly posted deals'],
-  best: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
-  relevance: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
-  for_you: ['✨ For You', 'Matched to what you follow'],
-  discount: ['⚡ Biggest discounts', 'Largest drop from the quoted MRP'],
-  price_low: ['💸 Cheapest first', 'Lowest prices first'],
-  price_high: ['💎 Priciest first', 'Highest prices first'],
-  ending: ['⏳ Ending soon', 'Grab these before they expire'],
+  newest: ['Latest', 'Newest deals first, checked around the clock'],
+  best: ['Top deals', 'Ranked by DealRadar’s deal score'],
+  relevance: ['Top deals', 'Ranked by DealRadar’s deal score'],
+  for_you: ['For you', 'Matched to what you follow'],
+  discount: ['Biggest discounts', 'Largest drop from the listed MRP'],
+  price_low: ['Cheapest first', 'Lowest prices first'],
+  price_high: ['Priciest first', 'Highest prices first'],
+  ending: ['Ending soon', 'Grab these before they expire'],
 };
 
 function gridHeading(f: DealFilters): [string, string] {
-  if (f.q) return [`🔎 Results for “${f.q}”`, 'Best matches'];
-  if (activeFilterCount(f)) return ['🏷️ Filtered deals', 'Matching your filters'];
+  if (f.q) return [`Results for “${f.q}”`, 'Best matches'];
+  if (activeFilterCount(f)) return ['Filtered deals', 'Matching your filters'];
   return SORT_HEADINGS[f.sort] ?? SORT_HEADINGS.newest;
 }
 
@@ -102,11 +102,11 @@ type Rails = Record<RailKey, Deal[] | null>;
 const EMPTY_RAILS: Rails = { trending: null, lows: null, ending: null, fresh: null, coupons: null };
 
 const RAIL_NOTES: Record<RailKey, (d: Deal) => [string, RailTone]> = {
-  trending: (d) => [`${d.repost_count}× posted`, 'hot'],
+  trending: (d) => (d.saving ? [`Save ${money(d.saving)}`, 'good'] : [storeName(d) || 'Popular today', 'muted']),
   lows: (d) => (d.saving ? [`Save ${money(d.saving)}`, 'good'] : ['All-time low', 'good']),
   ending: (d) => [endsIn(d.expires_at) || 'Ending soon', 'hot'],
   fresh: (d) => [timeAgo(d.posted_at) || 'Just now', 'muted'],
-  coupons: (d) => [`🏷 ${d.coupon ?? 'Coupon'}`, 'good'],
+  coupons: (d) => [d.coupon ? `Code ${d.coupon}` : 'Has a coupon', 'good'],
 };
 
 type FeedStatus = 'loading' | 'ready' | 'error';
@@ -125,10 +125,10 @@ export function DealsScreen() {
   const categories = useCategories();
   const [headerH, setHeaderH] = useState(insets.top + 112);
 
-  const [layout, setLayout] = useState<'grid' | 'list'>('grid');
+  const [layout, setLayout] = useState<'grid' | 'list'>('list');
   useEffect(() => {
     AsyncStorage.getItem(VIEW_KEY)
-      .then((v) => v === 'list' && setLayout('list'))
+      .then((v) => v === 'grid' && setLayout('grid'))
       .catch(() => {});
   }, []);
   const toggleLayout = (next: 'grid' | 'list') => {
@@ -139,7 +139,9 @@ export function DealsScreen() {
   };
 
   const cols = layout === 'grid' ? (width >= 900 ? 4 : width >= 600 ? 3 : 2) : width >= 720 ? 2 : 1;
-  const cardW = Math.floor((width - PAD * 2 - GAP * (cols - 1)) / cols);
+  // A single-column list runs edge to edge with hairline dividers; grids keep cards.
+  const flat = layout === 'list' && cols === 1;
+  const cardW = flat ? width : Math.floor((width - PAD * 2 - GAP * (cols - 1)) / cols);
 
   /* ---------------- feed ---------------- */
   const [items, setItems] = useState<Deal[]>([]);
@@ -278,9 +280,6 @@ export function DealsScreen() {
       withCache(`rail:${key}`, fetcher).then(put(key), fail(key));
     rail('trending', () => api.deals.trending(12));
     rail('lows', () => api.deals.list({ only_lowest: true, sort: 'best', limit: 12, offset: 0 }));
-    rail('ending', () => api.deals.list({ sort: 'ending', limit: 12, offset: 0 }));
-    rail('fresh', () => api.deals.list({ sort: 'newest', limit: 12, offset: 0 }));
-    rail('coupons', () => api.deals.list({ has_coupon: true, sort: 'best', limit: 12, offset: 0 }));
     withCache('facets', () => api.deals.facets())
       .then((r) => setStores((r.value.stores ?? []).filter((s) => s.key && s.key !== 'unknown').slice(0, 14)))
       .catch(() => {});
@@ -433,32 +432,14 @@ export function DealsScreen() {
   const header = (
     <View style={{ gap: 16, paddingBottom: 12 }}>
       {offline ? <OfflineBanner /> : null}
-      <StatsCard stats={stats} override={statusOverride} syncing={syncing} />
 
-      <SaleEventsRail />
+      <SaleEventsRail
+        onPick={(store) => {
+          haptic.select();
+          patchFilters({ store });
+        }}
+      />
 
-      {tracked === 0 && !isPublicMode() ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Channels')}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-            padding: 14,
-            borderRadius: t.r.md,
-            backgroundColor: t.c.accentSoft,
-            borderWidth: 1,
-            borderColor: t.c.accentLine,
-          }}
-        >
-          <Icon name="radio" size={20} color={t.c.accent} />
-          <Text style={{ flex: 1, color: t.c.accent, fontWeight: '600', fontSize: t.f.sm }}>
-            Pick the deal channels you want DealRadar to read.
-          </Text>
-          <Icon name="chevRight" size={18} color={t.c.accent} />
-        </Pressable>
-      ) : null}
 
       <ScrollView
         horizontal
@@ -467,10 +448,9 @@ export function DealsScreen() {
         contentContainerStyle={{ paddingHorizontal: PAD, gap: 6 }}
         accessibilityRole="tablist"
       >
-        {[{ name: '', label: 'All deals' }, ...categories.map((c) => ({ name: c.name, label: c.name }))].map((c) => (
-          <CategoryTile
+        {[{ name: '', label: 'All' }, ...categories.map((c) => ({ name: c.name, label: c.name }))].map((c) => (
+          <Chip
             key={c.name || 'all'}
-            icon={c.name ? categoryIcon(c.name) : '✨'}
             label={c.label}
             active={filters.category === c.name}
             onPress={() => pickCategory(c.name)}
@@ -491,7 +471,6 @@ export function DealsScreen() {
               key={s.key}
               label={storeName({ store: s.key }) || titleCase(s.key)}
               count={s.count}
-              leading="🛍"
               active={filters.store === s.key}
               accessibilityLabel={`${titleCase(s.key)}, ${s.count} deals`}
               onPress={() => pickStore(s.key)}
@@ -503,50 +482,21 @@ export function DealsScreen() {
       {browse ? (
         <>
           <DealRail
-            title="🔥 Trending right now"
-            sub="Reposted across deal channels"
+            title="Trending now"
+            sub="What shoppers are grabbing today"
             deals={rails.trending}
             note={RAIL_NOTES.trending}
             onOpen={openDeal}
           />
           <DealRail
-            title="⏳ Ending soon"
-            sub="Grab these before they expire"
-            deals={rails.ending}
-            note={RAIL_NOTES.ending}
-            onOpen={openDeal}
-            onSeeAll={() => {
-              haptic.select();
-              patchFilters({ sort: 'ending' });
-            }}
-          />
-          <DealRail
-            title="⚡ Just dropped"
-            sub="The newest deals, straight off the wire"
-            deals={rails.fresh}
-            note={RAIL_NOTES.fresh}
-            onOpen={openDeal}
-          />
-          <DealRail
-            title="📉 All-time lows"
-            sub="Cheapest we have ever recorded"
+            title="All-time lows"
+            sub="The cheapest we’ve ever recorded"
             deals={rails.lows}
             note={RAIL_NOTES.lows}
             onOpen={openDeal}
             onSeeAll={() => {
               haptic.select();
               patchFilters({ only_lowest: true });
-            }}
-          />
-          <DealRail
-            title="🏷 Coupons"
-            sub="Deals with a code to stack on top"
-            deals={rails.coupons}
-            note={RAIL_NOTES.coupons}
-            onOpen={openDeal}
-            onSeeAll={() => {
-              haptic.select();
-              patchFilters({ has_coupon: true });
             }}
           />
         </>
@@ -668,7 +618,7 @@ export function DealsScreen() {
   let empty: React.ReactElement | null = null;
   if (status === 'loading') {
     empty = (
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GAP }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: flat ? 0 : GAP, marginHorizontal: flat ? -PAD : 0 }}>
         {Array.from({ length: cols * 3 }, (_, i) => (
           <DealCardSkeleton key={i} layout={layout} width={cardW} />
         ))}
@@ -678,7 +628,7 @@ export function DealsScreen() {
     const off = isOffline(error);
     empty = (
       <EmptyState
-        emoji={off ? '📶' : '⚠️'}
+        icon={off ? 'wifiOff' : 'alert'}
         title={off ? 'You’re offline' : 'Something went wrong'}
         message={off ? 'We’ll refresh as soon as you’re back online.' : 'We couldn’t load the deals right now.'}
         detail={errorMessage(error, '')}
@@ -688,7 +638,7 @@ export function DealsScreen() {
   } else if (!archiveHits?.total) {
     empty = (
       <EmptyState
-        emoji={hasFilters ? '🔎' : '📭'}
+        icon={hasFilters ? 'search' : 'tag'}
         title="No products found"
         message={
           hasFilters
@@ -725,6 +675,7 @@ export function DealsScreen() {
       ) : null}
       {archiveHits?.total && status === 'ready' ? (
         <ArchiveSection
+          flat={flat}
           archive={archiveHits}
           liveTotal={total}
           layout={layout}
@@ -759,11 +710,11 @@ export function DealsScreen() {
           renderItem={renderItem}
           numColumns={cols}
           columnWrapperStyle={cols > 1 ? { gap: GAP } : undefined}
-          ItemSeparatorComponent={Separator}
-          ListHeaderComponent={header}
-          ListEmptyComponent={empty}
-          ListFooterComponent={footer}
-          contentContainerStyle={{ paddingHorizontal: PAD, paddingTop: headerH + 12, paddingBottom: 24 }}
+          ItemSeparatorComponent={flat ? undefined : Separator}
+          ListHeaderComponent={<View style={{ paddingHorizontal: flat ? PAD : 0 }}>{header}</View>}
+          ListEmptyComponent={empty ? <View style={{ paddingHorizontal: flat ? PAD : 0 }}>{empty}</View> : null}
+          ListFooterComponent={<View style={{ paddingHorizontal: flat ? PAD : 0 }}>{footer}</View>}
+          contentContainerStyle={{ paddingHorizontal: flat ? 0 : PAD, paddingTop: headerH + 12, paddingBottom: 24 }}
           scrollIndicatorInsets={{ top: headerH }}
           onEndReached={loadMore}
           onEndReachedThreshold={0.8}
@@ -786,6 +737,7 @@ export function DealsScreen() {
       </GlassContent>
       <GlassHeader target={blurTarget} onHeight={setHeaderH}>
         <TopBar
+          status={<StatsCard stats={stats} override={statusOverride} syncing={syncing} />}
           name={name}
           query={filters.q}
           topInset={insets.top}
@@ -808,6 +760,7 @@ export function DealsScreen() {
 const Separator = () => <View style={{ height: GAP }} />;
 
 function ArchiveSection({
+  flat,
   archive,
   liveTotal,
   layout,
@@ -815,6 +768,7 @@ function ArchiveSection({
   cardW,
   onOpen,
 }: {
+  flat: boolean;
   archive: { q: string; total: number; results: Deal[] };
   liveTotal: number;
   layout: 'grid' | 'list';
@@ -830,9 +784,9 @@ function ArchiveSection({
     : `No live deal for “${archive.q}” right now — ${n} earlier ${plural(archive.total, 'deal')} from our archive`;
   return (
     <View style={{ gap: GAP, paddingTop: 20 }}>
-      <SectionHead title="🗂 From the deal archive" sub={sub} />
+      <SectionHead title="From the deal archive" sub={sub} />
       {rows.map((row, i) => (
-        <View key={i} style={{ flexDirection: 'row', gap: GAP }}>
+        <View key={i} style={{ flexDirection: 'row', gap: GAP, marginHorizontal: flat ? -PAD : 0, marginTop: flat ? -GAP : 0 }}>
           {row.map((d) => (
             <DealCard key={d.id} deal={{ ...d, status: d.status && d.status !== 'live' ? d.status : 'archived' }} layout={layout} width={cardW} onOpen={onOpen} />
           ))}
@@ -845,6 +799,7 @@ function ArchiveSection({
 /* ============================================================ */
 
 function TopBar({
+  status,
   name,
   query,
   topInset,
@@ -855,6 +810,7 @@ function TopBar({
   onClearQuery,
   onSync,
 }: {
+  status: React.ReactNode;
   name: string;
   query: string;
   topInset: number;
@@ -870,13 +826,10 @@ function TopBar({
   return (
     <View style={{ paddingTop: topInset + 8, paddingHorizontal: PAD, paddingBottom: 10, gap: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <BrandMark size={34} />
+        <BrandMark size={32} />
         <View style={{ flex: 1 }}>
-          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 18, fontWeight: '800', letterSpacing: -0.6, color: t.c.text }}>
-            Deal<Text style={{ color: t.c.accent }}>Radar</Text>
-          </Text>
-          <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ color: t.c.text2, fontSize: t.f.xs }}>
-            {name ? `${greeting()}, ${name} 👋` : `${greeting()} 👋`}
+          <Text accessibilityRole="header" maxFontSizeMultiplier={1.3} style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.7, color: t.c.text }}>
+            DealRadar
           </Text>
         </View>
         <IconButton name="link" label="Check a product’s price" variant="soft" onPress={onCheckPrice} />
@@ -906,6 +859,7 @@ function TopBar({
         </Pressable>
         ) : null}
       </View>
+      {status}
       <Pressable
         accessibilityRole="search"
         accessibilityLabel={query ? `Search: ${query}` : 'Search deals'}
@@ -913,8 +867,8 @@ function TopBar({
         onPress={onSearch}
         style={{
           minHeight: 46,
-          borderRadius: t.r.full,
-          paddingLeft: 16,
+          borderRadius: t.r.sm,
+          paddingLeft: 14,
           paddingRight: 4,
           flexDirection: 'row',
           alignItems: 'center',
@@ -926,7 +880,7 @@ function TopBar({
       >
         <Icon name="search" size={18} color={t.c.text3} />
         <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ flex: 1, color: query ? t.c.text : t.c.text3, fontSize: t.f.md, fontWeight: query ? '600' : '400' }}>
-          {query || 'What are you looking for?'}
+          {query || 'Search deals, brands, stores'}
         </Text>
         {query ? <IconButton name="close" label="Clear search" size={17} color={t.c.text2} onPress={onClearQuery} /> : null}
       </Pressable>
@@ -948,44 +902,25 @@ function StatsCard({ stats, override, syncing }: { stats: Stats | null; override
   const status =
     override ??
     (stats == null
-      ? 'Tuning the radar…'
+      ? 'Connecting to the price tracker…'
       : last
-        ? `Updated ${timeAgo(last)} · next check in ${nextCheckIn(nextAt, now)}`
+        ? `Updated ${timeAgo(last)}`
         : 'Waiting for the first sync…');
-  const cells: [string, number | undefined, boolean][] = [
-    ['Live deals', stats?.deals_live, false],
-    ['Added today', stats?.deals_today, true],
-  ];
+  const live = stats?.deals_live;
+  const today = stats?.deals_today;
+  const counts =
+    live != null ? `${num(live)} live${today != null ? ` · ${num(today)} today` : ''} · ` : '';
   return (
-    <View style={{ borderRadius: t.r.lg, borderWidth: 1, borderColor: t.c.border, overflow: 'hidden', backgroundColor: t.c.surface }}>
-      <LinearGradient
-        colors={[t.c.accentSoft, 'transparent']}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0.3, y: 1 }}
-        style={{ padding: 15, gap: 12 }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <LiveDot mode={syncing ? 'syncing' : last ? 'live' : 'idle'} />
-          <Text numberOfLines={2} style={{ flex: 1, color: t.c.text2, fontSize: t.f.xs, fontWeight: '600' }}>
-            {status}
-          </Text>
-        </View>
-        <View style={{ flexDirection: 'row' }}>
-          {cells.map(([label, value, up]) => (
-            <View key={label} style={{ flex: 1 }} accessible accessibilityLabel={`${label}: ${value ?? 'loading'}`}>
-              <Text
-                maxFontSizeMultiplier={1.3}
-                style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.7, color: up ? t.c.good : t.c.text, fontVariant: ['tabular-nums'] }}
-              >
-                {value == null ? '–' : num(value)}
-              </Text>
-              <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 10.5, color: t.c.text3, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 2 }}>
-                {label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </LinearGradient>
+    <View
+      accessible
+      accessibilityLabel={`${live != null ? `${live} live deals, ${today ?? 0} added today. ` : ''}${status}`}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+    >
+      <LiveDot mode={syncing ? 'syncing' : last ? 'live' : 'idle'} />
+      <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ flex: 1, color: t.c.text2, fontSize: 11.5, fontFamily: MONO_FAMILY }}>
+        {counts}
+        {status.replace(/^Updated /, 'checked ')}
+      </Text>
     </View>
   );
 }
@@ -1086,7 +1021,6 @@ function ResultCats({
         <Chip
           key={c.name || 'all'}
           label={c.name || 'All'}
-          leading={c.name ? categoryIcon(c.name) : undefined}
           count={c.count}
           active={active === c.name}
           onPress={() => onPick(c.name)}

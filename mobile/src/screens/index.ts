@@ -1,6 +1,5 @@
 export { AccountScreen } from './AccountScreen';
 export { AlertsScreen } from './AlertsScreen';
-export { ChannelsScreen } from './ChannelsScreen';
 export { DealDetailScreen } from './DealDetailScreen';
 export { DealsScreen } from './DealsScreen';
 export { FiltersScreen } from './FiltersScreen';

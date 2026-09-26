@@ -1,6 +1,7 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Switch, View } from 'react-native';
+import { Text } from '../components/Text';
 
 import { api, errorMessage, isNotFound, type AppNotification, type Watchlist } from '../api';
 import {
@@ -229,7 +230,7 @@ export function AlertsScreen() {
             </View>
           ) : list && !list.length ? (
             <EmptyState
-              emoji="🔔"
+              icon="bell"
               title="No alerts yet"
               message="Create an alert above and DealRadar will message you in Telegram the moment a matching deal appears."
             />
@@ -249,7 +250,7 @@ export function AlertsScreen() {
           )}
 
           <SectionHead
-            title="📬 Recent matches"
+            title="Recent matches"
             sub="Deals your alerts caught lately"
             style={{ marginTop: 6 }}
           />
@@ -346,7 +347,7 @@ function AlertRow({
           value={w.notify}
           onValueChange={onToggle}
           disabled={busy === 'toggle'}
-          trackColor={{ false: t.c.surface3, true: t.c.accent }}
+          trackColor={{ false: t.c.borderStrong, true: t.c.good }}
           thumbColor="#ffffff"
           accessibilityLabel={`Notify for ${w.query}`}
         />

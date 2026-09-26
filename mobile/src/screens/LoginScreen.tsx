@@ -4,11 +4,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, errorMessage, type User } from '../api';
@@ -32,7 +31,7 @@ type Step = 'phone' | 'code' | 'password';
 
 const PITCH: [string, string][] = [
   ['Search in plain words', '“women kurta” finds kurti, anarkali, ethnic sets.'],
-  ['Cross-channel dedup', 'one product, one card, with a “seen in N channels” badge.'],
+  ['One product, one card', 'duplicates are merged, so you see each deal once.'],
   ['Price history', 'flags a genuine all-time low and catches inflated MRPs.'],
   ['Live-link checks', 'dead and out-of-stock deals drop out automatically.'],
   ['Alerts', 'saved searches ping you in your own Telegram Saved Messages.'],
@@ -141,7 +140,7 @@ export function LoginScreen() {
         </View>
 
         <Txt variant="title" style={{ fontSize: 25, lineHeight: 31 }}>
-          Every deal from your Telegram channels. Searchable, de-duplicated, ranked.
+          Every real deal, checked around the clock. Searchable, de-duplicated, ranked.
         </Txt>
 
         <Card style={{ gap: 14, padding: 18, borderRadius: t.r.lg }}>
@@ -181,7 +180,7 @@ export function LoginScreen() {
                 <Text style={{ color: t.c.text2, fontSize: t.f.sm, fontWeight: '600' }}>Secure Telegram authentication</Text>
               </View>
               <Txt variant="fine">
-                Your Telegram session is encrypted before storage and is used only to read the channels you choose.
+                Your Telegram session is encrypted before storage and is only used to deliver your alerts.
                 Your code and 2FA password are never stored.
               </Txt>
             </>

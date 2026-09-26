@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, SectionList, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, SectionList, View } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, isAbort, isNotFound, type Deal, type Suggestions } from '../api';
@@ -338,7 +339,7 @@ export function SearchScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', padding: 36, gap: 8 }}>
-            <Text style={{ fontSize: 34 }}>🔎</Text>
+            <Icon name="search" size={28} color={t.c.text3} />
             <Text style={{ color: t.c.text2, fontSize: t.f.md, textAlign: 'center' }}>
               Search in plain words — “women kurta” finds kurti, anarkali, ethnic sets.
             </Text>

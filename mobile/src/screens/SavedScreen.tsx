@@ -1,6 +1,7 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, RefreshControl, View, useWindowDimensions } from 'react-native';
+import { Text } from '../components/Text';
 
 import { api, errorMessage, isNotFound, type Deal, type PriceAlert } from '../api';
 import {
@@ -25,7 +26,7 @@ import {
 import { useTheme } from '../theme';
 import type { RootNav } from './types';
 
-const PAD = 14;
+const PAD = 16;
 const GAP = 10;
 const REFRESH_CAP = 60;
 
@@ -37,8 +38,10 @@ export function SavedScreen() {
   const { width } = useWindowDimensions();
   const { saved, ready } = useSaved();
 
-  const cols = width >= 900 ? 4 : width >= 600 ? 3 : 2;
-  const cardW = Math.floor((width - PAD * 2 - GAP * (cols - 1)) / cols);
+  const cols = width >= 720 ? 2 : 1;
+  // One column runs edge to edge with hairline dividers, like the Deals list.
+  const flat = cols === 1;
+  const cardW = flat ? width : Math.floor((width - PAD * 2 - GAP * (cols - 1)) / cols);
 
   const [fresh, setFresh] = useState<Record<string, Deal | 'gone'>>({});
   const [alerts, setAlerts] = useState<PriceAlert[] | null>(null);
@@ -116,7 +119,7 @@ export function SavedScreen() {
       {!online ? <OfflineBanner text="Offline — showing the prices you saved" /> : null}
       {alerts && alerts.length ? (
         <View style={{ gap: 8 }}>
-          <SectionHead title="🔔 Price alerts" sub={`${alerts.length} ${plural(alerts.length, 'deal')} watched for a drop`} />
+          <SectionHead title="Price alerts" sub={`${alerts.length} ${plural(alerts.length, 'deal')} watched for a drop`} />
           <View style={{ borderRadius: t.r.md, borderWidth: 1, borderColor: t.c.border, backgroundColor: t.c.surface, overflow: 'hidden' }}>
             {alerts.map((a, i) => (
               <AlertRow key={a.id} alert={a} first={i === 0} onOpen={() => navigation.navigate('DealDetail', { id: a.deal_id })} onRemove={() => removeAlert(a)} />
@@ -125,7 +128,7 @@ export function SavedScreen() {
         </View>
       ) : null}
       {ids.length ? (
-        <SectionHead title="♡ Saved deals" sub={`${ids.length} ${plural(ids.length, 'deal')} · prices refresh when you open this tab`} />
+        <SectionHead title="Saved deals" sub={`${ids.length} ${plural(ids.length, 'deal')} · prices refresh when you open this tab`} />
       ) : null}
     </View>
   );
@@ -133,10 +136,10 @@ export function SavedScreen() {
   const renderItem = useCallback(
     ({ item, index }: { item: Deal; index: number }) => (
       <FadeInItem index={index}>
-        <DealCard deal={item} layout="grid" width={cardW} onOpen={openDeal} />
+        <DealCard deal={item} layout="list" width={cardW} note={sinceSaved(savedRef.current[item.id]?.price, item, !!fresh[item.id])} onOpen={openDeal} />
       </FadeInItem>
     ),
-    [cardW, openDeal],
+    [cardW, openDeal, fresh],
   );
 
   return (
@@ -148,20 +151,21 @@ export function SavedScreen() {
         keyExtractor={(d) => d.id}
         renderItem={renderItem}
         numColumns={cols}
-        columnWrapperStyle={{ gap: GAP }}
-        ItemSeparatorComponent={Separator}
-        ListHeaderComponent={header}
+        // FlatList throws if columnWrapperStyle is set on a single-column list.
+        columnWrapperStyle={cols > 1 ? { gap: GAP } : undefined}
+        ItemSeparatorComponent={flat ? undefined : Separator}
+        ListHeaderComponent={<View style={{ paddingHorizontal: flat ? PAD : 0 }}>{header}</View>}
         ListEmptyComponent={
           ready ? (
             <EmptyState
-              emoji="♡"
+              icon="heart"
               title="Nothing saved yet"
               message="Tap the heart on any deal to keep it here. We’ll keep checking its price for you."
               actions={[{ title: 'Browse deals', variant: 'primary', onPress: () => navigation.navigate('Main', { screen: 'Deals' }) }]}
             />
           ) : null
         }
-        contentContainerStyle={{ paddingHorizontal: PAD, paddingTop: 12, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingHorizontal: flat ? 0 : PAD, paddingTop: 12, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[t.c.accent]} tintColor={t.c.accent} progressBackgroundColor={t.c.surface} />
         }
@@ -174,6 +178,15 @@ export function SavedScreen() {
 }
 
 const Separator = () => <View style={{ height: GAP }} />;
+
+/** How the price moved since the deal was saved; only once we have a fresh price to compare. */
+function sinceSaved(savedPrice: number | null | undefined, deal: Deal, isFresh: boolean): [string, 'good' | 'hot' | 'muted'] | null {
+  if (!isFresh || savedPrice == null || deal.price == null || deal.status !== 'live') return null;
+  const diff = Math.round(deal.price - savedPrice);
+  if (diff < 0) return [`↓ ${money(-diff)} since you saved it`, 'good'];
+  if (diff > 0) return [`↑ ${money(diff)} since you saved it`, 'hot'];
+  return ['Same price as when you saved it', 'muted'];
+}
 
 function AlertRow({ alert, first, onOpen, onRemove }: { alert: PriceAlert; first: boolean; onOpen: () => void; onRemove: () => void }) {
   const t = useTheme();
@@ -199,9 +212,9 @@ function AlertRow({ alert, first, onOpen, onRemove }: { alert: PriceAlert; first
             {store ? ` · ${store}` : ''}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dropped ? t.c.good : t.c.accent }} />
-            <Text style={{ color: dropped ? t.c.good : t.c.text2, fontSize: t.f.xs, fontWeight: '700' }}>
-              {dropped ? `Dropped to ${money(alert.triggered_price)} ✓` : 'Watching'}
+            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dropped ? t.c.good : t.c.text3 }} />
+            <Text style={{ color: dropped ? t.c.good : t.c.text2, fontSize: t.f.xs, fontWeight: '600' }}>
+              {dropped ? `Dropped to ${money(alert.triggered_price)}` : 'Watching'}
             </Text>
           </View>
         </View>
@@ -213,7 +226,7 @@ function AlertRow({ alert, first, onOpen, onRemove }: { alert: PriceAlert; first
         hitSlop={6}
         style={({ pressed }) => ({ minWidth: 72, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
       >
-        <Text style={{ color: t.c.text2, fontWeight: '700', fontSize: t.f.sm }}>Remove</Text>
+        <Text style={{ color: t.c.text2, fontWeight: '600', fontSize: t.f.sm }}>Remove</Text>
       </Pressable>
     </View>
   );

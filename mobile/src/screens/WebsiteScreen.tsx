@@ -52,7 +52,7 @@ export function WebsiteScreen() {
       />
       {failed ? (
         <EmptyState
-          emoji="⚠️"
+          icon="alert"
           title="Couldn’t load the website"
           message={failed}
           actions={[

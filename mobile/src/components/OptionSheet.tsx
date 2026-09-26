@@ -1,5 +1,6 @@
 import React from 'react';
-import { FlatList, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Modal, Pressable, View, useWindowDimensions } from 'react-native';
+import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme';

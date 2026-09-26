@@ -2,7 +2,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, errorMessage, isAbort, isNotFound, isOffline, type Deal, type LookupResult } from '../api';
@@ -173,7 +174,7 @@ export function CheckPriceScreen() {
 
           {state.kind === 'error' ? (
             <EmptyState
-              emoji={isOffline(state.error) ? '📶' : '🔗'}
+              icon={isOffline(state.error) ? 'wifiOff' : 'link'}
               title={
                 isOffline(state.error)
                   ? 'You’re offline'
@@ -237,16 +238,16 @@ function LookupView({
 
       {nothing ? (
         <EmptyState
-          emoji="🔍"
+          icon="search"
           title="We haven’t tracked this product yet"
-          message="No deal channel has posted it so far. Check its full price history on BuyHatke below."
+          message="It hasn’t come up in our price checks yet. See its full price history on BuyHatke below."
         />
       ) : null}
 
       {history.length || stats?.points ? (
         <View style={{ gap: 10 }}>
           <SectionHead
-            title="📈 Our price history"
+            title="Our price history"
             sub={
               stats?.points
                 ? `${stats.points} ${plural(stats.points, 'price point')} · low ${money(stats.min)} · typical ${money(stats.median)} · high ${money(stats.max)}`
@@ -273,10 +274,10 @@ function LookupView({
       ) : null}
 
       {live.length ? (
-        <CardGrid title="🟢 Live deals for this product" sub={`${live.length} matching ${plural(live.length, 'deal')} right now`} deals={live} cols={cols} cardW={cardW} onOpen={onOpen} />
+        <CardGrid title="Live deals for this product" sub={`${live.length} matching ${plural(live.length, 'deal')} right now`} deals={live} cols={cols} cardW={cardW} onOpen={onOpen} />
       ) : null}
       {past.length ? (
-        <CardGrid title="🗂 From the deal archive" sub="Earlier deals — prices may have changed" deals={past} cols={cols} cardW={cardW} onOpen={onOpen} />
+        <CardGrid title="From the deal archive" sub="Earlier deals — prices may have changed" deals={past} cols={cols} cardW={cardW} onOpen={onOpen} />
       ) : null}
     </View>
   );

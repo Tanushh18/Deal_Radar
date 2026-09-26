@@ -112,7 +112,7 @@ export function SavedProvider({ children }: { children: React.ReactNode }) {
         const snap = Object.fromEntries(SNAPSHOT.map((k) => [k, deal[k] ?? null])) as unknown as SavedDeal;
         next[deal.id] = { ...snap, savedAt: Date.now() };
         on = true;
-        toast('Saved ♡ — find it under Saved.', 'ok', 2200);
+        toast('Saved — find it under Saved.', 'ok', 2200);
       }
       persist(next);
       return on;
@@ -168,7 +168,7 @@ export const HeartButton = memo(function HeartButton({
 }: {
   deal: Deal;
   size?: number;
-  variant?: 'overlay' | 'soft';
+  variant?: 'overlay' | 'soft' | 'plain';
   style?: StyleProp<ViewStyle>;
 }) {
   const t = useTheme();
@@ -187,13 +187,14 @@ export const HeartButton = memo(function HeartButton({
   };
 
   const overlay = variant === 'overlay';
+  const plain = variant === 'plain';
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={on ? 'Remove from saved' : 'Save deal'}
       accessibilityState={{ selected: on }}
       onPress={press}
-      hitSlop={overlay ? 6 : 0}
+      hitSlop={overlay || plain ? 6 : 0}
       style={({ pressed }) => [
         {
           width: overlay ? 34 : 44,
@@ -201,8 +202,8 @@ export const HeartButton = memo(function HeartButton({
           borderRadius: overlay ? 17 : t.r.sm,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: overlay ? (t.dark ? 'rgba(17,24,39,0.78)' : 'rgba(255,255,255,0.92)') : t.c.surface2,
-          borderWidth: 1,
+          backgroundColor: plain ? 'transparent' : overlay ? t.c.surface : t.c.surface2,
+          borderWidth: plain ? 0 : 1,
           borderColor: on ? t.c.hotSoft : t.c.border,
           opacity: pressed ? 0.8 : 1,
         },
@@ -210,7 +211,7 @@ export const HeartButton = memo(function HeartButton({
       ]}
     >
       <Animated.View style={{ transform: [{ scale }] }}>
-        <HeartGlyph on={on} size={size} color={t.c.text2} fill="#ef4444" />
+        <HeartGlyph on={on} size={size} color={t.c.text2} fill={t.c.hot} />
       </Animated.View>
     </Pressable>
   );

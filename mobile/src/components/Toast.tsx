@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Pressable, View } from 'react-native';
+import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme';
@@ -79,9 +80,9 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
           paddingHorizontal: 14,
           paddingVertical: 12,
           borderRadius: t.r.sm,
-          backgroundColor: t.dark ? t.c.surface3 : '#111827',
+          backgroundColor: t.dark ? t.c.surface3 : t.c.text,
           borderWidth: 1,
-          borderColor: t.dark ? t.c.borderStrong : '#111827',
+          borderColor: t.dark ? t.c.borderStrong : t.c.text,
           elevation: 8,
           shadowColor: '#000',
           shadowOpacity: 0.25,
@@ -90,7 +91,7 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
         }}
       >
         <Icon name={icon} size={17} color={color} />
-        <Text style={{ flex: 1, color: '#f3f6fb', fontSize: t.f.sm, lineHeight: 19, fontWeight: '600' }}>
+        <Text style={{ flex: 1, color: t.dark ? t.c.text : t.c.bg, fontSize: t.f.sm, lineHeight: 19, fontWeight: '600' }}>
           {item.message}
         </Text>
       </Pressable>

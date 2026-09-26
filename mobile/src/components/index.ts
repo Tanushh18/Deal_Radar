@@ -13,3 +13,4 @@ export * from './motion';
 export * from './offline';
 export * from './Rails';
 export * from './Saved';
+export * from './StoreLogo';

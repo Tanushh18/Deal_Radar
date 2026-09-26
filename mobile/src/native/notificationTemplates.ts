@@ -183,7 +183,7 @@ export const TEMPLATES: Template[] = [
   { id: 'cr2', title: 'Smart buy, literally 🤓', body: '{name}', categories: BOOKS },
 
   // ---- FOMO / social proof
-  { id: 'o01', title: 'Everyone’s posting this one 📣', body: '{name} is showing up across deal channels.', kinds: ['hot_deal'] },
+  { id: 'o01', title: 'Everyone’s posting this one 📣', body: '{name} is one of the most-grabbed deals right now.', kinds: ['hot_deal'] },
   { id: 'o02', title: 'Trending right now 📈', body: '{name}', kinds: ['hot_deal'] },
   { id: 'o03', title: 'Don’t say we didn’t tell you 🤷', body: '{name} for {price}.', needs: ['price'] },
   { id: 'o04', title: 'Your group chat would want to know 💬', body: '{name} — share it or keep it secret.' },

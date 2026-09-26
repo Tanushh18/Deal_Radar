@@ -1,17 +1,19 @@
 import { Image } from 'expo-image';
 import React, { memo } from 'react';
-import { Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { Text } from './Text';
 
 import { api } from '../api';
 import type { Deal } from '../api/types';
-import { makeStyles, useTheme } from '../theme';
+import { MONO_FAMILY, makeStyles, useTheme } from '../theme';
 import { Sparkline } from './Charts';
-import { dealBadge, highlightParts, money, storeName, timeAgo, type BadgeKind } from './format';
+import { dealBadge, displayTitle, highlightParts, money, storeName, timeAgo, type BadgeKind } from './format';
 import { Icon } from './Icon';
 import { useDealActions } from './DealActions';
 import { openExternal, useImageUri } from './native';
 import { recordDealSignal } from '../native/smartNotify';
 import { HeartButton } from './Saved';
+import { StoreLogo } from './StoreLogo';
 import { Skeleton } from './ui';
 
 // A small module-level cache: cards remount on scroll (FlatList recycling),
@@ -106,35 +108,41 @@ export function StatusBadge({ kind, label, small }: { kind: BadgeKind; label: st
   );
 }
 
-export function PriceRow({ deal, size = 'md' }: { deal: Pick<Deal, 'price' | 'mrp' | 'discount_pct'> & { flags?: string[] }; size?: 'sm' | 'md' | 'lg' }) {
+export function PriceRow({
+  deal,
+  size = 'md',
+  hideDiscount,
+}: {
+  deal: Pick<Deal, 'price' | 'mrp' | 'discount_pct'> & { flags?: string[] };
+  size?: 'sm' | 'md' | 'lg';
+  /** When the discount is already shown as a badge on the photo. */
+  hideDiscount?: boolean;
+}) {
   const t = useTheme();
-  const now = size === 'lg' ? 30 : size === 'md' ? 18.5 : 16;
+  const now = size === 'lg' ? 32 : size === 'md' ? 19 : 16.5;
+  const small = size === 'lg' ? 15 : 12.5;
   const flags = deal.flags ?? [];
   // A sale ("up to 87%") or a floor price ("from ₹509") must not read as one exact product price.
   const upto = flags.includes('upto_discount');
   const from = flags.includes('price_from') && deal.price != null;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 7, rowGap: 2 }}>
-      {deal.discount_pct >= 5 ? (
-        <View style={{ backgroundColor: t.c.hotSoft, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-          <Text maxFontSizeMultiplier={1.2} style={{ color: t.c.hot, fontWeight: '800', fontSize: size === 'lg' ? 14 : 12 }}>
-            {upto ? 'Up to ' : '-'}{deal.discount_pct}%
-          </Text>
-        </View>
-      ) : null}
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 7, rowGap: 2 }}>
       <Text
         maxFontSizeMultiplier={1.3}
-        style={{ color: t.c.text, fontSize: now, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }}
+        style={{ color: t.c.text, fontSize: now, fontWeight: size === 'lg' ? '800' : '700', letterSpacing: size === 'lg' ? -1 : -0.4, fontVariant: ['tabular-nums'] }}
       >
-        {from ? <Text style={{ fontSize: now * 0.62, fontWeight: '600', color: t.c.text2 }}>From </Text> : null}
+        {from ? <Text style={{ fontSize: now * 0.6, fontWeight: '500', color: t.c.text2 }}>From </Text> : null}
         {money(deal.price)}
       </Text>
       {deal.mrp ? (
-        <Text
-          maxFontSizeMultiplier={1.3}
-          style={{ color: t.c.text3, fontSize: size === 'lg' ? 15 : 12, textDecorationLine: 'line-through' }}
-        >
+        <Text maxFontSizeMultiplier={1.3} style={{ color: t.c.text3, fontSize: small, textDecorationLine: 'line-through' }}>
           {money(deal.mrp)}
+        </Text>
+      ) : null}
+      {deal.discount_pct >= 5 && !hideDiscount ? (
+        <Text maxFontSizeMultiplier={1.2} style={{ color: t.c.hot, fontWeight: '700', fontSize: small }}>
+          {upto ? 'Up to ' : ''}
+          {deal.discount_pct}% off
         </Text>
       ) : null}
     </View>
@@ -147,9 +155,9 @@ export function DealImage({ deal, style, emojiSize = 34 }: { deal: Pick<Deal, 'i
   const [failed, setFailed] = React.useState(false);
   return (
     <View style={[{ backgroundColor: t.c.mediaBg, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }, style]}>
-      <Text style={{ fontSize: emojiSize, position: 'absolute' }} accessibilityElementsHidden importantForAccessibility="no">
-        🛍️
-      </Text>
+      <View style={{ position: 'absolute' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Icon name="tag" size={Math.round(emojiSize * 0.8)} color={t.c.borderStrong} />
+      </View>
       {uri && !failed ? (
         <Image
           source={{ uri }}
@@ -172,15 +180,18 @@ type CardProps = {
   layout: 'grid' | 'list';
   query?: string;
   width?: number;
+  /** A short line under the price, e.g. how it moved since it was saved. */
+  note?: [string, 'good' | 'hot' | 'muted'] | null;
   onOpen: (deal: Deal) => void;
 };
 
-export const DealCard = memo(function DealCard({ deal, layout, query = '', width, onOpen }: CardProps) {
+export const DealCard = memo(function DealCard({ deal, layout, query = '', width, note, onOpen }: CardProps) {
   const s = useCardStyles();
   const t = useTheme();
   const { open: openActions } = useDealActions();
   const past = isPastDeal(deal);
   const badge = past ? null : dealBadge(deal);
+  const imageBadge = badge && badge.kind !== 'low' ? badge : null;
   const store = storeName(deal);
   const list = layout === 'list';
   const suspicious = (deal.flags ?? []).includes('suspicious_mrp');
@@ -190,7 +201,7 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
     deal.title,
     money(deal.price),
     deal.discount_pct >= 5 ? `${deal.discount_pct} percent off` : '',
-    badge?.label.replace(/^\S+\s/, '') ?? '',
+    badge?.label ?? '',
     store,
   ]
     .filter(Boolean)
@@ -215,55 +226,57 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
       >
         <View style={list ? s.mediaList : s.mediaGrid}>
           <DealImage deal={deal} style={{ flex: 1 }} emojiSize={list ? 26 : 34} />
-          {badge || past ? (
+          {imageBadge || past ? (
             <View style={s.badges}>
-              {past ? <PastBadge small={list} /> : badge ? <StatusBadge kind={badge.kind} label={badge.label} small={list} /> : null}
+              {past ? <PastBadge small={list} /> : imageBadge ? <StatusBadge kind={imageBadge.kind} label={imageBadge.label} small={list} /> : null}
             </View>
           ) : null}
           {!list ? <HeartButton deal={deal} size={17} style={s.heart} /> : null}
-          {store && !list ? (
-            <View style={s.storeTag}>
-              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={s.storeText}>
-                {store}
-              </Text>
-            </View>
-          ) : null}
         </View>
         <View style={list ? s.bodyList : s.body}>
-          {list && store ? (
-            <Text style={s.storeInline} maxFontSizeMultiplier={1.2} numberOfLines={1}>
-              {store.toUpperCase()}
+          <View style={s.metaRow}>
+            {store ? <StoreLogo store={deal.store} size={16} /> : null}
+            <Text style={[s.meta, { flexShrink: 1 }]} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+              {store ? <Text style={s.metaStore}>{store.toUpperCase()}</Text> : null}
+              {store && deal.posted_at ? '  ·  ' : ''}
+              {deal.posted_at ? timeAgo(deal.posted_at).toUpperCase() : ''}
             </Text>
-          ) : null}
+          </View>
           <View style={list ? s.titleRowList : undefined}>
-            <Highlight text={deal.title} query={query} numberOfLines={2} style={[s.title, list && { flex: 1 }]} />
-            {list ? <HeartButton deal={deal} size={17} style={s.heartList} /> : null}
+            <Highlight text={displayTitle(deal.title)} query={query} numberOfLines={2} style={[s.title, list && s.titleList]} />
+            {list ? <HeartButton deal={deal} size={19} variant="plain" style={s.heartList} /> : null}
           </View>
           <PriceRow deal={deal} size={list ? 'sm' : 'md'} />
-          {deal.saving ? (
-            <View style={s.saveRow}>
-              <Icon name="down" size={12} color={t.c.good} strokeWidth={2.4} />
-              <Text maxFontSizeMultiplier={1.3} style={s.save}>
-                Save {money(deal.saving)}
-              </Text>
-            </View>
-          ) : null}
-          {deal.coupon ? (
-            <View style={s.coupon}>
-              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={s.couponText}>
-                🏷 {deal.coupon}
-              </Text>
-            </View>
-          ) : null}
-          <View style={s.metaRow}>
-            <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[s.meta, { flex: 1 }]}>
-              {timeAgo(deal.posted_at)}
-              {deal.repost_count > 1 ? (
-                <Text style={s.reposts}>{`  ·  Posted ${deal.repost_count}×`}</Text>
-              ) : null}
+          {note ? (
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.3}
+              style={{ color: note[1] === 'good' ? t.c.good : note[1] === 'hot' ? t.c.hot : t.c.text3, fontSize: 12, fontWeight: '600' }}
+            >
+              {note[0]}
             </Text>
-            {sparkline.length >= 2 ? <Sparkline points={sparkline} /> : null}
-          </View>
+          ) : null}
+          {deal.is_lowest && !past || deal.coupon || sparkline.length >= 2 ? (
+            <View style={s.tagRow}>
+              {deal.is_lowest && !past ? (
+                <View style={s.lowTag}>
+                  <Icon name="down" size={11} color={t.c.good} strokeWidth={2.6} />
+                  <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={s.lowText}>
+                    Lowest ever
+                  </Text>
+                </View>
+              ) : null}
+              {deal.coupon ? (
+                <View style={s.coupon}>
+                  <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={s.couponText}>
+                    {deal.coupon}
+                  </Text>
+                </View>
+              ) : null}
+              <View style={{ flex: 1 }} />
+              {sparkline.length >= 2 ? <Sparkline points={sparkline} /> : null}
+            </View>
+          ) : null}
           {suspicious ? (
             <View style={s.warnRow}>
               <Icon name="alert" size={11} color={t.c.warn} />
@@ -271,23 +284,6 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
                 {deal.ai_mrp_reason || 'Check the MRP'}
               </Text>
             </View>
-          ) : null}
-          {list && deal.url ? (
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={`Buy now on ${store || 'store'}`}
-              onPress={() => {
-                void recordDealSignal('buy', deal);
-                openExternal(deal.url);
-              }}
-              hitSlop={8}
-              style={({ pressed }) => [s.buyInline, { opacity: pressed ? 0.8 : 1 }]}
-            >
-              <Text maxFontSizeMultiplier={1.3} style={s.buyInlineText}>
-                Buy now
-              </Text>
-              <Icon name="external" size={12} color={t.c.accent} />
-            </Pressable>
           ) : null}
         </View>
       </Pressable>
@@ -318,46 +314,50 @@ const useCardStyles = makeStyles((t) => ({
     borderColor: t.c.border,
     overflow: 'hidden',
   },
-  cardList: { flexDirection: 'row' },
+  cardList: {
+    flexDirection: 'row',
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: t.c.borderStrong,
+  },
   pressGrid: { flex: 1 },
-  pressList: { flex: 1, flexDirection: 'row' },
-  mediaGrid: { aspectRatio: 1, width: '100%' },
-  mediaList: { width: 112, minHeight: 124 },
-  badges: { position: 'absolute', top: 7, left: 7, right: 46 },
+  pressList: { flex: 1, flexDirection: 'row', paddingVertical: 14, paddingLeft: 16, paddingRight: 8, gap: 14 },
+  mediaGrid: { aspectRatio: 1, width: '100%', borderBottomWidth: 1, borderBottomColor: t.c.border },
+  mediaList: { width: 92, height: 92, borderRadius: t.r.sm, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: t.c.borderStrong },
+  badges: { position: 'absolute', top: 6, left: 6, right: 40 },
   heart: { position: 'absolute', top: 6, right: 6 },
   titleRowList: { flexDirection: 'row', alignItems: 'flex-start', gap: 4 },
-  heartList: { marginTop: -4, marginRight: -4 },
-  storeTag: {
-    position: 'absolute',
-    bottom: 7,
-    left: 7,
-    maxWidth: '80%',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: t.r.full,
-    backgroundColor: t.dark ? 'rgba(17,24,39,0.88)' : 'rgba(255,255,255,0.92)',
-    borderWidth: 1,
-    borderColor: t.c.border,
-  },
-  storeText: { color: t.c.text, fontSize: 10.5, fontWeight: '700' },
-  storeInline: { color: t.c.text3, fontSize: 10, fontWeight: '800', letterSpacing: 0.6 },
-  body: { padding: 10, paddingBottom: 8, gap: 5, flex: 1 },
-  bodyList: { flex: 1, padding: 11, gap: 4, justifyContent: 'center' },
-  title: { color: t.c.text, fontSize: 13, fontWeight: '600', lineHeight: 18, minHeight: 36 },
-  saveRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  save: { color: t.c.good, fontSize: 11.5, fontWeight: '700' },
-  coupon: {
-    alignSelf: 'flex-start',
-    backgroundColor: t.c.warnSoft,
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    maxWidth: '100%',
-  },
-  couponText: { color: t.c.warn, fontSize: 11, fontWeight: '700', fontFamily: 'monospace' },
-  meta: { color: t.c.text3, fontSize: 11 },
+  heartList: { marginTop: -10, width: 40, height: 40 },
+  titleList: { flex: 1, minHeight: 0, fontSize: 15, lineHeight: 20 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  reposts: { color: t.c.text2, fontWeight: '600' },
+  meta: { color: t.c.text3, fontSize: 10.5, fontFamily: MONO_FAMILY, letterSpacing: 0.3 },
+  metaStore: { color: t.c.text2, fontFamily: MONO_FAMILY, fontWeight: '600' },
+  body: { padding: 10, paddingBottom: 8, gap: 5, flex: 1 },
+  bodyList: { flex: 1, gap: 4 },
+  title: { color: t.c.text, fontSize: 14, fontWeight: '500', lineHeight: 19, minHeight: 38 },
+  tagRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  lowTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 22,
+    paddingHorizontal: 7,
+    borderRadius: 6,
+    backgroundColor: t.c.goodSoft,
+  },
+  lowText: { color: t.c.good, fontSize: 11, fontWeight: '600' },
+  coupon: {
+    height: 22,
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: t.c.borderStrong,
+    flexShrink: 1,
+  },
+  couponText: { color: t.c.text2, fontSize: 10.5, fontFamily: MONO_FAMILY, fontWeight: '500' },
   warnRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   warnText: { color: t.c.warn, fontSize: 10.5, fontWeight: '600', flexShrink: 1 },
   actions: { paddingHorizontal: 10, paddingBottom: 10 },
@@ -370,19 +370,20 @@ const useCardStyles = makeStyles((t) => ({
     justifyContent: 'center',
     gap: 6,
   },
-  buyText: { color: t.c.accentText, fontWeight: '700', fontSize: 13 },
+  buyText: { color: t.c.accentText, fontWeight: '600', fontSize: 13 },
   buyInline: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    marginTop: 2,
-    paddingHorizontal: 10,
+    marginTop: 4,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: t.r.full,
-    backgroundColor: t.c.accentSoft,
+    borderWidth: 1,
+    borderColor: t.c.borderStrong,
   },
-  buyInlineText: { color: t.c.accent, fontWeight: '700', fontSize: 12 },
+  buyInlineText: { color: t.c.text, fontWeight: '600', fontSize: 12 },
 }));
 
 export const RailCard = memo(function RailCard({
@@ -410,31 +411,36 @@ export const RailCard = memo(function RailCard({
       onLongPress={() => openActions(deal)}
       delayLongPress={350}
       style={({ pressed }) => ({
-        width: 156,
-        borderRadius: t.r.md,
-        borderWidth: 1,
-        borderColor: t.c.border,
-        backgroundColor: t.c.surface,
-        overflow: 'hidden',
+        width: 150,
         transform: [{ scale: pressed ? 0.97 : 1 }],
       })}
     >
-      <View>
-        <DealImage deal={deal} style={{ height: 124 }} emojiSize={28} />
+      <View style={{ borderRadius: t.r.md, borderWidth: 1, borderColor: t.c.border, overflow: 'hidden' }}>
+        <DealImage deal={deal} style={{ height: 132 }} emojiSize={28} />
         {isPastDeal(deal) ? (
           <View style={{ position: 'absolute', top: 6, left: 6 }}>
             <PastBadge small />
           </View>
+        ) : deal.discount_pct >= 5 ? (
+          <View style={{ position: 'absolute', top: 7, left: 7, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, backgroundColor: t.c.hot }}>
+            <Text maxFontSizeMultiplier={1.1} style={{ color: '#ffffff', fontSize: 10.5, fontWeight: '700', letterSpacing: 0.2 }}>
+              {(deal.flags ?? []).includes('upto_discount') ? 'UP TO ' : ''}
+              {deal.discount_pct}% OFF
+            </Text>
+          </View>
         ) : null}
       </View>
-      <View style={{ padding: 9, gap: 4 }}>
-        <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={{ color: t.c.text, fontSize: 12.5, fontWeight: '600', lineHeight: 17, minHeight: 34 }}>
-          {deal.title}
+      <View style={{ paddingTop: 8, paddingHorizontal: 2, gap: 3 }}>
+        <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={{ color: t.c.text, fontSize: 13, fontWeight: '500', lineHeight: 17, minHeight: 34 }}>
+          {displayTitle(deal.title)}
         </Text>
-        <PriceRow deal={deal} size="sm" />
-        <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ color: noteColor, fontSize: 11, fontWeight: '700' }}>
-          {note}
-        </Text>
+        <PriceRow deal={deal} size="sm" hideDiscount={!isPastDeal(deal)} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <StoreLogo store={deal.store} size={16} />
+          <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ flexShrink: 1, color: noteColor, fontSize: 11.5, fontWeight: '600' }}>
+            {note}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -470,9 +476,9 @@ export function DealCardSkeleton({ layout, width }: { layout: 'grid' | 'list'; w
 export function RailSkeleton() {
   const t = useTheme();
   return (
-    <View style={{ width: 156, borderRadius: t.r.md, borderWidth: 1, borderColor: t.c.border, overflow: 'hidden', backgroundColor: t.c.surface }}>
-      <Skeleton style={{ height: 124, borderRadius: 0 }} />
-      <View style={{ padding: 9, gap: 7 }}>
+    <View style={{ width: 150 }}>
+      <Skeleton style={{ height: 132, borderRadius: t.r.md }} />
+      <View style={{ paddingTop: 8, gap: 7 }}>
         <Skeleton style={{ height: 10, width: '90%' }} />
         <Skeleton style={{ height: 16, width: '55%' }} />
       </View>

@@ -20,12 +20,14 @@ import { useShareIntentRouting } from './src/native/shareIntent';
 import { checkForUpdateOnLaunch, stopImmediateUpdates } from './src/native/updates';
 import { AppProviders } from './src/components/AppProviders';
 import { TelegramInvite } from './src/components/TelegramInvite';
-import { useTheme } from './src/theme';
+import { loadAppFonts, useTheme } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SystemUI.setBackgroundColorAsync(COLORS.bg).catch(() => {});
 configureNotificationHandler();
 checkForUpdateOnLaunch();
+// Starts now so the fonts are usually ready before the first screen paints.
+const fontsLoaded = loadAppFonts();
 
 function useNavTheme(): NavTheme {
   const t = useTheme();
@@ -83,6 +85,10 @@ function Root() {
   const navTheme = useNavTheme();
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [navKey, setNavKey] = useState(0);
+  const [fontsSettled, setFontsSettled] = useState(false);
+  useEffect(() => {
+    fontsLoaded.then(() => setFontsSettled(true));
+  }, []);
   const lastBack = useRef(0);
 
   const boot = useCallback(async () => {
@@ -117,8 +123,8 @@ function Root() {
   }, [t.c.bg]);
 
   useEffect(() => {
-    if (phase.kind !== 'loading') SplashScreen.hideAsync().catch(() => {});
-  }, [phase.kind]);
+    if (phase.kind !== 'loading' && fontsSettled) SplashScreen.hideAsync().catch(() => {});
+  }, [phase.kind, fontsSettled]);
 
   useEffect(() => startNotificationRouting(), []);
   useShareIntentRouting();
@@ -151,7 +157,9 @@ function Root() {
   }, []);
 
   let body: React.ReactNode = null;
-  if (phase.kind === 'connecting') body = <ConnectingView />;
+  // Nothing renders text until the fonts have loaded (or definitely failed), so no screen mixes typefaces.
+  if (!fontsSettled) body = null;
+  else if (phase.kind === 'connecting') body = <ConnectingView />;
   else if (phase.kind === 'offline') body = <OfflineView onRetry={boot} />;
   else if (phase.kind === 'ready')
     body = (

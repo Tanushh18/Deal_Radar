@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { GlassTabBarBackground } from '../components';
-import { useTheme } from '../theme';
+import { fontFor, useTheme } from '../theme';
 import * as S from './screens';
 import SetupScreen from './SetupScreen';
 import type { MainTabParamList, RootStackParamList } from './types';
@@ -38,15 +38,6 @@ function AlertsIcon({ color, size }: IconProps) {
     </Svg>
   );
 }
-function ChannelsIcon({ color, size }: IconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={9} {...stroke(color)} />
-      <Circle cx={12} cy={12} r={5} {...stroke(color)} />
-      <Circle cx={12} cy={12} r={1.5} fill={color} />
-    </Svg>
-  );
-}
 function SavedIcon({ color, size }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -72,7 +63,6 @@ function aboveTabBar<P extends object>(Screen: ComponentType<P>): ComponentType<
 const DealsTab = aboveTabBar(S.DealsScreen);
 const SavedTab = aboveTabBar(S.SavedScreen);
 const AlertsTab = aboveTabBar(S.AlertsScreen);
-const ChannelsTab = aboveTabBar(S.ChannelsScreen);
 const AccountTab = aboveTabBar(S.AccountScreen);
 
 function AccountIcon({ color, size }: IconProps) {
@@ -91,8 +81,9 @@ function MainTabs() {
       backBehavior="firstRoute"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: c.accent,
+        tabBarActiveTintColor: c.text,
         tabBarInactiveTintColor: c.text3,
+        tabBarLabelStyle: { fontFamily: fontFor('600'), fontWeight: fontFor('600') ? 'normal' : '600', fontSize: 11 },
         tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0 },
         tabBarBackground: () => <GlassTabBarBackground />,
         sceneStyle: { backgroundColor: c.bg },
@@ -100,9 +91,9 @@ function MainTabs() {
     >
       <Tabs.Screen name="Deals" component={DealsTab} options={{ tabBarIcon: DealsIcon }} />
       <Tabs.Screen name="Saved" component={SavedTab} options={{ tabBarIcon: SavedIcon }} />
-      {/* Alerts and channel picking need a Telegram account; public-mode guests browse only. */}
+      {/* Alerts need a Telegram account; public-mode guests browse only. Deal sources are
+          never shown in the app — they're managed from the web admin panel. */}
       {!isPublicMode() && <Tabs.Screen name="Alerts" component={AlertsTab} options={{ tabBarIcon: AlertsIcon }} />}
-      {!isPublicMode() && <Tabs.Screen name="Channels" component={ChannelsTab} options={{ tabBarIcon: ChannelsIcon }} />}
       <Tabs.Screen name="Account" component={AccountTab} options={{ tabBarIcon: AccountIcon }} />
     </Tabs.Navigator>
   );

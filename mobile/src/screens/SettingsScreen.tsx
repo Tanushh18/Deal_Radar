@@ -1,7 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import React, { useRef } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { Text } from '../components/Text';
 
 import { Card, ScreenHeader } from '../components';
 import { useTheme } from '../theme';
@@ -51,7 +52,7 @@ export function SettingsScreen() {
           </Text>
         </Card>
         <Text style={{ color: t.c.text3, fontSize: t.f.xs, textAlign: 'center' }}>
-          DealRadar aggregates deals from Telegram channels into one searchable catalog.
+          DealRadar checks prices across Indian stores around the clock and surfaces the deals that are actually worth it.
         </Text>
       </ScrollView>
     </View>

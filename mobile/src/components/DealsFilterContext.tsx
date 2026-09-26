@@ -70,7 +70,7 @@ export function activeFilterChips(f: DealFilters): { key: FilterKey; label: stri
   if (f.min_discount) chips.push({ key: 'min_discount', label: `${f.min_discount}%+ off` });
   if (f.has_coupon) chips.push({ key: 'has_coupon', label: 'Has coupon' });
   if (f.only_lowest) chips.push({ key: 'only_lowest', label: 'All-time lows' });
-  if (f.all_channels) chips.push({ key: 'all_channels', label: 'All channels' });
+  if (f.all_channels) chips.push({ key: 'all_channels', label: 'All sources' });
   return chips;
 }
 

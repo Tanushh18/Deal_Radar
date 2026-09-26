@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import { Text } from '../components/Text';
 import { Image } from 'expo-image';
 
 import { makeStyles, useTheme } from '../theme';

@@ -5,8 +5,6 @@ import {
   Animated,
   Pressable,
   StyleSheet,
-  Text,
-  TextInput,
   View,
   type PressableProps,
   type StyleProp,
@@ -14,9 +12,10 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import { Text, TextInput } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MIN_TOUCH, makeStyles, useTheme } from '../theme';
+import { MIN_TOUCH, MONO_FAMILY, makeStyles, useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 /* ---------------- Text ---------------- */
@@ -39,19 +38,19 @@ export function Txt({ variant = 'body', color, weight, style, ...rest }: TxtProp
 }
 
 const useTextStyles = makeStyles((t) => ({
-  title: { fontSize: t.f.xxl, fontWeight: '800', color: t.c.text, letterSpacing: -0.6 },
-  h2: { fontSize: t.f.xl, fontWeight: '700', color: t.c.text, letterSpacing: -0.4 },
+  title: { fontSize: 28, fontWeight: '800', color: t.c.text, letterSpacing: -0.9 },
+  h2: { fontSize: t.f.xl, fontWeight: '700', color: t.c.text, letterSpacing: -0.5 },
   h3: { fontSize: t.f.base, fontWeight: '700', color: t.c.text, letterSpacing: -0.2 },
   body: { fontSize: t.f.md, color: t.c.text, lineHeight: 21 },
   muted: { fontSize: t.f.md, color: t.c.text2, lineHeight: 21 },
   small: { fontSize: t.f.sm, color: t.c.text2, lineHeight: 18 },
   fine: { fontSize: t.f.xs, color: t.c.text3, lineHeight: 17 },
   label: {
-    fontSize: t.f.xs,
+    fontSize: 11,
     color: t.c.text3,
-    fontWeight: '700',
+    fontFamily: MONO_FAMILY,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
 }));
 
@@ -83,7 +82,7 @@ export function Button({
   const t = useTheme();
   const bg = {
     primary: t.c.accent,
-    soft: t.c.surface2,
+    soft: t.c.surface,
     ghost: 'transparent',
     danger: t.c.hotSoft,
   }[variant];
@@ -107,8 +106,8 @@ export function Button({
           paddingHorizontal: size === 'md' ? 18 : 14,
           borderRadius: t.r.sm,
           backgroundColor: bg,
-          borderWidth: variant === 'soft' ? StyleSheet.hairlineWidth * 2 : 0,
-          borderColor: t.c.border,
+          borderWidth: variant === 'soft' ? 1 : 0,
+          borderColor: t.c.borderStrong,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
@@ -130,7 +129,7 @@ export function Button({
       <Text
         maxFontSizeMultiplier={1.4}
         numberOfLines={1}
-        style={{ color: fg, fontWeight: '700', fontSize: size === 'md' ? t.f.md : t.f.sm, flexShrink: 1 }}
+        style={{ color: fg, fontWeight: '600', fontSize: size === 'md' ? t.f.base : t.f.sm, flexShrink: 1 }}
       >
         {title}
       </Text>
@@ -177,9 +176,9 @@ export function IconButton({
           borderRadius: t.r.sm,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: variant === 'soft' ? t.c.surface2 : 'transparent',
+          backgroundColor: variant === 'soft' ? t.c.surface : 'transparent',
           borderWidth: variant === 'soft' ? 1 : 0,
-          borderColor: t.c.border,
+          borderColor: t.c.borderStrong,
           opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
         },
         style,
@@ -196,12 +195,12 @@ export function IconButton({
             height: 17,
             paddingHorizontal: 4,
             borderRadius: 9,
-            backgroundColor: t.c.accent,
+            backgroundColor: t.c.hot,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text maxFontSizeMultiplier={1.1} style={{ color: t.c.accentText, fontSize: 10.5, fontWeight: '800' }}>
+          <Text maxFontSizeMultiplier={1.1} style={{ color: '#ffffff', fontSize: 10.5, fontWeight: '700' }}>
             {badge > 99 ? '99+' : badge}
           </Text>
         </View>
@@ -230,9 +229,9 @@ export function Chip({
   accessibilityLabel?: string;
 }) {
   const t = useTheme();
-  const bg = removable ? t.c.accentSoft : active ? t.c.accent : t.c.surface;
-  const border = removable ? t.c.accentLine : active ? t.c.accent : t.c.border;
-  const fg = removable ? t.c.accent : active ? t.c.accentText : t.c.text2;
+  const bg = removable ? t.c.surface : active ? t.c.accent : 'transparent';
+  const border = removable ? t.c.text : active ? t.c.accent : t.c.borderStrong;
+  const fg = removable ? t.c.text : active ? t.c.accentText : t.c.text2;
   return (
     <Pressable
       accessibilityRole="button"
@@ -242,7 +241,7 @@ export function Chip({
       hitSlop={{ top: 4, bottom: 4 }}
       style={({ pressed }) => ({
         minHeight: 36,
-        paddingHorizontal: 13,
+        paddingHorizontal: 14,
         borderRadius: t.r.full,
         borderWidth: 1,
         borderColor: border,
@@ -254,11 +253,11 @@ export function Chip({
       })}
     >
       {leading ? <Text maxFontSizeMultiplier={1.3}>{leading}</Text> : null}
-      <Text maxFontSizeMultiplier={1.4} numberOfLines={1} style={{ color: fg, fontSize: t.f.sm, fontWeight: '600' }}>
+      <Text maxFontSizeMultiplier={1.4} numberOfLines={1} style={{ color: fg, fontSize: t.f.sm, fontWeight: active ? '600' : '500' }}>
         {label}
       </Text>
       {count != null ? (
-        <Text maxFontSizeMultiplier={1.3} style={{ color: active ? t.c.accentText : t.c.text3, fontSize: t.f.xs, fontWeight: '700' }}>
+        <Text maxFontSizeMultiplier={1.3} style={{ color: active ? t.c.accentText : t.c.text3, fontSize: 11, fontFamily: MONO_FAMILY, opacity: active ? 0.75 : 1 }}>
           {count.toLocaleString('en-IN')}
         </Text>
       ) : null}
@@ -289,8 +288,6 @@ export function Segmented<T extends string | number>({
         gap: 3,
         borderRadius: t.r.sm,
         backgroundColor: t.c.surface2,
-        borderWidth: 1,
-        borderColor: t.c.border,
       }}
     >
       {options.map((o) => {
@@ -312,7 +309,7 @@ export function Segmented<T extends string | number>({
               gap: 6,
               backgroundColor: on ? t.c.surface : 'transparent',
               borderWidth: on ? 1 : 0,
-              borderColor: t.c.borderStrong,
+              borderColor: t.c.border,
             }}
           >
             {o.icon ? <Icon name={o.icon} size={15} color={on ? t.c.text : t.c.text2} /> : null}
@@ -433,8 +430,8 @@ export function Field({
             paddingVertical: 10,
             borderRadius: t.r.sm,
             borderWidth: 1,
-            borderColor: focused ? t.c.accent : t.c.border,
-            backgroundColor: t.c.surface2,
+            borderColor: focused ? t.c.text : t.c.borderStrong,
+            backgroundColor: t.c.surface,
             color: t.c.text,
             fontSize: t.f.base,
           },
@@ -461,11 +458,11 @@ export function SectionHead({
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 10 }, style]}>
       <View style={{ flex: 1 }}>
-        <Text accessibilityRole="header" maxFontSizeMultiplier={1.4} style={{ color: t.c.text, fontSize: t.f.base, fontWeight: '700' }}>
+        <Text accessibilityRole="header" maxFontSizeMultiplier={1.4} style={{ color: t.c.text, fontSize: t.f.lg, fontWeight: '700', letterSpacing: -0.3 }}>
           {title}
         </Text>
         {sub ? (
-          <Text maxFontSizeMultiplier={1.4} style={{ color: t.c.text3, fontSize: t.f.xs, marginTop: 2 }}>
+          <Text maxFontSizeMultiplier={1.4} style={{ color: t.c.text3, fontSize: t.f.sm, marginTop: 1 }}>
             {sub}
           </Text>
         ) : null}
@@ -478,7 +475,7 @@ export function SectionHead({
 export function KeyValue({ rows }: { rows: [string, React.ReactNode][] }) {
   const t = useTheme();
   return (
-    <View style={{ borderRadius: t.r.sm, borderWidth: 1, borderColor: t.c.border, overflow: 'hidden' }}>
+    <View style={{ borderRadius: t.r.md, borderWidth: 1, borderColor: t.c.border, overflow: 'hidden', backgroundColor: t.c.surface }}>
       {rows.map(([k, v], i) => (
         <View
           key={k}
@@ -486,11 +483,12 @@ export function KeyValue({ rows }: { rows: [string, React.ReactNode][] }) {
             flexDirection: 'row',
             gap: 12,
             paddingHorizontal: 14,
-            paddingVertical: 11,
-            backgroundColor: i % 2 ? t.c.surface : t.c.surface2,
+            paddingVertical: 12,
+            borderTopWidth: i ? StyleSheet.hairlineWidth : 0,
+            borderTopColor: t.c.borderStrong,
           }}
         >
-          <Text maxFontSizeMultiplier={1.4} style={{ width: 104, color: t.c.text3, fontSize: t.f.sm, fontWeight: '600' }}>
+          <Text maxFontSizeMultiplier={1.4} style={{ width: 104, color: t.c.text3, fontSize: t.f.sm }}>
             {k}
           </Text>
           <View style={{ flex: 1 }}>
@@ -511,13 +509,13 @@ export function KeyValue({ rows }: { rows: [string, React.ReactNode][] }) {
 /* ---------------- States ---------------- */
 
 export function EmptyState({
-  emoji,
+  icon,
   title,
   message,
   detail,
   actions,
 }: {
-  emoji: string;
+  icon: IconName;
   title: string;
   message?: string;
   detail?: string;
@@ -526,9 +524,13 @@ export function EmptyState({
   const t = useTheme();
   return (
     <View style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24, gap: 8 }}>
-      <Text style={{ fontSize: 40 }} accessibilityElementsHidden importantForAccessibility="no">
-        {emoji}
-      </Text>
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: t.c.surface2, borderWidth: 1, borderColor: t.c.border, marginBottom: 6 }}
+      >
+        <Icon name={icon} size={24} color={t.c.text2} />
+      </View>
       <Text accessibilityRole="header" style={{ color: t.c.text, fontSize: t.f.lg, fontWeight: '700', textAlign: 'center' }}>
         {title}
       </Text>
@@ -621,9 +623,9 @@ export function ScreenHeader({
         style={{
           flex: 1,
           color: t.c.text,
-          fontSize: large ? t.f.xxl : t.f.lg,
+          fontSize: large ? 28 : t.f.lg,
           fontWeight: large ? '800' : '700',
-          letterSpacing: large ? -0.6 : -0.2,
+          letterSpacing: large ? -0.9 : -0.3,
         }}
       >
         {title}

@@ -38,9 +38,9 @@ export const isFresh = (deal: Deal): boolean =>
 export type BadgeKind = 'low' | 'hot' | 'new';
 
 export function dealBadge(deal: Deal): { kind: BadgeKind; label: string } | null {
-  if (deal.is_lowest) return { kind: 'low', label: '🟢 LOWEST EVER' };
-  if (deal.score >= 80) return { kind: 'hot', label: '🏆 GREAT DEAL' };
-  if (isFresh(deal)) return { kind: 'new', label: '🆕 NEW' };
+  if (deal.is_lowest) return { kind: 'low', label: 'Lowest ever' };
+  if (deal.score >= 80) return { kind: 'hot', label: 'Great deal' };
+  if (isFresh(deal)) return { kind: 'new', label: 'New' };
   return null;
 }
 
@@ -55,12 +55,11 @@ export function dealReasons(deal: DealDetail): string[] {
   const history = deal.price_history;
   const out: string[] = [];
   if (deal.is_lowest) out.push('Lowest price we have recorded for this product');
-  if (deal.discount_pct >= 10) out.push(`${deal.discount_pct}% below the quoted MRP`);
+  if (deal.discount_pct >= 10) out.push(`${deal.discount_pct}% below the listed MRP`);
   if (history?.median && deal.price && history.points >= 3 && history.median > deal.price) {
     const below = Math.round((1 - deal.price / history.median) * 100);
     if (below >= 5) out.push(`${below}% below its typical price (${history.points} price points)`);
   }
-  if (deal.repost_count > 1) out.push(`Posted in ${deal.repost_count} of the channels you track`);
   return out;
 }
 
@@ -81,7 +80,25 @@ export const CATEGORY_ICON: Record<string, string> = {
   Other: '🎁',
 };
 
-export const categoryIcon = (name: string): string => CATEGORY_ICON[name] ?? '🏷️';
+// Category emoji are no longer shown anywhere; kept as a function so callers stay simple.
+export const categoryIcon = (_name: string): string => '';
+
+/**
+ * A deal title as a shopper would write it: drops the "@279" / "@ 11122 with
+ * HDFC Flat cc" price tails that deal posts append (the price is shown anyway).
+ * Display only — the stored title is untouched.
+ */
+export function displayTitle(title: string): string {
+  const cleaned = (title || '')
+    // "Amazon | …" / "Flipkart: …" — the store is already shown on the card.
+    .replace(/^\s*(?:amazon|flipkart|myntra|ajio|meesho|shopsy|nykaa|tata\s*cliq|croma)\s*[|:\-–]\s*/i, '')
+    // "71% Off - …" — the discount is already shown too.
+    .replace(/^\s*(?:flat\s*)?\d{1,2}\s*%\s*off\s*[|:\-–]\s*/i, '')
+    .replace(/\s*@\s*(?:rs\.?|₹|inr)?\s*[\d,]+(?:\.\d+)?\b.*$/i, '')
+    .replace(/\s*[-–|:]\s*$/, '')
+    .trim();
+  return cleaned.length >= 6 ? cleaned : (title || '').trim();
+}
 
 /** Splits `text` into plain / matched runs for every query token of 2+ chars. */
 export function highlightParts(text: string, query: string): { text: string; match: boolean }[] {
