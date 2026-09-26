@@ -49,7 +49,9 @@ def main() -> int:
         r = c.post("/api/devices/register", json={"device_id": dev, "platform": "android", "digest": True, "digest_hour": 19})
         check("register", r.status_code == 200 and r.json()["device"]["digest"] is True)
         check("bad device id rejected", c.get("/api/devices/settings", params={"device_id": "x"}).status_code == 400)
-        check("bad push token rejected", c.post("/api/devices/register", json={"device_id": dev, "push_token": "nope"}).status_code == 400)
+        r = c.post("/api/devices/register", json={"device_id": dev, "push_token": "nope"})
+        check("bad push token ignored (device still registers, token not stored)",
+              r.status_code == 200 and not db.query_one("SELECT push_token FROM devices WHERE device_id = ?", (dev,))["push_token"])
         r = c.post("/api/devices/follows", json={"device_id": dev, "kind": "brand", "value": "boAt", "min_discount": 30})
         check("follow brand", r.status_code == 200)
         check("follow kind validated", c.post("/api/devices/follows", json={"device_id": dev, "kind": "x", "value": "y"}).status_code == 400)
@@ -131,8 +133,8 @@ def main() -> int:
 
         print("\n=== BROADCAST DELIVERY REPORT ===")
         token_ok, token_bad = "fcmOK:APA91b" + "a" * 140, "fcmBD:APA91b" + "b" * 140
-        c.post("/api/devices/register", json={"device_id": "app_tokenholder000001", "push_token": token_ok})
-        c.post("/api/devices/register", json={"device_id": "app_tokenholder000002", "push_token": token_bad})
+        c.post("/api/devices/register", json={"device_id": "app_tokenholder000001", "platform": "android", "push_token": token_ok})
+        c.post("/api/devices/register", json={"device_id": "app_tokenholder000002", "platform": "android", "push_token": token_bad})
 
         async def fake_fcm_post(client, url, access, message):
             if message["message"]["token"] == token_ok:
@@ -201,7 +203,8 @@ def main() -> int:
                   asyncio.run(hot_push.send_best()).get("why", "").startswith("too soon")
                   or hot_push.is_quiet())
             r = c.get("/api/admin/reader/push-status", headers=ADMIN).json()
-            check("admin status lists what went out", len(r["recent"]) == 2 and r["devices_with_push"] == 2, str(r))
+            check("admin status lists what went out and who can get push",
+                  len(r["recent"]) == 2 and r["reachable"] == 2 and r["active_devices"] >= 2, str(r))
             r = c.post("/api/admin/reader/push-now", headers=ADMIN).json()
             check("admin push-now endpoint works", r.get("status") in ("sent", "skipped"), str(r))
 

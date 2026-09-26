@@ -285,8 +285,7 @@ def schedule_cycle(fresh_ids: Iterable[str], window_seconds: float) -> List[Dict
 
 def status() -> Dict[str, Any]:
     """For the admin panel: who can be reached, what's queued, what went out."""
-    devices_total = db.query_one("SELECT COUNT(*) AS c FROM devices")["c"]
-    with_token = db.query_one("SELECT COUNT(*) AS c FROM devices WHERE COALESCE(push_token, '') != ''")["c"]
+    from . import devices
     recent = [dict(r) for r in db.query(
         "SELECT deal_id, title, women, tokens, accepted, sent_at FROM push_log ORDER BY sent_at DESC LIMIT 10")]
     return {
@@ -295,8 +294,7 @@ def status() -> Dict[str, Any]:
         "min_score": settings.broadcast_min_score,
         "quiet_hours": settings.push_quiet_hours,
         "quiet_now": is_quiet(),
-        "devices": devices_total,
-        "devices_with_push": with_token,
+        **devices.active_counts(),
         "planned": [dict(p) for p in _plan],
         "recent": recent,
     }

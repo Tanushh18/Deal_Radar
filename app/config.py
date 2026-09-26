@@ -51,6 +51,9 @@ class Settings:
         # Firebase service-account key (raw JSON or base64 of it) for sending
         # pushes straight to FCM — services/fcm.py. Never commit it.
         self.fcm_service_account_json: str = os.getenv("FCM_SERVICE_ACCOUNT_JSON", "").strip()
+        # Admin panel "active phones" = app installs opened at/after this unix time.
+        # Default 26 Sep 2026, 5:02 PM IST — earlier test installs don't count.
+        self.active_devices_since: float = float(os.getenv("ACTIVE_DEVICES_SINCE", "1790422320"))
         self.mongo_db_name: str = os.getenv("MONGODB_DB_NAME", "dealradar")
 
         # --- Storage ---

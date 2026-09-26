@@ -422,21 +422,27 @@
   });
 
   /* ---------------- hot-deal pushes ---------------- */
-  // Expo error codes -> what the admin should actually do about them.
+  // FCM error codes -> what the admin should actually do about them.
   const PUSH_FIXES = {
-    InvalidCredentials: 'the EAS project has no FCM key — upload it with `eas credentials` (Android → FCM V1).',
-    MismatchSenderId: 'the FCM key does not match this app’s google-services.json.',
-    DeviceNotRegistered: 'those phones uninstalled the app (their tokens were removed).',
-    MessageRateExceeded: 'Expo rate-limited the send — it will retry next push.',
-    RequestFailed: 'Expo could not be reached from the server.',
+    FcmNotConfigured: 'FCM_SERVICE_ACCOUNT_JSON is not set on the server (Render → Environment).',
+    FcmAuthFailed: 'Google rejected the Firebase key — check FCM_SERVICE_ACCOUNT_JSON (rotated or deleted key?).',
+    SENDER_ID_MISMATCH: 'the Firebase key is from a different project than the app.',
+    THIRD_PARTY_AUTH_ERROR: 'Firebase could not authenticate with Google’s delivery service.',
+    UNREGISTERED: 'those phones uninstalled the app (their tokens were removed).',
+    QUOTA_EXCEEDED: 'Firebase rate-limited the send — try again in a bit.',
+    UNAVAILABLE: 'Firebase was briefly unavailable — try again.',
+    RequestFailed: 'Firebase could not be reached from the server.',
   };
+  const since = (ts) => new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
   function deliveryText(r) {
-    const feed = `Saved to every device’s feed (${r.devices} registered).`;
+    const active = r.active_devices ?? r.devices;
+    const feed = `Saved to every phone’s feed · ${active} active phone${active === 1 ? '' : 's'}`
+      + (r.active_since ? ` (opened since ${since(r.active_since)})` : '') + '.';
     if (!r.tokens) {
-      return `${feed} ⚠️ No device has a push token, so nothing buzzed — phones only see it when the app polls. `
-        + 'This means the Android build has no Firebase (google-services.json) set up.';
+      return `${feed} ⚠️ No phone can get an instant push yet, so nothing buzzed — they’ll see it in the app’s feed. `
+        + 'A phone gets push once it opens the app (twice after an update) with notifications allowed.';
     }
-    let text = `${feed} Push: ${r.accepted}/${r.tokens} accepted by Expo.`;
+    let text = `${feed} Push: ${r.accepted}/${r.tokens} delivered via Firebase.`;
     const errs = Object.entries(r.errors || {});
     if (errs.length) {
       text += ' Failed: ' + errs.map(([code, n]) => `${n}× ${code}${PUSH_FIXES[code] ? ' — ' + PUSH_FIXES[code] : ''}`).join('; ');
@@ -451,12 +457,12 @@
     pill.textContent = !s.enabled ? '● Off (BROADCAST_HOT_DEAL=false)'
       : s.quiet_now ? `● Quiet hours (${s.quiet_hours} IST)` : `● On · ${s.pushes_per_cycle} per cycle`;
     pill.className = `status-pill ${s.enabled && !s.quiet_now ? 'ok' : ''}`;
-    $('#push-stats').textContent = `${s.devices} registered devices · ${s.devices_with_push} can receive push`
-      + ` · deals need a score of ${s.min_score}+`;
+    $('#push-stats').textContent = `${s.active_devices} active phones (opened since ${since(s.active_since)})`
+      + ` · ${s.reachable} can receive push · deals need a score of ${s.min_score}+`;
     const warn = $('#push-warning');
-    if (s.devices && !s.devices_with_push) {
-      show(warn, '⚠️ Devices are registering without a push token, so no phone will buzz. The Android build needs '
-        + 'Firebase: add google-services.json + an FCM key to the EAS project, then make a new build.', 'err');
+    if (s.active_devices && !s.reachable) {
+      show(warn, '⚠️ Active phones have no Firebase push token yet, so none will buzz instantly. Each phone needs to '
+        + 'open the app (twice after an update) with notifications allowed.', 'err');
     } else {
       show(warn, '', '');
     }

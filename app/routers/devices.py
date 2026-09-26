@@ -45,7 +45,9 @@ def _device(device_id: str) -> str:
 async def register(payload: RegisterPayload):
     token = payload.push_token
     if token and not push.is_push_token(token):
-        raise HTTPException(status_code=400, detail="Not a valid push token.")
+        # An old build's Expo token: register the phone anyway, just without it,
+        # so the open still counts and its settings still save.
+        token = None
     return {"device": devices.register(_device(payload.device_id), payload.platform, token,
                                        payload.digest, payload.digest_hour, payload.smart_schedule)}
 

@@ -219,8 +219,27 @@ def main() -> int:
           own and own[0]["price"] == 1299 and own[0]["discount_pct"] == 56 and "category" in own[0], str(own[:1]))
 
     print("\n=== 8. FCM ONLY (no Expo push) ===")
-    r = anon.post("/api/devices/register", json={"device_id": "expo-device-1", "push_token": EXPO_TOKEN})
-    check("an Expo push token is refused at registration", r.status_code == 400, r.text)
+    r = anon.post("/api/devices/register", json={"device_id": "expo-device-1", "platform": "android",
+                                                  "push_token": EXPO_TOKEN})
+    row = db.query_one("SELECT push_token FROM devices WHERE device_id = 'expo-device-1'")
+    check("an old build's Expo token: phone still registers, token ignored",
+          r.status_code == 200 and row and not row["push_token"], f"{r.status_code} {dict(row) if row else None}")
+
+    print("\n=== 9. ACTIVE PHONES (admin panel) ===")
+    since = settings.active_devices_since
+    db.execute("DELETE FROM devices")
+    for dev, platform, seen, token in [
+        ("before-cutoff-01", "android", since - 3600, TOKEN_A),   # an old test install
+        ("after-cutoff-001", "android", since + 60, TOKEN_A),     # opened after the cut-off, has push
+        ("after-cutoff-002", "android", since + 120, ""),         # opened, notifications not set up
+        ("after-cutoff-003", "android", since + 180, EXPO_TOKEN), # old build's token only
+        ("web-browser-0001", "", since + 60, ""),                 # website visitor, not an install
+    ]:
+        db.execute("INSERT INTO devices (device_id, platform, push_token, created_at, last_seen_at) "
+                   "VALUES (?, ?, ?, ?, ?)", (dev, platform, token, seen, seen))
+    counts = devices.active_counts()
+    check("only installs opened since the cut-off count as active", counts["active_devices"] == 3, str(counts))
+    check("only active phones with a Firebase token count as reachable", counts["reachable"] == 1, str(counts))
     push_calls.clear()
     report = asyncio.run(push.send_push_detailed([EXPO_TOKEN, TOKEN_A], "t", "b", "/"))
     check("Expo tokens are skipped; only FCM is sent to",

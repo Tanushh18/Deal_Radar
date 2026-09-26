@@ -174,6 +174,20 @@ def notify(device_id: str, kind: str, title: str, body: str, deal: Optional[Dict
                                      expires_at=expires_at))
 
 
+def active_counts() -> Dict[str, Any]:
+    """Real users for the admin panel: app installs (not website visitors)
+    opened since ACTIVE_DEVICES_SINCE, and how many of those can get a push."""
+    from . import fcm
+    since = settings.active_devices_since
+    rows = db.query(
+        "SELECT push_token FROM devices WHERE last_seen_at >= ? AND platform IN ('android', 'ios')", (since,))
+    return {
+        "active_devices": len(rows),
+        "reachable": sum(1 for r in rows if fcm.is_fcm_token(r["push_token"] or "")),
+        "active_since": since,
+    }
+
+
 def _all_tokens(include_smart: bool = True) -> List[str]:
     smart = "" if include_smart else " AND COALESCE(smart_schedule, 0) = 0"
     rows = db.query(f"SELECT push_token FROM devices WHERE COALESCE(push_token, '') != ''{smart}")
@@ -206,7 +220,7 @@ async def broadcast(title: str, body: str, deal: Optional[Dict[str, Any]] = None
                                            image=image, kind=kind, expires_at=expires_at)
     log.info("Broadcast %r: %d devices, %d tokens, %d accepted, errors=%s",
              title, devices_count, report["tokens"], report["accepted"], report["errors"])
-    return {"devices": devices_count, "broadcast_id": cur.lastrowid, **report}
+    return {"devices": devices_count, "broadcast_id": cur.lastrowid, **active_counts(), **report}
 
 
 def prune_broadcasts() -> None:
