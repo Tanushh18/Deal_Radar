@@ -23,7 +23,7 @@ from . import taxonomy
 
 # Bump whenever price/MRP extraction changes: stored deals are re-parsed from
 # their raw text once per version (store.reparse_stored_deals).
-PARSER_VERSION = 3
+PARSER_VERSION = 4
 
 URL_RE = re.compile(r"https?://[^\s<>\"')\]]+", re.IGNORECASE)
 
@@ -86,7 +86,8 @@ MRP_RE = re.compile(
     r"(?:mrp|m\.r\.p|was|list price|original)\D{0,12}?([0-9][0-9,]{1,7})", re.IGNORECASE
 )
 COUPON_RE = re.compile(
-    r"(?:coupon|code|promo|voucher)\s*[:\-]?\s*[\"']?([A-Z0-9]{4,18})[\"']?", re.IGNORECASE
+    # Codes may contain inner hyphens ("GBOULT-100"), never a leading/trailing one.
+    r"(?:coupon|code|promo|voucher)\s*[:\-]?\s*[\"']?([A-Z0-9](?:[A-Z0-9-]{2,16}[A-Z0-9]))[\"']?", re.IGNORECASE
 )
 SIZE_RE = re.compile(
     r"\b(?:size[s]?\s*[:\-]?\s*)((?:(?:XS|S|M|L|XL|XXL|XXXL|2XL|3XL|\d{1,2})[,\s/&]*){1,10})",
@@ -270,13 +271,27 @@ def extract_sizes(text: str) -> str:
     return ", ".join(s.upper() for s in sizes if s)[:80]
 
 
+_NOT_A_CODE = {
+    "CODE", "COUPON", "PROMO", "APPLY", "OFFER", "HTTPS", "HTTP", "WWW", "LINK", "CLICK", "HERE",
+    "BELOW", "ABOVE", "WITH", "FROM", "USE", "AVAIL", "CHECK", "APPLIED", "AUTO", "ONLY", "CART",
+    "PAGE", "DETAILS", "EXTRA", "BANK", "CARD", "NEEDED", "REQUIRED", "AVAILABLE",
+}
+
+
 def extract_coupon(text: str) -> str:
-    for match in COUPON_RE.finditer(text or ""):
-        code = match.group(1).upper()
-        # Reject pure numbers (usually a price) and obvious words.
-        if code.isdigit() or code in {"CODE", "COUPON", "PROMO", "APPLY", "OFFER"}:
+    text = text or ""
+    for match in COUPON_RE.finditer(text):
+        raw = match.group(1)
+        code = raw.upper()
+        # "coupon: https://…" or "code amzn.to/…" — the start of a link, not a code.
+        if text[match.end(1):match.end(1) + 3].startswith((":/", ".")):
             continue
-        if any(c.isdigit() for c in code) or code.isupper():
+        # Reject pure numbers (usually a price) and ordinary words.
+        if code.isdigit() or code in _NOT_A_CODE:
+            continue
+        # Real codes are written in capitals ("EK20", "FURNITURE") or carry a
+        # digit ("save10"); a lowercase word after "coupon" is just prose.
+        if any(c.isdigit() for c in raw) or raw.isupper():
             return code
     return ""
 

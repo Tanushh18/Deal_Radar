@@ -585,6 +585,11 @@ def reparse_stored_deals() -> int:
                 (fresh["title"], fresh["norm_title"], fresh["search_blob"], json.dumps(new_flags), old["id"]),
             )
             fixed += 1
+        # Only correct a code the parser got wrong (e.g. "HTTPS"); an empty
+        # coupon may be one users reported dead, which must stay cleared.
+        if old.get("coupon") and fresh.get("coupon", "") != old.get("coupon"):
+            db.execute("UPDATE deals SET coupon = ?, dirty = 1 WHERE id = ?", (fresh.get("coupon", ""), old["id"]))
+            fixed += 1
         if fresh.get("price") is None:
             continue
         changes = {k: fresh.get(k) for k in ("price", "mrp", "discount_pct")

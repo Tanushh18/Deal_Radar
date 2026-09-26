@@ -57,6 +57,36 @@ def main() -> int:
     check("version recorded", db.get_meta("parser_version") == str(parser.PARSER_VERSION))
     check("second run is a no-op", store.reparse_stored_deals() == 0)
 
+    print("\n=== COUPON CODES ===")
+    cases = {
+        "Apply Coupon : https://amazon.in/dp/B0DRCYP93L": "",   # live post stored as "HTTPS"
+        "Apply Coupon Payment Page ✅": "",                    # stored as "PAYMENT"
+        "Apply coupon with ICICI card": "",
+        "code amzn.to/abc": "",
+        "USE CODE: EK20": "EK20",
+        "🏷 Use Code : GBOULT-100": "GBOULT-100",             # was cut to "GBOULT"
+        "✅ Use Coupon: BBD699": "BBD699",
+        "Coupon: FURNITURE": "FURNITURE",
+    }
+    for text, want in cases.items():
+        got = parser.extract_coupon(text)
+        check(f"{text[:34]!r} -> {want or '(none)'}", got == want, got)
+
+    # Stored with the old parser's junk code, and one whose coupon users reported dead.
+    junk = parser.parse_message("Boat Airdopes 141 @ ₹999\nApply Coupon : https://amzn.to/4Awrt1P",
+                                channel_id=77, channel_title="Loot", message_id=6, posted_at=now)
+    dead = parser.parse_message("Mi Power Bank @ ₹1199\n✅ Use Coupon: BBD699\nhttps://amzn.to/4xDB0Bn",
+                                channel_id=77, channel_title="Loot", message_id=7, posted_at=now)
+    store.save_deal(junk)
+    store.save_deal(dead)
+    db.execute("UPDATE deals SET coupon = 'HTTPS' WHERE id = ?", (junk["id"],))
+    db.execute("UPDATE deals SET coupon = '' WHERE id = ?", (dead["id"],))
+    db.execute("DELETE FROM meta WHERE key = 'parser_version'")
+    store.reparse_stored_deals()
+    coupon = lambda i: db.query_one("SELECT coupon FROM deals WHERE id = ?", (i,))["coupon"]  # noqa: E731
+    check("re-parse clears the stored 'HTTPS' code", coupon(junk["id"]) == "", coupon(junk["id"]))
+    check("re-parse never revives a coupon reported dead", coupon(dead["id"]) == "", coupon(dead["id"]))
+
     print("\n" + ("\033[92m✓ All checks passed.\033[0m" if not failures else f"\033[91m✗ {len(failures)} failed\033[0m"))
     return 1 if failures else 0
 
