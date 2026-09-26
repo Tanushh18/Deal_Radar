@@ -9,7 +9,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .. import db
-from ..services import ingest, parser, price_store, ratelimit, search
+from ..services import ingest, links, parser, price_store, ratelimit, search
 from .deals import price_verdict
 
 router = APIRouter(prefix="/api", tags=["lookup"])
@@ -21,6 +21,10 @@ async def _resolve(url: str) -> str:
     """Follow shortlinks (amzn.to, fkrt.cc, cuttli…) hop by hop, SSRF-checked at each hop."""
     async with httpx.AsyncClient(follow_redirects=False, timeout=6.0, headers=_HEADERS) as client:
         for _ in range(ingest.MAX_REDIRECT_HOPS):
+            # Landed on the store itself (e.g. amazon.in/dp/…): the URL already
+            # names the product, so don't request a page we mustn't open.
+            if not ingest.page_fetch_allowed(url) and links.is_store_site(url):
+                break
             if not await ingest._resolve_is_safe(url):
                 break
             try:

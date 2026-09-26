@@ -284,6 +284,11 @@ MAX_PROBE_BYTES = 200_000   # enough to see the out-of-stock markers, not a whol
 MAX_REDIRECT_HOPS = 4
 
 
+def page_fetch_allowed(url: str) -> bool:
+    """False for stores whose pages we must not open (SCRAPE_SKIP_STORES)."""
+    return parser.detect_store(url or "") not in settings.scrape_skip_stores
+
+
 async def _resolve_is_safe(url: str) -> bool:
     """SSRF guard: reject URLs that resolve to a non-public address.
 
@@ -391,6 +396,8 @@ async def probe_product(url: str, timeout: float = 6.0) -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient(follow_redirects=False, timeout=timeout, headers=_PROBE_HEADERS) as client:
             for _ in range(MAX_REDIRECT_HOPS):
+                if not page_fetch_allowed(url):
+                    return out  # "unknown": callers already handle a store that won't show its page
                 if not await _resolve_is_safe(url):
                     return out
                 async with client.stream("GET", url) as resp:
@@ -442,10 +449,12 @@ async def verify_links(batch: int = 40) -> Dict[str, int]:
     if not settings.liveness_check_enabled:
         return {"checked": 0, "dead": 0}
 
+    skip = sorted(settings.scrape_skip_stores)
+    skip_sql = f" AND LOWER(COALESCE(store, '')) NOT IN ({','.join('?' * len(skip))})" if skip else ""
     rows = db.query(
-        "SELECT id, url, clean_url, product_key, store FROM deals WHERE status='live' AND url != '' "
-        "ORDER BY last_seen_at ASC LIMIT ?",
-        (batch,),
+        "SELECT id, url, clean_url, product_key, store FROM deals WHERE status='live' AND url != ''"
+        f"{skip_sql} ORDER BY last_seen_at ASC LIMIT ?",
+        (*skip, batch),
     )
     if not rows:
         return {"checked": 0, "dead": 0}
@@ -468,6 +477,8 @@ async def verify_links(batch: int = 40) -> Dict[str, int]:
                 return
 
             for _ in range(MAX_REDIRECT_HOPS):
+                if not page_fetch_allowed(url):
+                    return  # a short link that turned out to be Amazon: not ours to open
                 if not await _resolve_is_safe(url):
                     return
                 try:

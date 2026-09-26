@@ -75,6 +75,12 @@ class Settings:
         self.max_channels_per_user: int = int(os.getenv("MAX_CHANNELS_PER_USER", "40"))
         self.liveness_check_enabled: bool = _bool(os.getenv("LIVENESS_CHECK", "true"))
         self.liveness_batch: int = int(os.getenv("LIVENESS_BATCH", "40"))
+        # Stores whose product pages the server never opens (stock/price checks).
+        # Amazon by default: its Associates agreement forbids scraping. Short-link
+        # redirects (amzn.to) are still followed to learn the product id.
+        self.scrape_skip_stores: set = {
+            s.strip().lower() for s in os.getenv("SCRAPE_SKIP_STORES", "amazon").split(",") if s.strip()
+        }
         # Noise gate (services/quality.py): only single-product posts with a
         # price, a store link and a photo become cards. "false" shows everything.
         self.quality_filter: bool = _bool(os.getenv("QUALITY_FILTER", "true"))
