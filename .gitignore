@@ -36,3 +36,4 @@ mobile/ios/
 mobile/dist/
 mobile/.expo/
 firebase-debug.log
+release/
