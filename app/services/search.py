@@ -40,9 +40,14 @@ _FOLLOW_KINDS = {"category", "brand", "store"}
 
 _CANDIDATE_CAP = 5000
 
-# Browsing orders that the admin's "show on top" rule leads; explicit sorts
-# (price, discount, ending) stay exactly what the visitor asked for.
-_PRIORITY_SORTS = ("relevance", "best", "newest")
+# The admin's "show on top" rule leads every sort, explicit ones included:
+# pinned deals come first, each group keeping the order the visitor chose
+# (cheapest pinned deals, then cheapest of the rest). A typed search is the
+# one exception — there the rule only nudges (_W_PRIORITY), so the best match
+# for what someone asked for is never buried.
+_PRIORITY_SORTS = ("relevance", "best", "newest", "discount", "price_low", "price_high", "ending", "for_you")
+# With a typed query, an explicit sort (cheapest first…) is exactly what was asked for.
+_PRIORITY_SORTS_WITH_QUERY = ("relevance", "best", "newest")
 
 
 def _priority_sql() -> str:
@@ -436,7 +441,8 @@ def search(
         min_discount=min_discount, channel_ids=channel_ids,
         include_expired=include_expired, only_lowest=only_lowest,
         order=SORTS.get(sort) or SORTS["best"],
-        archive=archive, has_coupon=has_coupon, size=size, lead_priority=sort in _PRIORITY_SORTS,
+        archive=archive, has_coupon=has_coupon, size=size,
+        lead_priority=sort in (_PRIORITY_SORTS if not (q or "").strip() else _PRIORITY_SORTS_WITH_QUERY),
     )
 
     plan = _Plan(q or "")
@@ -447,6 +453,8 @@ def search(
 
     if sort == "for_you" and device_id:
         rows = _rank_for_you(rows, device_id)
+        if not (q or "").strip():
+            rows.sort(key=lambda r: not r.get("priority"))  # stable: follow order kept within each group
 
     categories = _counts(rows, "category", "name")
     if category:

@@ -170,7 +170,17 @@ def main() -> int:
     axe = next(i for i, t in enumerate(feed) if t.startswith("AXE"))
     beardo = next(i for i, t in enumerate(feed) if t.startswith("Beardo"))
     check("men's grooming doesn't lead a women's feed", axe >= 2 and beardo >= 2, str(feed))
-    legacy = {"preset": "women", "label": "Women", "categories": ["Women Fashion", "Beauty"], "keywords": ["women"],
+    for sort in ("price_low", "price_high", "discount", "ending"):
+        rows = search.search(sort=sort, limit=100)["results"]
+        flags = [bool(d.get("priority")) for d in rows]
+        check(f"pinned deals lead the '{sort}' sort too", flags == sorted(flags, reverse=True), str(flags))
+    cheap = search.search(sort="price_low", limit=100)["results"]
+    pinned_prices = [d["price"] for d in cheap if d.get("priority")]
+    check("…and keep that sort's order among themselves", pinned_prices == sorted(pinned_prices), str(pinned_prices))
+    typed = search.search(q="perfume", sort="price_low", limit=100)["results"]
+    typed_prices = [d["price"] for d in typed]
+    check("a typed search keeps its explicit sort", typed_prices == sorted(typed_prices), str(typed_prices))
+    legacy ={"preset": "women", "label": "Women", "categories": ["Women Fashion", "Beauty"], "keywords": ["women"],
               "stores": []}
     db.set_meta(priority.META_KEY, json.dumps(legacy))
     priority.reset_cache()

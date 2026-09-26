@@ -74,7 +74,12 @@ tg_post.httpx = ai_enrich.httpx = se.httpx = _FakeHttpx()
 
 
 def run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:  # Python 3.14+: no implicit loop outside async code
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
 
 
 def main() -> int:
@@ -82,13 +87,16 @@ def main() -> int:
     with TestClient(app) as c:
         print("\n=== SEED CALENDAR ===")
         events = se.list_all()
-        check("seeds the known recurring sales", len(events) == len(se._SEED_TEMPLATE), str(len(events)))
+        check("admin view has every calendar sale exactly once", len(events) == len(se._CALENDAR)
+              and len({e["template"] for e in events}) == len(se._CALENDAR), str(len(events)))
         check("every seeded event is genuinely upcoming",
               all((e["ends_at"] or e["starts_at"]) >= time.time() for e in events))
         check("seeded events are marked approximate", all(e["approximate"] for e in events))
         r = c.get("/api/sale-events").json()
+        public_ids = {e["id"] for e in r["events"]}
         check("public endpoint lists upcoming events, soonest first",
-              r["events"] == sorted(r["events"], key=lambda e: e["starts_at"]) and len(r["events"]) == len(events))
+              r["events"] == sorted(r["events"], key=lambda e: e["starts_at"]) and len(r["events"]) >= 1)
+        check("public view is a subset of the admin calendar", public_ids <= {e["id"] for e in events})
         check("public endpoint never leaks admin-only fields",
               "heads_up_posted" not in r["events"][0] and "updated_at" not in r["events"][0])
 
@@ -111,9 +119,37 @@ def main() -> int:
         r = c.delete(f"/api/admin/reader/sale-events/{event['id']}", headers=ADMIN)
         check("admin can delete an event", r.status_code == 200)
         check("deleting an unknown id 404s", c.delete("/api/admin/reader/sale-events/nope", headers=ADMIN).status_code == 404)
+        check("same-name add became that year's BBD edit, not a copy", event["id"].startswith("flipkart-bbd-"), event["id"])
         remaining = c.get("/api/admin/reader/sale-events", headers=ADMIN).json()["events"]
-        check("deleted event is gone", not any(e["name"] == "Flipkart Big Billion Days" and not e["approximate"]
-                                                for e in remaining))
+        bbd = [e for e in remaining if e.get("template") == "flipkart-bbd"]
+        check("BBD appears once in the admin view", len(bbd) == 1, str(len(bbd)))
+        check("deleted calendar sale is hidden for that year", bbd and bbd[0].get("hidden") is True)
+        public = c.get("/api/sale-events").json()["events"]
+        check("hidden sale is not shown in the app", not any(e["id"] == event["id"] for e in public))
+        r = c.post("/api/admin/reader/sale-events", json={**payload, "id": event["id"]}, headers=ADMIN)
+        check("saving it again restores it", r.status_code == 200 and not r.json()["event"].get("hidden"))
+
+        print("\n=== YEARLY CALENDAR ===")
+        oct_2026 = datetime(2026, 10, 20, tzinfo=timezone.utc).timestamp()
+        after = se._materialize([], oct_2026, se.ADMIN_WINDOW_DAYS)
+        bbd_after = [e for e in after if e.get("template") == "flipkart-bbd"]
+        check("after BBD ends, next year's BBD shows up by itself",
+              len(bbd_after) == 1 and bbd_after[0]["id"] == "flipkart-bbd-2027", str([e["id"] for e in bbd_after]))
+        sep_2026 = datetime(2026, 9, 20, tzinfo=timezone.utc).timestamp()
+        pub = se.list_all(upcoming_only=True, now=sep_2026)
+        check("app view covers every sale through December",
+              {"flipkart-bbd-2026", "amazon-gif-2026", "nykaa-pink-friday-2026", "myntra-eors-2026"}
+              <= {e["id"] for e in pub}, str([e["id"] for e in pub]))
+        check("…but not next year's sales yet", not any(e["id"].endswith("-2027") for e in pub))
+        dec_2026 = datetime(2026, 12, 29, tzinfo=timezone.utc).timestamp()
+        late = se.list_all(upcoming_only=True, now=dec_2026)
+        check("late December still shows the next ~90 days", any(e["id"] == "amazon-republic-2027" for e in late))
+        legacy = se._migrate([se._clean({"name": "Flipkart Big Billion Days", "store": "flipkart",
+                                          "starts_at": datetime(2026, 10, 8, tzinfo=timezone.utc).timestamp(),
+                                          "ends_at": datetime(2026, 10, 14, tzinfo=timezone.utc).timestamp(),
+                                          "approximate": False})])
+        check("old saved rows become that year's edit (confirmed dates kept)",
+              legacy[0]["id"] == "flipkart-bbd-2026" and legacy[0]["approximate"] is False)
 
         print("\n=== TELEGRAM HEADS-UP ===")
         tg_calls.clear()

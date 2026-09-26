@@ -502,9 +502,11 @@
   async function loadSaleEvents() {
     const { events } = await api('/api/admin/reader/sale-events');
     $('#sale-events-list').innerHTML = events.length ? events.map((e) => `
-      <div class="sale-event-row">
+      <div class="sale-event-row" style="${e.hidden ? 'opacity:.55' : ''}">
         <div class="sev-main">
           <div class="sev-name">${esc(e.name)}
+            <span class="sev-badge">${e.template ? 'calendar' : 'custom'}</span>
+            ${e.hidden ? '<span class="sev-badge">hidden this year</span>' : ''}
             <span class="sev-badge ${e.approximate ? '' : 'confirmed'}">${e.approximate ? 'approx' : 'confirmed'}</span>
             ${e.heads_up_posted ? '<span class="sev-badge posted">posted</span>' : ''}
           </div>
@@ -514,7 +516,9 @@
         <button class="btn btn-soft btn-xs" data-se-edit="${e.id}">Edit</button>
         <button class="btn btn-soft btn-xs" data-se-hype="${e.id}">Regen AI blurb</button>
         <button class="btn btn-soft btn-xs" data-se-post="${e.id}" ${e.heads_up_posted ? 'disabled' : ''}>Post now</button>
-        <button class="btn btn-ghost btn-xs" data-se-delete="${e.id}">Delete</button>
+        ${e.hidden
+          ? `<button class="btn btn-soft btn-xs" data-se-restore="${e.id}">Restore</button>`
+          : `<button class="btn btn-ghost btn-xs" data-se-delete="${e.id}">${e.template ? 'Hide this year' : 'Delete'}</button>`}
       </div>`).join('') : '<p class="muted">No upcoming sales — add one below.</p>';
     window._saleEvents = events;
   }
@@ -551,6 +555,7 @@
     const hypeId = e.target.dataset.seHype;
     const postId = e.target.dataset.sePost;
     const delId = e.target.dataset.seDelete;
+    const restoreId = e.target.dataset.seRestore;
     try {
       if (editId) {
         const ev = (window._saleEvents || []).find((x) => x.id === editId);
@@ -574,10 +579,20 @@
         await loadSaleEvents();
         show($('#sale-events-msg'), 'Posted to Telegram.', 'ok');
       } else if (delId) {
-        if (!confirm('Delete this event?')) return;
+        const ev = (window._saleEvents || []).find((x) => x.id === delId);
+        if (!confirm(ev && ev.template ? 'Hide this sale for this year? It comes back next year.' : 'Delete this event?')) return;
         await api(`/api/admin/reader/sale-events/${delId}`, { method: 'DELETE' });
         await loadSaleEvents();
-        show($('#sale-events-msg'), 'Deleted.', 'ok');
+        show($('#sale-events-msg'), ev && ev.template ? 'Hidden for this year.' : 'Deleted.', 'ok');
+      } else if (restoreId) {
+        const ev = (window._saleEvents || []).find((x) => x.id === restoreId);
+        if (!ev) return;
+        // Saving it again (without the hidden flag) brings it back.
+        await post('/api/admin/reader/sale-events', {
+          id: ev.id, name: ev.name, store: ev.store, starts_at: ev.starts_at, ends_at: ev.ends_at, approximate: ev.approximate,
+        });
+        await loadSaleEvents();
+        show($('#sale-events-msg'), 'Restored.', 'ok');
       }
     } catch (err) {
       show($('#sale-events-msg'), err.message, 'err');

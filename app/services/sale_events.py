@@ -30,19 +30,37 @@ META_KEY = "sale_events"
 HEADS_UP_DAYS_BEFORE = 2   # how many days ahead of start the Telegram heads-up posts
 _cache: Optional[List[Dict[str, Any]]] = None
 
-# Recurring annual sales on the stores this app already tracks. Month/day are
-# the usual pattern in past years — genuinely approximate, always superseded
-# once the real date is set in /admin. year is filled in relative to "now"
-# each time the seed is used, so this never ships already stale.
-_SEED_TEMPLATE: List[Dict[str, Any]] = [
-    {"name": "Amazon Great Indian Festival", "store": "amazon", "month": 10, "day": 3, "duration_days": 6},
-    {"name": "Flipkart Big Billion Days", "store": "flipkart", "month": 10, "day": 3, "duration_days": 6},
-    {"name": "Myntra Big Fashion Festival", "store": "myntra", "month": 9, "day": 27, "duration_days": 5},
-    {"name": "Flipkart Big Saving Days", "store": "flipkart", "month": 3, "day": 11, "duration_days": 4},
-    {"name": "Amazon Great Republic Day Sale", "store": "amazon", "month": 1, "day": 18, "duration_days": 5},
-    {"name": "Myntra End of Reason Sale", "store": "myntra", "month": 12, "day": 27, "duration_days": 5},
-    {"name": "Ajio Big Bold Sale", "store": "ajio", "month": 8, "day": 15, "duration_days": 6},
+# The yearly calendar of recurring Indian sales on stores this app tracks.
+# Month/day follow each sale's usual slot in past years — genuinely
+# approximate, and superseded as soon as an admin sets the real dates for a
+# given year. Nothing here is stored: each read works out the next occurrence,
+# so the calendar rolls forward on its own (BBD 2027 appears once BBD 2026 ends).
+# `key` is permanent — it ties admin edits to a sale across renames.
+_CALENDAR: List[Dict[str, Any]] = [
+    {"key": "amazon-republic", "name": "Amazon Great Republic Day Sale", "store": "amazon", "month": 1, "day": 18, "duration_days": 5},
+    {"key": "flipkart-republic", "name": "Flipkart Republic Day Sale", "store": "flipkart", "month": 1, "day": 13, "duration_days": 6},
+    {"key": "flipkart-bsd-march", "name": "Flipkart Big Saving Days", "store": "flipkart", "month": 3, "day": 11, "duration_days": 4},
+    {"key": "amazon-summer", "name": "Amazon Great Summer Sale", "store": "amazon", "month": 5, "day": 1, "duration_days": 5},
+    {"key": "flipkart-summer", "name": "Flipkart Summer Big Saving Days", "store": "flipkart", "month": 5, "day": 2, "duration_days": 5},
+    {"key": "myntra-eors-summer", "name": "Myntra End of Reason Sale (Summer)", "store": "myntra", "month": 6, "day": 1, "duration_days": 5},
+    {"key": "amazon-prime-day", "name": "Amazon Prime Day", "store": "amazon", "month": 7, "day": 12, "duration_days": 3},
+    {"key": "amazon-freedom", "name": "Amazon Great Freedom Festival", "store": "amazon", "month": 8, "day": 6, "duration_days": 5},
+    {"key": "ajio-bbs", "name": "Ajio Big Bold Sale", "store": "ajio", "month": 8, "day": 15, "duration_days": 6},
+    {"key": "myntra-bff", "name": "Myntra Big Fashion Festival", "store": "myntra", "month": 9, "day": 27, "duration_days": 5},
+    {"key": "meesho-mbs", "name": "Meesho Mega Blockbuster Sale", "store": "meesho", "month": 9, "day": 27, "duration_days": 6},
+    {"key": "amazon-gif", "name": "Amazon Great Indian Festival", "store": "amazon", "month": 10, "day": 3, "duration_days": 6},
+    {"key": "flipkart-bbd", "name": "Flipkart Big Billion Days", "store": "flipkart", "month": 10, "day": 3, "duration_days": 6},
+    {"key": "flipkart-diwali", "name": "Flipkart Big Diwali Sale", "store": "flipkart", "month": 10, "day": 22, "duration_days": 6},
+    {"key": "nykaa-pink-friday", "name": "Nykaa Pink Friday Sale", "store": "nykaa", "month": 11, "day": 20, "duration_days": 8},
+    {"key": "myntra-eors", "name": "Myntra End of Reason Sale", "store": "myntra", "month": 12, "day": 27, "duration_days": 5},
 ]
+_BY_KEY = {t["key"]: t for t in _CALENDAR}
+# Kept for older callers/tests that counted the seed.
+_SEED_TEMPLATE = _CALENDAR
+
+ADMIN_WINDOW_DAYS = 360   # admin sees (and can pre-confirm) about a year ahead — under 365 so a sale never shows twice
+PUBLIC_MIN_DAYS = 90      # the app always shows at least this far ahead…
+                          # …and otherwise everything up to 31 December
 
 
 def _clean(event: Dict[str, Any]) -> Dict[str, Any]:
@@ -50,7 +68,7 @@ def _clean(event: Dict[str, Any]) -> Dict[str, Any]:
     store = str(event.get("store") or "").strip().lower()[:30]
     starts_at = float(event.get("starts_at") or 0) or None
     ends_at = float(event.get("ends_at") or 0) or None
-    return {
+    out = {
         "id": str(event.get("id") or uuid.uuid4().hex[:12]),
         "name": name,
         "store": store,
@@ -62,44 +80,98 @@ def _clean(event: Dict[str, Any]) -> Dict[str, Any]:
         "heads_up_posted": bool(event.get("heads_up_posted", False)),
         "updated_at": time.time(),
     }
+    # Calendar sales carry which template and year they are; custom ones don't.
+    if event.get("template") in _BY_KEY and event.get("year"):
+        out["template"] = event["template"]
+        out["year"] = int(event["year"])
+    if event.get("hidden"):
+        out["hidden"] = True
+    return out
 
 
-def _seed(now: Optional[float] = None) -> List[Dict[str, Any]]:
-    """Next occurrence of each recurring sale from `now`, so a freshly-deployed
-    server always starts with a genuinely *upcoming* calendar, not a stale one."""
+def _occurrence_id(key: str, year: int) -> str:
+    return f"{key}-{year}"
+
+
+def _parse_occurrence_id(event_id: str) -> Optional[tuple]:
+    """'flipkart-bbd-2026' -> ('flipkart-bbd', 2026); None for custom ids."""
+    key, _, year = str(event_id).rpartition("-")
+    if key in _BY_KEY and year.isdigit() and len(year) == 4:
+        return key, int(year)
+    return None
+
+
+def _occurrence(tpl: Dict[str, Any], year: int) -> Dict[str, Any]:
     import calendar
     from datetime import datetime, timedelta, timezone
 
-    now = now or time.time()
-    today = datetime.fromtimestamp(now, tz=timezone.utc)
+    day = min(tpl["day"], calendar.monthrange(year, tpl["month"])[1])
+    start = datetime(year, tpl["month"], day, tzinfo=timezone.utc)
+    end = start + timedelta(days=tpl["duration_days"])
+    return _clean({
+        "id": _occurrence_id(tpl["key"], year), "template": tpl["key"], "year": year,
+        "name": tpl["name"], "store": tpl["store"],
+        "starts_at": start.timestamp(), "ends_at": end.timestamp(), "approximate": True,
+    })
+
+
+def _seed(now: Optional[float] = None) -> List[Dict[str, Any]]:
+    """The calendar's next occurrences from `now` (no admin edits applied)."""
+    return [e for e in _materialize([], now or time.time(), ADMIN_WINDOW_DAYS) if not e.get("hidden")]
+
+
+def _migrate(stored: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Rows saved before the calendar had keys: a row whose name matches a
+    calendar sale becomes that sale's edit for its year, so dates an admin
+    already confirmed are kept rather than shown twice."""
+    by_name = {t["name"].lower(): t for t in _CALENDAR}
+    taken = {e["id"] for e in stored}
     out = []
-    for tpl in _SEED_TEMPLATE:
-        for year in (today.year, today.year + 1):
-            day = min(tpl["day"], calendar.monthrange(year, tpl["month"])[1])
-            start = datetime(year, tpl["month"], day, tzinfo=timezone.utc)
-            if start.timestamp() >= now - 86400:  # allow "starting today"
-                break
-        end = start + timedelta(days=tpl["duration_days"])
-        out.append(_clean({
-            "name": tpl["name"], "store": tpl["store"],
-            "starts_at": start.timestamp(), "ends_at": end.timestamp(),
-            "approximate": True,
-        }))
+    for e in stored:
+        tpl = None if e.get("template") else by_name.get((e.get("name") or "").lower())
+        if tpl and e.get("starts_at"):
+            from datetime import datetime, timezone
+            year = datetime.fromtimestamp(e["starts_at"], tz=timezone.utc).year
+            occ = _occurrence_id(tpl["key"], year)
+            if occ not in taken:
+                taken.add(occ)
+                e = _clean({**e, "id": occ, "template": tpl["key"], "year": year})
+        out.append(e)
     return out
 
 
 def _load() -> List[Dict[str, Any]]:
+    """Stored rows only: admin edits of calendar sales, hidden ones, and custom sales."""
     global _cache
     if _cache is None:
+        _cache = []
         raw = db.get_meta(META_KEY)
         if raw:
             try:
-                _cache = [_clean(e) for e in json.loads(raw)]
+                _cache = _migrate([_clean(e) for e in json.loads(raw)])
             except (ValueError, TypeError):
-                _cache = None
-        if _cache is None:
-            _cache = _seed()
+                _cache = []
     return _cache
+
+
+def _materialize(stored: List[Dict[str, Any]], now: float, window_days: float) -> List[Dict[str, Any]]:
+    """Calendar occurrences (with any admin edit for that year applied) that
+    haven't ended and start within the window, plus every custom sale."""
+    from datetime import datetime, timezone
+
+    edits = {e["id"]: e for e in stored if e.get("template")}
+    horizon = now + window_days * 86400
+    this_year = datetime.fromtimestamp(now, tz=timezone.utc).year
+    out = []
+    for tpl in _CALENDAR:
+        for year in (this_year - 1, this_year, this_year + 1):
+            occ_id = _occurrence_id(tpl["key"], year)
+            e = edits.get(occ_id) or _occurrence(tpl, year)
+            end = e["ends_at"] or e["starts_at"] or 0
+            if end >= now and (e["starts_at"] or 0) <= horizon:
+                out.append(e)
+    out += [e for e in stored if not e.get("template")]
+    return out
 
 
 def _persist(events: List[Dict[str, Any]]) -> None:
@@ -117,35 +189,72 @@ def reset_cache() -> None:
     _cache = None
 
 
+def _public_window_days(now: float) -> float:
+    from datetime import datetime, timezone
+    today = datetime.fromtimestamp(now, tz=timezone.utc)
+    year_end = datetime(today.year, 12, 31, 23, 59, tzinfo=timezone.utc).timestamp()
+    return max((year_end - now) / 86400, PUBLIC_MIN_DAYS)
+
+
 def list_all(upcoming_only: bool = False, now: Optional[float] = None) -> List[Dict[str, Any]]:
-    events = sorted(_load(), key=lambda e: e["starts_at"] or 0)
+    """upcoming_only=True is the app/website view: live and upcoming sales
+    through December. Otherwise the admin view: a full year ahead, plus past
+    custom sales, including hidden ones (so they can be restored)."""
+    now = now or time.time()
+    window = _public_window_days(now) if upcoming_only else ADMIN_WINDOW_DAYS
+    events = _materialize(_load(), now, window)
     if upcoming_only:
-        now = now or time.time()
-        events = [e for e in events if (e["ends_at"] or e["starts_at"] or 0) >= now]
-    return events
+        events = [e for e in events if not e.get("hidden") and (e["ends_at"] or e["starts_at"] or 0) >= now]
+    return sorted(events, key=lambda e: e["starts_at"] or 0)
+
+
+def _find(event_id: str) -> Optional[Dict[str, Any]]:
+    for e in _load():
+        if e["id"] == event_id:
+            return e
+    parsed = _parse_occurrence_id(event_id)
+    if parsed:
+        return _occurrence(_BY_KEY[parsed[0]], parsed[1])
+    return None
 
 
 def upsert(event: Dict[str, Any]) -> Dict[str, Any]:
     events = _load()
+    if not event.get("id") and event.get("starts_at"):
+        # "Adding" a sale the calendar already has (same name) means new dates
+        # for that year's occurrence, not a second copy of it.
+        tpl = next((t for t in _CALENDAR if t["name"].lower() == str(event.get("name") or "").strip().lower()), None)
+        if tpl:
+            from datetime import datetime, timezone
+            year = datetime.fromtimestamp(float(event["starts_at"]), tz=timezone.utc).year
+            event = {**event, "id": _occurrence_id(tpl["key"], year)}
+    parsed = _parse_occurrence_id(event.get("id") or "")
+    if parsed:  # editing a calendar sale: store it as that year's edit
+        event = {**event, "template": parsed[0], "year": parsed[1]}
     cleaned = _clean(event)
-    idx = next((i for i, e in enumerate(events) if e["id"] == cleaned["id"]), None)
-    if idx is None:
-        events = events + [cleaned]
-    else:
+    old = _find(cleaned["id"])
+    if old:
         # A real date/name/store change invalidates the cached AI blurb and
         # the "already posted" flag — a materially different event needs a
         # fresh heads-up, not silence because the old id happened to post once.
-        old = events[idx]
         if (cleaned["starts_at"], cleaned["name"], cleaned["store"]) != (old["starts_at"], old["name"], old["store"]):
             cleaned["hype"], cleaned["hype_generated_at"] = "", None
             cleaned["heads_up_posted"] = False
-        events = [*events[:idx], cleaned, *events[idx + 1:]]
+    idx = next((i for i, e in enumerate(events) if e["id"] == cleaned["id"]), None)
+    events = events + [cleaned] if idx is None else [*events[:idx], cleaned, *events[idx + 1:]]
     _persist(events)
     return cleaned
 
 
 def delete(event_id: str) -> bool:
+    """Custom sales are removed; a calendar sale is hidden for that year only
+    (it comes back next year on its own)."""
     events = _load()
+    parsed = _parse_occurrence_id(event_id)
+    if parsed:
+        base = _find(event_id)
+        upsert({**base, "hidden": True})
+        return True
     kept = [e for e in events if e["id"] != event_id]
     if len(kept) == len(events):
         return False
@@ -213,7 +322,7 @@ def due_for_heads_up(now: Optional[float] = None) -> List[Dict[str, Any]]:
     """Events starting within HEADS_UP_DAYS_BEFORE that haven't been announced yet."""
     now = now or time.time()
     window = now + HEADS_UP_DAYS_BEFORE * 86400
-    return [e for e in list_all() if e["starts_at"] and not e["heads_up_posted"]
+    return [e for e in list_all(upcoming_only=True, now=now) if e["starts_at"] and not e["heads_up_posted"]
             and now <= e["starts_at"] <= window]
 
 
