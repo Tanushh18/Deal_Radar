@@ -1,10 +1,11 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
 import { api, errorMessage, isNotFound, isOffline, type Deal, type DealDetail, type PriceAlert, type PricePoint } from '../api';
+import { buyHatkeHistory, mergeHistory, type BuyHatkeHistory } from '../native/buyhatkeHistory';
 import { getDeviceId } from '../native/device';
 import { recordDealSignal } from '../native/smartNotify';
 import {
@@ -117,6 +118,27 @@ export function DealDetailScreen() {
     load(ctrl.signal);
     return () => ctrl.abort();
   }, [load]);
+
+  // BuyHatke's longer history, read on this phone (see buyhatkeHistory.ts).
+  const [bh, setBh] = useState<BuyHatkeHistory | null>(null);
+  const [bhState, setBhState] = useState<'idle' | 'loading' | 'found' | 'none'>('idle');
+  const lookup = deal?.history_lookup_url ?? null;
+  useEffect(() => {
+    if (!lookup) return;
+    let alive = true;
+    setBhState('loading');
+    buyHatkeHistory(lookup)
+      .then((h) => {
+        if (!alive) return;
+        setBh(h);
+        setBhState(h ? 'found' : 'none');
+      })
+      .catch(() => alive && setBhState('none'));
+    return () => {
+      alive = false;
+    };
+  }, [lookup]);
+  const chartPoints = useMemo(() => (points && bh ? mergeHistory(points, bh.points) : points), [points, bh]);
 
   const share = () => {
     if (deal) void shareDeal(deal);
@@ -375,7 +397,8 @@ export function DealDetailScreen() {
             <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' }}>
               Price history
             </Text>
-            {points ? <PriceChart points={points} /> : <ActivityIndicator color={t.c.accent} />}
+            <FullHistoryCard state={bhState} history={bh} current={deal.price} />
+            {chartPoints ? <PriceChart points={chartPoints} /> : <ActivityIndicator color={t.c.accent} />}
           </View>
 
           {deal.price_history_url ? (
@@ -469,6 +492,66 @@ export function DealDetailScreen() {
           <IconButton name="copy" label="Copy link" variant="soft" onPress={() => copy(deal.url ?? '', 'Link')} style={{ width: 48, height: 48 }} />
         </View>
       ) : null}
+    </View>
+  );
+}
+
+const monthYear = (sec: number) =>
+  new Date(sec * 1000).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+
+/** The "full price history" card: loading line, then the headline numbers from BuyHatke. */
+function FullHistoryCard({
+  state,
+  history,
+  current,
+}: {
+  state: 'idle' | 'loading' | 'found' | 'none';
+  history: BuyHatkeHistory | null;
+  current: number | null;
+}) {
+  const t = useTheme();
+  if (state === 'loading') {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: t.r.sm, backgroundColor: t.c.surface2 }}>
+        <ActivityIndicator size="small" color={t.c.good} />
+        <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>Fetching full price history…</Text>
+      </View>
+    );
+  }
+  if (state !== 'found' || !history) return null;
+  const atLowest = current != null && current <= history.lowest;
+  const stat = (label: string, value: string, color: string) => (
+    <View style={{ flex: 1, gap: 2 }}>
+      <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color, fontSize: t.f.md, fontWeight: '800' }}>{value}</Text>
+    </View>
+  );
+  return (
+    <View style={{ gap: 12, padding: 14, borderRadius: t.r.md, borderWidth: 1, borderColor: t.c.goodLine, backgroundColor: t.c.goodSoft }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: t.c.good }}>
+          <Icon name="check" size={14} color={t.c.bg} strokeWidth={3} />
+        </View>
+        <Text style={{ flex: 1, color: t.c.text, fontSize: t.f.md, fontWeight: '800' }}>Full price history</Text>
+        <Text style={{ color: t.c.good, fontSize: t.f.xs, fontWeight: '700' }}>{history.points.length} points</Text>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {stat('Lowest ever', money(history.lowest), t.c.good)}
+        {stat('Highest', money(history.highest), t.c.text)}
+        {stat('Tracked since', monthYear(history.since), t.c.text)}
+      </View>
+      {atLowest ? (
+        <Text style={{ color: t.c.good, fontSize: t.f.sm, fontWeight: '700' }}>🎉 Today's price matches the lowest ever</Text>
+      ) : null}
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => WebBrowser.openBrowserAsync(history.pageUrl).catch(() => {})}
+        hitSlop={8}
+      >
+        <Text style={{ color: t.c.text3, fontSize: t.f.xs }}>
+          History by <Text style={{ color: t.c.accent, fontWeight: '700' }}>BuyHatke</Text> ↗
+        </Text>
+      </Pressable>
     </View>
   );
 }

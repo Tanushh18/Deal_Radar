@@ -69,7 +69,12 @@ export type PriceStats = {
   points: number;
 };
 
-export type DealDetail = Deal & { raw_text: string | null; price_history: PriceStats | null };
+export type DealDetail = Deal & {
+  raw_text: string | null;
+  price_history: PriceStats | null;
+  /** BuyHatke page to read on the phone for full history; null when it can't look the product up. */
+  history_lookup_url?: string | null;
+};
 
 export type PricePoint = { price: number; at: number };
 export type DealHistory = { stats: PriceStats; points: PricePoint[] };

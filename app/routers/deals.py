@@ -198,6 +198,11 @@ async def get_deal(deal_id: str):
     points = _merge(await price_store.history(deal.get("product_key") or ""), buyhatke.cached(deal))
     shaped["price_history"] = price_store.stats(points)
     shaped["price_verdict"] = price_verdict(deal.get("price"), shaped["price_history"])
+    # The exact page the app should read on the user's phone for BuyHatke's
+    # history (the server itself is blocked there); None if BuyHatke can't
+    # look this product up (e.g. an Amazon post with no product id).
+    lookup = buyhatke.store_url(deal)
+    shaped["history_lookup_url"] = (buyhatke.BASE + lookup) if lookup else None
     return shaped
 
 
