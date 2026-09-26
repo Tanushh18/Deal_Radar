@@ -194,6 +194,16 @@ export function DealDetailScreen() {
 
   const store = deal ? storeName(deal) : '';
   const heroH = Math.min(width, 520) * 0.82;
+  // Transparent over the product photo; solid once the photo scrolls away,
+  // so the floating buttons never sit on top of text.
+  const [headerSolid, setHeaderSolid] = useState(false);
+  const onScroll = useCallback(
+    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+      const solid = e.nativeEvent.contentOffset.y > heroH - 8;
+      setHeaderSolid((prev) => (prev === solid ? prev : solid));
+    },
+    [heroH],
+  );
 
   const header = (
     <View
@@ -203,10 +213,14 @@ export function DealDetailScreen() {
         left: 0,
         right: 0,
         paddingTop: insets.top + 4,
+        paddingBottom: 6,
         paddingHorizontal: 8,
         flexDirection: 'row',
         justifyContent: 'space-between',
         zIndex: 10,
+        backgroundColor: headerSolid ? t.c.bg : 'transparent',
+        borderBottomWidth: headerSolid ? 1 : 0,
+        borderBottomColor: t.c.border,
       }}
       pointerEvents="box-none"
     >
@@ -290,7 +304,7 @@ export function DealDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.c.bg }}>
       {header}
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} onScroll={onScroll} scrollEventThrottle={32}>
         <View style={{ paddingTop: insets.top + 44, backgroundColor: t.c.mediaBg, borderBottomWidth: 1, borderBottomColor: t.c.border }}>
           <DealImage deal={deal} emojiSize={56} style={{ height: heroH }} />
         </View>
