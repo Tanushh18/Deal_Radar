@@ -470,6 +470,10 @@ function chooseTemplate(s: State, c: Candidate, at: number): Template {
       (!tpl.personal || personal) &&
       (tpl.needs ?? []).every((n) => has(c, n, at)),
   );
+  // Crazy deals and come-back nudges mean something specific: when this kind
+  // has its own lines, only those are used (a generic line would lose the point).
+  const own = c.kind === 'crazy_deal' || c.kind === 'nudge' ? fits.filter((tpl) => tpl.kinds?.includes(c.kind as string)) : [];
+  if (own.length) fits.splice(0, fits.length, ...own);
   // Lines never used lately first; once those run out (15 a day gets through them),
   // the ones used longest ago.
   const unused = fits.filter((tpl) => !lastUsed.has(tpl.id));

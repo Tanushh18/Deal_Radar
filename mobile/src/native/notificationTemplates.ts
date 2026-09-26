@@ -189,4 +189,16 @@ export const TEMPLATES: Template[] = [
   { id: 'o04', title: 'Your group chat would want to know 💬', body: '{name} — share it or keep it secret.' },
   { id: 'o05', title: 'Blink and it’s gone 👁️', body: '{name}' },
   { id: 'o06', title: 'Today’s top pick 🥇', body: '{name} for {price}.', kinds: ['digest', 'weekly_pick'], needs: ['price'] },
+
+  // ---- Crazy deals (server auto mode): exceptional finds — say exactly why, no fake urgency
+  { id: 'z01', title: 'Lowest price we’ve ever seen', body: '{name} is down to {price} ({discount}% off).', kinds: ['crazy_deal'], needs: ['price', 'discount'] },
+  { id: 'z02', title: '{discount}% off — this one’s rare', body: '{name} for {price} on {store}.', kinds: ['crazy_deal'], needs: ['price', 'discount', 'store'] },
+  { id: 'z03', title: 'A genuinely great price 🔥', body: '{name} for {price}, was {mrp}.', kinds: ['crazy_deal'], needs: ['price', 'mrp'] },
+  { id: 'z04', title: 'We don’t see prices like this often', body: '{name} — {price}.', kinds: ['crazy_deal'], needs: ['price'] },
+
+  // ---- Come-back nudges (server auto mode): only for people who haven't opened the app in days
+  { id: 'n01', title: 'Prices moved while you were away', body: '{name} is {price} right now.', kinds: ['nudge'], needs: ['price'] },
+  { id: 'n02', title: 'Missed a few good ones 👀', body: 'Like {name} at {discount}% off. Take a look?', kinds: ['nudge'], needs: ['discount'] },
+  { id: 'n03', title: 'Your {day} deal check', body: '{name} for {price} — and plenty more since your last visit.', kinds: ['nudge'], needs: ['price'] },
+  { id: 'n04', title: 'Still tracking prices for you', body: 'Today’s standout: {name}.', kinds: ['nudge'] },
 ];
