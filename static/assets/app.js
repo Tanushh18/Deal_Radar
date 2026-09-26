@@ -1475,6 +1475,7 @@
 
           <div class="price-chart-wrap">
             <div class="price-chart-title">Price history</div>
+            ${fullHistory && fullHistory.source === 'buyhatke' && fullHistory.buyhatke ? `<div class="detail-note good">${icon('check')}<span>History fetched · ${Number(fullHistory.buyhatke.points)} price points since ${new Date(fullHistory.buyhatke.since * 1000).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span></div>` : ''}
             <div class="price-chart" id="price-chart-${escapeHtml(id)}"></div>
           </div>
 

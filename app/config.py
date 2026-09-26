@@ -75,6 +75,11 @@ class Settings:
         self.max_channels_per_user: int = int(os.getenv("MAX_CHANNELS_PER_USER", "40"))
         self.liveness_check_enabled: bool = _bool(os.getenv("LIVENESS_CHECK", "true"))
         self.liveness_batch: int = int(os.getenv("LIVENESS_BATCH", "40"))
+        # BuyHatke price history (services/buyhatke.py): public pages only,
+        # cached in memory for 3 days, never stored. WARM_PER_CYCLE = how many
+        # not-yet-opened live deals get fetched ahead of time each ingest cycle.
+        self.buyhatke_enabled: bool = _bool(os.getenv("BUYHATKE_ENABLED", "true"))
+        self.buyhatke_warm_per_cycle: int = int(os.getenv("BUYHATKE_WARM_PER_CYCLE", "10"))
         # Stores whose product pages the server never opens (stock/price checks).
         # Amazon by default: its Associates agreement forbids scraping. Short-link
         # redirects (amzn.to) are still followed to learn the product id.

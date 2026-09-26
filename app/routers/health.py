@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Response
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, mongo_store, store, turso_backup
+from ..services import buyhatke, ingest, mongo_store, store, turso_backup
 
 router = APIRouter(prefix="/api", tags=["system"])
 
@@ -62,6 +62,7 @@ async def health():
     checks["telegram_configured"] = settings.telegram_configured
     checks["mongo"] = mongo_store.status()
     checks["turso"] = turso_backup.status()
+    checks["buyhatke"] = buyhatke.status()
 
     ingest_state = ingest.state()
     last_run = ingest_state.get("last_run") or 0

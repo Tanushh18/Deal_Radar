@@ -282,6 +282,7 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
 
 MAX_PROBE_BYTES = 200_000   # enough to see the out-of-stock markers, not a whole page
 MAX_REDIRECT_HOPS = 4
+_background: set = set()  # strong refs so fire-and-forget tasks aren't garbage-collected mid-run
 
 
 def page_fetch_allowed(url: str) -> bool:
@@ -729,6 +730,12 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             _rollup_price_history_daily()
             store.rescore_all()
             liveness = await verify_links(settings.liveness_batch)
+            # Background, never awaited: BuyHatke's 3s spacing would otherwise
+            # add ~30s to every cycle.
+            from . import buyhatke
+            _warm_task = asyncio.get_running_loop().create_task(buyhatke.warm(settings.buyhatke_warm_per_cycle))
+            _background.add(_warm_task)
+            _warm_task.add_done_callback(_background.discard)
             alerts = await run_watchlist_alerts()
 
             # Plan this window's hot-deal pushes (PUSHES_PER_CYCLE of them, each

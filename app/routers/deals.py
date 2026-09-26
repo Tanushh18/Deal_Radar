@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from .. import auth, db
 
-from ..services import price_store, ratelimit, search, store, taxonomy, telegram
+from ..services import buyhatke, price_store, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -194,7 +194,8 @@ async def get_deal(deal_id: str):
         raise HTTPException(status_code=404, detail="Deal not found.")
     shaped = search.shape(deal)
     shaped["raw_text"] = deal.get("raw_text")
-    points = await price_store.history(deal.get("product_key") or "")
+    # Cached BuyHatke points only — opening a deal never waits on BuyHatke here.
+    points = _merge(await price_store.history(deal.get("product_key") or ""), buyhatke.cached(deal))
     shaped["price_history"] = price_store.stats(points)
     shaped["price_verdict"] = price_verdict(deal.get("price"), shaped["price_history"])
     return shaped
@@ -230,17 +231,29 @@ async def report_coupon_dead(deal_id: str, device_id: str = Query(..., max_lengt
     return {"reports": count, "suppressed": suppressed}
 
 
+def _merge(own: list, theirs: list) -> list:
+    """Our points plus BuyHatke's, oldest first; ours win on an exact tie."""
+    merged = {int(t): (t, p) for t, p in theirs}
+    merged.update({int(t): (t, p) for t, p in own})
+    return [merged[k] for k in sorted(merged)]
+
+
 @router.get("/{deal_id}/history")
 async def deal_history(deal_id: str):
-    row = db.query_one("SELECT product_key FROM deals WHERE id = ?", (deal_id,)) \
-        or await price_store.remote_deal(deal_id)
-    if not row:
+    row = db.query_one("SELECT product_key, url, clean_url, resolved_url FROM deals WHERE id = ?", (deal_id,))
+    deal = db.row_to_dict(row) if row else await price_store.remote_deal(deal_id)
+    if not deal:
         raise HTTPException(status_code=404, detail="Deal not found.")
-    # Served from Turso, the full price record (newest HISTORY_LIMIT points).
-    points = await price_store.history(row["product_key"] or "")
+    # Served from Turso, the full price record (newest HISTORY_LIMIT points),
+    # plus BuyHatke's longer history when it has this product.
+    own = await price_store.history(deal.get("product_key") or "")
+    theirs = await buyhatke.history(deal)
+    points = _merge(own, theirs)
     return {
         "stats": price_store.stats(points),
         "points": price_store.as_json(points),
+        "source": "buyhatke" if theirs else "own",
+        "buyhatke": {"points": len(theirs), "since": theirs[0][0]} if theirs else None,
     }
 
 

@@ -126,6 +126,16 @@ deals.**
 sends rows with `turso_dirty > 0` and clears the flag only if it hasn't changed
 mid-upload, so no edit is lost.
 
+## Not stored anywhere: BuyHatke price history
+
+[app/services/buyhatke.py](app/services/buyhatke.py) reads BuyHatke's public
+product pages (never its `/api/`) and keeps the result **in server memory
+only** for 3 days (12 h when BuyHatke has no data), then drops it. It is never
+written to SQLite, Turso or MongoDB; a restart just re-fetches on first view.
+It's merged into `/api/deals/{id}/history` (`"source": "buyhatke"`) and shown
+on the website with a "History fetched" tick. Live status: `/api/health` →
+`checks.buyhatke`.
+
 ---
 
 ## After a Render restart (startup order, [app/main.py](app/main.py))
