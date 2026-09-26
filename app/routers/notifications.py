@@ -13,19 +13,19 @@ router = APIRouter(prefix="/api", tags=["notifications"])
 
 
 class RegisterPayload(BaseModel):
-    token: str = Field(..., max_length=200)
+    token: str = Field(..., max_length=4096)
     platform: str = Field("android", max_length=20)
 
 
 class UnregisterPayload(BaseModel):
-    token: str = Field(..., max_length=200)
+    token: str = Field(..., max_length=4096)
 
 
 @router.post("/push/register")
 async def register(payload: RegisterPayload, user=Depends(auth.current_user)):
     token = payload.token.strip()
-    if not push.is_expo_token(token):
-        raise HTTPException(status_code=400, detail="Not a valid Expo push token.")
+    if not push.is_push_token(token):
+        raise HTTPException(status_code=400, detail="Not a valid push token.")
     push.register_token(user["id"], token, (payload.platform or "android").strip().lower())
     return {"status": "ok"}
 

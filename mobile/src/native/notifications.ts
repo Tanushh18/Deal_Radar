@@ -2,8 +2,8 @@
  * Deal-alert notifications for the anonymous device.
  *
  * Delivery paths:
- *  1. Remote push via Expo (needs FCM credentials in the EAS project; without
- *     them getExpoPushTokenAsync fails and the device registers token-less).
+ *  1. Remote push straight from our server to Firebase Cloud Messaging: the
+ *     device registers its raw FCM token (getDevicePushTokenAsync).
  *  2. The device feed, GET /api/devices/feed, polled on every foreground and by
  *     an expo-background-task (>= 15 min). Each new item is shown locally as a
  *     rich notification. Items whose deal already arrived as a push in the last
@@ -18,7 +18,6 @@
  * Daily deals, Flash sales.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -223,20 +222,15 @@ export async function requestPermission(): Promise<boolean> {
   return next.granted;
 }
 
-export function getEasProjectId(): string | null {
-  const fromExtra = (Constants.expoConfig?.extra as any)?.eas?.projectId;
-  const fromEas = (Constants as any).easConfig?.projectId;
-  const id = fromExtra || fromEas;
-  return typeof id === 'string' && id.length > 0 ? id : null;
-}
-
-/** Expo push token, or null when this build has no FCM credentials. */
+/**
+ * The raw FCM device token — the server sends to Firebase Cloud Messaging
+ * directly (no Expo push service). Null if Firebase isn't available.
+ */
 export async function getPushToken(): Promise<string | null> {
-  const projectId = getEasProjectId();
-  if (!projectId) return null;
+  if (Platform.OS !== 'android') return null;
   try {
-    const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
-    return data || null;
+    const { data } = await Notifications.getDevicePushTokenAsync();
+    return typeof data === 'string' && data ? data : null;
   } catch (e) {
     console.warn('[notifications] push token unavailable:', (e as Error)?.message ?? e);
     return null;

@@ -44,8 +44,8 @@ def _device(device_id: str) -> str:
 @router.post("/register", dependencies=[Depends(_limit_writes)])
 async def register(payload: RegisterPayload):
     token = payload.push_token
-    if token and not push.is_expo_token(token):
-        raise HTTPException(status_code=400, detail="Not a valid Expo push token.")
+    if token and not push.is_push_token(token):
+        raise HTTPException(status_code=400, detail="Not a valid push token.")
     return {"device": devices.register(_device(payload.device_id), payload.platform, token,
                                        payload.digest, payload.digest_hour, payload.smart_schedule)}
 

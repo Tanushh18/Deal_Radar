@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app import db  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services import devices, hot_push, ingest, parser, push, store, turso_backup  # noqa: E402
+from app.services import devices, fcm, hot_push, ingest, parser, push, store, turso_backup  # noqa: E402
 
 ADMIN = {"X-Admin-Token": "test-admin-token"}
 
@@ -130,25 +130,26 @@ def main() -> int:
               c.post("/api/admin/reader/broadcast", json={"title": "x", "body": "y", "deal_id": "does-not-exist"}, headers=ADMIN).status_code == 404)
 
         print("\n=== BROADCAST DELIVERY REPORT ===")
-        token_ok, token_bad = "ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]", "ExponentPushToken[bbbbbbbbbbbbbbbbbbbbbb]"
+        token_ok, token_bad = "fcmOK:APA91b" + "a" * 140, "fcmBD:APA91b" + "b" * 140
         c.post("/api/devices/register", json={"device_id": "app_tokenholder000001", "push_token": token_ok})
         c.post("/api/devices/register", json={"device_id": "app_tokenholder000002", "push_token": token_bad})
-        sent_batches = []
 
-        async def fake_expo(batch):
-            sent_batches.append(batch)
-            return [{"status": "ok"} if m["to"] == token_ok else
-                    {"status": "error", "message": "no fcm", "details": {"error": "InvalidCredentials"}}
-                    for m in batch]
+        async def fake_fcm_post(client, url, access, message):
+            if message["message"]["token"] == token_ok:
+                return 200, {"name": "projects/p/messages/1"}
+            return 403, {"error": {"status": "PERMISSION_DENIED", "details": [{"errorCode": "SENDER_ID_MISMATCH"}]}}
 
-        real_post = push._post_batch
-        push._post_batch = fake_expo
+        async def fake_access_token(account):
+            return "test-access-token"
+
+        real_post, real_token, real_account = fcm._post, fcm._access_token, fcm._account
+        fcm._post, fcm._access_token = fake_fcm_post, fake_access_token
+        fcm._account = lambda: {"client_email": "x@p.iam.gserviceaccount.com", "private_key": "k", "project_id": "p"}
         try:
             r = c.post("/api/admin/reader/broadcast", json={"title": "Test", "body": "Hello"}, headers=ADMIN).json()
             check("report counts tokens", r["tokens"] == 2, str(r))
-            check("report counts Expo acceptances", r["accepted"] == 1, str(r))
-            check("report names the failure reason", r["errors"].get("InvalidCredentials") == 1, str(r))
-            check("all tokens go in one batched request", len(sent_batches) == 1 and len(sent_batches[0]) == 2)
+            check("report counts FCM acceptances", r["accepted"] == 1, str(r))
+            check("report names the failure reason", r["errors"].get("SENDER_ID_MISMATCH") == 1, str(r))
 
             print("\n=== BROADCASTS REACH DEVICES REGISTERED LATER ===")
             late = "app_registeredafter0001"
@@ -211,16 +212,16 @@ def main() -> int:
             plan = asyncio.run(plan_and_cancel())
             check("each cycle plans PUSHES_PER_CYCLE pushes", len(plan) == 2, str(plan))
         finally:
-            push._post_batch = real_post
+            fcm._post, fcm._access_token, fcm._account = real_post, real_token, real_account
 
         print("\n=== DEVICES SURVIVE A RESTART (TURSO RESTORE) ===")
         saved = [{"device_id": "app_restoredfromturso1", "platform": "android",
-                  "push_token": "ExponentPushToken[cccccccccccccccccccccc]", "digest": 1, "digest_hour": 9,
+                  "push_token": "fcmRS:APA91b" + "c" * 140, "digest": 1, "digest_hour": 9,
                   "follows": '[{"kind": "brand", "value": "Libas", "min_discount": 20, "created_at": 1}]',
                   "created_at": 1.0, "last_seen_at": time.time()}]
         check("restores a device", turso_backup._restore_devices(saved) == 1)
         row = db.query_one("SELECT push_token, digest_hour FROM devices WHERE device_id = 'app_restoredfromturso1'")
-        check("with its push token", row and row["push_token"].startswith("ExponentPushToken["))
+        check("with its push token", row and row["push_token"].startswith("fcmRS:"))
         check("with its follows", devices.follows("app_restoredfromturso1")[0]["value"] == "Libas")
         check("a device already re-registered locally keeps its own row", turso_backup._restore_devices(saved) == 0)
         check("registering marks a device for backup", db.query_one(

@@ -48,6 +48,9 @@ class Settings:
         # Deals, price history and price alerts stay in Turso; MongoDB never
         # touches those. A mongodb+srv:// Atlas URI works as-is.
         self.mongo_uri: str = os.getenv("MONGODB_URI", "").strip()
+        # Firebase service-account key (raw JSON or base64 of it) for sending
+        # pushes straight to FCM — services/fcm.py. Never commit it.
+        self.fcm_service_account_json: str = os.getenv("FCM_SERVICE_ACCOUNT_JSON", "").strip()
         self.mongo_db_name: str = os.getenv("MONGODB_DB_NAME", "dealradar")
 
         # --- Storage ---

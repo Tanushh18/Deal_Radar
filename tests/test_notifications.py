@@ -6,6 +6,7 @@ Uses a throwaway SQLite file and a stubbed Expo sender — no network.
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 import tempfile
@@ -22,15 +23,17 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app import auth, db  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services import devices, hot_push, ingest, parser, push, store, telegram  # noqa: E402
+from app.services import devices, fcm, hot_push, ingest, parser, push, store, telegram  # noqa: E402
 
 PASS, FAIL = "\033[92m✓\033[0m", "\033[91m✗\033[0m"
 failures = []
 
-TOKEN_A = "ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]"
-TOKEN_B = "ExpoPushToken[bbbbbbbbbbbbbbbbbbbbbb]"
+# Shaped like real FCM registration tokens.
+TOKEN_A = "fcmA1:APA91b" + "a" * 140
+TOKEN_B = "fcmB2:APA91b" + "b" * 140
+EXPO_TOKEN = "ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]"
 
-push_calls = []
+push_calls = []  # one [message] list per FCM send, normalised for the checks below
 
 
 def check(label: str, condition: bool, detail: str = "") -> None:
@@ -39,15 +42,19 @@ def check(label: str, condition: bool, detail: str = "") -> None:
         failures.append(label)
 
 
-async def fake_post_batch(messages):
-    push_calls.append(messages)
-    tickets = []
-    for m in messages:
-        if m["to"] == TOKEN_B:
-            tickets.append({"status": "error", "message": "gone", "details": {"error": "DeviceNotRegistered"}})
-        else:
-            tickets.append({"status": "ok", "id": "x"})
-    return tickets
+async def fake_fcm_post(client, url, access, message):
+    m = message["message"]
+    d = m["data"]
+    push_calls.append([{"to": m["token"], "title": d["title"], "channelId": d["channelId"],
+                        "priority": m["android"]["priority"].lower(), "data": json.loads(d["body"]),
+                        "raw": m}])
+    if m["token"] == TOKEN_B:
+        return 404, {"error": {"status": "NOT_FOUND", "details": [{"errorCode": "UNREGISTERED"}]}}
+    return 200, {"name": "projects/p/messages/1"}
+
+
+async def fake_access_token(account):
+    return "test-access-token"
 
 
 async def no_client(user_id):
@@ -66,7 +73,10 @@ def make_user(telegram_id: int, name: str) -> tuple[int, TestClient]:
 
 def main() -> int:
     db.connect()
-    push._post_batch = fake_post_batch
+    fcm._post = fake_fcm_post
+    fcm._access_token = fake_access_token
+    real_account = fcm._account
+    fcm._account = lambda: {"client_email": "x@p.iam.gserviceaccount.com", "private_key": "k", "project_id": "p"}
     telegram.get_client = no_client
 
     alice_id, alice = make_user(9001, "alice")
@@ -117,6 +127,10 @@ def main() -> int:
     check("push payload shape",
           msg.get("channelId") == "deal-alerts" and msg.get("priority") == "high"
           and msg.get("data", {}).get("deal_id") == deal["id"], str(msg))
+    raw = msg.get("raw", {})
+    check("data-only, in the shape the app's notification library reads",
+          "notification" not in raw
+          and set(raw.get("data", {})) >= {"title", "message", "body", "channelId"}, str(raw))
 
     print("\n=== 4. FEED ===")
     r = alice.get("/api/notifications")
@@ -146,7 +160,9 @@ def main() -> int:
     result = asyncio.run(ingest.run_watchlist_alerts())
     after = db.query_one("SELECT COUNT(*) c FROM notifications WHERE user_id=?", (alice_id,))["c"]
     check("alert created a notification", after == before + 1, f"{before} -> {after}")
-    check("push sender called", len(push_calls) == 1, str(len(push_calls)))
+    # FCM v1 is one request per device, so both of alice's phones = 2 sends.
+    check("push sent to each of the user's phones",
+          sorted(m["to"] for b in push_calls for m in b) == sorted([TOKEN_A, TOKEN_B]), str(len(push_calls)))
     check("telegram unavailable -> 0 telegram alerts", result["alerts_sent"] == 0, str(result))
     newest = alice.get("/api/notifications", params={"limit": 1}).json()["notifications"][0]
     check("alert title/url",
@@ -163,8 +179,8 @@ def main() -> int:
     check("old notifications pruned", push.prune_notifications() == 1)
 
     print("\n=== 7. SMART-SCHEDULE DEVICES ===")
-    token_smart = "ExponentPushToken[smartsmartsmartsmart00]"
-    token_old = "ExponentPushToken[oldoldoldoldoldold0000]"
+    token_smart = "fcmS3:APA91b" + "s" * 140
+    token_old = "fcmO4:APA91b" + "o" * 140
     r = anon.post("/api/devices/register", json={"device_id": "smart-device-1", "platform": "android",
                                                   "push_token": token_smart, "smart_schedule": True})
     check("register accepts smart_schedule", r.status_code == 200, r.text)
@@ -201,6 +217,19 @@ def main() -> int:
     own = [i for i in items if i["kind"] == "follow"]
     check("feed carries deal fields for on-phone copy",
           own and own[0]["price"] == 1299 and own[0]["discount_pct"] == 56 and "category" in own[0], str(own[:1]))
+
+    print("\n=== 8. FCM ONLY (no Expo push) ===")
+    r = anon.post("/api/devices/register", json={"device_id": "expo-device-1", "push_token": EXPO_TOKEN})
+    check("an Expo push token is refused at registration", r.status_code == 400, r.text)
+    push_calls.clear()
+    report = asyncio.run(push.send_push_detailed([EXPO_TOKEN, TOKEN_A], "t", "b", "/"))
+    check("Expo tokens are skipped; only FCM is sent to",
+          report["tokens"] == 1 and [m["to"] for b in push_calls for m in b] == [TOKEN_A], f"{report} {push_calls}")
+    fcm._account = real_account
+    settings.fcm_service_account_json = ""
+    report = asyncio.run(push.send_push_detailed([TOKEN_A], "t", "b", "/"))
+    check("no key on the server -> reported as FcmNotConfigured, nothing raised",
+          report["errors"] == {"FcmNotConfigured": 1}, str(report))
 
     print("\n" + "=" * 52)
     if failures:
