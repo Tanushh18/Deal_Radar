@@ -102,7 +102,7 @@ def main() -> int:
         check("get requires admin token", c.get("/api/admin/reader/poll-interval").status_code == 403)
         check("set requires admin token", c.post("/api/admin/reader/poll-interval", json={"seconds": 900}).status_code == 403)
         check("below the floor is rejected",
-              c.post("/api/admin/reader/poll-interval", json={"seconds": 60}, headers=ADMIN).status_code == 400)
+              c.post("/api/admin/reader/poll-interval", json={"seconds": 59}, headers=ADMIN).status_code == 400)
         check("above the ceiling is rejected",
               c.post("/api/admin/reader/poll-interval", json={"seconds": 999999}, headers=ADMIN).status_code == 400)
         r = c.post("/api/admin/reader/poll-interval", json={"seconds": 900}, headers=ADMIN)

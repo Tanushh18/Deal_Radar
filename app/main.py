@@ -29,7 +29,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import ingest, live, mongo_store, public_reader, quality, store, telegram, turso_backup
+from .services import activity, ingest, live, mongo_store, notify_auto, public_reader, quality, store, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -126,6 +126,9 @@ async def lifespan(app: FastAPI):
     # published (and hot ones go straight to your Telegram channel).
     _tasks.append(asyncio.create_task(live.run()))
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
+    # Notification auto mode paces pushes on its own clock, not the ingest
+    # cycle's (idle unless the admin switched it on).
+    _tasks.append(asyncio.create_task(notify_auto.loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 
     try:
@@ -184,6 +187,11 @@ async def shell_cache_headers(request: Request, call_next):
     stylesheet with a new app.js. ETags keep the revalidation a cheap 304."""
     response = await call_next(request)
     path = request.url.path
+    if path.startswith("/api/deals"):
+        try:
+            activity.record(request)  # website "who's here now" for auto poll mode — hashed, never raw IPs
+        except Exception as exc:  # noqa: BLE001 — never fail a request over a counter
+            log.debug("Activity tracking failed: %s", exc)
     if not path.startswith("/api/") and "cache-control" not in response.headers:
         if path.startswith("/assets/icons/"):
             response.headers["Cache-Control"] = "public, max-age=604800"

@@ -1,9 +1,19 @@
 """Hot-deal pushes — the main reason anyone opens the app.
 
-Each ingest cycle schedules PUSHES_PER_CYCLE (default 2) pushes, each fired
-at a random moment inside the cycle: one somewhere in the first half, one in
-the second — say 11 and 27 minutes in, the next cycle 6 and 31. Never a
-fixed clock, so they don't read as a timer.
+Manual notification mode (notify_auto.mode() == "manual"): each ingest cycle
+schedules PUSHES_PER_CYCLE (default 2) pushes, each fired at a random moment
+inside the window: one somewhere in the first half, one in the second — say
+11 and 27 minutes in, the next time 6 and 31. Never a fixed clock, so they
+don't read as a timer.
+
+The window is at least an hour, and nothing new is scheduled while earlier
+pushes are still pending. Poll intervals can be as short as a minute now; if
+each cycle cancelled and re-planned (as it once did), pushes planned >= 60 s
+out would be cancelled by the next 60 s cycle and never fire at all. So with
+short cycles PUSHES_PER_CYCLE effectively means "per hour at most".
+
+In auto mode notify_auto.py paces everything from its own loop and
+schedule_cycle does nothing; it still calls send_best() for its slots.
 
 What gets pushed is decided when the push *fires*, not when it's scheduled:
 the deal must still be live then, and the first push of a cycle is already in
@@ -38,8 +48,12 @@ WOMEN_BONUS = 30.0              # on the 0-100 deal score: women's items lead
 NEW_BONUS = 12.0                # posted in the cycle that scheduled this push
 LOWEST_BONUS = 10.0             # lowest price we've recorded
 
+MIN_WINDOW_SECONDS = 3600       # a push window is never shorter than this
+FRESH_ID_TTL = 3600             # new-deal ids keep their NEW_BONUS this long
+
 _pending: Set[asyncio.Task] = set()
 _plan: List[Dict[str, Any]] = []
+_fresh: Dict[str, float] = {}   # deal id -> when a cycle reported it new
 
 
 # --------------------------------------------------------------- timing
@@ -88,14 +102,15 @@ def _rank(deal: Dict[str, Any], women: bool, fresh_ids: Set[str]) -> float:
     return rank
 
 
-def candidates(fresh_ids: Iterable[str] = (), limit: int = 20) -> List[Tuple[Dict[str, Any], bool, float]]:
+def candidates(fresh_ids: Iterable[str] = (), limit: int = 20,
+               now: Optional[float] = None) -> List[Tuple[Dict[str, Any], bool, float]]:
     """Live, photographed, priced deals not pushed recently — best first.
 
     Returns (deal, is_women, rank) tuples.
     """
     from . import priority
 
-    now = time.time()
+    now = now or time.time()
     fresh = set(fresh_ids or ())
     rows = db.query(
         "SELECT * FROM deals WHERE status = 'live' AND expires_at > ? AND COALESCE(image_url, '') != '' "
@@ -206,34 +221,51 @@ def compose(deal: Dict[str, Any], women: bool) -> Tuple[str, str]:
 
 # --------------------------------------------------------------- sending
 
-async def send_best(fresh_ids: Iterable[str] = (), force: bool = False, reason: str = "") -> Dict[str, Any]:
+def log_push(kind: str, deal: Optional[Dict[str, Any]], title: str, women: bool, report: Dict[str, Any],
+             reach: int, now: float) -> None:
+    """One push_log row per send. product_key stays empty for sends that
+    aren't "this deal to everyone" (nudges), so they never block the deal
+    from a later hot push via REPEAT_WINDOW."""
+    deal = deal or {}
+    key = (deal.get("product_key") or deal.get("id") or "") if kind != "nudge" else ""
+    db.execute(
+        "INSERT INTO push_log (product_key, deal_id, title, women, tokens, accepted, sent_at, kind, reach) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (key, deal.get("id") or "", title, int(women), report.get("tokens", 0), report.get("accepted", 0),
+         now, kind, int(reach)),
+    )
+
+
+async def send_best(fresh_ids: Iterable[str] = (), force: bool = False, reason: str = "",
+                    kind: Optional[str] = None, now: Optional[float] = None,
+                    check_guards: Optional[bool] = None) -> Dict[str, Any]:
     """Pick the best eligible deal right now and push it to everyone.
 
-    `force` (admin "send now") ignores quiet hours and the minimum gap.
+    `force` (admin "send now") ignores quiet hours and the minimum gap and
+    goes out as kind "broadcast" (instant on every phone). `kind` overrides
+    the kind; `check_guards=False` skips quiet hours / gap for a caller that
+    has applied its own (notify_auto), without making the push instant.
     """
     from . import devices
 
-    if not force and is_quiet():
+    now = now or time.time()
+    guards = (not force) if check_guards is None else check_guards
+    if guards and is_quiet(datetime.fromtimestamp(now, IST)):
         return {"status": "skipped", "why": "quiet hours"}
     last = float(db.get_meta("last_hot_push_at") or 0)
     min_gap = max(MIN_GAP_SECONDS, settings.hot_push_min_gap_minutes * 60)
-    if not force and time.time() - last < min_gap:
+    if guards and now - last < min_gap:
         return {"status": "skipped", "why": "too soon after the last push"}
-    ranked = candidates(fresh_ids, limit=1)
+    ranked = candidates(fresh_ids, limit=1, now=now)
     if not ranked:
         return {"status": "skipped", "why": "no eligible deal (live, with photo, above the score bar, not pushed in 48h)"}
     deal, women, rank = ranked[0]
     title, body = compose(deal, women)
     # An admin pressing "send now" means now, on every phone — including the ones
     # that otherwise pick their own moment (they treat "broadcast" as instant).
-    report = await devices.broadcast(title, body, deal, kind="broadcast" if force else "hot_deal")
-    now = time.time()
-    db.execute(
-        "INSERT INTO push_log (product_key, deal_id, title, women, tokens, accepted, sent_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (deal.get("product_key") or deal["id"], deal["id"], title, int(women),
-         report.get("tokens", 0), report.get("accepted", 0), now),
-    )
+    kind = kind or ("broadcast" if force else "hot_deal")
+    report = await devices.broadcast(title, body, deal, kind=kind)
+    log_push(kind, deal, title, women, report, report.get("devices", 0), now)
     db.set_meta("last_hot_push_at", str(now))
     log.info("Hot push (%s): %r women=%s rank=%.1f -> %s", reason or "manual", title, women, rank, report)
     return {"status": "sent", "deal_id": deal["id"], "title": title, "body": body, "women": women, **report}
@@ -246,10 +278,20 @@ def _cancel_pending() -> None:
     _plan.clear()
 
 
-async def _fire_later(delay: float, fresh_ids: List[str], slot: int) -> None:
+def _note_fresh(ids: Iterable[str], now: float) -> List[str]:
+    """Remember new-deal ids for an hour, so a push planned in an earlier
+    cycle still favours what later cycles found."""
+    for deal_id in ids or ():
+        _fresh[deal_id] = now
+    for deal_id in [k for k, at in _fresh.items() if now - at > FRESH_ID_TTL]:
+        del _fresh[deal_id]
+    return list(_fresh)
+
+
+async def _fire_later(delay: float, slot: int) -> None:
     try:
         await asyncio.sleep(delay)
-        result = await send_best(fresh_ids, reason=f"cycle push {slot + 1}")
+        result = await send_best(_note_fresh((), time.time()), reason=f"cycle push {slot + 1}")
         for p in _plan:
             if p["slot"] == slot:
                 p["result"] = result.get("status")
@@ -261,22 +303,32 @@ async def _fire_later(delay: float, fresh_ids: List[str], slot: int) -> None:
 
 
 def schedule_cycle(fresh_ids: Iterable[str], window_seconds: float) -> List[Dict[str, Any]]:
-    """Called at the end of each ingest cycle: plan this window's pushes.
+    """Called at the end of each ingest cycle: plan the next window's pushes
+    (manual notification mode only — auto mode paces itself).
 
-    Anything still pending from the previous window is cancelled first, so an
-    admin shortening the cycle can never stack pushes up.
+    Pending pushes are never cancelled and never doubled: while any is still
+    waiting, this only notes the new deals (so the pending push can favour
+    them) and returns the current plan. The window is at least an hour, so
+    a 1-minute poll interval still gets its pushes out.
     """
+    from . import notify_auto
+
     if not settings.broadcast_hot_deal_enabled or settings.pushes_per_cycle <= 0:
+        return []
+    if notify_auto.mode() == "auto":
         return []
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         return []
-    _cancel_pending()
-    ids = list(fresh_ids or [])
     now = time.time()
-    for slot, delay in enumerate(random_delays(settings.pushes_per_cycle, window_seconds)):
-        task = loop.create_task(_fire_later(delay, ids, slot))
+    _note_fresh(fresh_ids, now)
+    if any(not t.done() for t in _pending):
+        return [dict(p) for p in _plan]
+    _plan.clear()
+    window = max(float(window_seconds or 0), MIN_WINDOW_SECONDS)
+    for slot, delay in enumerate(random_delays(settings.pushes_per_cycle, window)):
+        task = loop.create_task(_fire_later(delay, slot))
         _pending.add(task)
         task.add_done_callback(_pending.discard)
         _plan.append({"slot": slot, "fires_at": now + delay, "result": "pending", "why": ""})
@@ -287,7 +339,8 @@ def status() -> Dict[str, Any]:
     """For the admin panel: who can be reached, what's queued, what went out."""
     from . import devices
     recent = [dict(r) for r in db.query(
-        "SELECT deal_id, title, women, tokens, accepted, sent_at FROM push_log ORDER BY sent_at DESC LIMIT 10")]
+        "SELECT deal_id, title, women, tokens, accepted, sent_at, kind FROM push_log "
+        "WHERE COALESCE(kind, 'hot_deal') != 'nudge' ORDER BY sent_at DESC LIMIT 10")]
     return {
         "enabled": settings.broadcast_hot_deal_enabled,
         "pushes_per_cycle": settings.pushes_per_cycle,

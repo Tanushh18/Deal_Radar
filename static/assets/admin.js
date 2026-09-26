@@ -40,27 +40,54 @@
     return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : `${Math.round(m / 60)}h ago`;
   };
 
+  // Paint one status in the top strip chip + the Overview tile. kind: 'ok' | 'bad' | 'warn' | ''.
+  function setStatus(chipId, chipText, tileId, tileText, kind) {
+    const chip = chipId && $(chipId);
+    if (chip) { chip.textContent = chipText; chip.className = `chip ${kind || ''}`; }
+    const tile = tileId && $(tileId);
+    if (tile) { tile.textContent = tileText; tile.className = `tile-value ${kind || ''}`; }
+  }
+
   async function refresh() {
     const s = await api('/api/admin/reader');
     const pill = $('#reader-status');
-    if (s.account && s.connected) {
-      pill.textContent = `● Reading as ${s.account.first_name || ''}${s.account.username ? ' (@' + s.account.username + ')' : ''}`;
+    const connected = !!(s.account && s.connected);
+    if (connected) {
+      const who = `${s.account.first_name || ''}${s.account.username ? ' (@' + s.account.username + ')' : ''}`;
+      pill.textContent = `● Reading as ${who}`;
       pill.className = 'status-pill ok';
+      setStatus('#st-reader', '● Reader connected', '#gl-reader', `Connected as ${who}`, 'ok');
     } else if (s.account) {
       pill.textContent = '● Session expired — log in again';
       pill.className = 'status-pill bad';
+      setStatus('#st-reader', '● Reader session expired', '#gl-reader', 'Session expired — log in again', 'bad');
     } else {
       pill.textContent = '● Not connected';
       pill.className = 'status-pill bad';
+      setStatus('#st-reader', '● Reader not connected', '#gl-reader', 'Not connected', 'bad');
     }
+    // The login form is only needed when the account isn't connected; keep it folded away otherwise.
+    const loginMidway = !$('#step-code').classList.contains('hidden') || !$('#step-password').classList.contains('hidden');
+    if (!loginMidway) $('#reader-login').open = !connected;
     const reading = s.channels.filter((c) => c.enabled).length;
+    const stale = s.channels.filter((c) => c.enabled && c.stale).length;
     $('#channel-count').textContent = `· ${reading} reading · ${s.channels.length - reading} blocked`;
+    setStatus(null, '', '#gl-channels', `${reading} reading · ${s.channels.length - reading} blocked${stale ? ` · ${stale} stale` : ''}`,
+      reading ? (stale ? 'warn' : '') : 'bad');
     $('#pause-sync').textContent = s.sync_paused ? 'Resume syncing' : 'Pause syncing';
     $('#pause-sync').classList.toggle('on', !!s.sync_paused);
     $('#pause-note').classList.toggle('hidden', !s.sync_paused);
+    $('#sync-pill').textContent = s.sync_paused ? '⏸ Paused' : '● Running';
+    $('#sync-pill').className = `status-pill ${s.sync_paused ? 'warn' : 'ok'}`;
+    setStatus('#st-sync', s.sync_paused ? '⏸ Fetching paused' : '● Fetching on', '#gl-sync',
+      s.sync_paused ? 'Paused — showing existing deals' : 'Running', s.sync_paused ? 'warn' : 'ok');
     const tgPaused = !!(s.live && s.live.posting_paused);
     $('#tg-pause').textContent = tgPaused ? 'Resume posting to Telegram' : 'Pause posting to Telegram';
     $('#tg-pause').classList.toggle('on', tgPaused);
+    $('#tg-pill').textContent = tgPaused ? '⏸ Paused' : '● Posting';
+    $('#tg-pill').className = `status-pill ${tgPaused ? 'warn' : 'ok'}`;
+    setStatus('#st-tg', tgPaused ? '⏸ Telegram posts paused' : '● Telegram posts on', '#gl-tg',
+      tgPaused ? 'Paused' : 'On', tgPaused ? 'warn' : 'ok');
     $('#channels').innerHTML = s.channels.length ? s.channels.map((c) => `
       <tr class="${c.enabled ? '' : 'blocked'}">
         <td><b>${esc(c.title)}</b><br><span class="muted small">${c.username ? '@' + esc(c.username) : 'private'}</span></td>
@@ -74,33 +101,206 @@
       </tr>`).join('') : '<tr><td colspan="6" class="muted">No channels yet — connect the reader, then “Refresh from Telegram”.</td></tr>';
   }
 
-  function fmtMinutes(seconds) {
-    const m = Math.round(seconds / 60);
-    return m % 60 === 0 && m >= 60 ? `${m / 60}h` : `${m}m`;
+  /* ---------------- How often to fetch deals (poll interval: manual / auto) ---------------- */
+  // Seconds -> "1.5 min" / "10 min" (UI always talks in minutes).
+  function fmtMin(seconds) {
+    const m = Math.round((Number(seconds) || 0) / 6) / 10;
+    return `${Number.isInteger(m) ? m : m.toFixed(1)} min`;
   }
-  async function loadPollInterval() {
-    const r = await api('/api/admin/reader/poll-interval');
-    $('#poll-minutes').value = Math.round(r.seconds / 60);
-    $('#poll-note').textContent = r.is_override
-      ? `Custom — the built-in default is ${fmtMinutes(r.default_seconds)}.`
-      : `Default (${fmtMinutes(r.default_seconds)}) — no override set.`;
-  }
-  $('#poll-save').addEventListener('click', async () => {
-    const minutes = Number($('#poll-minutes').value);
-    if (!Number.isFinite(minutes) || minutes <= 0) { show($('#channel-msg'), 'Enter a number of minutes.', 'err'); return; }
-    try {
-      const r = await post('/api/admin/reader/poll-interval', { seconds: Math.round(minutes * 60) });
-      await loadPollInterval();
-      show($('#channel-msg'), `Ingest cycle set to every ${fmtMinutes(r.seconds)} — takes effect on the next cycle, no restart needed.`, 'ok');
-    } catch (err) { show($('#channel-msg'), err.message, 'err'); }
+  const toMinutes = (seconds) => Math.round((Number(seconds) || 0) / 30) / 2; // nearest half-minute
+  let poll = null;          // last GET body
+  let pollDirty = false;    // user is editing manual value — don't overwrite on auto-refresh
+  let pollAutoDirty = false;
+  const pollBounds = () => ({
+    min: Math.max(1, toMinutes(poll?.min_seconds ?? 60)),
+    max: toMinutes(poll?.max_seconds ?? 3600) || 60,
   });
-  $('#poll-reset').addEventListener('click', async () => {
+
+  function renderPoll(r) {
+    poll = r || {};
+    const mode = poll.mode === 'auto' ? 'auto' : 'manual';
+    const { min, max } = pollBounds();
+    ['#poll-range', '#poll-minutes', '#poll-auto-min', '#poll-auto-max'].forEach((id) => { $(id).min = min; $(id).max = max; });
+    document.querySelectorAll('#poll-mode [data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    // Auto only makes sense when the server knows about it.
+    $('#poll-mode [data-mode="auto"]').disabled = !poll.auto && mode !== 'auto';
+    $('#poll-mode [data-mode="auto"]').title = poll.auto || mode === 'auto' ? '' : 'Needs the latest server update';
+    $('#poll-manual').classList.toggle('hidden', mode !== 'manual');
+    $('#poll-auto').classList.toggle('hidden', mode !== 'auto');
+
+    const effect = `Every ${fmtMin(poll.seconds)}`;
+    $('#poll-effect').textContent = `In effect now: every ${fmtMin(poll.seconds)}${mode === 'auto' ? ' (auto)' : ''}`;
+    $('#poll-effect').className = 'status-pill ok';
+    setStatus('#st-poll', `⏱ ${effect.toLowerCase()}${mode === 'auto' ? ' · auto' : ''}`, '#gl-poll',
+      `${effect}${mode === 'auto' ? ' (Auto)' : ' (Manual)'}`, '');
+
+    // Manual
+    const manualSec = poll.manual_seconds ?? poll.seconds;
+    if (!pollDirty) {
+      $('#poll-minutes').value = toMinutes(manualSec);
+      $('#poll-range').value = toMinutes(manualSec);
+    }
+    if (poll.default_seconds) $('#poll-reset').textContent = `Reset to default (${fmtMin(poll.default_seconds)})`;
+    $('#poll-note').textContent = poll.default_seconds == null ? ''
+      : poll.is_override ? `Custom value — the built-in default is ${fmtMin(poll.default_seconds)}.`
+        : `Using the default (${fmtMin(poll.default_seconds)}).`;
+
+    // Auto
+    const a = poll.auto;
+    if (a && !pollAutoDirty) {
+      if (a.min_seconds) $('#poll-auto-min').value = toMinutes(a.min_seconds);
+      if (a.max_seconds) $('#poll-auto-max').value = toMinutes(a.max_seconds);
+    }
+    $('#poll-auto-readout').classList.toggle('hidden', !a);
+    if (a) {
+      $('#poll-auto-now').textContent = `Right now: every ${fmtMin(poll.seconds)}`
+        + (a.decided_at ? ` · decided ${ago(a.decided_at)}` : '');
+      $('#poll-auto-reason').textContent = a.reason || '';
+      const sg = a.signals || {};
+      const chips = [];
+      const n = (v) => Number(v || 0).toLocaleString('en-IN');
+      if (sg.live_deals != null) chips.push(`Live deals <b>${n(sg.live_deals)}</b>${sg.target_live ? ` / target ${n(sg.target_live)}` : ''}`);
+      if (sg.app_users != null || sg.web_users != null) {
+        chips.push(`People on app <b>${n(sg.app_users)}</b> · site <b>${n(sg.web_users)}</b>`);
+      } else if (sg.active_users != null) chips.push(`People active <b>${n(sg.active_users)}</b>`);
+      if (sg.new_per_cycle != null) chips.push(`New deals per cycle <b>${n(Math.round(sg.new_per_cycle * 10) / 10)}</b>`);
+      $('#poll-signals').innerHTML = chips.map((c) => `<span class="stat-chip">${c}</span>`).join('');
+    }
+
+    // Telegram flood-wait (applies in both modes)
+    let fw = a && a.signals && Number(a.signals.flood_wait_until);
+    if (fw && fw > 1e12) fw /= 1000; // tolerate milliseconds
+    const flood = $('#poll-flood');
+    if (fw && fw > Date.now() / 1000) {
+      const until = new Date(fw * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      flood.textContent = `⚠️ Telegram asked us to slow down — fetching is held at ≥10 min until ${until}.`;
+      flood.classList.remove('hidden');
+      $('#st-poll').className = 'chip warn';
+    } else {
+      flood.classList.add('hidden');
+    }
+  }
+
+  async function loadPollInterval() {
+    renderPoll(await api('/api/admin/reader/poll-interval'));
+  }
+
+  function readMinutes(el, label) {
+    const v = Number(el.value);
+    const { min, max } = pollBounds();
+    if (!el.value || !Number.isFinite(v) || v < min || v > max) {
+      throw new Error(`${label}: enter ${min}–${max} minutes.`);
+    }
+    return Math.round(v * 60);
+  }
+
+  $('#poll-range').addEventListener('input', () => { pollDirty = true; $('#poll-minutes').value = $('#poll-range').value; });
+  $('#poll-minutes').addEventListener('input', () => {
+    pollDirty = true;
+    if ($('#poll-minutes').value) $('#poll-range').value = $('#poll-minutes').value;
+  });
+  ['#poll-auto-min', '#poll-auto-max'].forEach((id) => $(id).addEventListener('input', () => { pollAutoDirty = true; }));
+
+  $('#poll-mode').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-mode]');
+    if (!btn || btn.getAttribute('aria-pressed') === 'true') return;
+    const mode = btn.dataset.mode;
+    const buttons = $('#poll-mode').querySelectorAll('button');
+    buttons.forEach((b) => { b.disabled = true; });
+    try {
+      const body = { mode };
+      if (mode === 'auto' && poll && poll.auto) {
+        body.auto_min_seconds = poll.auto.min_seconds;
+        body.auto_max_seconds = poll.auto.max_seconds;
+      }
+      const r = await post('/api/admin/reader/poll-mode', body);
+      pollDirty = false; pollAutoDirty = false;
+      if (r && r.seconds != null) renderPoll(r); else await loadPollInterval();
+      show($('#poll-msg'), mode === 'auto'
+        ? 'Switched to Auto — the server now picks the speed each cycle.'
+        : 'Switched to Manual — the server uses your fixed value.', 'ok');
+    } catch (err) { show($('#poll-msg'), err.message, 'err'); } finally {
+      buttons.forEach((b) => { b.disabled = false; });
+      if (poll) renderPoll(poll);
+    }
+  });
+
+  $('#poll-save').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    let seconds;
+    try { seconds = readMinutes($('#poll-minutes'), 'Minutes'); } catch (err) { show($('#poll-msg'), err.message, 'err'); return; }
+    btn.disabled = true;
+    try {
+      const r = await post('/api/admin/reader/poll-interval', { seconds });
+      pollDirty = false;
+      await loadPollInterval();
+      show($('#poll-msg'), `Saved — fetching every ${fmtMin(r && r.seconds != null ? r.seconds : seconds)} from the next cycle, no restart needed.`, 'ok');
+    } catch (err) { show($('#poll-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+  });
+
+  $('#poll-reset').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
     try {
       const r = await post('/api/admin/reader/poll-interval/reset', {});
+      pollDirty = false;
       await loadPollInterval();
-      show($('#channel-msg'), `Back to the default — every ${fmtMinutes(r.seconds)}.`, 'ok');
-    } catch (err) { show($('#channel-msg'), err.message, 'err'); }
+      show($('#poll-msg'), `Back to the default — every ${fmtMin(r && r.seconds != null ? r.seconds : poll?.default_seconds)}.`, 'ok');
+    } catch (err) { show($('#poll-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
+
+  $('#poll-auto-save').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    let lo, hi;
+    try {
+      lo = readMinutes($('#poll-auto-min'), 'Fastest');
+      hi = readMinutes($('#poll-auto-max'), 'Slowest');
+      if (lo > hi) throw new Error('Fastest must be the same as or shorter than Slowest.');
+    } catch (err) { show($('#poll-msg'), err.message, 'err'); return; }
+    btn.disabled = true;
+    try {
+      const r = await post('/api/admin/reader/poll-mode', { mode: 'auto', auto_min_seconds: lo, auto_max_seconds: hi });
+      pollAutoDirty = false;
+      if (r && r.seconds != null) renderPoll(r); else await loadPollInterval();
+      show($('#poll-msg'), `Saved — Auto will stay between ${fmtMin(lo)} and ${fmtMin(hi)}.`, 'ok');
+    } catch (err) { show($('#poll-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+  });
+
+  // Keep the card fresh every 30 s while it's on screen.
+  setInterval(() => {
+    if (document.hidden || $('#panel').classList.contains('hidden') || $('#tab-fetching').classList.contains('hidden')) return;
+    loadPollInterval().catch(() => { /* transient — next tick retries */ });
+  }, 30000);
+
+  /* ---------------- tabs ---------------- */
+  const TAB_KEY = 'dr-admin-tab';
+  const TABS = ['overview', 'fetching', 'users', 'notifications', 'sources'];
+  function showTab(name, remember = true) {
+    if (!TABS.includes(name)) name = 'overview';
+    document.querySelectorAll('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== name));
+    document.querySelectorAll('#admin-nav [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+    const active = $(`#admin-nav [data-tab="${name}"]`);
+    const nav = $('#admin-nav');
+    if (active && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = active.offsetLeft - 16;
+    if (remember) { try { localStorage.setItem(TAB_KEY, name); } catch { /* storage blocked */ } }
+    if (name === 'fetching' && !$('#panel').classList.contains('hidden')) loadPollInterval().catch(() => {});
+    if (name === 'notifications' && !$('#panel').classList.contains('hidden')) loadNotifyAuto().catch(() => {});
+  }
+  $('#admin-nav').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]');
+    if (!b) return;
+    showTab(b.dataset.tab);
+    window.scrollTo({ top: 0 });
+  });
+  document.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-goto]');
+    if (!g) return;
+    showTab(g.dataset.goto);
+    window.scrollTo({ top: 0 });
+  });
+  let savedTab = 'overview';
+  try { savedTab = localStorage.getItem(TAB_KEY) || 'overview'; } catch { /* storage blocked */ }
+  showTab(savedTab, false);
 
   let presets = {};
   async function loadPriority() {
@@ -118,6 +318,7 @@
     const empty = !rule.categories.length && !rule.keywords.length && !rule.stores.length;
     $('#priority-now').textContent = empty ? 'Neutral — nothing prioritised' : `● ${rule.label} on top`;
     $('#priority-now').className = `status-pill ${empty ? '' : 'ok'}`;
+    setStatus(null, '', '#gl-priority', empty ? 'Nothing — neutral order' : rule.label, empty ? '' : 'ok');
   }
   $('#pr-preset').addEventListener('change', async (e) => {
     if (e.target.value === 'custom') return;
@@ -173,11 +374,13 @@
       await refresh();
       await loadPriority();
       await loadDataSource();
-      await loadPollInterval();
+      await loadPollInterval().catch((err) => show($('#poll-msg'), err.message, 'err'));
       await loadPushStatus().catch(() => {});
+      await loadNotifyAuto().catch((err) => show($('#na-msg'), err.message, 'err'));
       await loadSaleEvents().catch(() => {});
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
+      $('#status-strip').classList.remove('hidden');
     } catch (err) {
       show($('#gate-msg'), err.status === 403 ? 'Wrong admin token.' : err.message, 'err');
       try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* private mode */ }
@@ -263,10 +466,10 @@
     try {
       await post('/api/admin/reader/telegram-pause', { paused: pausing });
       await refresh();
-      show($('#channel-msg'), pausing
+      show($('#tgpost-msg'), pausing
         ? 'Telegram posting paused — the site/app keep working, nothing new goes to the channel.'
         : 'Telegram posting resumed.', 'ok');
-    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+    } catch (err) { show($('#tgpost-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
 
   $('#tg-test').addEventListener('click', async (e) => {
@@ -275,8 +478,8 @@
     try {
       const r = await post('/api/admin/reader/telegram-test');
       const live = r.live && r.live.connected ? 'live listener connected' : 'live listener NOT connected yet';
-      show($('#channel-msg'), `Test post sent to ${r.channel} (message #${r.message_id}); ${live}.`, 'ok');
-    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+      show($('#tgpost-msg'), `Test post sent to ${r.channel} (message #${r.message_id}); ${live}.`, 'ok');
+    } catch (err) { show($('#tgpost-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
 
   $('#refresh').addEventListener('click', async (e) => {
@@ -296,9 +499,9 @@
     btn.textContent = 'Syncing…';
     try {
       const r = await post('/api/admin/reader/sync');
-      show($('#channel-msg'), `Sync done: ${r.new || 0} new, ${r.merged || 0} merged, ${r.fetched || 0} posts read.`, 'ok');
+      show($('#fetch-msg'), `Sync done: ${r.new || 0} new, ${r.merged || 0} merged, ${r.fetched || 0} posts read.`, 'ok');
       await refresh();
-    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; btn.textContent = 'Sync now'; }
+    } catch (err) { show($('#fetch-msg'), err.message, 'err'); } finally { btn.disabled = false; btn.textContent = 'Sync now'; }
   });
 
   $('#pause-sync').addEventListener('click', async (e) => {
@@ -307,11 +510,11 @@
     btn.disabled = true;
     try {
       await post('/api/admin/reader/pause', { paused: pausing });
-      show($('#channel-msg'), pausing
-        ? 'Syncing paused — the automatic 5-min sync is off. "Sync now" still works.'
+      show($('#fetch-msg'), pausing
+        ? 'Syncing paused — automatic fetching is off. "Sync now" still works.'
         : 'Syncing resumed.', 'ok');
       await refresh();
-    } catch (err) { show($('#channel-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+    } catch (err) { show($('#fetch-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
 
   /* ---------------- send notification: visual deal picker ---------------- */
@@ -457,6 +660,11 @@
     pill.textContent = !s.enabled ? '● Off (BROADCAST_HOT_DEAL=false)'
       : s.quiet_now ? `● Quiet hours (${s.quiet_hours} IST)` : `● On · ${s.pushes_per_cycle} per cycle`;
     pill.className = `status-pill ${s.enabled && !s.quiet_now ? 'ok' : ''}`;
+    const pushKind = !s.enabled ? 'bad' : s.quiet_now ? 'warn' : 'ok';
+    setStatus('#st-push', !s.enabled ? '● Pushes off' : s.quiet_now ? '☾ Pushes: quiet hours' : '● Pushes on',
+      '#gl-push', !s.enabled ? 'Off' : s.quiet_now ? `Quiet hours (${s.quiet_hours} IST)` : `On · ${s.pushes_per_cycle} per cycle`, pushKind);
+    setStatus('#st-phones', `📱 ${s.active_devices} active phone${s.active_devices === 1 ? '' : 's'}`, '#gl-phones',
+      `${s.active_devices} active · ${s.reachable} can get push`, s.active_devices && !s.reachable ? 'warn' : '');
     $('#push-stats').textContent = `${s.active_devices} active phones (opened since ${since(s.active_since)})`
       + ` · ${s.reachable} can receive push · deals need a score of ${s.min_score}+`;
     const warn = $('#push-warning');
@@ -488,6 +696,160 @@
       await loadPushStatus();
     } catch (err) { show($('#push-msg'), err.message, 'err'); } finally { btn.disabled = false; }
   });
+
+  /* ---------------- Automatic notifications (manual / auto scheduler) ---------------- */
+  const NA_FIELDS = ['daily_cap', 'min_gap_minutes', 'crazy_per_day', 'nudge_after_days', 'nudge_every_days', 'nudge_max'];
+  const NA_KIND = { crazy: 'Crazy deal', best: 'Best deal', nudge: 'Nudge' };
+  const naKind = (k) => NA_KIND[k] || esc(k || 'Push');
+  const istTime = (ts) => {
+    if (!ts) return '—';
+    try { return new Date(ts * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }); }
+    catch { return new Date(ts * 1000).toLocaleTimeString(); }
+  };
+  let na = null;
+  let naDirty = false;
+
+  function naSetEnabled(on) {
+    $('#na-card').querySelectorAll('button, input').forEach((el) => { el.disabled = !on; });
+  }
+
+  function renderNotifyAuto(r) {
+    na = r || {};
+    const mode = na.mode === 'auto' ? 'auto' : 'manual';
+    $('#na-missing').classList.add('hidden');
+    naSetEnabled(true);
+    document.querySelectorAll('#na-mode [data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    $('#na-help-manual').classList.toggle('hidden', mode !== 'manual');
+    $('#na-help-auto').classList.toggle('hidden', mode !== 'auto');
+    $('#na-pill').textContent = mode === 'auto' ? '● Auto' : '● Manual';
+    $('#na-pill').className = `status-pill ${mode === 'auto' ? 'ok' : ''}`;
+    setStatus('#st-notify', `🔔 Notifications: ${mode}`, '#gl-notify', mode === 'auto' ? 'Auto' : 'Manual', mode === 'auto' ? 'ok' : '');
+    $('#push-card h2').textContent = mode === 'auto' ? 'Hot-deal pushes (manual mode — replaced by Auto)' : 'Hot-deal pushes (manual mode)';
+
+    const st = na.settings || {};
+    document.querySelectorAll('#na-help-auto [data-na]').forEach((el) => {
+      const v = st[el.dataset.na];
+      el.textContent = v == null ? 'N' : v;
+    });
+    $('#na-quiet-hours').textContent = na.quiet_hours || '…';
+    if (!naDirty) NA_FIELDS.forEach((f) => { if (st[f] != null) $(`#na-${f}`).value = st[f]; });
+
+    const t = na.today || {};
+    const chips = [];
+    if (t.sent != null) chips.push(`Sent today <b>${t.sent}${t.cap != null ? ' / ' + t.cap : ''}</b>`);
+    if (t.crazy_sent != null) chips.push(`Crazy deals <b>${t.crazy_sent}</b>`);
+    if (t.nudges_sent != null) chips.push(`Nudges <b>${t.nudges_sent}</b>`);
+    if (na.reachable_devices != null) chips.push(`Can get push <b>${na.reachable_devices}</b>`);
+    if (na.inactive_devices != null) chips.push(`Away (nudge-able) <b>${na.inactive_devices}</b>`);
+    if (na.quiet_now != null) chips.push(na.quiet_now ? `☾ <b>Quiet hours now</b> (${esc(na.quiet_hours || '')} IST)` : 'Not quiet hours');
+    $('#na-today').innerHTML = chips.map((c) => `<span class="stat-chip">${c}</span>`).join('');
+
+    const nx = na.next;
+    $('#na-next').innerHTML = mode !== 'auto' ? ''
+      : nx ? `Next up: <b>${naKind(nx.kind)}</b> at <b>${istTime(nx.at)} IST</b>${nx.why ? ` — ${esc(nx.why)}` : ''}`
+        : 'Next up: nothing planned right now.';
+
+    const plan = na.plan || [];
+    $('#na-plan').innerHTML = plan.length ? plan.map((p) => {
+      const tag = p.status === 'sent' ? 'on' : p.status === 'skipped' ? 'mute' : 'warn';
+      return `<li class="${esc(p.status)}"><span class="t">${istTime(p.at)}</span><span>${naKind(p.kind)}</span>
+        <span class="tag ${tag}">${esc(p.status || 'pending')}</span>${p.why ? `<span class="why">${esc(p.why)}</span>` : ''}</li>`;
+    }).join('') : `<li class="muted">${mode === 'auto' ? 'Nothing planned for today yet.' : 'Only used in Auto mode.'}</li>`;
+
+    $('#na-recent').innerHTML = (na.recent || []).map((x) => `
+      <tr><td>${naKind(x.kind)}</td><td>${esc(x.title)}</td>
+        <td>${esc(x.audience || '')}${x.count != null ? ` · ${Number(x.count).toLocaleString('en-IN')}` : ''}</td>
+        <td>${x.sent_at ? when(x.sent_at) : ''}</td></tr>`).join('')
+      || '<tr><td class="muted">Nothing sent automatically yet.</td></tr>';
+  }
+
+  function naUnavailable() {
+    na = null;
+    $('#na-missing').classList.remove('hidden');
+    naSetEnabled(false);
+    $('#na-pill').textContent = 'Not available';
+    $('#na-pill').className = 'status-pill';
+    setStatus('#st-notify', '🔔 Notifications: update needed', '#gl-notify', 'Needs server update', 'warn');
+  }
+
+  async function loadNotifyAuto() {
+    try {
+      renderNotifyAuto(await api('/api/admin/reader/notify-auto'));
+    } catch (err) {
+      if (err.status === 404) { naUnavailable(); return; }
+      throw err;
+    }
+  }
+
+  NA_FIELDS.forEach((f) => $(`#na-${f}`).addEventListener('input', () => { naDirty = true; }));
+
+  $('#na-mode').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-mode]');
+    if (!btn || btn.disabled || btn.getAttribute('aria-pressed') === 'true') return;
+    const mode = btn.dataset.mode;
+    $('#na-mode').querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    try {
+      renderNotifyAuto(await post('/api/admin/reader/notify-auto', { mode }));
+      show($('#na-msg'), mode === 'auto'
+        ? 'Switched to Auto — the server now decides which pushes go out.'
+        : 'Switched to Manual — back to the random hot-deal pushes.', 'ok');
+      loadPushStatus().catch(() => {});
+    } catch (err) {
+      show($('#na-msg'), err.message, 'err');
+      if (na) renderNotifyAuto(na);
+    } finally {
+      if (na) $('#na-mode').querySelectorAll('button').forEach((b) => { b.disabled = false; });
+    }
+  });
+
+  $('#na-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = {};
+    for (const f of NA_FIELDS) {
+      const el = $(`#na-${f}`);
+      if (el.value === '') continue;
+      const v = Number(el.value);
+      if (!Number.isInteger(v) || v < Number(el.min) || v > Number(el.max)) {
+        show($('#na-msg'), `${el.closest('label').firstChild.textContent.trim()}: enter a whole number ${el.min}–${el.max}.`, 'err');
+        return;
+      }
+      body[f] = v;
+    }
+    const btn = $('#na-save');
+    btn.disabled = true;
+    try {
+      const r = await post('/api/admin/reader/notify-auto', body);
+      naDirty = false;
+      renderNotifyAuto(r);
+      show($('#na-msg'), 'Saved — applies from the next planning round.', 'ok');
+    } catch (err) { show($('#na-msg'), err.message, 'err'); } finally { btn.disabled = !na; }
+  });
+
+  $('#na-preview-btn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const box = $('#na-preview');
+    btn.disabled = true;
+    try {
+      const p = await api('/api/admin/reader/notify-auto/preview');
+      const deal = (label, d) => `<div><div class="k">${label}</div>${d
+        ? `<b>${esc(d.title)}</b>${d.price != null ? ` · ₹${Math.round(d.price).toLocaleString('en-IN')}` : ''}${d.why ? `<div class="muted small" style="margin:2px 0 0">${esc(d.why)}</div>` : ''}`
+        : '<span class="muted">Nothing qualifies right now.</span>'}</div>`;
+      const n = p.sample_nudge;
+      box.innerHTML = deal('Crazy deal', p.crazy) + deal('Best deal', p.best)
+        + `<div><div class="k">Come-back nudge</div>${Number(p.nudge_eligible || 0).toLocaleString('en-IN')} phone(s) would get one${
+          n ? `: <b>${esc(n.title)}</b> — ${esc(n.body)}` : '.'}</div>`
+        + '<div class="muted small">Preview only — nothing was sent.</div>';
+      box.classList.remove('hidden');
+    } catch (err) {
+      show($('#na-msg'), err.status === 404 ? 'Needs the latest server update.' : err.message, 'err');
+    } finally { btn.disabled = !na; }
+  });
+
+  // Refresh every 60 s while the Notifications tab is on screen.
+  setInterval(() => {
+    if (document.hidden || $('#panel').classList.contains('hidden') || $('#tab-notifications').classList.contains('hidden')) return;
+    loadNotifyAuto().catch(() => { /* transient */ });
+  }, 60000);
 
   /* -------------------- Upcoming sales calendar -------------------- */
   function fmtDay(ts) {
@@ -567,6 +929,7 @@
         $('#se-end').value = toDateInput(ev.ends_at);
         $('#se-approx').checked = !!ev.approximate;
         $('#se-save').textContent = 'Update event';
+        $('#sale-event-editor').open = true;
         $('#se-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else if (hypeId) {
         e.target.disabled = true;

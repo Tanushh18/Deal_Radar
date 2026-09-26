@@ -7,14 +7,14 @@ Every route needs the X-Admin-Token header (ADMIN_TOKEN).
 from __future__ import annotations
 
 import time
-from typing import Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel
 
 from .. import auth, db
 from ..config import settings
-from ..services import ingest, live, mongo_store, priority, public_reader, sale_events, taxonomy, telegram, tg_post
+from ..services import autopoll, ingest, live, mongo_store, notify_auto, priority, public_reader, sale_events, taxonomy, telegram, tg_post
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -52,6 +52,12 @@ class PriorityPayload(BaseModel):
 
 class PollIntervalPayload(BaseModel):
     seconds: int
+
+
+class PollModePayload(BaseModel):
+    mode: str
+    auto_min_seconds: Optional[int] = None
+    auto_max_seconds: Optional[int] = None
 
 
 def reader_id() -> Optional[int]:
@@ -125,7 +131,7 @@ class PausePayload(BaseModel):
 
 @router.post("/pause")
 async def pause_syncing(payload: PausePayload):
-    """Stops the automatic 5-min ingest loop; "Sync now" still works as a manual override."""
+    """Stops the automatic ingest loop (manual or auto poll interval); "Sync now" still works as a manual override."""
     ingest.set_sync_paused(payload.paused)
     return {"status": "ok", "sync_paused": payload.paused}
 
@@ -138,15 +144,23 @@ async def pause_telegram_posting(payload: PausePayload):
     return {"status": "ok", "posting_paused": payload.paused}
 
 
-@router.get("/poll-interval")
-async def get_poll_interval():
+def _poll_interval_body() -> dict:
+    manual = ingest.manual_poll_interval_seconds()
     return {
-        "seconds": ingest.poll_interval_seconds(),
+        "mode": autopoll.mode(),
+        "seconds": ingest.poll_interval_seconds(),  # what the scheduler will actually wait
+        "manual_seconds": manual,
         "default_seconds": settings.poll_interval_seconds,
-        "is_override": ingest.poll_interval_seconds() != settings.poll_interval_seconds,
+        "is_override": manual != settings.poll_interval_seconds,
         "min_seconds": ingest.MIN_POLL_INTERVAL_SECONDS,
         "max_seconds": ingest.MAX_POLL_INTERVAL_SECONDS,
+        "auto": autopoll.status(),
     }
+
+
+@router.get("/poll-interval")
+async def get_poll_interval():
+    return _poll_interval_body()
 
 
 @router.post("/poll-interval")
@@ -169,6 +183,23 @@ async def reset_poll_interval():
     if mongo_store.is_enabled():
         mongo_store.save_setting(ingest.POLL_INTERVAL_META_KEY, "")
     return {"status": "ok", "seconds": seconds}
+
+
+@router.post("/poll-mode")
+async def set_poll_mode(payload: PollModePayload):
+    """manual = the interval above; auto = autopoll picks it after every cycle
+    from live deals, active users and new-deal yield, within the auto bounds.
+    Telegram flood-wait safety applies in both."""
+    mode = (payload.mode or "").strip().lower()
+    error = autopoll.validate(mode, payload.auto_min_seconds, payload.auto_max_seconds)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    saved = autopoll.set_mode(mode, payload.auto_min_seconds, payload.auto_max_seconds)
+    if mongo_store.is_enabled():
+        mongo_store.save_setting(autopoll.MODE_META_KEY, saved["mode"])
+        mongo_store.save_setting(autopoll.AUTO_MIN_META_KEY, str(saved["auto_min_seconds"]))
+        mongo_store.save_setting(autopoll.AUTO_MAX_META_KEY, str(saved["auto_max_seconds"]))
+    return _poll_interval_body()
 
 
 class BroadcastPayload(BaseModel):
@@ -206,6 +237,38 @@ async def push_now():
     """Push the best eligible deal right now (ignores quiet hours and the gap)."""
     from ..services import hot_push
     return await hot_push.send_best(force=True, reason="admin")
+
+
+@router.get("/notify-auto")
+async def get_notify_auto():
+    """Notification mode (manual = per-cycle hot pushes; auto = notify_auto
+    paces crazy deals, best-deal slots and re-engagement nudges), today's plan
+    and what went out."""
+    return notify_auto.status()
+
+
+@router.post("/notify-auto")
+async def set_notify_auto(payload: Any = Body(None)):
+    """Any subset of mode + notify_auto.SETTINGS; a plain dict (not a model)
+    so a bad value is a readable 400, same as the other settings here."""
+    payload = {} if payload is None else payload
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Send a JSON object.")
+    changes = {k: v for k, v in payload.items() if v is not None}
+    error = notify_auto.validate(changes)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    written = notify_auto.update(changes)
+    if mongo_store.is_enabled():
+        for key, value in written.items():
+            mongo_store.save_setting(key, value)
+    return notify_auto.status()
+
+
+@router.get("/notify-auto/preview")
+async def preview_notify_auto():
+    """What auto mode would send right now — sends nothing."""
+    return notify_auto.preview()
 
 
 async def _finish(result: dict) -> dict:

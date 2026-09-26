@@ -10,18 +10,56 @@
     try { var t = localStorage.getItem('dr-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
   <style>
-    body { padding: 24px 16px 64px; }
-    .admin { max-width: 880px; margin: 0 auto; display: grid; gap: 18px; }
-    .admin header { display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
-    .admin .card { padding: 20px; }
-    .admin h2 { font-size: 1.1rem; margin-bottom: 6px; }
-    .admin .muted { font-size: .88rem; margin-bottom: 14px; }
+    /* ---------- admin page only (this <style> is not loaded by the public site) ---------- */
+    body.admin-page { padding: 0 0 64px; }
+    .admin-top { position: sticky; top: 0; z-index: 20; background: var(--bg);
+      border-bottom: 1px solid var(--border); }
+    .admin-top-inner { max-width: 1100px; margin: 0 auto; padding: 10px 16px; display: grid; gap: 8px; }
+    .admin-top-row { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+    .status-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .status-strip::-webkit-scrollbar { display: none; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 4px 10px; border-radius: 999px;
+      font: inherit; font-size: .76rem; font-weight: 650; background: var(--surface-2); color: var(--text-2);
+      border: 1px solid var(--border); cursor: pointer; white-space: nowrap; }
+    .chip:hover { border-color: var(--border-strong); color: var(--text); }
+    .chip.ok { background: var(--good-soft); color: var(--good); border-color: transparent; }
+    .chip.bad { background: var(--hot-soft); color: var(--hot); border-color: transparent; }
+    .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+
+    .admin { max-width: 1100px; margin: 0 auto; padding: 18px 16px 0; display: grid; gap: 18px; }
+    #gate { max-width: 520px; width: 100%; margin: 24px auto 0; }
+    .admin-shell { display: grid; gap: 18px; }
+    .admin-nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; }
+    .admin-nav::-webkit-scrollbar { display: none; }
+    .admin-nav button { flex: none; font: inherit; font-size: .88rem; font-weight: 650; padding: 8px 14px;
+      border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); cursor: pointer; }
+    .admin-nav button:hover { color: var(--text); }
+    .admin-nav button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    @media (min-width: 900px) {
+      .admin-shell { grid-template-columns: 200px minmax(0, 1fr); align-items: start; }
+      .admin-nav { flex-direction: column; position: sticky; top: 110px; margin: 0; padding: 0; overflow: visible; }
+      .admin-nav button { text-align: left; border-radius: 10px; border-color: transparent; background: transparent; }
+      .admin-nav button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+    }
+    .tab-panel { display: grid; gap: 16px; min-width: 0; }
+    .tab-intro h2 { font-size: 1.3rem; margin: 0 0 4px; }
+    .tab-intro p { margin: 0; }
+
+    .admin .card { padding: 20px; min-width: 0; }
+    .admin h2 { font-size: 1.1rem; margin: 0 0 6px; }
+    .admin h3 { font-size: 1rem; margin: 0 0 6px; }
+    .admin .muted { font-size: .88rem; margin: 0 0 14px; }
+    .admin .help { font-size: .84rem; line-height: 1.5; margin: 0 0 12px; }
+    .admin .help b { color: var(--text); font-weight: 650; }
+    .card-head { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+    .card-head h2 { margin: 0; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .row .input { flex: 1; min-width: 200px; }
+    .row .input { flex: 1; min-width: 180px; }
     .status-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px;
-      font-size: .82rem; font-weight: 700; background: var(--surface-2); }
+      font-size: .82rem; font-weight: 700; background: var(--surface-2); max-width: 100%; }
     .status-pill.ok { background: var(--good-soft); color: var(--good); }
     .status-pill.bad { background: var(--hot-soft); color: var(--hot); }
+    .status-pill.warn { background: var(--warn-soft); color: var(--warn); }
     table { width: 100%; border-collapse: collapse; font-size: .88rem; }
     th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
     th { color: var(--text-3); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; }
@@ -54,15 +92,92 @@
     .deal-picked-body { min-width: 0; flex: 1; font-size: .84rem; }
     .deal-picked-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .deal-picked-meta { color: var(--text-3); font-size: .78rem; }
+    .admin .sale-event-row { flex-wrap: wrap; }
+    .admin .sale-event-row .sev-main { flex-basis: 220px; }
+    .admin .sale-event-form input[type=text], .admin .sale-event-form input[type=date] { min-width: 0; }
+    .admin .sale-event-form .row > input { flex: 1 1 160px; }
+
+    /* Overview tiles */
+    .glance { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    .tile { text-align: left; font: inherit; color: inherit; padding: 14px 16px; border-radius: var(--r-md);
+      background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: grid; gap: 4px; }
+    .tile:hover { border-color: var(--accent-line); }
+    .tile-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 700; }
+    .tile-value { font-size: 1rem; font-weight: 750; }
+    .tile-value.ok { color: var(--good); } .tile-value.bad { color: var(--hot); } .tile-value.warn { color: var(--warn); }
+    .tile-help { font-size: .8rem; color: var(--text-2); line-height: 1.45; }
+
+    /* Advanced / collapsible */
+    details.adv { border: 1px dashed var(--border-strong); border-radius: var(--r-md); padding: 0 16px; }
+    details.adv > summary { cursor: pointer; padding: 12px 0; font-weight: 650; font-size: .9rem; color: var(--text-2); }
+    details.adv[open] { padding-bottom: 16px; }
+    details.adv .card { box-shadow: none; }
+    details.inline-adv { margin-top: 12px; }
+    details.inline-adv > summary { cursor: pointer; font-size: .86rem; font-weight: 650; color: var(--accent); padding: 4px 0; }
+    details.inline-adv[open] > summary { margin-bottom: 10px; }
+
+    /* Poll interval card */
+    .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 12px; }
+    .seg button { font: inherit; font-size: .86rem; font-weight: 700; padding: 6px 18px; border-radius: 999px;
+      border: 0; background: transparent; color: var(--text-2); cursor: pointer; }
+    .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+    .seg button:disabled { opacity: .6; cursor: default; }
+    .poll-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .poll-row .range { flex: 1 1 200px; min-width: 0; }
+    .poll-row input.input[type=number] { width: 88px; flex: none; min-width: 0; }
+    .poll-field { display: grid; gap: 4px; font-size: .82rem; font-weight: 650; color: var(--text-2); }
+    .poll-field .input { width: 110px; min-width: 0; }
+    .poll-readout { margin-top: 14px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface-2); display: grid; gap: 8px; }
+    .poll-readout .now { font-weight: 750; }
+    .poll-readout .reason { font-size: .86rem; color: var(--text-2); }
+    .stat-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .stat-chip { font-size: .76rem; font-weight: 650; padding: 3px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); }
+    .stat-chip b { color: var(--text); }
+    .poll-effect { font-size: .95rem; font-weight: 750; }
+
+    /* Automatic notifications card */
+    .na-list { margin: 6px 0 6px; padding-left: 20px; display: grid; gap: 4px; }
+    .na-today { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .na-next { margin-top: 10px; font-size: .9rem; }
+    .na-next b { font-weight: 750; }
+    .na-groups { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .na-group { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px 12px 12px; margin: 0; min-width: 0;
+      display: flex; flex-wrap: wrap; gap: 10px; }
+    .na-group legend { font-size: .8rem; font-weight: 750; color: var(--text); padding: 0 4px; }
+    .na-group .poll-field .input { width: 100px; }
+    .na-plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .na-plan li { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: .86rem;
+      padding: 6px 10px; border-radius: var(--r-xs); background: var(--surface-2); }
+    .na-plan .t { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 48px; }
+    .na-plan .why { color: var(--text-2); font-size: .8rem; flex-basis: 100%; }
+    .na-plan li.skipped { opacity: .6; }
+    .na-preview { margin-top: 10px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface-2);
+      display: grid; gap: 8px; font-size: .86rem; }
+    .na-preview .k { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 700; }
+    .tag.warn { background: var(--warn-soft); color: var(--warn); }
+    .tag.mute { background: var(--surface-3); color: var(--text-2); }
   </style>
 </head>
-<body>
-<main class="admin">
-  <header>
-    <div class="brand"><span class="brand-mark">📡</span><span class="brand-name">Deal<span>Radar</span> Admin</span></div>
-    <a class="btn btn-ghost btn-sm" href="/">Open site ↗</a>
-  </header>
+<body class="admin-page">
+<header class="admin-top">
+  <div class="admin-top-inner">
+    <div class="admin-top-row">
+      <div class="brand"><span class="brand-mark">📡</span><span class="brand-name">Deal<span>Radar</span> Admin</span></div>
+      <a class="btn btn-ghost btn-sm" href="/">Open site ↗</a>
+    </div>
+    <div class="status-strip hidden" id="status-strip" aria-label="Status">
+      <button type="button" class="chip" id="st-reader" data-goto="sources">Reader …</button>
+      <button type="button" class="chip" id="st-sync" data-goto="fetching">Fetching …</button>
+      <button type="button" class="chip" id="st-poll" data-goto="fetching">Every …</button>
+      <button type="button" class="chip" id="st-tg" data-goto="notifications">Telegram posts …</button>
+      <button type="button" class="chip" id="st-notify" data-goto="notifications">Notifications …</button>
+      <button type="button" class="chip" id="st-push" data-goto="notifications">Pushes …</button>
+      <button type="button" class="chip" id="st-phones" data-goto="notifications">Phones …</button>
+    </div>
+  </div>
+</header>
 
+<main class="admin">
   <section class="card" id="gate">
     <h2>Admin access</h2>
     <p class="muted">Enter the ADMIN_TOKEN from your Render environment. It stays in this browser tab only.</p>
@@ -73,186 +188,423 @@
     <div class="msg err hidden" id="gate-msg"></div>
   </section>
 
-  <div id="panel" class="hidden" style="display:grid;gap:18px">
-    <section class="card">
-      <div class="row" style="justify-content:space-between">
-        <h2>Reader Telegram account</h2>
-        <span class="status-pill" id="reader-status">…</span>
+  <div id="panel" class="admin-shell hidden">
+    <nav class="admin-nav" id="admin-nav" role="tablist" aria-label="Admin sections">
+      <button type="button" role="tab" data-tab="overview">Overview</button>
+      <button type="button" role="tab" data-tab="fetching">Deal fetching</button>
+      <button type="button" role="tab" data-tab="users">What users see</button>
+      <button type="button" role="tab" data-tab="notifications">Notifications</button>
+      <button type="button" role="tab" data-tab="sources">Sources</button>
+    </nav>
+
+    <!-- ======================= OVERVIEW ======================= -->
+    <section class="tab-panel" id="tab-overview" data-panel="overview" role="tabpanel">
+      <div class="tab-intro">
+        <h2>Overview</h2>
+        <p class="muted help">Everything important at a glance. Tap any box to jump to the place where you can change it.</p>
       </div>
-      <p class="muted">This one account reads every channel below for all visitors. Visitors never sign in.</p>
-
-      <form class="row" id="step-phone">
-        <input class="input" id="phone" type="tel" placeholder="+91 81304 83894" required />
-        <button class="btn btn-primary" type="submit">Send login code</button>
-      </form>
-      <form class="row hidden" id="step-code">
-        <input class="input" id="code" inputmode="numeric" placeholder="Code from your Telegram app" required />
-        <button class="btn btn-primary" type="submit">Verify</button>
-      </form>
-      <form class="row hidden" id="step-password">
-        <input class="input" id="password" type="password" placeholder="Two-step verification password" required />
-        <button class="btn btn-primary" type="submit">Sign in</button>
-      </form>
-      <div class="msg hidden" id="login-msg"></div>
-
-      <div class="hidden" id="session-box" style="margin-top:16px">
-        <p class="muted" style="margin-bottom:8px"><b>Save this once:</b> copy it into Render → Environment as
-          <code>TELEGRAM_SESSION</code> so the reader survives restarts (the free plan wipes local data).
-          It is full access to this Telegram account — never share it.</p>
-        <textarea class="input" id="session" readonly></textarea>
-        <div class="row" style="margin-top:8px"><button class="btn btn-soft btn-sm" id="copy-session" type="button">Copy</button></div>
+      <div class="glance" id="glance">
+        <button type="button" class="tile" data-goto="sources">
+          <span class="tile-label">Telegram reader</span><span class="tile-value" id="gl-reader">…</span>
+          <span class="tile-help">The one Telegram account that reads every deal channel for the site.</span></button>
+        <button type="button" class="tile" data-goto="fetching">
+          <span class="tile-label">Automatic fetching</span><span class="tile-value" id="gl-sync">…</span>
+          <span class="tile-help">Whether the server keeps pulling new deals on its own.</span></button>
+        <button type="button" class="tile" data-goto="fetching">
+          <span class="tile-label">Fetch speed</span><span class="tile-value" id="gl-poll">…</span>
+          <span class="tile-help">How often every channel is re-read (backup to the live listener).</span></button>
+        <button type="button" class="tile" data-goto="sources">
+          <span class="tile-label">Channels</span><span class="tile-value" id="gl-channels">…</span>
+          <span class="tile-help">Telegram channels deals are read from. Blocked ones never show.</span></button>
+        <button type="button" class="tile" data-goto="users">
+          <span class="tile-label">Shown on top</span><span class="tile-value" id="gl-priority">…</span>
+          <span class="tile-help">Deals matching this rule always come first on the site and app.</span></button>
+        <button type="button" class="tile" data-goto="notifications">
+          <span class="tile-label">Automatic notifications</span><span class="tile-value" id="gl-notify">…</span>
+          <span class="tile-help">Manual = a couple of hot-deal pushes; Auto = the server picks crazy deals, best deals and come-back nudges.</span></button>
+        <button type="button" class="tile" data-goto="notifications">
+          <span class="tile-label">Hot-deal pushes</span><span class="tile-value" id="gl-push">…</span>
+          <span class="tile-help">Automatic phone notifications for the best deals.</span></button>
+        <button type="button" class="tile" data-goto="notifications">
+          <span class="tile-label">Active phones</span><span class="tile-value" id="gl-phones">…</span>
+          <span class="tile-help">Phones that opened the app recently, and how many can get an instant push.</span></button>
+        <button type="button" class="tile" data-goto="notifications">
+          <span class="tile-label">Posting to Telegram</span><span class="tile-value" id="gl-tg">…</span>
+          <span class="tile-help">Whether good deals are auto-posted to your own Telegram channel.</span></button>
       </div>
     </section>
 
-    <section class="card" id="priority-card">
-      <div class="row" style="justify-content:space-between">
-        <h2>Show on top</h2>
-        <span class="status-pill ok" id="priority-now">…</span>
+    <!-- ======================= DEAL FETCHING ======================= -->
+    <section class="tab-panel hidden" id="tab-fetching" data-panel="fetching" role="tabpanel">
+      <div class="tab-intro">
+        <h2>Deal fetching</h2>
+        <p class="muted help">How the server pulls new deals out of the Telegram channels listed under Sources.</p>
       </div>
-      <p class="muted">Deals matching this rule always come first on the website and app — in every sort
-        (Newest, Top rated, price, discount, ending soon), home rows, trending and category order. Nothing is
-        hidden: other deals follow below. In a typed search the rule only gives a boost, so exact matches still win.</p>
-      <form id="priority-form" style="display:grid;gap:12px">
-        <div class="row">
-          <select class="input" id="pr-preset" style="max-width:260px"></select>
-          <input class="input" id="pr-label" placeholder="Name shown here, e.g. Women" />
+
+      <section class="card" id="fetch-card">
+        <div class="card-head">
+          <h2>Automatic fetching</h2>
+          <span class="status-pill" id="sync-pill">…</span>
         </div>
-        <div><div class="muted small" style="margin-bottom:6px">Categories</div><div class="row" id="pr-cats"></div></div>
-        <label class="field" style="margin:0"><span>Keywords (comma separated — match the start of a word)</span>
-          <textarea class="input" id="pr-keywords" rows="3" placeholder="women, kurti, saree, lipstick"></textarea></label>
-        <label class="field" style="margin:0"><span>Stores (comma separated)</span>
-          <input class="input" id="pr-stores" placeholder="myntra, nykaa" /></label>
-        <div class="row"><button class="btn btn-primary" type="submit">Save rule</button></div>
-      </form>
-      <div class="msg hidden" id="priority-msg"></div>
-    </section>
-
-    <section class="card" id="sale-events-card">
-      <h2>Upcoming sales</h2>
-      <p class="muted">Big Billion Days, Great Indian Festival, End of Reason Sale… A heads-up posts to Telegram
-        automatically 2 days before each event, once. Dates ship approximate — confirm the real ones here as
-        stores announce them.</p>
-      <div id="sale-events-list" class="sale-events-list"></div>
-      <form id="sale-event-form" class="sale-event-form">
-        <input type="hidden" id="se-id" />
+        <p class="muted help">New posts usually arrive within seconds through the live listener; on top of that the server
+          re-reads every channel on a timer. <b>Pause</b> stops that timer (e.g. while you fix something) — the site keeps
+          showing the deals it already has.</p>
+        <p class="muted small hidden" id="pause-note">
+          ⏸ Automatic syncing is paused — the site is showing what it already has. "Sync now" still works.</p>
         <div class="row">
-          <input type="text" id="se-name" placeholder="Event name (e.g. Flipkart Big Billion Days)" required
-                 style="flex:2" />
-          <input type="text" id="se-store" placeholder="Store (amazon, flipkart…)" style="flex:1" />
+          <button class="btn btn-primary btn-sm" id="sync" type="button">Sync now</button>
+          <button class="btn btn-soft btn-sm" id="pause-sync" type="button">Pause syncing</button>
         </div>
-        <div class="row">
-          <input type="date" id="se-start" required />
-          <input type="date" id="se-end" />
-          <label class="row" style="gap:6px;align-items:center;white-space:nowrap">
-            <input type="checkbox" id="se-approx" checked /> Approximate
-          </label>
+        <p class="muted help" style="margin:10px 0 0"><b>Sync now</b> reads every channel once, right away — handy after
+          adding a channel. Works even while paused.</p>
+        <div class="msg hidden" id="fetch-msg"></div>
+      </section>
+
+      <section class="card" id="poll-card">
+        <div class="card-head">
+          <h2>How often to fetch deals</h2>
+          <span class="status-pill" id="poll-effect">…</span>
         </div>
-        <div class="row">
-          <button class="btn btn-primary btn-sm" type="submit" id="se-save">Save event</button>
-          <button class="btn btn-soft btn-sm" type="button" id="se-cancel-edit">Cancel edit</button>
+        <p class="muted help">How often the server re-reads every source channel. New posts usually arrive within
+          seconds anyway via the live listener; this is the backup sweep.</p>
+        <div class="seg" id="poll-mode" role="group" aria-label="Fetch mode">
+          <button type="button" data-mode="manual" aria-pressed="true">Manual</button>
+          <button type="button" data-mode="auto" aria-pressed="false">Auto</button>
         </div>
-      </form>
-      <div class="msg hidden" id="sale-events-msg"></div>
-    </section>
 
-    <section class="card" id="data-source-card">
-      <h2>Data source</h2>
-      <p class="muted">Both are testing/recovery toggles. Leave them alone in normal operation — switching storage
-        starts a fresh, empty local file until it catches up; switching serving to Sheet ignores the DB entirely
-        while active.</p>
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span>Serving <code>/api/deals</code> from</span>
-        <span class="status-pill" id="serve-now">…</span>
-      </div>
-      <div class="row" style="margin-bottom:16px">
-        <button class="btn btn-soft btn-sm" id="serve-db" type="button">Serve from DB</button>
-        <button class="btn btn-soft btn-sm" id="serve-sheet" type="button">Serve from Sheet (testing)</button>
-      </div>
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span>Storage backend</span>
-        <span class="status-pill" id="storage-now">…</span>
-      </div>
-      <div class="row">
-        <button class="btn btn-soft btn-sm" id="storage-sqlite" type="button">Use local SQLite</button>
-      </div>
-      <div class="msg hidden" id="data-source-msg"></div>
-    </section>
-
-    <section class="card" id="push-card">
-      <div class="row" style="justify-content:space-between">
-        <h2>Hot-deal pushes</h2>
-        <span class="status-pill" id="push-pill">…</span>
-      </div>
-      <p class="muted">Every ingest cycle picks the best live deals — women's items first — and pushes them to
-        everyone at random moments before the next cycle. Nothing goes out in quiet hours.</p>
-      <div class="msg hidden" id="push-warning"></div>
-      <div id="push-stats" class="muted small"></div>
-      <div id="push-plan" class="muted small" style="margin-top:6px"></div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn btn-primary btn-sm" id="push-now" type="button">Send the top deal now</button>
-        <button class="btn btn-soft btn-sm" id="push-refresh" type="button">Refresh</button>
-      </div>
-      <div class="msg hidden" id="push-msg"></div>
-      <table style="margin-top:10px"><tbody id="push-recent"></tbody></table>
-    </section>
-
-    <section class="card" id="notify-card">
-      <h2>Send a notification</h2>
-      <p class="muted">Goes to every device that has opened the site or app. Optionally attach a deal — its photo
-        rides along, and tapping the notification opens it.</p>
-      <form id="notify-form" style="display:grid;gap:12px">
-        <label class="field" style="margin:0"><span>Attach a deal (optional)</span>
-          <div class="row">
-            <input class="input" id="notify-deal-search" placeholder="Search a deal by name, store or brand…" autocomplete="off" />
-            <button class="btn btn-ghost btn-sm hidden" id="notify-deal-clear" type="button">Clear</button>
+        <div id="poll-manual">
+          <p class="muted help"><b>Manual</b> — a fixed gap you choose. The server sticks to it no matter how busy things are.</p>
+          <div class="poll-row">
+            <input class="range" id="poll-range" type="range" min="1" max="60" step="0.5" aria-label="Minutes between fetches" />
+            <input class="input" id="poll-minutes" type="number" min="1" max="60" step="0.5" aria-label="Minutes" />
+            <span class="muted small" style="margin:0">min</span>
           </div>
-          <div id="notify-deal-picked" class="deal-picked hidden"></div>
-          <div id="notify-deal-results" class="deal-picker hidden"></div>
-        </label>
-        <label class="field" style="margin:0"><span>Title</span>
-          <input class="input" id="notify-title" maxlength="120" placeholder="🔥 Big Billion Days is live" required /></label>
-        <label class="field" style="margin:0"><span>Message</span>
-          <textarea class="input" id="notify-body" rows="3" maxlength="240" placeholder="Type what you want everyone to see…" required></textarea></label>
-        <div class="row"><button class="btn btn-primary" type="submit">Send to everyone</button></div>
-      </form>
-      <div class="msg hidden" id="notify-msg"></div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn btn-primary btn-sm" id="poll-save" type="button">Save</button>
+            <button class="btn btn-ghost btn-sm" id="poll-reset" type="button">Reset to default</button>
+          </div>
+          <p class="muted small" id="poll-note" style="margin:10px 0 0"></p>
+        </div>
+
+        <div id="poll-auto" class="hidden">
+          <p class="muted help"><b>Auto</b> — the server decides every cycle. It goes faster when live deals run low, when
+            many people are on the app/site, or when channels are posting a lot; it slows down when things are quiet.
+            It always backs off if Telegram rate-limits. You set the fastest and slowest it may go.</p>
+          <div class="row" style="align-items:flex-end">
+            <label class="poll-field">Fastest (min)
+              <input class="input" id="poll-auto-min" type="number" min="1" max="60" step="0.5" /></label>
+            <label class="poll-field">Slowest (min)
+              <input class="input" id="poll-auto-max" type="number" min="1" max="60" step="0.5" /></label>
+            <button class="btn btn-primary btn-sm" id="poll-auto-save" type="button">Save</button>
+          </div>
+          <div class="poll-readout hidden" id="poll-auto-readout">
+            <div class="now" id="poll-auto-now"></div>
+            <div class="reason" id="poll-auto-reason"></div>
+            <div class="stat-chips" id="poll-signals"></div>
+          </div>
+        </div>
+
+        <div class="alert alert-warn hidden" id="poll-flood" style="margin:14px 0 0"></div>
+        <p class="muted small" style="margin:12px 0 0">Switching between Manual and Auto takes effect on the next cycle — no restart needed.</p>
+        <div class="msg hidden" id="poll-msg"></div>
+      </section>
+
+      <details class="adv">
+        <summary>Advanced — data source (testing / recovery only)</summary>
+        <section class="card" id="data-source-card">
+          <h2>Data source</h2>
+          <p class="muted help">Leave these alone in normal operation. Switching storage starts a fresh, empty local file
+            until it catches up; serving from the Sheet ignores the database entirely while it's on.</p>
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span>Serving <code>/api/deals</code> from</span>
+            <span class="status-pill" id="serve-now">…</span>
+          </div>
+          <p class="muted help">Where the site and app get their deal list. <b>DB</b> is normal; <b>Sheet</b> is for testing.</p>
+          <div class="row" style="margin-bottom:16px">
+            <button class="btn btn-soft btn-sm" id="serve-db" type="button">Serve from DB</button>
+            <button class="btn btn-soft btn-sm" id="serve-sheet" type="button">Serve from Sheet (testing)</button>
+          </div>
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span>Storage backend</span>
+            <span class="status-pill" id="storage-now">…</span>
+          </div>
+          <p class="muted help">Where deals are saved. <b>Turso</b> is the normal cloud database; local SQLite is an
+            emergency fallback if Turso is down.</p>
+          <div class="row">
+            <button class="btn btn-soft btn-sm" id="storage-sqlite" type="button">Use local SQLite</button>
+          </div>
+          <div class="msg hidden" id="data-source-msg"></div>
+        </section>
+      </details>
     </section>
 
-    <section class="card">
-      <div class="row" style="justify-content:space-between">
-        <h2>Channels <span class="muted" id="channel-count" style="font-weight:500"></span></h2>
-        <div class="row">
-          <button class="btn btn-soft btn-sm" id="refresh">Refresh from Telegram</button>
-          <button class="btn btn-soft btn-sm" id="sync">Sync now</button>
-          <button class="btn btn-soft btn-sm" id="pause-sync">Pause syncing</button>
-          <button class="btn btn-soft btn-sm" id="tg-test">Send test post to Telegram</button>
-          <button class="btn btn-soft btn-sm" id="tg-pause">Pause posting to Telegram</button>
+    <!-- ======================= WHAT USERS SEE ======================= -->
+    <section class="tab-panel hidden" id="tab-users" data-panel="users" role="tabpanel">
+      <div class="tab-intro">
+        <h2>What users see</h2>
+        <p class="muted help">Controls for the order of deals and the sale calendar on the website and app.</p>
+      </div>
+
+      <section class="card" id="priority-card">
+        <div class="card-head">
+          <h2>Show on top</h2>
+          <span class="status-pill ok" id="priority-now">…</span>
         </div>
+        <p class="muted help">Deals matching this rule always come first on the website and app — in every sort, home
+          row, trending and category. Nothing is hidden: other deals just follow below. In a typed search the rule only
+          gives a boost, so exact matches still win.</p>
+        <form id="priority-form" style="display:grid;gap:12px">
+          <div>
+            <div class="row">
+              <select class="input" id="pr-preset" style="max-width:260px"></select>
+              <input class="input" id="pr-label" placeholder="Name shown here, e.g. Women" />
+            </div>
+            <p class="muted small" style="margin:6px 0 0">Picking a ready-made preset saves it straight away. To make your
+              own, change the fields below and press <b>Save rule</b>.</p>
+          </div>
+          <div><div class="muted small" style="margin-bottom:6px">Categories</div><div class="row" id="pr-cats"></div></div>
+          <label class="field" style="margin:0"><span>Keywords (comma separated — match the start of a word)</span>
+            <textarea class="input" id="pr-keywords" rows="3" placeholder="women, kurti, saree, lipstick"></textarea></label>
+          <label class="field" style="margin:0"><span>Stores (comma separated)</span>
+            <input class="input" id="pr-stores" placeholder="myntra, nykaa" /></label>
+          <div class="row"><button class="btn btn-primary" type="submit">Save rule</button></div>
+        </form>
+        <div class="msg hidden" id="priority-msg"></div>
+      </section>
+
+      <section class="card" id="sale-events-card">
+        <h2>Upcoming sales</h2>
+        <p class="muted help">The sale calendar users see (Big Billion Days, Great Indian Festival…). A heads-up posts to
+          Telegram automatically 2 days before each event, once. Dates start approximate — confirm the real ones here
+          when stores announce them.</p>
+        <p class="muted small" style="margin:-4px 0 12px"><b>Regen AI blurb</b> writes a new one-line hype text ·
+          <b>Post now</b> sends the heads-up immediately · <b>Hide this year</b> skips a calendar sale until next year.</p>
+        <div id="sale-events-list" class="sale-events-list"></div>
+        <details class="inline-adv" id="sale-event-editor">
+          <summary>Add or edit a sale</summary>
+          <form id="sale-event-form" class="sale-event-form">
+            <input type="hidden" id="se-id" />
+            <div class="row">
+              <input class="input" type="text" id="se-name" placeholder="Event name (e.g. Flipkart Big Billion Days)" required />
+              <input class="input" type="text" id="se-store" placeholder="Store (amazon, flipkart…)" />
+            </div>
+            <div class="row">
+              <input class="input" type="date" id="se-start" required aria-label="Start date" />
+              <input class="input" type="date" id="se-end" aria-label="End date" />
+              <label class="row" style="gap:6px;align-items:center;white-space:nowrap">
+                <input type="checkbox" id="se-approx" checked /> Approximate
+              </label>
+            </div>
+            <p class="muted small" style="margin:0">Untick <b>Approximate</b> once the store has announced the real dates.</p>
+            <div class="row">
+              <button class="btn btn-primary btn-sm" type="submit" id="se-save">Save event</button>
+              <button class="btn btn-soft btn-sm" type="button" id="se-cancel-edit">Cancel edit</button>
+            </div>
+          </form>
+        </details>
+        <div class="msg hidden" id="sale-events-msg"></div>
+      </section>
+    </section>
+
+    <!-- ======================= NOTIFICATIONS ======================= -->
+    <section class="tab-panel hidden" id="tab-notifications" data-panel="notifications" role="tabpanel">
+      <div class="tab-intro">
+        <h2>Notifications</h2>
+        <p class="muted help">Phone pushes and posts to your own Telegram channel.</p>
       </div>
-      <p class="muted small hidden" id="pause-note" style="margin-top:-6px">
-        ⏸ Automatic syncing is paused — the site is showing what it already has. "Sync now" still works.</p>
-      <div class="row" style="align-items:center;gap:8px;margin-top:4px">
-        <span class="muted small">Check for new deals every</span>
-        <input class="input" id="poll-minutes" type="number" min="5" max="360" step="5" style="width:76px" />
-        <span class="muted small">min</span>
-        <button class="btn btn-soft btn-sm" id="poll-save" type="button">Save</button>
-        <button class="btn btn-ghost btn-sm" id="poll-reset" type="button">Reset to default</button>
+
+      <section class="card" id="na-card">
+        <div class="card-head">
+          <h2>Automatic notifications</h2>
+          <span class="status-pill" id="na-pill">…</span>
+        </div>
+        <p class="muted help">Decides which deal pushes phones get on their own, and how many.</p>
+        <div class="alert alert-warn hidden" id="na-missing" style="margin:0 0 12px">Needs the latest server update — this
+          card works once the new server is deployed.</div>
+        <div class="seg" id="na-mode" role="group" aria-label="Notification mode">
+          <button type="button" data-mode="manual" aria-pressed="true">Manual</button>
+          <button type="button" data-mode="auto" aria-pressed="false">Auto</button>
+        </div>
+        <p class="muted help" id="na-help-manual"><b>Manual</b> — today's behaviour: a couple of hot-deal pushes at random
+          moments (the card below), capped per hour, never in quiet hours.</p>
+        <div class="muted help hidden" id="na-help-auto"><b>Auto</b> — the server decides what goes out and how much:
+          <ol class="na-list">
+            <li><b>Crazy deals</b> — exceptional finds (lowest price ever at 70%+ off, or top-scored) go out soon after they
+              appear, at most <span data-na="crazy_per_day">N</span> a day.</li>
+            <li><b>Best deal of the moment</b> in prime windows (morning, lunch, evening); fewer on quiet days.</li>
+            <li><b>"Come back" nudges</b> — only to people who haven't opened the app in
+              <span data-na="nudge_after_days">N</span> days, at most once every <span data-na="nudge_every_days">N</span>
+              days, stopping after <span data-na="nudge_max">N</span> tries.</li>
+          </ol>
+          Each phone shows them at the hour that person is usually active. Nothing is sent in quiet hours
+          (<span id="na-quiet-hours">…</span> IST).</div>
+
+        <div class="na-today" id="na-today"></div>
+        <div class="na-next" id="na-next"></div>
+
+        <details class="inline-adv" id="na-settings-box">
+          <summary>Settings</summary>
+          <form id="na-form">
+            <div class="na-groups">
+              <fieldset class="na-group"><legend>Everyone</legend>
+                <label class="poll-field">Max pushes a day<input class="input" id="na-daily_cap" type="number" min="1" max="12" step="1" /></label>
+                <label class="poll-field">Min gap (minutes)<input class="input" id="na-min_gap_minutes" type="number" min="30" max="480" step="5" /></label>
+                <label class="poll-field">Crazy deals a day<input class="input" id="na-crazy_per_day" type="number" min="0" max="5" step="1" /></label>
+              </fieldset>
+              <fieldset class="na-group"><legend>Come-back nudges</legend>
+                <label class="poll-field">After (days away)<input class="input" id="na-nudge_after_days" type="number" min="1" max="30" step="1" /></label>
+                <label class="poll-field">Every (days)<input class="input" id="na-nudge_every_days" type="number" min="1" max="30" step="1" /></label>
+                <label class="poll-field">Max tries<input class="input" id="na-nudge_max" type="number" min="0" max="10" step="1" /></label>
+              </fieldset>
+            </div>
+            <p class="muted small" style="margin:8px 0 10px">Max pushes a day and min gap apply to everyone in Auto mode. Set
+              crazy deals or nudge tries to 0 to switch that kind off.</p>
+            <button class="btn btn-primary btn-sm" type="submit" id="na-save">Save</button>
+          </form>
+        </details>
+
+        <details class="inline-adv" id="na-plan-box">
+          <summary>Today's plan</summary>
+          <ul class="na-plan" id="na-plan"></ul>
+        </details>
+
+        <div class="row" style="margin-top:12px">
+          <button class="btn btn-soft btn-sm" id="na-preview-btn" type="button">Preview what would go out now</button>
+        </div>
+        <p class="muted small" style="margin:6px 0 0">Shows what Auto would pick right now. Sends nothing.</p>
+        <div class="na-preview hidden" id="na-preview"></div>
+
+        <details class="inline-adv">
+          <summary>Recently sent</summary>
+          <div style="overflow-x:auto"><table><tbody id="na-recent"></tbody></table></div>
+        </details>
+        <div class="msg hidden" id="na-msg"></div>
+      </section>
+
+      <section class="card" id="push-card">
+        <div class="card-head">
+          <h2>Hot-deal pushes (manual mode)</h2>
+          <span class="status-pill" id="push-pill">…</span>
+        </div>
+        <p class="muted help">Used in Manual mode. Every fetch cycle picks the best live deals — women's items first — and pushes
+          them to everyone at random moments before the next cycle. Nothing goes out in quiet hours. <b>In Auto mode the
+          automatic scheduler above replaces this</b>; "Send the top deal now" still works either way.</p>
+        <div class="msg hidden" id="push-warning"></div>
+        <div id="push-stats" class="muted small"></div>
+        <div id="push-plan" class="muted small" style="margin-top:6px"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn btn-primary btn-sm" id="push-now" type="button">Send the top deal now</button>
+          <button class="btn btn-soft btn-sm" id="push-refresh" type="button">Refresh</button>
+        </div>
+        <p class="muted help" style="margin:10px 0 0"><b>Send the top deal now</b> pushes the best current deal to every
+          phone immediately, outside the normal schedule.</p>
+        <div class="msg hidden" id="push-msg"></div>
+        <details class="inline-adv">
+          <summary>Recently sent pushes</summary>
+          <div style="overflow-x:auto"><table><tbody id="push-recent"></tbody></table></div>
+        </details>
+      </section>
+
+      <section class="card" id="notify-card">
+        <h2>Send a notification</h2>
+        <p class="muted help">Write your own message to every device that has opened the site or app. Optionally attach a
+          deal — its photo rides along, and tapping the notification opens it.</p>
+        <form id="notify-form" style="display:grid;gap:12px">
+          <label class="field" style="margin:0"><span>Attach a deal (optional)</span>
+            <div class="row">
+              <input class="input" id="notify-deal-search" placeholder="Search a deal by name, store or brand…" autocomplete="off" />
+              <button class="btn btn-ghost btn-sm hidden" id="notify-deal-clear" type="button">Clear</button>
+            </div>
+            <div id="notify-deal-picked" class="deal-picked hidden"></div>
+            <div id="notify-deal-results" class="deal-picker hidden"></div>
+          </label>
+          <label class="field" style="margin:0"><span>Title</span>
+            <input class="input" id="notify-title" maxlength="120" placeholder="🔥 Big Billion Days is live" required /></label>
+          <label class="field" style="margin:0"><span>Message</span>
+            <textarea class="input" id="notify-body" rows="3" maxlength="240" placeholder="Type what you want everyone to see…" required></textarea></label>
+          <div class="row"><button class="btn btn-primary" type="submit">Send to everyone</button></div>
+        </form>
+        <div class="msg hidden" id="notify-msg"></div>
+      </section>
+
+      <section class="card" id="tg-post-card">
+        <div class="card-head">
+          <h2>Posting to your Telegram channel</h2>
+          <span class="status-pill" id="tg-pill">…</span>
+        </div>
+        <p class="muted help">The server also posts good deals to your own public Telegram channel. <b>Pause</b> stops new
+          posts there — the site and app keep working normally.</p>
+        <div class="row">
+          <button class="btn btn-soft btn-sm" id="tg-pause" type="button">Pause posting to Telegram</button>
+          <button class="btn btn-soft btn-sm" id="tg-test" type="button">Send test post to Telegram</button>
+        </div>
+        <p class="muted help" style="margin:10px 0 0"><b>Test post</b> sends one sample message so you can check posting
+          works and see whether the live listener is connected.</p>
+        <div class="msg hidden" id="tgpost-msg"></div>
+      </section>
+    </section>
+
+    <!-- ======================= SOURCES ======================= -->
+    <section class="tab-panel hidden" id="tab-sources" data-panel="sources" role="tabpanel">
+      <div class="tab-intro">
+        <h2>Sources</h2>
+        <p class="muted help">Where deals come from: one Telegram account and the channels it reads.</p>
       </div>
-      <p class="muted small" id="poll-note" style="margin-top:-4px"></p>
-      <p class="muted">Every channel the reader account follows on Telegram is read automatically.
-        Block any you don't want on the site — blocked channels stay blocked. To add one, join it in Telegram
-        (then "Refresh from Telegram") or paste its @username below.</p>
-      <form class="row" id="add-form">
-        <input class="input" id="new-channel" placeholder="@dealschannel or https://t.me/dealschannel" required />
-        <button class="btn btn-primary" type="submit">Add channel</button>
-      </form>
-      <div class="msg hidden" id="channel-msg"></div>
-      <div style="overflow-x:auto;margin-top:14px">
-        <table>
-          <thead><tr><th>Channel</th><th>Status</th><th class="num">Members</th><th class="num">Live deals</th><th>Last read</th><th></th></tr></thead>
-          <tbody id="channels"></tbody>
-        </table>
-      </div>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Reader Telegram account</h2>
+          <span class="status-pill" id="reader-status">…</span>
+        </div>
+        <p class="muted help">This one account reads every channel below for all visitors. Visitors never sign in.
+          You only need to log in again if the pill above says the session expired.</p>
+
+        <details class="inline-adv" id="reader-login">
+          <summary>Connect / reconnect the account</summary>
+          <form class="row" id="step-phone">
+            <input class="input" id="phone" type="tel" placeholder="+91 81304 83894" required />
+            <button class="btn btn-primary" type="submit">Send login code</button>
+          </form>
+          <form class="row hidden" id="step-code">
+            <input class="input" id="code" inputmode="numeric" placeholder="Code from your Telegram app" required />
+            <button class="btn btn-primary" type="submit">Verify</button>
+          </form>
+          <form class="row hidden" id="step-password">
+            <input class="input" id="password" type="password" placeholder="Two-step verification password" required />
+            <button class="btn btn-primary" type="submit">Sign in</button>
+          </form>
+        </details>
+        <div class="msg hidden" id="login-msg"></div>
+
+        <div class="hidden" id="session-box" style="margin-top:16px">
+          <p class="muted" style="margin-bottom:8px"><b>Save this once:</b> copy it into Render → Environment as
+            <code>TELEGRAM_SESSION</code> so the reader survives restarts (the free plan wipes local data).
+            It is full access to this Telegram account — never share it.</p>
+          <textarea class="input" id="session" readonly></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn btn-soft btn-sm" id="copy-session" type="button">Copy</button></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Channels <span class="muted" id="channel-count" style="font-weight:500;font-size:.88rem"></span></h2>
+          <button class="btn btn-soft btn-sm" id="refresh" type="button">Refresh from Telegram</button>
+        </div>
+        <p class="muted help">Every channel the reader account follows on Telegram is read automatically. <b>Block</b>
+          any you don't want on the site — blocked channels stay blocked. <b>Refresh from Telegram</b> re-checks which
+          channels the account has joined; use it after joining or leaving one in the Telegram app.</p>
+        <form class="row" id="add-form">
+          <input class="input" id="new-channel" placeholder="@dealschannel or https://t.me/dealschannel" required />
+          <button class="btn btn-primary" type="submit">Add channel</button>
+        </form>
+        <div class="msg hidden" id="channel-msg"></div>
+        <div style="overflow-x:auto;margin-top:14px">
+          <table>
+            <thead><tr><th>Channel</th><th>Status</th><th class="num">Members</th><th class="num">Live deals</th><th>Last read</th><th></th></tr></thead>
+            <tbody id="channels"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </div>
 </main>

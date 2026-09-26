@@ -24,6 +24,8 @@ CHANNEL_BY_KIND = {
     "follow": "flash-sales",
     "hot_deal": "flash-sales",
     "broadcast": "flash-sales",
+    "crazy_deal": "flash-sales",   # notify_auto.py
+    "nudge": "daily-deals",        # notify_auto.py — gentle, not a flash alert
 }
 RETENTION_DAYS = 30
 

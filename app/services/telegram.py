@@ -321,6 +321,12 @@ async def fetch_messages(
         ]
     except FloodWaitError as exc:
         log.warning("Flood wait %ss on channel %s", exc.seconds, tg_channel_id)
+        try:
+            # Slows ingest down (both poll modes) so the reader account never gets locked.
+            from . import autopoll  # local: autopoll -> db only, but keep telegram's imports lean
+            autopoll.note_flood_wait(exc.seconds)
+        except Exception as note_exc:  # noqa: BLE001 — the original error matters more
+            log.warning("Couldn't record flood wait: %s", note_exc)
         raise TelegramError(f"Rate limited for {exc.seconds}s")
 
 

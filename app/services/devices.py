@@ -44,6 +44,7 @@ def register(device_id: str, platform: str = "", push_token: Optional[str] = Non
     db.execute(
         "INSERT INTO devices (device_id, platform, created_at, last_seen_at, turso_dirty) VALUES (?, ?, ?, ?, 1) "
         "ON CONFLICT(device_id) DO UPDATE SET last_seen_at = excluded.last_seen_at, turso_dirty = 1, "
+        "nudges_since_seen = 0, "  # they're back: a later lapse starts its nudge count afresh
         "platform = COALESCE(NULLIF(excluded.platform, ''), devices.platform)",
         (device_id, platform or "", now, now),
     )

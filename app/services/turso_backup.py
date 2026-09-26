@@ -94,7 +94,8 @@ _SCHEMA_MAIN = [
     """CREATE TABLE IF NOT EXISTS devices (
         device_id TEXT PRIMARY KEY,
         platform TEXT, push_token TEXT, digest INTEGER, digest_hour INTEGER,
-        follows TEXT, created_at REAL, last_seen_at REAL
+        follows TEXT, created_at REAL, last_seen_at REAL,
+        last_nudge_at REAL, nudges_since_seen INTEGER
     ) WITHOUT ROWID""",
     "CREATE TABLE IF NOT EXISTS dr_schema (version INTEGER NOT NULL)",
 ]
@@ -109,7 +110,10 @@ _PRICE_POINTS_DDL = """CREATE TABLE IF NOT EXISTS price_points (
 _ALERT_COLS = ["device_id", "created_at", "deal_id", "product_key", "title",
                "target_price", "start_price", "push_token", "triggered_at", "triggered_price"]
 _DEVICE_COLS = ["device_id", "platform", "push_token", "digest", "digest_hour",
-                "follows", "created_at", "last_seen_at"]
+                "follows", "created_at", "last_seen_at",
+                # Nudge bookkeeping (notify_auto.py): without it every restart
+                # would forget who was already nudged and ask them again.
+                "last_nudge_at", "nudges_since_seen"]
 _FOLLOW_COLS = ["kind", "value", "min_discount", "created_at"]
 
 _thread: Optional[threading.Thread] = None
@@ -485,8 +489,8 @@ def _push_alerts(client: httpx.Client) -> int:
 def _push_devices(client: httpx.Client) -> int:
     """Upsert changed devices, each with its follows folded in as JSON."""
     rows = db.query(
-        "SELECT device_id, platform, push_token, digest, digest_hour, created_at, last_seen_at, turso_dirty "
-        "FROM devices WHERE turso_dirty > 0 LIMIT ?", (BATCH_SIZE,))
+        "SELECT device_id, platform, push_token, digest, digest_hour, created_at, last_seen_at, "
+        "last_nudge_at, nudges_since_seen, turso_dirty FROM devices WHERE turso_dirty > 0 LIMIT ?", (BATCH_SIZE,))
     if not rows:
         return 0
     updates = ", ".join(f"{c} = excluded.{c}" for c in _DEVICE_COLS[1:])
@@ -693,10 +697,11 @@ def _restore_devices(saved: List[Dict[str, Any]]) -> int:
             continue
         db.execute(
             "INSERT INTO devices (device_id, platform, push_token, digest, digest_hour, created_at, last_seen_at, "
-            "turso_dirty) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
+            "last_nudge_at, nudges_since_seen, turso_dirty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
             (d["device_id"], d.get("platform") or "", d.get("push_token") or "", int(d.get("digest") or 0),
              int(d.get("digest_hour") if d.get("digest_hour") is not None else 19),
-             d.get("created_at"), d.get("last_seen_at")),
+             d.get("created_at"), d.get("last_seen_at"),
+             float(d.get("last_nudge_at") or 0), int(d.get("nudges_since_seen") or 0)),
         )
         try:
             follows = json.loads(d.get("follows") or "[]")

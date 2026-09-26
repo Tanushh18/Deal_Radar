@@ -69,20 +69,23 @@ def set_sync_paused(paused: bool) -> None:
 
 # --- runtime-adjustable poll interval (admin panel) ---------------------
 # Overrides settings.poll_interval_seconds without a redeploy. Stored in meta
-# (and mirrored to the Sheet's Settings tab like every other admin setting —
-# see admin.py), so it survives a restart on Render's ephemeral disk. Cached
+# (and mirrored to MongoDB's settings like every other admin setting — see
+# admin.py), so it survives a restart on Render's ephemeral disk. Cached
 # in memory after the first read: /api/ping advertises itself as DB-free
 # (an uptime pinger shouldn't cost a real query on every hit), and this
 # keeps that true after the first call — the cache is only ever written by
 # the two setters below, both called from the admin endpoint.
+#
+# That's "manual" mode. In "auto" mode autopoll.py picks the interval itself
+# from live data; either way autopoll's Telegram flood-wait guard applies.
 POLL_INTERVAL_META_KEY = "poll_interval_seconds_override"
-MIN_POLL_INTERVAL_SECONDS = 300      # 5 min floor — protects Telegram/Sheets/Turso from being hammered
-MAX_POLL_INTERVAL_SECONDS = 21600    # 6 h ceiling — past this it's not really "ingesting" any more
+MIN_POLL_INTERVAL_SECONDS = 60       # 1 min floor — the owner asked for it; autopoll's flood guard keeps Telegram safe
+MAX_POLL_INTERVAL_SECONDS = 3600     # 1 h ceiling — slower than this and deals expire before we see them
 _poll_interval_cache: Optional[int] = None
 
 
-def poll_interval_seconds() -> int:
-    """The cadence actually in effect: an admin override if one's set and valid, else the env default."""
+def manual_poll_interval_seconds() -> int:
+    """The manual cadence: an admin override if one's set and valid, else the env default."""
     global _poll_interval_cache
     if _poll_interval_cache is None:
         raw = db.get_meta(POLL_INTERVAL_META_KEY)
@@ -96,6 +99,18 @@ def poll_interval_seconds() -> int:
                 value = None
         _poll_interval_cache = value or settings.poll_interval_seconds
     return _poll_interval_cache
+
+
+def poll_interval_seconds() -> int:
+    """The cadence actually in effect right now (auto or manual, flood guard applied)."""
+    from . import autopoll  # local: autopoll is tiny, but keep ingest's import graph flat
+    try:
+        if autopoll.mode() == "auto":
+            return autopoll.current_seconds()
+        return autopoll.flood_guard(manual_poll_interval_seconds())
+    except Exception as exc:  # noqa: BLE001 — the scheduler must always get a number
+        log.warning("Poll interval lookup failed, using manual value: %s", exc)
+        return manual_poll_interval_seconds()
 
 
 def set_poll_interval_seconds(seconds: int) -> int:
@@ -113,6 +128,12 @@ def reset_poll_interval_seconds() -> int:
     db.set_meta(POLL_INTERVAL_META_KEY, "")
     _poll_interval_cache = settings.poll_interval_seconds
     return _poll_interval_cache
+
+
+def reset_poll_interval_cache() -> None:
+    """Forget the cached manual value (tests; mirrors a restart)."""
+    global _poll_interval_cache
+    _poll_interval_cache = None
 
 
 async def _resolve_reader(channel: Dict[str, Any]) -> Optional[int]:
@@ -794,6 +815,15 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             _state["last_result"] = result
             _state["last_error"] = None
             _state["cycles"] += 1
+            try:
+                # Feed auto poll mode and let it re-decide for the next wait —
+                # done in manual mode too (two cheap COUNTs), so the admin panel
+                # shows what auto would pick and flipping to it has history.
+                from . import autopoll
+                autopoll.record_cycle(totals["new"])
+                autopoll.decide()
+            except Exception as exc:  # noqa: BLE001 — never break the cycle over this
+                log.warning("Auto poll decision failed: %s", exc)
             return result
         except Exception as exc:  # noqa: BLE001
             log.exception("Ingest cycle failed")
@@ -824,9 +854,11 @@ async def scheduler_loop() -> None:
             raise
         except Exception as exc:  # noqa: BLE001
             log.warning("Scheduler iteration failed: %s", exc)
-        # A new cycle starts every poll_interval_seconds() (admin-adjustable —
-        # see set_poll_interval_seconds), however long the last one took.
-        await asyncio.sleep(max(30, poll_interval_seconds() - (time.time() - started)))
+        # A new cycle starts every poll_interval_seconds() (admin-adjustable,
+        # or picked by autopoll in auto mode), however long the last one took.
+        # The small floor only matters when a cycle overran its slot: it
+        # still gets a breather instead of starting again back-to-back.
+        await asyncio.sleep(max(5, poll_interval_seconds() - (time.time() - started)))
 
 
 async def keepalive_loop() -> None:

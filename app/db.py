@@ -440,6 +440,23 @@ def connect() -> Any:
         # feed instead). Not backed up — the app re-sends it on every launch.
         if "smart_schedule" not in device_cols:
             _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN smart_schedule INTEGER DEFAULT 0")
+        # Re-engagement nudges (notify_auto.py): when this device was last
+        # nudged, and how many nudges since it was last seen — capped so a
+        # lapsed user is asked back a few times, then left alone. register()
+        # resets the count whenever the device shows up again.
+        if "last_nudge_at" not in device_cols:
+            _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN last_nudge_at REAL DEFAULT 0")
+        if "nudges_since_seen" not in device_cols:
+            _safe_exec(_conn, "ALTER TABLE devices ADD COLUMN nudges_since_seen INTEGER DEFAULT 0")
+        # push_log.kind: hot_deal / crazy_deal / nudge / broadcast — the auto
+        # notifier counts its daily cap and gaps per kind. reach: how many
+        # devices it went to (everyone, or the inactive ones nudged).
+        push_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(push_log)").fetchall()}
+        if "kind" not in push_cols:
+            _safe_exec(_conn, "ALTER TABLE push_log ADD COLUMN kind TEXT DEFAULT 'hot_deal'")
+        if "reach" not in push_cols:
+            _safe_exec(_conn, "ALTER TABLE push_log ADD COLUMN reach INTEGER DEFAULT 0")
+        _safe_exec(_conn, "CREATE INDEX IF NOT EXISTS idx_push_log_sent ON push_log(sent_at)")
         notif_cols = {r[1] for r in _safe_exec(_conn, "PRAGMA table_info(device_notifications)").fetchall()}
         if "expires_at" not in notif_cols:
             _safe_exec(_conn, "ALTER TABLE device_notifications ADD COLUMN expires_at REAL DEFAULT 0")
