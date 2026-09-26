@@ -397,7 +397,7 @@ export function DealDetailScreen() {
             <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' }}>
               Price history
             </Text>
-            <FullHistoryCard state={bhState} history={bh} current={deal.price} />
+            <FullHistoryCard state={bhState} history={bh} merged={chartPoints} current={deal.price} />
             {chartPoints ? <PriceChart points={chartPoints} /> : <ActivityIndicator color={t.c.accent} />}
           </View>
 
@@ -503,10 +503,12 @@ const monthYear = (sec: number) =>
 function FullHistoryCard({
   state,
   history,
+  merged,
   current,
 }: {
   state: 'idle' | 'loading' | 'found' | 'none';
   history: BuyHatkeHistory | null;
+  merged: PricePoint[] | null;
   current: number | null;
 }) {
   const t = useTheme();
@@ -519,7 +521,14 @@ function FullHistoryCard({
     );
   }
   if (state !== 'found' || !history) return null;
-  const atLowest = current != null && current <= history.lowest;
+  // Same numbers the chart shows: BuyHatke's history plus our own points
+  // (today's price can be below BuyHatke's previous low).
+  const all = merged && merged.length ? merged : history.points;
+  const prices = all.map((p) => p.price);
+  const lowest = Math.min(...prices);
+  const highest = Math.max(...prices);
+  const since = Math.min(...all.map((p) => p.at));
+  const atLowest = current != null && current <= lowest;
   const stat = (label: string, value: string, color: string) => (
     <View style={{ flex: 1, gap: 2 }}>
       <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '700' }}>{label}</Text>
@@ -533,15 +542,19 @@ function FullHistoryCard({
           <Icon name="check" size={14} color={t.c.bg} strokeWidth={3} />
         </View>
         <Text style={{ flex: 1, color: t.c.text, fontSize: t.f.md, fontWeight: '800' }}>Full price history</Text>
-        <Text style={{ color: t.c.good, fontSize: t.f.xs, fontWeight: '700' }}>{history.points.length} points</Text>
+        <Text style={{ color: t.c.good, fontSize: t.f.xs, fontWeight: '700' }}>{all.length} points</Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        {stat('Lowest ever', money(history.lowest), t.c.good)}
-        {stat('Highest', money(history.highest), t.c.text)}
-        {stat('Tracked since', monthYear(history.since), t.c.text)}
+        {stat('Lowest ever', money(lowest), t.c.good)}
+        {stat('Highest', money(highest), t.c.text)}
+        {stat('Tracked since', monthYear(since), t.c.text)}
       </View>
       {atLowest ? (
-        <Text style={{ color: t.c.good, fontSize: t.f.sm, fontWeight: '700' }}>🎉 Today's price matches the lowest ever</Text>
+        <Text style={{ color: t.c.good, fontSize: t.f.sm, fontWeight: '700' }}>
+          {current != null && current < history.lowest
+            ? `🎉 Lowest price ever — below the previous low of ${money(history.lowest)}`
+            : "🎉 Today's price matches the lowest ever"}
+        </Text>
       ) : null}
       <Pressable
         accessibilityRole="link"
