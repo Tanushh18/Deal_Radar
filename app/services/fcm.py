@@ -48,7 +48,8 @@ def is_fcm_token(token: str) -> bool:
 
 
 def _account() -> Optional[Dict[str, Any]]:
-    raw = settings.fcm_service_account_json
+    # Tolerate the value pasted with its surrounding quotes (as .env exports show it).
+    raw = settings.fcm_service_account_json.strip().strip("'\"").strip()
     if not raw:
         return None
     try:
