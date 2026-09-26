@@ -134,21 +134,35 @@ export async function cachedHistory(lookupUrl: string): Promise<BuyHatkeHistory 
 
 let queue: Promise<unknown> = Promise.resolve();
 let lastRequest = 0;
-const inflight = new Map<string, Promise<BuyHatkeHistory | null>>();
 
 /**
- * BuyHatke's history for this product: from this phone's cache, or read now.
- * Resolves null when BuyHatke has no data, is unreachable, or is paused.
+ * found   — history (from this phone's cache or read now)
+ * none    — BuyHatke has no history for this product
+ * blocked — the quick request was challenged; the caller can retry in a
+ *           real browser engine (see HiddenPageReader) and hand the page to
+ *           ingestPage()
+ * failed  — offline, timed out, or paused after repeated pushback
  */
-export function buyHatkeHistory(lookupUrl: string | null | undefined): Promise<BuyHatkeHistory | null> {
-  if (!lookupUrl || !/^https:\/\/buyhatke\.com\//.test(lookupUrl)) return Promise.resolve(null);
-  const running = inflight.get(lookupUrl);
+export type HistoryResult =
+  | { kind: 'found'; history: BuyHatkeHistory }
+  | { kind: 'none' | 'blocked' | 'failed' };
+
+const inflightResults = new Map<string, Promise<HistoryResult>>();
+
+export function isLookupUrl(url: string | null | undefined): url is string {
+  return !!url && /^https:\/\/buyhatke\.com\//.test(url);
+}
+
+/** BuyHatke's history for this product, saying why when there isn't any. */
+export function loadHistory(lookupUrl: string | null | undefined): Promise<HistoryResult> {
+  if (!isLookupUrl(lookupUrl)) return Promise.resolve({ kind: 'none' });
+  const running = inflightResults.get(lookupUrl);
   if (running) return running;
-  const task = (async () => {
+  const task = (async (): Promise<HistoryResult> => {
     const cached = await cachedHistory(lookupUrl);
-    if (cached !== undefined) return cached;
+    if (cached !== undefined) return cached ? { kind: 'found', history: cached } : { kind: 'none' };
     const pausedUntil = Number((await AsyncStorage.getItem(PAUSE_KEY).catch(() => null)) || 0);
-    if (Date.now() < pausedUntil) return null;
+    if (Date.now() < pausedUntil) return { kind: 'failed' };
     // One at a time, spaced out, however many deals are opened.
     const turn = queue.then(async () => {
       const wait = MIN_GAP_MS - (Date.now() - lastRequest);
@@ -158,42 +172,54 @@ export function buyHatkeHistory(lookupUrl: string | null | undefined): Promise<B
     });
     queue = turn.catch(() => {});
     return turn;
-  })().finally(() => inflight.delete(lookupUrl));
-  inflight.set(lookupUrl, task);
+  })().finally(() => inflightResults.delete(lookupUrl));
+  inflightResults.set(lookupUrl, task);
   return task;
 }
 
-async function fetchPage(lookupUrl: string): Promise<BuyHatkeHistory | null> {
+export function isChallengePage(html: string): boolean {
+  const head = html.slice(0, 5000).toLowerCase();
+  return BLOCK_MARKERS.some((m) => head.includes(m));
+}
+
+/**
+ * A BuyHatke page read some other way (the in-app browser fallback). Stores
+ * and returns its history exactly like a normal fetch would.
+ */
+export async function ingestPage(lookupUrl: string, html: string, pageUrl: string): Promise<HistoryResult> {
+  if (isChallengePage(html)) return { kind: 'blocked' };
+  const url = /^https:\/\/(www\.)?buyhatke\.com\//.test(pageUrl) ? pageUrl : lookupUrl;
+  const points = downsample(parseHistory(html));
+  if (points.length < 2) {
+    await remember(lookupUrl, { exp: Date.now() + MISS_TTL_MS, p: null, url });
+    return { kind: 'none' };
+  }
+  await remember(lookupUrl, { exp: Date.now() + HIT_TTL_MS, p: points.flatMap((pt) => [pt.at, pt.price]), url });
+  return { kind: 'found', history: summarize(points, url) };
+}
+
+/** Both the quick request and the in-app browser failed: back off for an hour. */
+export function pauseAfterPushback(): Promise<void> {
+  return AsyncStorage.setItem(PAUSE_KEY, String(Date.now() + PAUSE_MS)).catch(() => {});
+}
+
+async function fetchPage(lookupUrl: string): Promise<HistoryResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   let res: Response;
   let html = '';
   try {
     res = await fetch(lookupUrl, { headers: { 'User-Agent': UA, Accept: 'text/html' }, signal: controller.signal });
-    html = res.status === 200 ? await res.text() : '';
+    html = await res.text().catch(() => '');
   } catch {
-    return null; // offline or slow: not cached, tried again next time
+    return { kind: 'failed' }; // offline or slow: not cached, tried again next time
   } finally {
     clearTimeout(timer);
   }
-  const head = html.slice(0, 5000).toLowerCase();
-  if ([403, 429, 503].includes(res.status) || BLOCK_MARKERS.some((m) => head.includes(m))) {
-    await AsyncStorage.setItem(PAUSE_KEY, String(Date.now() + PAUSE_MS)).catch(() => {});
-    return null;
-  }
-  if (res.status !== 200) return null;
-  const pageUrl = res.url && /^https:\/\/(www\.)?buyhatke\.com\//.test(res.url) ? res.url : lookupUrl;
-  const points = downsample(parseHistory(html));
-  if (points.length < 2) {
-    await remember(lookupUrl, { exp: Date.now() + MISS_TTL_MS, p: null, url: pageUrl });
-    return null;
-  }
-  await remember(lookupUrl, {
-    exp: Date.now() + HIT_TTL_MS,
-    p: points.flatMap((pt) => [pt.at, pt.price]),
-    url: pageUrl,
-  });
-  return summarize(points, pageUrl);
+  // A challenge here isn't the end: a real browser engine usually passes it.
+  if ([403, 429, 503].includes(res.status) || isChallengePage(html)) return { kind: 'blocked' };
+  if (res.status !== 200) return { kind: 'failed' };
+  return ingestPage(lookupUrl, html, res.url || lookupUrl);
 }
 
 /** Our points plus BuyHatke's, oldest first; ours win on an exact tie. */

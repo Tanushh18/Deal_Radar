@@ -5,7 +5,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
 import { api, errorMessage, isNotFound, isOffline, type Deal, type DealDetail, type PriceAlert, type PricePoint } from '../api';
-import { buyHatkeHistory, mergeHistory, type BuyHatkeHistory } from '../native/buyhatkeHistory';
+import { HiddenPageReader } from '../components/HiddenPageReader';
+import {
+  ingestPage,
+  isChallengePage,
+  loadHistory,
+  mergeHistory,
+  pauseAfterPushback,
+  type BuyHatkeHistory,
+  type HistoryResult,
+} from '../native/buyhatkeHistory';
 import { getDeviceId } from '../native/device';
 import { recordDealSignal } from '../native/smartNotify';
 import {
@@ -121,23 +130,42 @@ export function DealDetailScreen() {
 
   // BuyHatke's longer history, read on this phone (see buyhatkeHistory.ts).
   const [bh, setBh] = useState<BuyHatkeHistory | null>(null);
-  const [bhState, setBhState] = useState<'idle' | 'loading' | 'found' | 'none'>('idle');
+  const [bhState, setBhState] = useState<HistoryState>('idle');
   const lookup = deal?.history_lookup_url ?? null;
+  const applyResult = useCallback((r: HistoryResult) => {
+    if (r.kind === 'found') {
+      setBh(r.history);
+      setBhState('found');
+    } else if (r.kind === 'blocked') {
+      setBhState('browser'); // quick request was challenged: read it in the hidden in-app browser
+    } else {
+      setBhState(r.kind);
+    }
+  }, []);
   useEffect(() => {
     if (!lookup) return;
     let alive = true;
+    setBh(null);
     setBhState('loading');
-    buyHatkeHistory(lookup)
-      .then((h) => {
-        if (!alive) return;
-        setBh(h);
-        setBhState(h ? 'found' : 'none');
-      })
-      .catch(() => alive && setBhState('none'));
+    loadHistory(lookup)
+      .then((r) => alive && applyResult(r))
+      .catch(() => alive && setBhState('failed'));
     return () => {
       alive = false;
     };
-  }, [lookup]);
+  }, [lookup, applyResult]);
+  const onBrowserPage = useCallback(
+    (html: string, pageUrl: string) => {
+      if (!lookup || isChallengePage(html)) return false; // still on the check: keep waiting
+      void ingestPage(lookup, html, pageUrl).then(applyResult);
+      return true;
+    },
+    [lookup, applyResult],
+  );
+  const onBrowserGiveUp = useCallback(() => {
+    void pauseAfterPushback();
+    setBhState('failed');
+  }, []);
   const chartPoints = useMemo(() => (points && bh ? mergeHistory(points, bh.points) : points), [points, bh]);
 
   const share = () => {
@@ -397,7 +425,10 @@ export function DealDetailScreen() {
             <Text style={{ color: t.c.text3, fontSize: t.f.xs, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' }}>
               Price history
             </Text>
-            <FullHistoryCard state={bhState} history={bh} merged={chartPoints} current={deal.price} />
+            <FullHistoryCard state={bhState} history={bh} merged={chartPoints} current={deal.price} lookupUrl={lookup} />
+            {bhState === 'browser' && lookup ? (
+              <HiddenPageReader url={lookup} onPage={onBrowserPage} onGiveUp={onBrowserGiveUp} />
+            ) : null}
             {chartPoints ? <PriceChart points={chartPoints} /> : <ActivityIndicator color={t.c.accent} />}
           </View>
 
@@ -499,25 +530,52 @@ export function DealDetailScreen() {
 const monthYear = (sec: number) =>
   new Date(sec * 1000).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
 
+type HistoryState = 'idle' | 'loading' | 'browser' | 'found' | 'none' | 'failed';
+
 /** The "full price history" card: loading line, then the headline numbers from BuyHatke. */
 function FullHistoryCard({
   state,
   history,
   merged,
   current,
+  lookupUrl,
 }: {
-  state: 'idle' | 'loading' | 'found' | 'none';
+  state: HistoryState;
   history: BuyHatkeHistory | null;
   merged: PricePoint[] | null;
   current: number | null;
+  lookupUrl: string | null;
 }) {
   const t = useTheme();
-  if (state === 'loading') {
+  const openBuyHatke = (url: string | null) => url && WebBrowser.openBrowserAsync(url).catch(() => {});
+  if (state === 'loading' || state === 'browser') {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: t.r.sm, backgroundColor: t.c.surface2 }}>
         <ActivityIndicator size="small" color={t.c.good} />
         <Text style={{ color: t.c.text2, fontSize: t.f.sm }}>Fetching full price history…</Text>
       </View>
+    );
+  }
+  if (state === 'none') {
+    return (
+      <Text style={{ color: t.c.text3, fontSize: t.f.xs }}>
+        No longer price history on BuyHatke for this product yet — showing ours.
+      </Text>
+    );
+  }
+  if (state === 'failed') {
+    return (
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => openBuyHatke(lookupUrl)}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: t.r.sm, backgroundColor: t.c.surface2 }}
+      >
+        <Icon name="alert" size={16} color={t.c.text3} />
+        <Text style={{ flex: 1, color: t.c.text2, fontSize: t.f.sm }}>
+          Couldn't load the full history right now.{' '}
+          <Text style={{ color: t.c.accent, fontWeight: '700' }}>Open on BuyHatke ↗</Text>
+        </Text>
+      </Pressable>
     );
   }
   if (state !== 'found' || !history) return null;
