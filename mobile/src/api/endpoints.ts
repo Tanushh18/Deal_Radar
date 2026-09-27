@@ -1,5 +1,6 @@
 import { request } from './client';
 import type {
+  Offer,
   AppNotification,
   AuthConfig,
   AvailableChannel,
@@ -99,6 +100,9 @@ export const deals = {
   categories: (o: Sig = {}) => request<{ categories: Category[] }>('/api/deals/categories', o),
   facets: (allChannels = false, o: Sig = {}) =>
     request<Facets>('/api/deals/facets', { query: { all_channels: allChannels || undefined }, signal: o.signal }),
+  /** Search-only "More offers": recent channel posts that aren't full deal cards. */
+  offers: (q: string, limit = 12, o: Sig = {}) =>
+    request<{ results: Offer[] }>('/api/deals/offers', { query: { q, limit }, signal: o.signal, timeoutMs: 10_000 }),
   trending: (limit = 12, o: Sig = {}) =>
     request<{ results: Deal[] }>('/api/deals/trending', { query: { limit }, signal: o.signal }),
   get: (id: string, o: Sig = {}) => request<DealDetail>(`/api/deals/${enc(id)}`, o),

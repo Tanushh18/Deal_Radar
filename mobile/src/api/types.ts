@@ -242,3 +242,15 @@ export type DeviceSettings = {
   device: { digest: boolean; digest_hour: number | null } | null;
   follows: Follow[];
 };
+
+/** A channel post that isn't a full deal card, shown under a search as "More offers". */
+export interface Offer {
+  id: string;
+  title: string;
+  price: number | null;
+  /** true: `price` is a starting price ("from ₹229"). */
+  price_from: boolean;
+  store: string;
+  url: string;
+  posted_at: number;
+}

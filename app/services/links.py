@@ -217,15 +217,28 @@ async def resolve_deals(deals: List[Dict[str, Any]]) -> int:
     return resolved
 
 
-# --- Amazon photos for text-only posts --------------------------------------
-# About a quarter of posts are just "Product @price + amzn.to link" with no
-# photo, and the photo gate drops them. Once the shortlink is resolved the ASIN
-# is known, and Amazon's own image CDN serves the product photo by ASIN — one
-# image request, never a product page (Amazon pages stay unscraped). An unknown
-# ASIN comes back as a tiny placeholder GIF, hence the size check.
+# --- Store photos for text-only posts ---------------------------------------
+# About a quarter of posts are just "Product @price + link" with no photo, and
+# the photo gate drops them. Once the shortlink is resolved we know the product:
+#   * Amazon — its image CDN serves the photo by ASIN: one image request, never
+#     a product page (Amazon pages stay unscraped). An unknown ASIN comes back
+#     as a tiny placeholder GIF, hence the size check.
+#   * Flipkart / Shopsy / Myntra — the product page names its photo in an
+#     og:image tag near the top; we read only until we find it.
+# Ajio and Meesho turn servers away (403), so they're not tried.
 AMAZON_IMAGE_URL = "https://m.media-amazon.com/images/P/{asin}.01._SCLZZZZZZZ_.jpg"
 _MIN_IMAGE_BYTES = 1000
-_asin_images: "OrderedDict[str, str]" = OrderedDict()
+_PAGE_READ_LIMIT = 450_000   # Myntra's tag sits ~220KB in; Flipkart's ~80KB
+_PAGE_IMAGE_HOSTS = ("flipkart.com", "shopsy.in", "myntra.com")
+_PAGE_IMAGE_TIMEOUT = 8.0
+_MOBILE_UA = ("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36")
+_OG_IMAGE_RE = re.compile(
+    r"""<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*content=["']([^"']+)["']"""
+    r"""|<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image|twitter:image)["']""",
+    re.IGNORECASE,
+)
+_images: "OrderedDict[str, str]" = OrderedDict()   # product key -> photo url ("" = none)
 
 
 def amazon_asin(deal: Dict[str, Any]) -> Optional[str]:
@@ -233,34 +246,89 @@ def amazon_asin(deal: Dict[str, Any]) -> Optional[str]:
     return key.split(":", 1)[1] if key.startswith("amazon:") else None
 
 
-async def fill_amazon_images(deals: List[Dict[str, Any]]) -> int:
-    """Give photo-less Amazon deals their product photo. Returns how many got one."""
-    todo = [d for d in deals if not d.get("image_url") and amazon_asin(d)]
+def _page_host(url: str) -> Optional[str]:
+    """The store host we may read a photo from (never one in SCRAPE_SKIP_STORES)."""
+    from ..config import settings  # local: keep this module importable without app config
+    host = (urlparse(url).hostname or "").lower()
+    match = next((h for h in _PAGE_IMAGE_HOSTS if host == h or host.endswith("." + h)), None)
+    return match if match and parser.detect_store(url) not in settings.scrape_skip_stores else None
+
+
+def _tidy_image(url: str) -> str:
+    """Card-sized, https version of a store's photo URL."""
+    url = url.replace("&amp;", "&").strip()
+    if url.startswith("//"):
+        url = "https:" + url
+    url = re.sub(r"^http://", "https://", url)
+    # Flipkart/Shopsy: /image/{w}/{h}/… (sometimes a literal {@width}/{@height} template).
+    url = re.sub(r"/image/(?:\{@width\}|\d+)/(?:\{@height\}|\d+)/", "/image/416/416/", url)
+    # Myntra: h_1440,q_75,w_1080 → half size.
+    url = re.sub(r"h_\d+,q_(\d+),w_\d+", r"h_720,q_\1,w_540", url)
+    return url
+
+
+def image_from_page(html: str) -> str:
+    match = _OG_IMAGE_RE.search(html or "")
+    return _tidy_image(match.group(1) or match.group(2)) if match else ""
+
+
+async def _page_image(client: httpx.AsyncClient, url: str) -> str:
+    """The og:image of a Flipkart/Shopsy/Myntra product page, reading as little as possible."""
+    async with client.stream("GET", url) as r:
+        if r.status_code != 200 or not _page_host(str(r.url)):
+            return ""
+        seen = ""
+        async for chunk in r.aiter_text():
+            seen += chunk
+            found = image_from_page(seen)
+            if found:
+                return found
+            if len(seen) > _PAGE_READ_LIMIT:
+                break
+    return ""
+
+
+async def _amazon_image(client: httpx.AsyncClient, asin: str) -> str:
+    url = AMAZON_IMAGE_URL.format(asin=asin)
+    r = await client.get(url)
+    ok = r.status_code == 200 and r.headers.get("content-type", "").startswith("image/") and len(r.content) >= _MIN_IMAGE_BYTES
+    return url if ok else ""
+
+
+async def fill_store_images(deals: List[Dict[str, Any]]) -> int:
+    """Give photo-less deals their product photo from the store. Returns how many got one."""
+    todo = []
+    for deal in deals:
+        if deal.get("image_url"):
+            continue
+        asin = amazon_asin(deal)
+        page = deal.get("resolved_url") or deal.get("url") or ""
+        if asin:
+            todo.append((deal, deal["product_key"], "amazon", asin))
+        elif _page_host(page) and is_product_page(page):
+            todo.append((deal, deal.get("product_key") or page, "page", page))
     if not todo:
         return 0
     semaphore = asyncio.Semaphore(CONCURRENCY)
     filled = 0
 
-    async with httpx.AsyncClient(timeout=HOP_TIMEOUT, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=_PAGE_IMAGE_TIMEOUT, follow_redirects=True,
+                                 headers={"User-Agent": _MOBILE_UA}) as client:
 
-        async def one(deal: Dict[str, Any]) -> None:
+        async def one(deal: Dict[str, Any], key: str, kind: str, target: str) -> None:
             nonlocal filled
-            asin = amazon_asin(deal) or ""
-            if asin not in _asin_images:
-                url = AMAZON_IMAGE_URL.format(asin=asin)
+            if key not in _images:
                 async with semaphore:
                     try:
-                        r = await client.get(url)
-                        ok = (r.status_code == 200 and r.headers.get("content-type", "").startswith("image/")
-                              and len(r.content) >= _MIN_IMAGE_BYTES)
-                    except httpx.HTTPError:
+                        found = await (_amazon_image(client, target) if kind == "amazon" else _page_image(client, target))
+                    except (httpx.HTTPError, UnicodeDecodeError):
                         return  # network blip: try again on the next repost, don't cache
-                _asin_images[asin] = url if ok else ""
-                while len(_asin_images) > _CACHE_MAX:
-                    _asin_images.popitem(last=False)
-            if _asin_images[asin]:
-                deal["image_url"] = _asin_images[asin]
+                _images[key] = found
+                while len(_images) > _CACHE_MAX:
+                    _images.popitem(last=False)
+            if _images[key]:
+                deal["image_url"] = _images[key]
                 filled += 1
 
-        await asyncio.gather(*(one(d) for d in todo), return_exceptions=True)
+        await asyncio.gather(*(one(*item) for item in todo), return_exceptions=True)
     return filled

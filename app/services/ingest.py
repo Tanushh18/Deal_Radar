@@ -30,7 +30,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import links, mongo_store, parser, price_store, push, quality, ratelimit, sale_events, search, store, telegram, tg_post
+from . import links, mongo_store, offers, parser, price_store, push, quality, ratelimit, sale_events, search, store, telegram, tg_post
 
 log = logging.getLogger(__name__)
 
@@ -226,6 +226,7 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
     gate_on = settings.quality_filter
     highest = watermark
     candidates = []
+    turned_away: List[Dict[str, Any]] = []   # kept for search as "More offers"
     for message in messages:
         highest = max(highest, int(message.id or 0))
         text = with_hidden_links(message.message or getattr(message, "raw_text", "") or "", message)
@@ -247,6 +248,8 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
         reason = quality.text_reason(deal) if gate_on else None
         if reason:
             filtered(reason)
+            if offers.keep(deal, reason):
+                turned_away.append(deal)
             continue
         candidates.append((deal, message))
 
@@ -261,9 +264,9 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
         if getattr(message, "photo", None):
             deal["image_url"] = store.telegram_image_url(deal["id"], int(channel["tg_id"]), int(message.id))
     try:
-        await links.fill_amazon_images([deal for deal, _ in candidates])
+        await links.fill_store_images([deal for deal, _ in candidates])
     except Exception as exc:  # noqa: BLE001 — a missing photo only means the gate decides
-        log.warning("Amazon image lookup failed for %s: %s", channel.get("title"), exc)
+        log.warning("Store image lookup failed for %s: %s", channel.get("title"), exc)
 
     # Local SQLite only keeps a few days; pull these products' longer history
     # from Turso in one round trip so the ALL-TIME LOW and fake-MRP checks in
@@ -273,7 +276,10 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
     for deal, message in candidates:
         outcome = store.save_deal(deal, gate=quality.reject_reason if gate_on else None)
         if outcome == "filtered":
-            filtered(quality.reject_reason(deal) or "filtered")
+            reason = quality.reject_reason(deal) or "filtered"
+            filtered(reason)
+            if offers.keep(deal, reason):
+                turned_away.append(deal)
             continue
         store.remember_resolved_url(deal)
         if outcome == "new":
@@ -291,6 +297,8 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
             if saved and client is not None:
                 from . import live
                 await tg_post.maybe_publish(db.row_to_dict(saved) or {}, live._photo_loader(client, message))
+
+    offers.save_later(turned_away)
 
     if highest > watermark:
         db.execute(
@@ -774,6 +782,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 log.warning("Hot-push scheduling failed: %s", exc)
 
             purged_ids = store.purge_ancient()
+            offers.prune()
             store.purge_housekeeping()
             _purge_local_cache()
             push.prune_notifications()

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from .. import auth, db
 
-from ..services import buyhatke, price_store, ratelimit, search, store, taxonomy, telegram
+from ..services import buyhatke, offers, price_store, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -71,6 +71,17 @@ async def suggest_deals(
 ):
     scope = None if all_channels else _scope(user)
     return search.suggest(q, channel_ids=scope, limit=limit)
+
+
+@router.get("/offers")
+async def more_offers(
+    q: str = Query("", max_length=120),
+    limit: int = Query(12, ge=1, le=40),
+    _rl=Depends(_limit_search),
+):
+    """Search-only "More offers": recent channel posts that aren't full deal cards."""
+    q = q.strip()
+    return {"results": offers.search(q, limit) if len(q) >= 2 else []}
 
 
 @router.get("")

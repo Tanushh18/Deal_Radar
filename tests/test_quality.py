@@ -186,16 +186,24 @@ def main() -> int:
     priority.reset_cache()
     check("a rule saved before exclusions picks them up", "beardo" in priority.get()["exclude_keywords"])
 
-    print("\n=== 8. AMAZON PHOTOS FOR TEXT-ONLY POSTS ===")
+    print("\n=== 8. STORE PHOTOS FOR TEXT-ONLY POSTS ===")
     import asyncio
     import httpx
 
     real_httpx, hits = links.httpx, []
+    padding = "<script>" + "x" * 90_000 + "</script>"   # the tag isn't in the first chunk
 
     def cdn(request: httpx.Request) -> httpx.Response:
-        hits.append(str(request.url))
-        if "B0KNOWN001" in str(request.url):
+        url = str(request.url)
+        hits.append(url)
+        if "B0KNOWN001" in url:
             return httpx.Response(200, headers={"content-type": "image/jpeg"}, content=b"\xff" * 5000)
+        if "flipkart.com" in url:
+            page = (f"<html><head>{padding}<meta property=\"og:image\" "
+                    "content=\"https://rukminim3.flixcart.com/image/{@width}/{@height}/xif0q/heater/a.jpeg\"></head>")
+            return httpx.Response(200, headers={"content-type": "text/html"}, text=page)
+        if "myntra.com" in url:
+            return httpx.Response(200, headers={"content-type": "text/html"}, text=padding * 8)  # no tag at all
         return httpx.Response(200, headers={"content-type": "image/gif"}, content=b"GIF89a" + b"\0" * 37)
 
     class _FakeHttpx:
@@ -213,16 +221,31 @@ def main() -> int:
                        9, 2, photo=False)
         flip = post("Orient Areva Portable Room Heater @1399\n\nhttps://www.flipkart.com/x/p/itm123?pid=HTRABCDEFGH",
                     9, 3, photo=False)
-        n = asyncio.run(links.fill_amazon_images([known, unknown, flip]))
+        myn = post("Highlander Men Slim Fit Casual Shirt @499\n\nhttps://www.myntra.com/shirts/highlander/x/16090648/buy",
+                   9, 5, photo=False)
+        ajio = post("Pepe Jeans Men Slim Fit Denim Jeans @899\n\nhttps://www.ajio.com/pepe/p/469123456_blue",
+                    9, 6, photo=False)
+        roundup = post("Orient Heaters Collection @999\n\nhttps://www.flipkart.com/search?q=heater", 9, 7, photo=False)
+        n = asyncio.run(links.fill_store_images([known, unknown, flip, myn, ajio, roundup]))
         check("text-only Amazon post gets its product photo", known["image_url"].startswith("https://m.media-amazon.com/")
               and "B0KNOWN001" in known["image_url"], known["image_url"])
         check("…and now passes the photo gate", quality.reject_reason(known) is None, str(quality.reject_reason(known)))
-        check("placeholder image for an unknown ASIN is ignored", not unknown["image_url"] and n == 1)
-        check("non-Amazon posts are left alone", not flip["image_url"] and len(hits) == 2, str(hits))
+        check("placeholder image for an unknown ASIN is ignored", not unknown["image_url"])
+        check("Flipkart photo read from the product page, card-sized",
+              flip["image_url"] == "https://rukminim3.flixcart.com/image/416/416/xif0q/heater/a.jpeg", flip["image_url"])
+        check("a page without a photo tag gives nothing (and is read only so far)", not myn["image_url"])
+        check("Ajio (blocks servers) and non-product pages are never fetched",
+              not ajio["image_url"] and not roundup["image_url"]
+              and not any("ajio" in h or "search?q" in h for h in hits), str(hits))
+        check("exactly the photos found are counted", n == 2, str(n))
+        before = len(hits)
         again = post("Nippon Gold Interior Emulsion Paint, 4 Ltr @899.\n\nhttps://www.amazon.in/dp/B0KNOWN001", 9, 4,
                      photo=False)
-        asyncio.run(links.fill_amazon_images([again]))
-        check("an ASIN is looked up once, then cached", again["image_url"] and len(hits) == 2, str(hits))
+        asyncio.run(links.fill_store_images([again]))
+        check("a product is looked up once, then cached", again["image_url"] and len(hits) == before, str(hits))
+        check("real Flipkart og:image markup is parsed",
+              links.image_from_page('<meta property="og:image" content="http://rukmini1.flixcart.com/image/300/300/a.jpeg"/>')
+              == "https://rukmini1.flixcart.com/image/416/416/a.jpeg")
     finally:
         links.httpx = real_httpx
 

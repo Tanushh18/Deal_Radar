@@ -16,7 +16,7 @@ import {
 import { Text } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { api, errorMessage, isAbort, isOffline, type Deal, type DealsPage, type KeyCount, type NamedCount, type Stats } from '../api';
+import { api, errorMessage, isAbort, isOffline, type Deal, type DealsPage, type KeyCount, type NamedCount, type Offer, type Stats } from '../api';
 import {
   AnimatedBackdrop,
   BrandMark,
@@ -31,6 +31,7 @@ import {
   Icon,
   IconButton,
   NewDealsPill,
+  OffersSection,
   OfflineBanner,
   SectionHead,
   activeFilterChips,
@@ -247,6 +248,20 @@ export function DealsScreen() {
       .list({ q, archive: true, sort: 'relevance', limit: 24, offset: 0 }, { signal: ctrl.signal })
       .then((r) => setArchive({ q, total: r.total, results: r.results ?? [] }))
       .catch(() => {});
+    return () => ctrl.abort();
+  }, [filters.q, refreshTick]);
+
+  /* ---------------- more offers (non-card posts for a search) ---------------- */
+  const [offers, setOffers] = useState<{ q: string; results: Offer[] } | null>(null);
+  useEffect(() => {
+    const q = filters.q.trim();
+    setOffers(null);
+    if (q.length < 2) return;
+    const ctrl = new AbortController();
+    api.deals
+      .offers(q, 12, { signal: ctrl.signal })
+      .then((r) => setOffers({ q, results: r.results ?? [] }))
+      .catch(() => {}); // older servers have no /offers — the section just stays hidden
     return () => ctrl.abort();
   }, [filters.q, refreshTick]);
 
@@ -615,6 +630,7 @@ export function DealsScreen() {
   /* ---------------- empty / error ---------------- */
   const hasFilters = !!(filters.q || filterCount);
   const archiveHits = archive && archive.q === filters.q.trim() ? archive : null;
+  const offerHits = offers && offers.q === filters.q.trim() && offers.results.length ? offers : null;
   let empty: React.ReactElement | null = null;
   if (status === 'loading') {
     empty = (
@@ -635,7 +651,7 @@ export function DealsScreen() {
         actions={[{ title: 'Try again', variant: 'primary', onPress: () => load('reset') }]}
       />
     );
-  } else if (!archiveHits?.total) {
+  } else if (!archiveHits?.total && !offerHits) {
     empty = (
       <EmptyState
         icon={hasFilters ? 'search' : 'tag'}
@@ -666,12 +682,15 @@ export function DealsScreen() {
         <View style={{ paddingVertical: 20 }}>
           <ActivityIndicator color={t.c.accent} />
         </View>
-      ) : status === 'ready' && items.length > 0 && items.length >= total && !archiveHits?.total ? (
+      ) : status === 'ready' && items.length > 0 && items.length >= total && !archiveHits?.total && !offerHits ? (
         <Text style={{ textAlign: 'center', color: t.c.text3, fontSize: t.f.xs, paddingVertical: 20 }}>
           {stats?.deal_ttl_hours
             ? `You’re all caught up · deals are kept ${stats.deal_ttl_hours}h or until the link goes dead.`
             : 'You’re all caught up'}
         </Text>
+      ) : null}
+      {offerHits && status === 'ready' && !loadingMore ? (
+        <OffersSection q={offerHits.q} offers={offerHits.results} flat={flat} />
       ) : null}
       {archiveHits?.total && status === 'ready' ? (
         <ArchiveSection

@@ -14,3 +14,4 @@ export * from './offline';
 export * from './Rails';
 export * from './Saved';
 export * from './StoreLogo';
+export * from './OffersSection';

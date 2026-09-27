@@ -101,7 +101,12 @@ def msg(text: str, channel: int, photo: bool = True, age_minutes: float = 0):
 
 
 def run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:  # Python 3.14+: no implicit loop outside async code
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
 
 
 def feed(text: str, channel: int = 1, **kw) -> bool:

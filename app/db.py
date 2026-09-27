@@ -257,6 +257,24 @@ CREATE TABLE IF NOT EXISTS coupon_reports (
 );
 CREATE INDEX IF NOT EXISTS idx_coupon_reports_deal ON coupon_reports(deal_id);
 
+-- Channel posts that didn't become a card (round-ups, no price, no photo…),
+-- kept a few days so search can still find them as "More offers" (offers.py).
+-- Only what a result row shows is kept — never the post text or its channel name.
+CREATE TABLE IF NOT EXISTS offers (
+    id          TEXT PRIMARY KEY,   -- "<channel_id>:<message_id>"
+    title       TEXT,
+    price       REAL,
+    price_from  INTEGER DEFAULT 0,  -- 1: a starting price ("Kurtas starting 229"), shown as "from ₹229"
+    store       TEXT,
+    url         TEXT,
+    brand       TEXT,
+    category    TEXT,
+    subcategory TEXT,
+    title_key   TEXT,               -- normalised title: the same offer from 5 channels shows once
+    posted_at   REAL
+);
+CREATE INDEX IF NOT EXISTS idx_offers_posted ON offers(posted_at DESC);
+
 -- Deletes/renames waiting to be replayed on Turso (see turso_enqueue).
 -- target: which Turso database this statement runs against — 'main'
 -- (deals/products/price_alerts) or 'prices' (price_points; its own

@@ -814,7 +814,7 @@
         : 'Show deals';
 
       $('#btn-more').classList.toggle('hidden', state.offset + res.count >= res.total);
-      if (reset) loadArchive(res.total);
+      if (reset) { loadArchive(res.total); loadOffers(res.total); }
       if (!res.total && !state.filters.q) showEmpty();
     } catch (err) {
       if (err.name === 'AbortError') return; // superseded by a newer search — ignore
@@ -959,7 +959,7 @@
       if (controller.signal.aborted) return;
       if (!res.total) {
         wrap.classList.add('hidden');
-        if (!liveTotal) showEmpty();
+        if (!liveTotal && $('#offers-wrap').classList.contains('hidden')) showEmpty();
         return;
       }
       $('#archive-sub').textContent = liveTotal
@@ -967,6 +967,41 @@
         : `No live deal for “${q}” right now — ${res.total.toLocaleString()} earlier deal${res.total === 1 ? '' : 's'} from our archive`;
       $('#archive-grid').innerHTML = res.results.map(dealCard).join('');
       bindDetailTriggers($('#archive-grid'));
+      wrap.classList.remove('hidden');
+      if (!liveTotal) $('#empty-state').classList.add('hidden');
+    } catch (err) {
+      if (err.name !== 'AbortError') wrap.classList.add('hidden');
+    }
+  }
+
+  /* ---------------- more offers: sales & round-ups for a search ---------------- */
+  let offersAbort = null;
+  function offerRow(o) {
+    const price = o.price ? `<b>${o.price_from ? 'from ' : ''}${money(o.price)}</b>` : '';
+    const logo = o.store
+      ? `<img class="offer-logo" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(o.store === 'amazon' ? 'amazon.in' : o.store === 'shopsy' ? 'shopsy.in' : o.store + '.com')}&sz=64" alt="" loading="lazy" onerror="this.remove()" />`
+      : '<span class="offer-logo"></span>';
+    const meta = [o.store ? o.store.toUpperCase() : '', timeAgo(o.posted_at).toUpperCase()].filter(Boolean).join(' · ');
+    return `<a class="offer-row" href="${escapeHtml(o.url)}" target="_blank" rel="noopener nofollow">
+      ${logo}
+      <span class="offer-body"><span class="offer-title">${escapeHtml(o.title)}</span>
+      <span class="offer-meta">${price}<span>${escapeHtml(meta)}</span></span></span>
+      <span class="offer-go" aria-hidden="true">↗</span></a>`;
+  }
+  async function loadOffers(liveTotal) {
+    const wrap = $('#offers-wrap');
+    const q = (state.filters.q || '').trim();
+    offersAbort?.abort();
+    if (q.length < 2) { wrap.classList.add('hidden'); return; }
+    const controller = new AbortController();
+    offersAbort = controller;
+    try {
+      const res = await api('/api/deals/offers?' + new URLSearchParams({ q, limit: 12 }), { signal: controller.signal });
+      if (controller.signal.aborted) return;
+      const rows = res.results || [];
+      if (!rows.length) { wrap.classList.add('hidden'); return; }
+      $('#offers-sub').textContent = `Sales and offers matching “${q}” from the last few days`;
+      $('#offers-list').innerHTML = rows.map(offerRow).join('');
       wrap.classList.remove('hidden');
       if (!liveTotal) $('#empty-state').classList.add('hidden');
     } catch (err) {

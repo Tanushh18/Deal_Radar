@@ -20,7 +20,7 @@ from telethon import events
 
 from .. import db
 from ..config import settings
-from . import links, parser, price_store, quality, store, telegram, tg_post
+from . import links, offers, parser, price_store, quality, store, telegram, tg_post
 
 log = logging.getLogger("dealradar.live")
 
@@ -76,7 +76,10 @@ async def handle_message(client: Any, message: Any) -> Optional[str]:
     # Same steps as the poll cycle (ingest.ingest_channel), so a post is
     # judged identically whichever path sees it first.
     gate_on = settings.quality_filter
-    if gate_on and quality.text_reason(deal):
+    reason = quality.text_reason(deal) if gate_on else None
+    if reason:
+        if offers.keep(deal, reason):
+            offers.save_later([deal])
         return "filtered"
     try:
         await links.resolve_deals([deal])
@@ -85,14 +88,17 @@ async def handle_message(client: Any, message: Any) -> Optional[str]:
     if getattr(message, "photo", None):
         deal["image_url"] = store.telegram_image_url(deal["id"], int(tg_id), int(message.id))
     try:
-        await links.fill_amazon_images([deal])
+        await links.fill_store_images([deal])
     except Exception as exc:  # noqa: BLE001
-        log.info("Amazon image lookup failed: %s", exc)
+        log.info("Store image lookup failed: %s", exc)
 
     # Full Turso history first, so the all-time-low and fake-MRP checks are right.
     await price_store.prefetch([deal["product_key"]] if deal.get("product_key") else [])
     outcome = store.save_deal(deal, gate=quality.reject_reason if gate_on else None)
     if outcome == "filtered":
+        reason = quality.reject_reason(deal) or "filtered"
+        if offers.keep(deal, reason):
+            offers.save_later([deal])
         return outcome
     store.remember_resolved_url(deal)
     _stats["deals"] += 1
