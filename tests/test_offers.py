@@ -116,6 +116,15 @@ def main() -> int:
         db.execute("UPDATE offers SET posted_at = ? WHERE title LIKE '%Kurta%'", (time.time() - 8 * 86400,))
         removed = offers.prune()
         check("offers older than a week are pruned", removed == 2, str(removed))
+        check("a channel handle is never an offer title",
+              not offers.keep({"title": "@Lootunboxing", "url": "https://bitli.in/x"}, "vague")
+              and offers.clean_title("Kurta Set @lootdeals - starting 229 t.me/lootdeals") == "Kurta Set - starting 229"
+              and offers.clean_title("Story@Home Door Curtains") == "Story@Home Door Curtains")
+        db.upsert("offers", {"id": "9:9", "title": "@Lootunboxing", "title_key": "lootunboxing", "posted_at": time.time()})
+        db.upsert("offers", {"id": "9:10", "title": "Nike Shoes @nikeloot", "title_key": "x", "posted_at": time.time()})
+        offers.prune()
+        left = {r["id"]: r["title"] for r in db.rows_to_dicts(db.query("SELECT id, title FROM offers WHERE id LIKE '9:%'"))}
+        check("handles already stored are cleaned or dropped", left == {"9:10": "Nike Shoes"}, str(left))
         check("unknown shortener isn't shown as a store",
               offers._row({"title": "Some Product Here", "url": "https://bitli.in/x", "store": "bitli"})["store"] == "")
     finally:

@@ -36,12 +36,22 @@ _FROM_PRICE_RE = re.compile(
 _pending: set = set()   # strong refs to background save tasks
 
 
+# A channel's own handle or link ("@Lootunboxing", "t.me/xyz") must never
+# become an offer title. A handle starts a word ("Story@Home" is a brand).
+_HANDLE_RE = re.compile(r"(?:(?<=\s)|^)@[A-Za-z_][A-Za-z0-9_]{2,}|(?:https?://)?t\.me/\S*", re.IGNORECASE)
+
+
+def clean_title(title: str) -> str:
+    return re.sub(r"\s{2,}", " ", _HANDLE_RE.sub(" ", title or "")).strip(" -|:·")
+
+
 def _title_key(title: str) -> str:
     return _KEY_RE.sub(" ", (title or "").lower()).strip()[:120]
 
 
 def keep(deal: Dict[str, Any], reason: str) -> bool:
-    return bool(deal and reason not in _SKIP_REASONS and deal.get("url") and len(_title_key(deal.get("title") or "")) >= 4)
+    return bool(deal and reason not in _SKIP_REASONS and deal.get("url")
+                and len(_title_key(clean_title(deal.get("title") or ""))) >= 4)
 
 
 def _from_price(title: str) -> float:
@@ -51,7 +61,7 @@ def _from_price(title: str) -> float:
 
 def _row(deal: Dict[str, Any]) -> Dict[str, Any]:
     store = (deal.get("store") or "").lower()
-    title = deal.get("title") or ""
+    title = clean_title(deal.get("title") or "")
     # A round-up's "starting 229" beats whatever single number the parser guessed.
     floor = _from_price(title)
     price = floor or (float(deal["price"]) if deal.get("price") else None)
@@ -95,7 +105,16 @@ def save_later(deals: List[Dict[str, Any]]) -> None:
 
 
 def prune(days: int = OFFER_DAYS) -> int:
-    return db.execute("DELETE FROM offers WHERE posted_at < ?", (time.time() - days * 86400,)).rowcount or 0
+    removed = db.execute("DELETE FROM offers WHERE posted_at < ?", (time.time() - days * 86400,)).rowcount or 0
+    # Rows saved before handles were stripped: clean them, or drop them if nothing is left.
+    for row in db.rows_to_dicts(db.query(
+            "SELECT id, title FROM offers WHERE title LIKE '%@%' OR title LIKE '%t.me/%'")):
+        title = clean_title(row["title"])
+        if len(_title_key(title)) < 4:
+            removed += db.execute("DELETE FROM offers WHERE id = ?", (row["id"],)).rowcount or 0
+        elif title != row["title"]:
+            db.execute("UPDATE offers SET title = ?, title_key = ? WHERE id = ?", (title, _title_key(title), row["id"]))
+    return removed
 
 
 def search(q: str, limit: int = 12, exclude_titles: Set[str] = frozenset()) -> List[Dict[str, Any]]:
