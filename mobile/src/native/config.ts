@@ -61,15 +61,17 @@ export async function saveBaseUrl(url: string): Promise<string> {
 }
 
 /**
- * Both hostnames point at the same backend. Some phones' DNS-level filtering
- * or on-device ad/tracker blockers (NextDNS, AdGuard, several carrier
- * filters) block specific hostnames outright — "onrender.com" in particular
- * shows up in a few "free hosting abuse" blocklists, which is exactly the
- * kind of thing that makes an app "just never load" on one phone but work
- * fine on another. Trying the other hostname routes around a block on
- * either specific name without needing the user to do anything.
+ * Extra hosts worth trying, in order, if LIVE_HOST can't be reached at all —
+ * some phones' DNS-level filtering or on-device ad/tracker blockers block
+ * specific hostnames outright, and a second real host routes around that
+ * without needing the user to do anything. RETIRED_HOST is deliberately NOT
+ * here: its own routing was disabled once the custom domain took over, so it
+ * now answers every request with a blanket 404 rather than failing to
+ * connect — a "success" a naive retry would happily latch onto forever (see
+ * the res.ok check in api/client.ts). Only list a host here once it's a real,
+ * currently-serving backend.
  */
-export const FALLBACK_HOSTS: readonly string[] = [LIVE_HOST, RETIRED_HOST];
+export const FALLBACK_HOSTS: readonly string[] = [LIVE_HOST];
 
 // Remembered only for this run of the app (never persisted): once a fallback
 // host is found to work, later requests try it first instead of eating the

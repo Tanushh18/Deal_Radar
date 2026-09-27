@@ -137,7 +137,12 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
       : null;
     if (!fallback) throw e;
     res = await attempt(fallback, path, opts);
-    rememberWorkingHost(fallback);
+    // Only trust this host going forward if it actually answered for real —
+    // a fetch that "succeeds" with a blanket 404/5xx (e.g. a retired host
+    // whose routing was disabled but that still resolves and connects) must
+    // never get remembered, or every later request gets stuck failing
+    // against it for the rest of the session.
+    if (res.ok) rememberWorkingHost(fallback);
   }
 
   let data: unknown = null;
