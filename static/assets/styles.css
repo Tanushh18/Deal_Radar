@@ -3,46 +3,51 @@
    Mobile-first. Every value below is a token; screens compose
    tokens, never raw colours or one-off pixel numbers.
    ============================================================ */
+/* "Paper & ink" — the same palette as the app: warm off-white / warm
+   charcoal, ink-black actions, orange only for discounts, green only for
+   price drops. No blues, no gradients, no glass. */
 :root {
   /* --- surfaces & text (light) --- */
-  --bg:            #f7f8fa;
-  --bg-sunk:       #eef1f6;
+  --bg:            #f5f2ec;
+  --bg-sunk:       #ece8e0;
   --surface:       #ffffff;
-  --surface-2:     #f3f5f9;
-  --surface-3:     #e8ecf3;
-  --border:        #e4e8ef;
-  --border-strong: #cbd3e1;
-  --text:          #111827;
-  --text-2:        #6b7280;
-  --text-3:        #9aa3b2;
+  --surface-2:     #f0ece5;
+  --surface-3:     #e6e1d8;
+  --border:        #e3ded4;
+  --border-strong: #d2ccc0;
+  --text:          #17150f;
+  --text-2:        #5e5a52;
+  --text-3:        #8f897e;
   /* Product photos are shot on white; a light tile keeps them looking intended. */
   --media-bg:      #ffffff;
 
-  /* --- brand --- */
-  --accent:        #2563eb;
-  --accent-hover:  #1d4ed8;
-  --accent-soft:   rgba(37, 99, 235, .10);
-  --accent-line:   rgba(37, 99, 235, .28);
-  --accent-text:   #ffffff;
-  --cyan:          #0891b2;
-  --cyan-soft:     rgba(6, 182, 212, .12);
+  /* --- brand: ink --- */
+  --accent:        #17150f;
+  --accent-hover:  #000000;
+  --accent-soft:   rgba(23, 21, 15, .06);
+  --accent-line:   rgba(23, 21, 15, .18);
+  --accent-text:   #f5f2ec;
+  --cyan:          #2f6f8f;
+  --cyan-soft:     rgba(47, 111, 143, .12);
 
   /* --- semantic --- */
-  --good:          #15803d;
-  --good-soft:     rgba(22, 163, 74, .12);
-  --good-line:     rgba(22, 163, 74, .30);
-  --hot:           #dc2626;
-  --hot-soft:      rgba(239, 68, 68, .10);
-  --warn:          #b45309;
-  --warn-soft:     rgba(245, 158, 11, .14);
-  --gold:          #b45309;          /* price-history chart accent */
+  --good:          #1f7a4d;
+  --good-soft:     rgba(31, 122, 77, .12);
+  --good-line:     rgba(31, 122, 77, .30);
+  --hot:           #d9480f;
+  --hot-soft:      rgba(217, 72, 15, .10);
+  --warn:          #a15c07;
+  --warn-soft:     rgba(196, 122, 20, .13);
+  --gold:          #a15c07;          /* price-history chart accent */
+  --overlay:       rgba(23, 21, 15, .45);
+  --skeleton:      #e8e3da;
 
   /* --- shape --- */
   --r-xs:   8px;
   --r-sm:  12px;
-  --r-md:  16px;
-  --r-lg:  20px;
-  --r-xl:  26px;
+  --r-md:  14px;
+  --r-lg:  18px;
+  --r-xl:  24px;
   --r-full: 999px;
   /* kept for compatibility with anything still reading the old names */
   --radius: var(--r-md);
@@ -52,12 +57,12 @@
   /* --- spacing --- */
   --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
   --s-5: 20px; --s-6: 24px; --s-8: 32px;
-  --page-pad: 14px;
+  --page-pad: 16px;
 
-  /* --- elevation --- */
-  --shadow-1: 0 1px 2px rgba(15, 23, 42, .05);
-  --shadow-2: 0 1px 3px rgba(15, 23, 42, .06), 0 6px 16px rgba(15, 23, 42, .06);
-  --shadow-3: 0 8px 40px rgba(15, 23, 42, .16);
+  /* --- elevation: hairlines, not shadows --- */
+  --shadow-1: none;
+  --shadow-2: 0 1px 0 rgba(23, 21, 15, .04);
+  --shadow-3: 0 12px 40px rgba(23, 21, 15, .18);
   --shadow:    var(--shadow-2);
   --shadow-lg: var(--shadow-3);
   --ring: 0 0 0 3px var(--accent-soft);
@@ -70,8 +75,8 @@
   --ease:     cubic-bezier(.32, .72, .3, 1);
 
   /* --- type --- */
-  --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --font: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* --- chrome metrics --- */
   --appbar-h:   56px;
@@ -81,37 +86,39 @@
 }
 
 :root[data-theme="dark"] {
-  --bg:            #080b12;
-  --bg-sunk:       #05070c;
-  --surface:       #111827;
-  --surface-2:     #172033;
-  --surface-3:     #202b40;
-  --border:        #1f2a3c;
-  --border-strong: #33405a;
-  --text:          #e9eef7;
-  --text-2:        #9ba7bc;
-  --text-3:        #6b7789;
-  --media-bg:      #eef1f5;
+  --bg:            #14120e;
+  --bg-sunk:       #0f0d0a;
+  --surface:       #1c1914;
+  --surface-2:     #24201a;
+  --surface-3:     #2d2922;
+  --border:        #2d2922;
+  --border-strong: #3b362d;
+  --text:          #f1ece2;
+  --text-2:        #b4ad9f;
+  --text-3:        #857f73;
+  --media-bg:      #f4f1eb;
 
-  --accent:        #5b93f7;
-  --accent-hover:  #7aabff;
-  --accent-soft:   rgba(91, 147, 247, .14);
-  --accent-line:   rgba(91, 147, 247, .34);
-  --accent-text:   #06101f;
-  --cyan:          #22d3ee;
-  --cyan-soft:     rgba(34, 211, 238, .14);
+  --accent:        #f1ece2;
+  --accent-hover:  #ffffff;
+  --accent-soft:   rgba(241, 236, 226, .08);
+  --accent-line:   rgba(241, 236, 226, .22);
+  --accent-text:   #14120e;
+  --cyan:          #6fb3cf;
+  --cyan-soft:     rgba(111, 179, 207, .14);
 
-  --good:          #34d399;
-  --good-soft:     rgba(52, 211, 153, .14);
-  --good-line:     rgba(52, 211, 153, .32);
-  --hot:           #f87171;
-  --hot-soft:      rgba(248, 113, 113, .14);
-  --warn:          #fbbf24;
-  --warn-soft:     rgba(251, 191, 36, .14);
-  --gold:          #fbbf24;
+  --good:          #52c48c;
+  --good-soft:     rgba(82, 196, 140, .14);
+  --good-line:     rgba(82, 196, 140, .32);
+  --hot:           #ff7a45;
+  --hot-soft:      rgba(255, 122, 69, .14);
+  --warn:          #e8a94a;
+  --warn-soft:     rgba(232, 169, 74, .14);
+  --gold:          #e8a94a;
+  --overlay:       rgba(0, 0, 0, .6);
+  --skeleton:      #26221c;
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
-  --shadow-2: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px rgba(0, 0, 0, .34);
+  --shadow-1: none;
+  --shadow-2: none;
   --shadow-3: 0 12px 48px rgba(0, 0, 0, .55);
 }
 
@@ -1699,70 +1706,6 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   .vh-stats b { font-size: 1.25rem; }
 }
 
-/* ============================================================
-   VISITOR: live + glass effects
-   ============================================================ */
-:root { --glass: rgba(255, 255, 255, .62); --glass-line: rgba(255, 255, 255, .7); --glass-blur: saturate(170%) blur(18px); }
-:root[data-theme="dark"] { --glass: rgba(17, 24, 39, .55); --glass-line: rgba(255, 255, 255, .08); }
-
-/* Slowly drifting colour field behind everything — the page feels "on". */
-:root.guest body::before {
-  content: ""; position: fixed; inset: -20vmax; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(38vmax 38vmax at 18% 22%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
-    radial-gradient(34vmax 34vmax at 82% 30%, color-mix(in srgb, var(--cyan) 18%, transparent), transparent 60%),
-    radial-gradient(40vmax 40vmax at 60% 85%, color-mix(in srgb, #a855f7 14%, transparent), transparent 62%);
-  animation: aurora 26s ease-in-out infinite alternate;
-}
-@keyframes aurora {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-  50%  { transform: translate3d(-4vmax, 3vmax, 0) rotate(8deg); }
-  100% { transform: translate3d(3vmax, -2vmax, 0) rotate(-6deg); }
-}
-:root.guest body { background: var(--bg); }
-
-/* Frosted glass surfaces */
-:root.guest .appbar { background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--glass-line); }
-:root.guest .visitor-hero, :root.guest .deal, :root.guest .railcard, :root.guest .cat-icon,
-:root.guest .sorttabs button, :root.guest .viewtoggle, :root.guest .toolbar {
-  background-color: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-  border-color: var(--glass-line);
-}
-:root.guest .sorttabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
-:root.guest .search input { background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-line); }
-@media (min-width: 1024px) {
-  :root.guest .filters { background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-    border-color: var(--glass-line); }
-}
-
-/* Cards: glow on hover, arrive with a staggered rise */
-:root.guest .deal { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-normal), border-color var(--t-normal); }
-@media (hover: hover) and (pointer: fine) {
-  :root.guest .deal:hover, :root.guest .railcard:hover {
-    border-color: var(--accent-line);
-    box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--accent) 55%, transparent), var(--shadow-2);
-  }
-}
-:root.guest #deal-grid .deal, :root.guest #archive-grid .deal { animation: card-in .5s var(--ease) both; }
-:root.guest #deal-grid .deal:nth-child(2), :root.guest #archive-grid .deal:nth-child(2) { animation-delay: 40ms; }
-:root.guest #deal-grid .deal:nth-child(3), :root.guest #archive-grid .deal:nth-child(3) { animation-delay: 80ms; }
-:root.guest #deal-grid .deal:nth-child(4), :root.guest #archive-grid .deal:nth-child(4) { animation-delay: 120ms; }
-:root.guest #deal-grid .deal:nth-child(5) { animation-delay: 160ms; }
-:root.guest #deal-grid .deal:nth-child(6) { animation-delay: 200ms; }
-:root.guest #deal-grid .deal:nth-child(n+7) { animation-delay: 240ms; }
-@keyframes card-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
-
-/* Hero: animated gradient headline + glowing live dot */
-.vh-copy h1 span {
-  background: linear-gradient(90deg, var(--accent), var(--cyan), #a855f7, var(--accent));
-  background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: shine 8s linear infinite;
-}
-@keyframes shine { to { background-position: 300% 0; } }
-.vh-live .livedot { box-shadow: 0 0 0 0 var(--good-line), 0 0 12px var(--good); }
-
 /* Past deals from the archive read as history, not live offers */
 .archive { margin-top: 28px; padding-top: 6px; border-top: 1px dashed var(--border-strong); }
 #archive-grid .deal { opacity: .88; }
@@ -1773,17 +1716,11 @@ details.raw[open] summary::before { transform: rotate(45deg); }
   position: fixed; z-index: 95; left: 50%; transform: translateX(-50%);
   top: calc(var(--appbar-h) + 12px);
   display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px;
-  font-weight: 700; font-size: .86rem; color: #fff; border: 1px solid rgba(255,255,255,.25);
-  background: color-mix(in srgb, var(--accent) 88%, transparent);
-  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+  font-weight: 700; font-size: .86rem; color: var(--accent-text); border: none;
+  background: var(--accent); box-shadow: var(--shadow-3);
   animation: rise var(--t-smooth) var(--ease);
 }
-.newdeals .livedot { background: #fff; }
-
-@media (prefers-reduced-motion: reduce) {
-  :root.guest body::before, .vh-copy h1 span { animation: none; }
-}
+.newdeals .livedot { background: var(--hot); }
 
 /* ---------- ♡ save, share, price alert ---------- */
 .heart {
@@ -1898,3 +1835,238 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 .offer-meta { display: flex; gap: 8px; align-items: baseline; font-size: 11px; color: var(--text-3); letter-spacing: .03em; }
 .offer-meta b { font-size: 13px; color: var(--text); letter-spacing: 0; }
 .offer-go { color: var(--text-3); }
+
+/* ============================================================
+   PAPER & INK — the app's look on the website
+   Flat surfaces, hairlines instead of shadows, ink actions,
+   orange only for discounts, green only for price drops.
+   Last in the file so it wins over the older rules above.
+   ============================================================ */
+body { font-family: var(--font); background: var(--bg); letter-spacing: -.005em; }
+h1, h2, h3, h4 { letter-spacing: -.025em; }
+.btn { font-weight: 600; border-radius: var(--r-sm); }
+.btn:active:not(:disabled) { transform: none; opacity: .85; }
+.btn-soft { background: var(--surface); border-color: var(--border-strong); }
+.btn-soft:hover:not(:disabled) { background: var(--surface-2); }
+.iconbtn { background: transparent; border: 1px solid var(--border-strong); color: var(--text); box-shadow: none; }
+.iconbtn:hover { background: var(--surface-2); }
+
+/* brand */
+.brand-mark { width: 30px; height: 30px; border-radius: 0; background: none; box-shadow: none; }
+.brand-svg { width: 100%; height: 100%; }
+.brand-name { font-weight: 800; letter-spacing: -.04em; }
+.brand-name span { color: var(--text); }
+.greet-hi { font-family: var(--mono); font-size: .68rem; letter-spacing: .02em; text-transform: uppercase; color: var(--text-3); }
+.avatar { background: var(--text); color: var(--bg); border: none; font-weight: 700; }
+.bell-dot, .nav-badge { background: var(--hot); }
+
+/* app bar + search: solid paper, a hairline when scrolled */
+.appbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.appbar.scrolled { box-shadow: none; border-bottom-color: var(--border); }
+.search input { background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); }
+.search input:focus { border-color: var(--text); box-shadow: none; }
+.search:focus-within .search-icon { color: var(--text); }
+.search .btn { border-radius: var(--r-sm); }
+
+/* section heads: 18/700 title, mono sub-label like the app */
+.section-title { font-size: 1.12rem; font-weight: 700; letter-spacing: -.025em; }
+.section-head .section-sub { font-family: var(--mono); font-size: .7rem; letter-spacing: .02em; color: var(--text-3); }
+
+/* status line instead of a dashboard card */
+.dropcountdown { background: transparent; border: 0; padding: 0; margin: 8px 0 0; font-family: var(--mono); font-size: .72rem;
+  text-transform: uppercase; letter-spacing: .03em; }
+.dc-dot { background: var(--good); animation: none; box-shadow: none; }
+.dc-time { font-weight: 600; }
+.visitor-hero { background: transparent; border: 0; border-bottom: 1px solid var(--border); border-radius: 0;
+  padding: 18px 0 16px; box-shadow: none; }
+.vh-copy h1 { font-size: clamp(1.5rem, 5.4vw, 2.3rem); font-weight: 800; letter-spacing: -.04em; line-height: 1.08; max-width: 18ch; }
+.vh-copy h1 span { color: inherit; background: none; animation: none; }
+.vh-copy p { color: var(--text-2); max-width: 56ch; }
+.vh-stats b { font-weight: 800; letter-spacing: -.04em; }
+.vh-stats b.up { color: var(--good); }
+.vh-stats span { font-family: var(--mono); letter-spacing: .03em; }
+.vh-stats .vh-live { background: transparent; border-color: var(--border-strong); }
+.vh-live .livedot { box-shadow: none; }
+.radarcard { background: var(--surface); box-shadow: none; }
+.spotlight { background: var(--surface); }
+.spotlight-kicker { color: var(--hot); font-family: var(--mono); font-weight: 600; }
+.spotlight-now { color: var(--text); }
+.spotlight-badge { background: var(--hot); box-shadow: none; border-radius: 6px; font-family: var(--mono); }
+.spotlight-cta { color: var(--text); }
+
+/* categories: text chips (no emoji tiles) */
+.catrow { gap: 8px; padding-top: 12px; }
+.cat { width: auto; flex-direction: row; padding: 0 14px; height: 36px; border-radius: var(--r-full);
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+  font-size: .84rem; font-weight: 600; }
+.cat-icon { display: none; }
+.cat-label { max-width: none; overflow: visible; }
+.catrow .cat { flex: none; max-width: none; }
+.cat.active { background: var(--text); border-color: var(--text); color: var(--bg); }
+.chip { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); font-weight: 600; }
+.chip:hover { background: var(--surface-2); }
+.chip.active { background: var(--text); border-color: var(--text); color: var(--bg); }
+.chip .store-logo { margin-left: -4px; }
+.facet-count { font-family: var(--mono); font-size: .72rem; color: var(--text-3); }
+.rcat { background: var(--surface); border-color: var(--border-strong); }
+.rcat.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* sort tabs + view toggle */
+.sorttabs button { background: transparent; border: 1px solid var(--border-strong); color: var(--text-2); font-weight: 600; }
+.sorttabs button[aria-selected="true"] { background: var(--text); border-color: var(--text); color: var(--bg); }
+.viewtoggle { background: transparent; border: 1px solid var(--border-strong); }
+.viewtoggle button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+.toolbar { background: var(--bg); }
+
+/* horizontal rows keep the page gutter when snapped/scrolled */
+.salerail, .rail, .catrow, .storerow, .resultcats { scroll-padding-inline: var(--page-pad); }
+
+/* store logo tile (store's own favicon on white) */
+.store-logo { flex: none; border-radius: 5px; background: #fff; border: 1px solid var(--border); padding: 1px; object-fit: contain; box-sizing: border-box; }
+
+/* ---------- deal card ---------- */
+.deal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: none; }
+.deal:hover { border-color: var(--border-strong); box-shadow: none; }
+.deal.pressed { transform: none; background: var(--surface-2); }
+.deal-media { background: var(--media-bg); border-bottom: 1px solid var(--border); }
+.deal-media img, .rail-media img { padding: 10px; background: var(--media-bg); }
+.placeholder { background: var(--media-bg); opacity: 1; color: var(--border-strong); font-size: 1.6rem; }
+.deal-body { padding: 10px 11px 12px; gap: 5px; cursor: pointer; }
+.deal-meta { gap: 6px; flex-wrap: nowrap; font-family: var(--mono); font-size: .66rem; letter-spacing: .03em;
+  text-transform: uppercase; color: var(--text-3); min-width: 0; }
+.deal-meta > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deal-title { font-size: .88rem; font-weight: 500; line-height: 1.35; min-height: 2.7em; }
+.deal-price, .rail-price, .detail-price { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+.deal-price { margin-top: 2px; }
+.price-now { font-weight: 800; letter-spacing: -.035em; color: var(--text); font-size: 1.12rem; }
+.price-was { color: var(--text-3); }
+.price-off { background: none; padding: 0; border-radius: 0; color: var(--hot); font-weight: 700; font-size: .78rem; align-self: baseline; }
+.coupon { background: transparent; border: 1px dashed var(--border-strong); color: var(--text-2); border-radius: 6px;
+  font-family: var(--mono); font-weight: 500; }
+.badge { border-radius: 5px; font-size: .64rem; font-weight: 700; letter-spacing: .01em; text-transform: none; }
+.badge-low  { background: var(--good); color: #fff; }
+.badge-hot  { background: var(--hot); color: #fff; }
+.badge-new  { background: var(--text); color: var(--bg); }
+.badge-score { background: var(--text); color: var(--bg); backdrop-filter: none; }
+.badge-warn { background: var(--warn); color: #fff; }
+.sparkline-down polyline { stroke: var(--good); }
+.sparkline-up polyline { stroke: var(--hot); }
+/* plain heart, no bubble */
+.heart { top: 6px; right: 6px; background: transparent; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none;
+  color: var(--text-3); width: 38px; height: 38px; }
+.heart svg { width: 19px; height: 19px; }
+.heart:hover { color: var(--hot); transform: none; }
+.heart.on { background: transparent; color: var(--hot); }
+.deal .heart { background: color-mix(in srgb, var(--media-bg) 70%, transparent); border-radius: 50%; }
+
+/* list rows: flat, edge-to-edge, hairline between rows — like the app */
+.grid.list { gap: 0; margin-inline: calc(var(--page-pad) * -1); border-top: 1px solid var(--border-strong); }
+.grid.list .deal { display: grid; grid-template-columns: 92px minmax(0, 1fr) 40px; gap: 14px; align-items: start;
+  border: 0; border-bottom: 1px solid var(--border-strong); border-radius: 0; padding: 14px var(--page-pad); background: transparent; }
+.grid.list .deal:hover { background: var(--surface); }
+.grid.list .deal-media { grid-row: auto; width: 92px; height: 92px; min-height: 0; aspect-ratio: 1; border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm); }
+.grid.list .deal-media img { padding: 6px; }
+.grid.list .deal-body { padding: 0; }
+.grid.list .deal-title { font-size: .95rem; min-height: 0; line-height: 1.32; }
+.grid.list .badges { top: 4px; left: 4px; }
+.grid.list .badge { font-size: .56rem; padding: 2px 5px; }
+.grid.list .heart { position: static; margin: -8px -6px 0 0; background: transparent; }
+@media (min-width: 700px) {
+  .grid.list { margin-inline: 0; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+  .grid.list .deal:last-child { border-bottom: 0; }
+}
+#archive-grid .deal { opacity: .9; }
+
+/* ---------- rails ---------- */
+.railcard { border: 0; background: transparent; width: 148px; border-radius: 0; }
+.railcard:hover { box-shadow: none; }
+.railcard:active { transform: none; opacity: .85; }
+.railcard .rail-media { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--media-bg); overflow: hidden; }
+.railcard .rail-body { padding: 8px 2px 0; gap: 4px; }
+.rail-title { font-weight: 500; font-size: .8rem; }
+.rail-off { position: absolute; z-index: 2; left: 6px; top: 6px; background: var(--hot); color: #fff; font-family: var(--mono);
+  font-size: .62rem; font-weight: 600; padding: 2px 6px; border-radius: 5px; letter-spacing: .02em; }
+.rail-foot { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.rail-note { font-family: var(--mono); font-weight: 500; font-size: .64rem; letter-spacing: .02em; color: var(--good); }
+.rail-note.muted-note { color: var(--text-3); text-transform: uppercase; }
+
+/* ---------- upcoming sales: each store in its own colours ---------- */
+.salerail { gap: 12px; padding: 14px 0 4px; scroll-snap-type: x mandatory;
+  margin-inline: calc(var(--page-pad) * -1); padding-inline: var(--page-pad); }
+.salecard { position: relative; overflow: hidden; flex: none; width: min(84vw, 330px); min-width: 0; max-width: none;
+  scroll-snap-align: start; padding: 16px; gap: 6px; border: 0; border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff; }
+.salecard::before, .salecard::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none;
+  border: solid rgba(255, 255, 255, .07); }
+.salecard::before { right: -40px; top: -40px; width: 150px; height: 150px; border-width: 18px; }
+.salecard::after { right: 5px; top: 5px; width: 60px; height: 60px; border-width: 10px; }
+.salecard-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.salecard-brand { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+.salecard-logo { width: 34px; height: 34px; border-radius: 9px; background: #fff; display: grid; place-items: center; flex: none;
+  color: var(--c1); font-weight: 800; overflow: hidden; }
+.salecard-logo img { width: 24px; height: 24px; object-fit: contain; }
+.salecard-store { font-family: var(--mono); font-size: .68rem; letter-spacing: .06em; color: rgba(255, 255, 255, .85); font-weight: 500; }
+.salecard-when { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px;
+  background: rgba(255, 255, 255, .16); color: #fff; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.salecard-when.live { background: var(--acc); color: var(--pill-ink); }
+.salecard-when i { width: 6px; height: 6px; border-radius: 50%; background: var(--pill-ink); }
+.salecard-name { font-size: 1.3rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; color: #fff; }
+.salecard-detail { font-size: .82rem; color: rgba(255, 255, 255, .8); }
+.salecard-hype { font-size: .74rem; color: rgba(255, 255, 255, .7); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.salecard-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; position: relative; z-index: 1; }
+.salecard-open, .salecard-deals { flex: 1; min-height: 42px; border-radius: var(--r-sm); display: inline-flex; align-items: center;
+  justify-content: center; gap: 6px; font-size: .84rem; text-decoration: none; cursor: pointer; }
+.salecard-open { background: #fff; color: var(--c1); font-weight: 700; border: 0; }
+.salecard-open svg { width: 14px; height: 14px; }
+.salecard-deals { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .45); font-weight: 600; }
+.salecard-open:hover, .salecard-deals:hover { opacity: .88; }
+
+/* ---------- detail sheet ---------- */
+.modal-backdrop { background: var(--overlay); backdrop-filter: none; }
+.modal-body { background: var(--bg); border: 1px solid var(--border); box-shadow: var(--shadow-3); }
+.detail-hero { background: var(--media-bg); border: 1px solid var(--border); border-radius: var(--r-lg); }
+.detail-meta { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: .7rem; letter-spacing: .03em;
+  color: var(--text-3); margin-bottom: 6px; }
+.detail-price .price-now { font-size: 1.9rem; }
+.detail-price .price-off { font-size: .95rem; }
+.detail-save { color: var(--good); background: none; padding: 0; }
+.scorecard, .price-chart-wrap, .pricealert { background: var(--surface); border: 1px solid var(--border); box-shadow: none; }
+.pricealert { border-color: var(--border-strong); }
+.kv dt { font-family: var(--mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+.detail-cta { background: var(--bg); border-top: 1px solid var(--border); }
+.verdict-great, .verdict-good { background: var(--good-soft); }
+
+/* ---------- bottom nav, filters, misc chrome ---------- */
+.bottomnav { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; border-top: 1px solid var(--border-strong); }
+.navbtn { color: var(--text-3); font-weight: 600; }
+.navbtn.active { color: var(--text); }
+.navbtn::before, .navbtn.active::before { display: none; }
+.filters { background: var(--bg); box-shadow: none; }
+.dropdown { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-3); }
+.dropdown::before { display: none; }
+.empty .emoji { font-size: 0; display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
+  border: 1px solid var(--border-strong); color: var(--text-3); }
+.empty .emoji svg { width: 24px; height: 24px; }
+.skel, .sk-line, .skel-card .sk-media { background: var(--skeleton); }
+.offers { border-top-color: var(--border-strong); }
+.offer-row { border-bottom-color: var(--border-strong); }
+.offer-meta { font-family: var(--mono); }
+.offer-meta b { font-family: var(--font); }
+
+/* our own Telegram channel popup: ink, not blue */
+.tg-invite-icon { background: var(--text); color: var(--bg); box-shadow: none; font-size: 0; }
+.tg-invite-icon svg { width: 28px; height: 28px; }
+.tg-invite-join { background: var(--text); color: var(--bg); }
+.tg-invite-join:hover { background: var(--accent-hover); }
+.tg-invite-close { display: grid; place-items: center; }
+.tg-invite-close svg { width: 18px; height: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .salecard, .deal, .railcard { transition: none; }
+}
+.drop-avatar { background: var(--text); color: var(--bg); font-weight: 700; }
+.sheet-backdrop { background: var(--overlay); backdrop-filter: none; -webkit-backdrop-filter: none; }
+/* No frosted glass anywhere — solid paper surfaces only. */
+*, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }

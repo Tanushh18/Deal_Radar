@@ -1,19 +1,42 @@
 {
-  "name": "DealRadar — Telegram deals, searchable",
+  "name": "DealRadar — the best deals, checked and ranked",
   "short_name": "DealRadar",
-  "description": "Aggregates marketplace deals from your Telegram channels into one searchable, de-duplicated catalog.",
+  "description": "Price drops from Amazon, Flipkart, Myntra and more — tracked around the clock, every price checked against its history.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "categories": ["shopping", "lifestyle"],
-  "background_color": "#080b12",
-  "theme_color": "#080b12",
+  "categories": [
+    "shopping",
+    "lifestyle"
+  ],
+  "background_color": "#14120e",
+  "theme_color": "#14120e",
   "icons": [
-    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

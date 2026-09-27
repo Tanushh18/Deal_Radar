@@ -3,21 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>DealRadar — Telegram deals, searchable</title>
-  <meta name="description" content="Aggregates marketplace deals from your Telegram channels into one searchable, de-duplicated catalog." />
-  <meta name="theme-color" content="#080b12" id="meta-theme-color" />
+  <title>DealRadar — the best deals, checked and ranked</title>
+  <meta name="description" content="Price drops from Amazon, Flipkart, Myntra and more — tracked around the clock, every price checked against its history." />
+  <meta name="theme-color" content="#14120e" id="meta-theme-color" />
   <meta name="color-scheme" content="dark light" />
   <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="/assets/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%2317150f'/><path d='M9 21a9 9 0 0 1 14 0M12.5 17.5a5 5 0 0 1 7 0' stroke='%23f5f2ec' stroke-width='2.4' fill='none' stroke-linecap='round'/><circle cx='16' cy='21.5' r='2' fill='%23d9480f'/></svg>" />
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png" />
   <!-- iOS ignores the manifest for "Add to Home Screen"; these are the equivalent it does read -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DealRadar" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="DealRadar — Telegram deals, searchable" />
-  <meta property="og:description" content="Every deal from your Telegram channels. Searchable, de-duplicated, ranked." />
+  <meta property="og:title" content="DealRadar — the best deals, checked and ranked" />
+  <meta property="og:description" content="Price drops from Amazon, Flipkart, Myntra and more — tracked around the clock, every price checked against its history." />
   <meta property="og:image" content="/assets/icons/icon-512.png" />
   <meta name="twitter:card" content="summary" />
   <script>
@@ -67,6 +70,13 @@
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
     <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 000-7.8z"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+    <!-- The DealRadar mark: ink tile, paper arcs, one orange dot (same as the app). -->
+    <symbol id="i-brand" viewBox="0 0 32 32">
+      <rect width="32" height="32" rx="9" style="fill:var(--text);stroke:none"/>
+      <path d="M9 21a9 9 0 0 1 14 0M12.5 17.5a5 5 0 0 1 7 0" style="stroke:var(--bg);fill:none" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="16" cy="21.5" r="2" style="fill:var(--hot);stroke:none"/>
+    </symbol>
     <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></symbol>
   </defs>
 </svg>
@@ -78,8 +88,8 @@
 <!-- First paint: neither view is shown until the auth check resolves, so this
      stands in rather than flashing the login screen at a signed-in user. -->
 <div id="boot">
-  <span class="brand-mark" style="width:56px;height:56px;border-radius:18px;font-size:1.8rem">📡</span>
-  <span class="muted small">Tuning the radar…</span>
+  <span class="brand-mark" style="width:56px;height:56px"><svg class="brand-svg" viewBox="0 0 32 32" aria-hidden="true"><use href="#i-brand"/></svg></span>
+  <span class="muted small">Loading deals…</span>
 </div>
 
 <!-- ================================ LOGIN ================================ -->
@@ -87,28 +97,27 @@
   <div class="login-grid">
     <div class="login-pitch">
       <div class="brand brand-lg">
-        <span class="brand-mark">📡</span>
+        <span class="brand-mark"><svg class="brand-svg" viewBox="0 0 32 32" aria-hidden="true"><use href="#i-brand"/></svg></span>
         <span class="brand-name">Deal<span>Radar</span></span>
       </div>
-      <h1>Every deal from your Telegram channels. Searchable, de-duplicated, ranked.</h1>
+      <h1>The best deals, checked and ranked.</h1>
       <p class="lede">
-        Deal channels fire hundreds of posts a day. DealRadar reads the channels you already
-        follow, parses each post into a structured deal, collapses the same product posted
-        across a dozen channels into one entry, and lets you just search for what you want.
+        DealRadar tracks prices across Amazon, Flipkart, Myntra and more around the clock,
+        checks every price against its history, and ranks what's genuinely worth buying.
       </p>
 
       <!-- Illustrative only: what a deal looks like once DealRadar has parsed it. -->
       <div class="login-preview" aria-hidden="true">
         <div class="lp-card">
-          <div class="lp-media">🎧<span class="badge badge-low">LOWEST EVER</span></div>
+          <div class="lp-media"><span class="badge badge-low">Lowest ever</span></div>
           <div class="lp-body">
             <div class="lp-title">boAt Rockerz 450 Bluetooth Headphones</div>
             <div class="deal-price"><span class="price-off">-56%</span><span class="price-now">₹1,299</span><span class="price-was">₹2,990</span></div>
-            <div class="deal-meta"><span>4m ago</span><span class="dot"></span><span class="reposts">6 channels</span></div>
+            <div class="deal-meta"><span>AMAZON · 4M AGO</span></div>
           </div>
         </div>
         <div class="lp-card lp-back">
-          <div class="lp-media">⌚</div>
+          <div class="lp-media"></div>
           <div class="lp-body">
             <div class="lp-title">Noise ColorFit Pro 5 AMOLED</div>
             <div class="deal-price"><span class="price-off">-60%</span><span class="price-now">₹2,799</span></div>
@@ -137,8 +146,7 @@
             Secure Telegram authentication
           </div>
           <p class="fineprint">
-            Your Telegram session is encrypted before storage and is used only to read the
-            channels you choose. Your code and 2FA password are never stored.
+            Your session is encrypted before storage. Your code and 2FA password are never stored.
           </p>
         </form>
 
@@ -172,10 +180,10 @@
     <div class="login-why">
       <ul class="pitch-list">
         <li><b>Search in plain words</b> — “women kurta” finds kurti, anarkali, ethnic sets.</li>
-        <li><b>Cross-channel dedup</b> — one product, one card, with a “seen in N channels” badge.</li>
+        <li><b>No duplicates</b> — one product, one card, however many times it's posted.</li>
         <li><b>Price history</b> — flags a genuine all-time low and catches inflated MRPs.</li>
         <li><b>Live-link checks</b> — dead and out-of-stock deals drop out automatically.</li>
-        <li><b>Alerts</b> — saved searches ping you in your own Telegram Saved Messages.</li>
+        <li><b>Alerts</b> — saved searches ping you the moment a match appears.</li>
       </ul>
       <div class="pitch-foot">
         Stored durably · deals kept 4 days or until they go dead
@@ -189,7 +197,7 @@
   <header class="appbar" id="appbar">
     <div class="appbar-row">
       <div class="brand appbar-brand" data-nav="deals">
-        <span class="brand-mark">📡</span>
+        <span class="brand-mark"><svg class="brand-svg" viewBox="0 0 32 32" aria-hidden="true"><use href="#i-brand"/></svg></span>
         <span class="appbar-greet">
           <span class="brand-name">Deal<span>Radar</span></span>
           <span class="greet-hi" id="greeting">Find something worth buying</span>
@@ -216,7 +224,7 @@
       </nav>
 
       <div class="appbar-actions">
-        <button id="btn-sync" class="iconbtn" title="Fetch new deals from Telegram now" aria-label="Sync deals now">
+        <button id="btn-sync" class="iconbtn" title="Check for new deals now" aria-label="Check for new deals now">
           <svg aria-hidden="true"><use href="#i-sync"/></svg>
         </button>
         <button id="btn-bell" class="iconbtn bell" data-nav="alerts" title="Deal alerts" aria-label="Deal alerts">
@@ -375,7 +383,7 @@
             </label>
             <label class="check hidden">
               <input type="checkbox" id="f-all-channels" />
-              <span>Include untracked channels</span>
+              <span>Include every source</span>
             </label>
           </div>
         </div>
@@ -406,8 +414,8 @@
         <section id="trending-wrap" class="rail-section hidden">
           <div class="section-head">
             <div>
-              <h3 class="section-title">🔥 Trending right now</h3>
-              <div class="section-sub">Posted again and again right now</div>
+              <h3 class="section-title">Trending now</h3>
+              <div class="section-sub">What everyone is buying today</div>
             </div>
             <div class="rail-nav" data-rail="#trending-row">
               <button class="iconbtn" data-dir="-1" aria-label="Scroll trending left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
@@ -420,7 +428,7 @@
         <section id="lowest-wrap" class="rail-section hidden">
           <div class="section-head">
             <div>
-              <h3 class="section-title">📉 All-time lows</h3>
+              <h3 class="section-title">All-time lows</h3>
               <div class="section-sub">Cheapest we have ever recorded</div>
             </div>
             <div class="section-actions">
@@ -433,52 +441,13 @@
           </div>
           <div id="lowest-row" class="rail"></div>
         </section>
-        <section id="ending-wrap" class="rail-section hidden">
-          <div class="section-head">
-            <div>
-              <h3 class="section-title">⏳ Ending soon</h3>
-              <div class="section-sub">Grab these before they expire</div>
-            </div>
-            <div class="rail-nav" data-rail="#ending-row">
-              <button class="iconbtn" data-dir="-1" aria-label="Scroll left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
-              <button class="iconbtn" data-dir="1" aria-label="Scroll right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
-            </div>
-          </div>
-          <div id="ending-row" class="rail"></div>
-        </section>
-        <section id="fresh-wrap" class="rail-section hidden">
-          <div class="section-head">
-            <div>
-              <h3 class="section-title">⚡ Just dropped</h3>
-              <div class="section-sub">Posted in the last few hours</div>
-            </div>
-            <div class="rail-nav" data-rail="#fresh-row">
-              <button class="iconbtn" data-dir="-1" aria-label="Scroll left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
-              <button class="iconbtn" data-dir="1" aria-label="Scroll right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
-            </div>
-          </div>
-          <div id="fresh-row" class="rail"></div>
-        </section>
-        <section id="coupons-wrap" class="rail-section hidden">
-          <div class="section-head">
-            <div>
-              <h3 class="section-title">🏷 Coupon deals</h3>
-              <div class="section-sub">Extra savings with a code</div>
-            </div>
-            <div class="rail-nav" data-rail="#coupons-row">
-              <button class="iconbtn" data-dir="-1" aria-label="Scroll left"><svg aria-hidden="true"><use href="#i-chev-left"/></svg></button>
-              <button class="iconbtn" data-dir="1" aria-label="Scroll right"><svg aria-hidden="true"><use href="#i-chev-right"/></svg></button>
-            </div>
-          </div>
-          <div id="coupons-row" class="rail"></div>
-        </section>
 
         <div id="cat-rails" class="cat-rails hidden"></div>
 
         <div class="section-head" id="grid-head">
           <div>
-            <h3 class="section-title" id="grid-title">🕘 Latest deals</h3>
-            <div class="section-sub" id="grid-sub">Freshly posted deals</div>
+            <h3 class="section-title" id="grid-title">Latest deals</h3>
+            <div class="section-sub" id="grid-sub">Just found, newest first</div>
           </div>
         </div>
 
@@ -511,7 +480,7 @@
         <section id="archive-wrap" class="archive hidden" aria-live="polite">
           <div class="section-head">
             <div>
-              <h3 class="section-title">🗂️ From the deal archive</h3>
+              <h3 class="section-title">From the deal archive</h3>
               <div class="section-sub" id="archive-sub">Earlier deals for this search — prices may have changed</div>
             </div>
           </div>
@@ -531,56 +500,22 @@
     <div class="page-head">
       <div>
         <h2>Saved deals</h2>
-        <p>Deals you ♡ are kept on this device — no account needed.</p>
+        <p>Deals you save are kept on this device — no account needed.</p>
       </div>
     </div>
     <section id="price-watch" class="hidden" style="margin-bottom:24px">
       <div class="section-head" style="margin-top:0"><div>
-        <h3 class="section-title">🔔 Price alerts</h3>
+        <h3 class="section-title">Price alerts</h3>
         <div class="section-sub">We notify you here when a price drops below your target</div>
       </div></div>
       <div id="price-watch-list" class="alert-list"></div>
     </section>
     <div id="saved-grid" class="grid"></div>
     <div id="saved-empty" class="empty hidden">
-      <span class="emoji">♡</span>
+      <span class="emoji"><svg aria-hidden="true"><use href="#i-heart"/></svg></span>
       <h3>No saved deals yet</h3>
       <p>Tap the heart on any deal to keep it here.</p>
     </div>
-  </main>
-
-  <!-- ----------------------------- CHANNELS ----------------------------- -->
-  <main id="page-channels" class="page hidden">
-    <div class="page-head">
-      <div>
-        <h2>Channels</h2>
-        <p>Pick the deal channels DealRadar should read. Only channels you already follow are listed — plus any public channel you add by username.</p>
-      </div>
-      <div class="page-head-actions">
-        <button class="btn btn-soft" id="btn-refresh-channels">
-          <svg class="ico" aria-hidden="true"><use href="#i-sync"/></svg> Refresh list
-        </button>
-        <button class="btn btn-primary" id="btn-save-channels">
-          <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Save selection
-        </button>
-      </div>
-    </div>
-
-    <div class="addpublic card">
-      <label class="field">
-        <span>Add a public channel by username</span>
-        <div class="row-inputs">
-          <input id="input-public" class="input" placeholder="@dealschannel or t.me/dealschannel" />
-          <button class="btn btn-soft" id="btn-add-public">Add &amp; join</button>
-        </div>
-      </label>
-    </div>
-
-    <div class="channel-toolbar">
-      <input id="channel-filter" class="input" placeholder="Filter channels…" aria-label="Filter channels" />
-      <span id="channel-count" class="muted small"></span>
-    </div>
-    <div id="channel-list" class="channel-list"></div>
   </main>
 
   <!-- ------------------------------ ALERTS ------------------------------ -->
@@ -588,7 +523,7 @@
     <div class="page-head">
       <div>
         <h2>Deal alerts</h2>
-        <p>Saved searches. When a new matching deal appears, DealRadar messages you in your own Telegram <b>Saved Messages</b>.</p>
+        <p>Saved searches. When a new matching deal appears, DealRadar lets you know.</p>
       </div>
     </div>
 
@@ -621,7 +556,7 @@
     <section class="notif-section" aria-labelledby="notif-title">
       <div class="section-head">
         <div>
-          <h3 class="section-title" id="notif-title">📬 Recent matches</h3>
+          <h3 class="section-title" id="notif-title">Recent matches</h3>
           <div class="section-sub">Deals your alerts caught lately</div>
         </div>
         <button class="btn btn-soft btn-xs" id="btn-test-notif">

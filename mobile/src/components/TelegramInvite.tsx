@@ -73,7 +73,7 @@ export function TelegramInvite() {
       <Pressable
         accessibilityLabel="Close"
         onPress={close}
-        style={{ flex: 1, backgroundColor: 't.c.overlay', justifyContent: 'center', padding: 24 }}
+        style={{ flex: 1, backgroundColor: t.c.overlay, justifyContent: 'center', padding: 24 }}
       >
         <Pressable
           // Taps inside the card must not fall through to the backdrop's close.

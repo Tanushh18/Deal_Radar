@@ -8,7 +8,7 @@
  */
 /* Bumped whenever the shell changes: the old cache is deleted on activate, so
  * an installed app picks the new UI up instead of serving last year's CSS. */
-const CACHE_VERSION = 'dealradar-shell-v4';
+const CACHE_VERSION = 'dealradar-shell-v5';
 const SHELL_FILES = [
   '/',
   '/assets/styles.css',

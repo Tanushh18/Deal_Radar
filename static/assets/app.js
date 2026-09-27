@@ -75,6 +75,35 @@
   const titleCase = (s) => String(s || '').replace(/\b[a-z]/g, (c) => c.toUpperCase());
   const storeName = (deal) => (deal.store && deal.store !== 'unknown' ? titleCase(deal.store) : '');
   const num = (n) => (n || 0).toLocaleString('en-IN');
+  // Store key -> its site, for the store's own icon (same map as the app).
+  const STORE_DOMAINS = {
+    amazon: 'amazon.in', flipkart: 'flipkart.com', myntra: 'myntra.com', ajio: 'ajio.com', meesho: 'meesho.com',
+    nykaa: 'nykaa.com', shopsy: 'shopsy.in', tatacliq: 'tatacliq.com', croma: 'croma.com', jiomart: 'jiomart.com',
+    firstcry: 'firstcry.com', snapdeal: 'snapdeal.com',
+  };
+  // Only real stores get a logo/label — never a shortener like "bitli".
+  const KNOWN_STORES = new Set([...Object.keys(STORE_DOMAINS), 'reliancedigital', 'bigbasket', 'zepto', 'blinkit',
+    'swiggy', 'pharmeasy', 'boat', 'puma', 'adidas']);
+  const storeDomain = (store) => {
+    const key = String(store || '').trim().toLowerCase().replace(/\s+/g, '');
+    if (!key || key === 'unknown') return '';
+    return STORE_DOMAINS[key] || (key.includes('.') ? key : `${key}.com`);
+  };
+  const storeLogo = (store, size = 18) => {
+    const domain = storeDomain(store);
+    return domain ? `<img class="store-logo" style="width:${size}px;height:${size}px" alt="" loading="lazy"
+      src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64" onerror="this.remove()" />` : '';
+  };
+  // "Amazon | 71% Off - Boat Airdopes @ 999" -> "Boat Airdopes" (same rules as the app).
+  function displayTitle(title) {
+    const cleaned = String(title || '')
+      .replace(/^\s*(?:amazon|flipkart|myntra|ajio|meesho|shopsy|nykaa|tata\s*cliq|croma)\s*[|:\-–]\s*/i, '')
+      .replace(/^\s*(?:flat\s*)?\d{1,2}\s*%\s*off\s*[|:\-–]\s*/i, '')
+      .replace(/\s*@\s*(?:rs\.?|₹|inr)?\s*[\d,]+(?:\.\d+)?\b.*$/i, '')
+      .replace(/\s*[-–|:]\s*$/, '')
+      .trim();
+    return cleaned.length >= 6 ? cleaned : String(title || '').trim();
+  }
   const icon = (name, cls = '') => `<svg class="${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 
   function timeAgo(ts) {
@@ -297,9 +326,9 @@
     const initials = user.guest ? 'V' : (name || 'U').slice(0, 1).toUpperCase();
     $('#user-btn').textContent = initials;
     $('#drop-avatar').textContent = initials;
-    $('#drop-name').textContent = user.guest ? 'Visitor' : (user.first_name || 'Telegram user');
+    $('#drop-name').textContent = user.guest ? 'Visitor' : (user.first_name || 'You');
     $('#drop-handle').textContent = user.username ? '@' + user.username : '';
-    $('#greeting').textContent = name ? `${greeting()}, ${name} 👋` : `${greeting()} 👋`;
+    $('#greeting').textContent = name ? `${greeting()}, ${name}` : greeting();
 
     measureChrome();
     postToApp({ type: 'signed-in', user: { first_name: user.first_name || '' } });
@@ -313,21 +342,10 @@
     }
 
     await loadCategories();
-    const mine = await api('/api/channels').catch(() => ({ channels: [] }));
-    state.channelDeals = {};
-    (mine.channels || []).forEach((c) => { state.channelDeals[c.tg_id] = c.live_deals; });
-    const active = (mine.channels || []).filter((c) => c.enabled);
-    if (!active.length && !user.guest) {
-      // Nothing tracked yet — send them straight to channel selection.
-      toast('Pick the deal channels you want DealRadar to read.', 'info', 6000);
-      navigate('channels');
-      loadAvailableChannels();
-    } else {
-      navigate('deals');
-      refreshDeals(true);
-      loadFacets();
-      loadRails();
-    }
+    navigate('deals');
+    refreshDeals(true);
+    loadFacets();
+    loadRails();
     loadStats();
     loadSpotlight();
     startDropCountdown();
@@ -406,7 +424,6 @@
       if (!state.user) return;
       if (state.page === 'deals') { refreshDeals(true); loadRails(); loadStats(); }
       else if (state.page === 'alerts') { loadAlerts(); loadNotifications(); }
-      else if (state.page === 'channels') loadAvailableChannels();
       checkUnseenNotifications();
     },
   };
@@ -417,7 +434,7 @@
      ============================================================ */
   function navigate(page) {
     state.page = page;
-    ['deals', 'channels', 'alerts', 'saved'].forEach((p) => {
+    ['deals', 'alerts', 'saved'].forEach((p) => {
       $(`#page-${p}`).classList.toggle('hidden', p !== page);
     });
     $$('.navlink, .navbtn').forEach((n) => n.classList.toggle('active', n.dataset.nav === page));
@@ -427,7 +444,6 @@
     closeSuggest();
     if (page === 'alerts') { loadAlerts(); loadNotifications(); }
     if (page === 'saved') loadSaved();
-    if (page === 'channels' && !state.availableChannels.length) loadAvailableChannels();
   }
 
   $$('[data-nav]').forEach((el) => el.addEventListener('click', () => navigate(el.dataset.nav)));
@@ -460,7 +476,7 @@
     document.documentElement.dataset.theme = theme;
     // Keeps the Android/PWA status bar the same colour as the page it sits above.
     const meta = $('#meta-theme-color');
-    if (meta) meta.setAttribute('content', theme === 'dark' ? '#080b12' : '#f7f8fa');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#14120e' : '#f5f2ec');
     document.querySelector('meta[name="color-scheme"]')
       ?.setAttribute('content', theme === 'dark' ? 'dark light' : 'light dark');
     const label = $('#theme-label');
@@ -510,7 +526,6 @@
         <dl class="kv">
           <dt>Service</dt><dd>${escapeHtml(health.status)} · up ${Math.floor(health.uptime_seconds / 60)} min</dd>
           <dt>Database</dt><dd>${escapeHtml(health.checks.database)}</dd>
-          <dt>Telegram API</dt><dd>${health.checks.telegram_configured ? 'configured' : 'not configured'}</dd>
           <dt>MongoDB</dt><dd>${mongoInfo.configured ? (mongoInfo.connected ? 'connected' : 'configured, not connected') : 'not configured'}</dd>
           <dt>Ingest cycles</dt><dd>${ingestInfo.cycles ?? 0}</dd>
           <dt>Last sync</dt><dd>${ingestInfo.last_run_ago_seconds != null ? Math.floor(ingestInfo.last_run_ago_seconds / 60) + ' min ago' : 'not yet'}</dd>
@@ -577,7 +592,6 @@
       <button class="cat ${state.filters.category === c.name ? 'active' : ''}"
               data-cat="${escapeHtml(c.name)}" role="tab"
               aria-selected="${state.filters.category === c.name}">
-        <span class="cat-icon" aria-hidden="true">${CATEGORY_ICON[c.name] || '🏷️'}</span>
         <span class="cat-label">${escapeHtml(c.label)}</span>
       </button>`).join('');
 
@@ -643,7 +657,6 @@
     if (f.has_coupon)  chips.push(['has_coupon', 'Has coupon']);
     if (f.min_discount) chips.push(['min_discount', `${f.min_discount}%+ off`]);
     if (f.only_lowest) chips.push(['only_lowest', 'All-time lows']);
-    if (f.all_channels) chips.push(['all_channels', 'All channels']);
 
     const box = $('#active-filters');
     box.classList.toggle('hidden', !chips.length);
@@ -837,20 +850,20 @@
     const title = $('#grid-title');
     const sub = $('#grid-sub');
     if (state.filters.q) {
-      title.textContent = `🔎 Results for “${state.filters.q}”`;
+      title.textContent = `Results for “${state.filters.q}”`;
       sub.textContent = 'Best matches';
     } else if (activeFilterCount()) {
-      title.textContent = '🏷️ Filtered deals';
+      title.textContent = 'Filtered deals';
       sub.textContent = 'Matching your filters';
     } else {
       const labels = {
-        newest: ['🕘 Latest deals', 'Freshly posted deals'],
-        best: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
-        discount: ['⚡ Biggest discounts', 'Largest drop from the quoted MRP'],
-        price_low: ['💸 Cheapest first', 'Lowest prices first'],
-        price_high: ['💎 Priciest first', 'Highest prices first'],
-        relevance: ['🏆 Top deals', 'Ranked by DealRadar’s deal score'],
-        for_you: ['✨ For You', 'Matched to what you follow'],
+        newest: ['Latest deals', 'Just found, newest first'],
+        best: ['Top deals', 'Ranked by our deal score'],
+        discount: ['Biggest discounts', 'Largest drop from the MRP'],
+        price_low: ['Cheapest first', 'Lowest prices first'],
+        price_high: ['Priciest first', 'Highest prices first'],
+        relevance: ['Top deals', 'Ranked by our deal score'],
+        for_you: ['For you', 'Matched to what you follow'],
       };
       const [t, s] = labels[state.filters.sort] || labels.newest;
       title.textContent = t;
@@ -886,7 +899,7 @@
     box.innerHTML = chips.map((c) => `
       <button class="rcat ${active === c.name ? 'active' : ''}" role="tab"
               aria-selected="${active === c.name}" data-rcat="${escapeHtml(c.name)}">
-        ${c.name ? `<span class="rcat-icon" aria-hidden="true">${CATEGORY_ICON[c.name] || '🏷️'}</span>` : ''}
+
         <span class="rcat-label">${escapeHtml(c.label)}</span>
         <span class="rcat-count">${num(c.count)}</span>
       </button>`).join('');
@@ -905,7 +918,7 @@
     const hasFilters = !!(state.filters.q || activeFilterCount());
 
     el.innerHTML = `
-      <span class="emoji">${hasFilters ? '🔎' : '📭'}</span>
+      <span class="emoji">${icon(hasFilters ? 'search' : 'tag')}</span>
       <h3>No products found</h3>
       <p>${hasFilters
         ? 'Nothing matches your search and filters right now. Try fewer filters or a broader term.'
@@ -922,7 +935,6 @@
       $('#search-clear').classList.add('hidden');
       $('#btn-clear-filters').click(); // resets the rest of the filters and re-queries
     });
-    $('#empty-channels')?.addEventListener('click', () => navigate('channels'));
     $('#empty-sync')?.addEventListener('click', () => syncNow());
   }
 
@@ -930,7 +942,7 @@
     const offline = !navigator.onLine;
     const el = $('#empty-state');
     el.innerHTML = `
-      <span class="emoji">${offline ? '📶' : '⚠️'}</span>
+      <span class="emoji">${icon(offline ? 'wifi-off' : 'alert')}</span>
       <h3>${offline ? 'You’re offline' : 'Something went wrong'}</h3>
       <p>${offline
         ? 'We’ll refresh automatically as soon as you’re back online.'
@@ -1068,7 +1080,7 @@
     } else {
       const d = dealCache.get(id) || { id };
       map[id] = { ...Object.fromEntries(SNAPSHOT.map((k) => [k, d[k]])), savedAt: Date.now() };
-      toast('Saved ♡ — find it under Saved.', 'ok', 2200);
+      toast('Saved — find it under Saved.', 'ok', 2200);
     }
     writeJSON(SAVED_KEY, map);
     const on = Boolean(map[id]);
@@ -1143,7 +1155,7 @@
       </div>
       ${deal.price ? `
       <form class="pricealert" id="price-alert-form">
-        <div class="pa-copy">🔔 <b>Price-drop alert</b><span>${existing
+        <div class="pa-copy"><b>Price-drop alert</b><span>${existing
           ? `Watching for ₹${Number(existing.target_price).toLocaleString('en-IN')} or less`
           : 'Get notified when it gets cheaper'}</span></div>
         <div class="pa-row">
@@ -1193,7 +1205,7 @@
     const seen = new Set(readJSON('dr-alerts-seen', []));
     const fresh = state.priceAlerts.filter((a) => a.triggered_at && !seen.has(a.id));
     fresh.forEach((a) => {
-      const msg = `📉 ${(a.title || 'A deal you watch').slice(0, 60)} dropped to ₹${Number(a.triggered_price).toLocaleString('en-IN')}`;
+      const msg = `${(a.title || 'A deal you watch').slice(0, 60)} dropped to ₹${Number(a.triggered_price).toLocaleString('en-IN')}`;
       toast(msg, 'ok', 8000);
       if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
         try { new Notification('DealRadar price drop', { body: msg, icon: '/assets/icons/icon-192.png', tag: `pa-${a.id}` }); } catch { /* unsupported */ }
@@ -1293,7 +1305,7 @@
     const img = deal.image_url
       ? `<img src="${escapeHtml(deal.image_url)}" alt="" loading="lazy" decoding="async" onerror="this.remove()" />`
       : '';
-    return `<div class="placeholder" aria-hidden="true">🛍️</div>${img}${extra}`;
+    return `<div class="placeholder" aria-hidden="true">${icon('tag')}</div>${img}${extra}`;
   }
 
   // Discount lives in the price row (like every major deal site); image
@@ -1305,7 +1317,9 @@
   };
   // A sale ("up to 87%") or a floor price ("from ₹509") must not read as one exact product price.
   const priceOff = (deal) => (deal.discount_pct >= 5
-    ? `<span class="price-off">${hasFlag(deal, 'upto_discount') ? 'Up to ' : '-'}${deal.discount_pct}%</span>` : '');
+    ? `<span class="price-off">${hasFlag(deal, 'upto_discount') ? 'up to ' : ''}${deal.discount_pct}% off</span>` : '');
+  const priceRow = (deal, cls = 'deal-price') => `<div class="${cls}">${priceNow(deal)}${
+    deal.mrp && deal.mrp > deal.price ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}${priceOff(deal)}</div>`;
   const priceNow = (deal) => `<span class="price-now">${hasFlag(deal, 'price_from') && deal.price != null
     ? '<small class="price-from">From </small>' : ''}${money(deal.price)}</span>`;
 
@@ -1313,12 +1327,12 @@
     const badges = [];
     if (deal.status && deal.status !== 'live') badges.push('<span class="badge badge-score">Past deal</span>');
     if (hasFlag(deal, 'stock_unknown')) badges.push('<span class="badge badge-score">Stock unknown</span>');
-    if (deal.is_lowest) badges.push('<span class="badge badge-low">🟢 LOWEST EVER</span>');
-    else if (deal.score >= 80) badges.push('<span class="badge badge-hot">🏆 GREAT DEAL</span>');
-    else if (isFresh(deal)) badges.push('<span class="badge badge-new">🆕 NEW</span>');
+    if (deal.is_lowest) badges.push('<span class="badge badge-low">Lowest ever</span>');
+    else if (deal.score >= 80) badges.push('<span class="badge badge-hot">Great deal</span>');
+    else if (isFresh(deal)) badges.push('<span class="badge badge-new">New</span>');
     if (hasFlag(deal, 'suspicious_mrp')) {
       const title = deal.ai_mrp_reason || 'The quoted MRP looks inflated versus this product’s usual price';
-      badges.push(`<span class="badge badge-warn" title="${escapeHtml(title)}">⚠️ Check MRP</span>`);
+      badges.push(`<span class="badge badge-warn" title="${escapeHtml(title)}">Check MRP</span>`);
     }
     return badges;
   }
@@ -1353,40 +1367,29 @@
     } catch { /* purely decorative — a failed fetch just leaves cards without it */ }
   }
 
+  function dealMeta(deal) {
+    const known = KNOWN_STORES.has(String(deal.store || '').toLowerCase());
+    const parts = [known ? escapeHtml(storeName(deal)) : '', timeAgo(deal.posted_at)].filter(Boolean);
+    return `<div class="deal-meta">${known ? storeLogo(deal.store) : ''}<span>${parts.join(' · ')}</span>${
+      minBuy(deal) ? `<span>· Min ${minBuy(deal)}</span>` : ''}<span class="sparkline-slot" aria-hidden="true"></span></div>`;
+  }
+
   function dealCard(deal) {
     const badges = dealBadges(deal);
-    const store = storeName(deal)
-      ? `<span class="store-tag">${escapeHtml(storeName(deal))}</span>` : '';
-
+    const title = displayTitle(deal.title);
     return `
       <article class="deal" data-id="${escapeHtml(deal.id)}">
         <div class="deal-media" data-detail="${escapeHtml(deal.id)}" role="button" tabindex="0"
-             aria-label="${escapeHtml(deal.title)}">
-          ${dealMedia(deal, `<div class="badges">${badges.join('')}</div>${store}${heartButton(deal)}`)}
+             aria-label="${escapeHtml(title)}">
+          ${dealMedia(deal, `<div class="badges">${badges.join('')}</div>`)}
         </div>
-        <div class="deal-body">
-          <div class="deal-title" title="${escapeHtml(deal.title)}">${highlight(deal.title, state.filters.q)}</div>
-          <div class="deal-price">
-            ${priceOff(deal)}
-            ${priceNow(deal)}
-            ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
-          </div>
-          ${deal.saving ? `<div class="price-save">${icon('down')} Save ${money(deal.saving)}</div>` : ''}
-          ${deal.coupon ? `<div><span class="coupon">🏷 ${escapeHtml(deal.coupon)}</span></div>` : ''}
-          <div class="deal-meta">
-            <span>${timeAgo(deal.posted_at)}</span>
-            ${deal.repost_count > 1
-              ? `<span class="dot"></span><span class="reposts">Posted ${deal.repost_count}×</span>` : ''}
-            ${minBuy(deal) ? `<span class="dot"></span><span>Min ${minBuy(deal)}</span>` : ''}
-            <span class="sparkline-slot" aria-hidden="true"></span>
-          </div>
+        <div class="deal-body" data-detail="${escapeHtml(deal.id)}">
+          ${dealMeta(deal)}
+          <div class="deal-title" title="${escapeHtml(deal.title)}">${highlight(title, state.filters.q)}</div>
+          ${priceRow(deal)}
+          ${deal.coupon ? `<div><span class="coupon">Code ${escapeHtml(deal.coupon)}</span></div>` : ''}
         </div>
-        <div class="deal-actions">
-          <button class="btn btn-soft btn-sm" data-detail="${escapeHtml(deal.id)}">Details</button>
-          ${deal.url
-            ? `<a class="btn btn-primary btn-sm btn-buy" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">Buy now</a>`
-            : ''}
-        </div>
+        ${heartButton(deal)}
       </article>`;
   }
 
@@ -1451,6 +1454,13 @@
       </div>`;
   }
 
+  // Sizes arrive as a list, or as its JSON text from older rows; "[]" means none.
+  function sizesText(sizes) {
+    let list = sizes;
+    if (typeof list === 'string') { try { list = JSON.parse(list); } catch { return list.trim(); } }
+    return Array.isArray(list) ? list.filter(Boolean).join(', ') : '';
+  }
+
   function dealReasons(deal) {
     const history = deal.price_history || {};
     const out = [];
@@ -1460,7 +1470,6 @@
       const below = Math.round((1 - deal.price / history.median) * 100);
       if (below >= 5) out.push(`${below}% below its typical price (${history.points} price points)`);
     }
-    if (deal.repost_count > 1) out.push(`Posted ${deal.repost_count} times — widely shared deal`);
     return out;
   }
 
@@ -1479,18 +1488,15 @@
 
       openModal(`
         <div class="modal-head">
-          <h2>${escapeHtml(deal.title)}</h2>
+          <h2>${escapeHtml(displayTitle(deal.title))}</h2>
           <button class="btn btn-soft btn-xs" data-close>Close</button>
         </div>
         <div class="detail-layout ${deal.image_url ? 'has-hero' : ''}">
         ${deal.image_url ? `<div class="detail-hero">${dealMedia(deal)}</div>` : ''}
         <div class="modal-pad">
           ${badges.length ? `<div class="detail-badges">${badges.join('')}</div>` : ''}
-          <div class="detail-price">
-            ${priceOff(deal)}
-            ${priceNow(deal)}
-            ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
-          </div>
+          <div class="detail-meta">${storeLogo(deal.store, 18)}<span>${escapeHtml([KNOWN_STORES.has(String(deal.store || '').toLowerCase()) ? storeName(deal) : '', timeAgo(deal.posted_at)].filter(Boolean).join(' · ').toUpperCase())}</span></div>
+          ${priceRow(deal, 'detail-price')}
           ${deal.saving ? `<span class="detail-save">${icon('down')} You save ${money(deal.saving)}${deal.discount_pct ? ` · ${deal.discount_pct}% off` : ''}</span>` : ''}
 
           ${verdictChip(deal.price_verdict)}
@@ -1518,21 +1524,16 @@
             <dt>Store</dt><dd>${escapeHtml(deal.store || '—')}</dd>
             <dt>Category</dt><dd>${escapeHtml(deal.category || '—')} › ${escapeHtml(deal.subcategory || '—')}</dd>
             ${deal.brand ? `<dt>Brand</dt><dd>${escapeHtml(deal.brand)}</dd>` : ''}
-            ${deal.sizes ? `<dt>Sizes</dt><dd class="raw">${escapeHtml(deal.sizes)}</dd>` : ''}
+            ${sizesText(deal.sizes) ? `<dt>Sizes</dt><dd class="raw">${escapeHtml(sizesText(deal.sizes))}</dd>` : ''}
             ${deal.coupon ? `<dt>Coupon</dt><dd><span class="coupon">${escapeHtml(deal.coupon)}</span>
               <button type="button" class="btn btn-ghost btn-xs" id="btn-coupon-dead" data-deal="${escapeHtml(deal.id)}">Code not working?</button></dd>` : ''}
-            <dt>Posted</dt><dd class="raw">${timeAgo(deal.posted_at)}</dd>
-            <dt>Shared</dt><dd>${deal.repost_count} time${deal.repost_count === 1 ? '' : 's'}</dd>
-            <dt>Expires</dt><dd class="raw">${deal.expires_at ? new Date(deal.expires_at * 1000).toLocaleString() : '—'}</dd>
+            <dt>Found</dt><dd class="raw">${timeAgo(deal.posted_at)}</dd>
+            <dt>Expires</dt><dd class="raw">${deal.expires_at ? escapeHtml(endsIn(deal.expires_at)) : '—'}</dd>
             ${history.points ? `<dt>History</dt><dd class="raw">${history.points} points · low ${money(history.min)} · high ${money(history.max)}</dd>` : ''}
             <dt>Deal score</dt><dd>${Math.round(deal.score ?? 0)} / 100</dd>
           </dl>
 
-          <details class="raw">
-            <summary>Original post</summary>
-            <pre class="rawpost">${escapeHtml(deal.raw_text || '')}</pre>
-          </details>
-          <div class="similar"><h3 class="section-title" style="margin:18px 0 10px">Similar deals</h3><div class="rail" id="similar-row">${railSkeletons(3)}</div></div>
+          <div class="similar"><h3 class="section-title" style="margin:18px 0 10px">Similar, live now</h3><div class="rail" id="similar-row">${railSkeletons(3)}</div></div>
         </div>
         </div>
         ${deal.url ? `
@@ -1540,7 +1541,7 @@
             ${deal.price_history_url ? `<a class="btn btn-soft btn-block" id="btn-price-history" href="${escapeHtml(deal.price_history_url)}"
                target="_blank" rel="noopener noreferrer nofollow">${icon('trend', 'ico')} Price history &amp; stock</a>` : ''}
             <a class="btn btn-primary btn-block" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">
-              Open on ${escapeHtml(storeName(deal) || 'store')} ${icon('external', 'ico')}
+              Buy on ${escapeHtml(storeName(deal) || 'store')} ${icon('external', 'ico')}
             </a>
           </div>` : ''}
       `, { wide: true });
@@ -1728,52 +1729,31 @@
      HOME RAILS  (only shown while browsing — a search replaces them)
      ============================================================ */
   function railCard(deal, note) {
+    const title = displayTitle(deal.title);
+    const off = deal.discount_pct >= 5 ? `<span class="rail-off">${deal.discount_pct}% OFF</span>` : '';
     return `
       <article class="railcard" data-detail="${escapeHtml(deal.id)}" role="button" tabindex="0"
-               aria-label="${escapeHtml(deal.title)}">
-        <div class="rail-media">${dealMedia(deal)}</div>
+               aria-label="${escapeHtml(title)}">
+        <div class="rail-media">${dealMedia(deal, off)}</div>
         <div class="rail-body">
-          <div class="rail-title">${highlight(deal.title, state.filters.q)}</div>
-          <div class="rail-price">
-            ${priceOff(deal)}
-            ${priceNow(deal)}
-            ${deal.mrp ? `<span class="price-was">${money(deal.mrp)}</span>` : ''}
-          </div>
-          ${note}
+          <div class="rail-title">${highlight(title, state.filters.q)}</div>
+          ${priceRow({ ...deal, discount_pct: 0 }, 'rail-price')}
+          <div class="rail-foot">${KNOWN_STORES.has(String(deal.store || '').toLowerCase()) ? storeLogo(deal.store, 14) : ''}${note}</div>
         </div>
       </article>`;
   }
 
   /* ---------------- extra home rows + store chips ---------------- */
-  const ALL_OFF = { q: '', category: '', subcategory: '', store: '', brand: '', min_price: null, max_price: null,
-    min_discount: 0, has_coupon: false, only_lowest: false, offset: 0, limit: 12 };
-  async function fillRail(name, overrides, note) {
-    const wrap = $(`#${name}-wrap`);
-    const row = $(`#${name}-row`);
-    try {
-      const res = await api('/api/deals?' + buildQuery({ ...ALL_OFF, ...overrides }));
-      if (!res.results.length) { delete wrap.dataset.hasData; toggleRails(); return; }
-      row.innerHTML = res.results.map((d) => railCard(d, note(d))).join('');
-      wrap.dataset.hasData = '1';
-      bindDetailTriggers(row);
-    } catch { delete wrap.dataset.hasData; }
-    toggleRails();
-  }
   function endsIn(ts) {
     const h = Math.max(0, (ts - Date.now() / 1000) / 3600);
     return h < 1 ? 'Ends within the hour' : h < 24 ? `Ends in ${Math.round(h)}h` : `Ends in ${Math.round(h / 24)}d`;
   }
-  function loadExtraRails() {
-    fillRail('ending', { sort: 'ending' }, (d) => `<span class="rail-note hot">${icon('clock')} ${endsIn(d.expires_at)}</span>`);
-    fillRail('fresh', { sort: 'newest' }, (d) => `<span class="rail-note">${icon('clock')} ${timeAgo(d.posted_at)}</span>`);
-    fillRail('coupons', { sort: 'best', has_coupon: true }, (d) => `<span class="coupon">🏷 ${escapeHtml(d.coupon || '')}</span>`);
-  }
   function renderStoreChips() {
     const box = $('#store-chips');
-    const stores = (state.facets.stores || []).filter((s) => s.key && s.key !== 'unknown').slice(0, 10);
+    const stores = (state.facets.stores || []).filter((s) => KNOWN_STORES.has(String(s.key || '').toLowerCase())).slice(0, 10);
     box.classList.toggle('hidden', !stores.length);
     box.innerHTML = stores.map((s) => `<button class="chip ${state.filters.store === s.key ? 'active' : ''}" data-store="${escapeHtml(s.key)}">
-      ${escapeHtml(titleCase(s.key))} <span class="facet-count">${s.count}</span></button>`).join('');
+      ${storeLogo(s.key, 16)}${escapeHtml(titleCase(s.key))} <span class="facet-count">${num(s.count)}</span></button>`).join('');
   }
   $('#store-chips').addEventListener('click', (e) => {
     const chip = e.target.closest('[data-store]');
@@ -1810,8 +1790,8 @@
           ${r.price_stats && r.price_stats.points ? `<p class="muted small" style="margin:8px 0">We've seen it ${r.price_stats.points} times · lowest ${money(r.price_stats.min)} · highest ${money(r.price_stats.max)}</p>` : ''}
           <div class="price-chart" id="check-chart"></div>
           ${r.deals.length ? `<h3 class="section-title" style="margin:16px 0 10px">Live deals</h3>${cards(r.deals)}` : ''}
-          ${r.archive.length ? `<h3 class="section-title" style="margin:16px 0 10px">🗂️ Earlier deals</h3>${cards(r.archive)}` : ''}
-          ${!r.deals.length && !r.archive.length ? '<p class="muted">We haven’t seen this product in our channels yet.</p>' : ''}
+          ${r.archive.length ? `<h3 class="section-title" style="margin:16px 0 10px">Earlier deals</h3>${cards(r.archive)}` : ''}
+          ${!r.deals.length && !r.archive.length ? '<p class="muted">We haven’t tracked this product yet.</p>' : ''}
           ${r.price_history_url ? `<a class="btn btn-soft btn-block" style="margin-top:14px" target="_blank" rel="noopener noreferrer nofollow" href="${escapeHtml(r.price_history_url)}">${icon('trend', 'ico')} Full price history on BuyHatke</a>` : ''}`;
         if ((r.history || []).length >= 2) renderPriceChart($('#check-chart'), r.history, '');
         else $('#check-chart').remove();
@@ -1838,7 +1818,7 @@
 
   function toggleRails() {
     const show = isBrowseMode();
-    ['#trending-wrap', '#lowest-wrap', '#ending-wrap', '#fresh-wrap', '#coupons-wrap'].forEach((sel) => {
+    ['#trending-wrap', '#lowest-wrap'].forEach((sel) => {
       const el = $(sel);
       // A rail with no data stays hidden regardless — `has-data` is set by its loader.
       el.classList.toggle('hidden', !show || !el.dataset.hasData);
@@ -1850,7 +1830,6 @@
   async function loadRails() {
     loadTrending();
     loadLowest();
-    loadExtraRails();
     catRails.stale = true;
   }
 
@@ -1892,7 +1871,7 @@
       <section class="rail-section cat-rail">
         <div class="section-head">
           <div>
-            <h3 class="section-title">${CATEGORY_ICON[cat.name] || '🏷️'} ${escapeHtml(cat.name)}</h3>
+            <h3 class="section-title">${escapeHtml(cat.name)}</h3>
             <div class="section-sub">${num(res.total)} live deal${res.total === 1 ? '' : 's'}</div>
           </div>
           <div class="section-actions">
@@ -1932,8 +1911,9 @@
         wrap.classList.add('hidden');
         return;
       }
-      row.innerHTML = res.results.map((d) => railCard(d,
-        `<span class="rail-note hot">${icon('trend')} ${d.repost_count}× posted</span>`)).join('');
+      row.innerHTML = res.results.map((d) => railCard(d, d.saving
+        ? `<span class="rail-note">Save ${money(d.saving)}</span>`
+        : `<span class="rail-note muted-note">${escapeHtml(storeName(d) || timeAgo(d.posted_at))}</span>`)).join('');
       wrap.dataset.hasData = '1';
       bindDetailTriggers(row);
       toggleRails();
@@ -1960,8 +1940,8 @@
         return;
       }
       row.innerHTML = res.results.map((d) => railCard(d,
-        d.saving ? `<span class="rail-note">${icon('down')} Save ${money(d.saving)}</span>`
-                 : `<span class="rail-note">${icon('check')} All-time low</span>`)).join('');
+        d.saving ? `<span class="rail-note">Save ${money(d.saving)}</span>`
+                 : `<span class="rail-note">All-time low</span>`)).join('');
       wrap.dataset.hasData = '1';
       bindDetailTriggers(row);
       toggleRails();
@@ -2057,8 +2037,8 @@
       $('#statstrip').innerHTML = `
         <div class="visitor-hero">
           <div class="vh-copy">
-            <h1>Today’s best deals, <span>in one place</span></h1>
-            <p>Loot deals and price drops from India’s top deal channels — duplicates merged, prices checked, ranked.</p>
+            <h1>Today’s best deals, checked and ranked</h1>
+            <p>Price drops from Amazon, Flipkart, Myntra and more — tracked around the clock, every price checked against its history.</p>
           </div>
           <div class="vh-stats">
             <div><b data-count="${stats.deals_live || 0}">0</b><span>live deals</span></div>
@@ -2279,7 +2259,7 @@
       ? `<img src="${escapeHtml(deal.image_url)}" alt="" loading="lazy" decoding="async" onerror="this.remove()" />`
       : '';
     return suggestOption('deal', deal.id, `
-      <span class="s-thumb" aria-hidden="true"><span>🛍️</span>${thumb}</span>
+      <span class="s-thumb" aria-hidden="true"><span>${icon('tag')}</span>${thumb}</span>
       <span class="s-deal">
         <span class="s-title">${highlight(deal.title, typed)}</span>
         <span class="s-price">
@@ -2300,7 +2280,7 @@
       const name = kind === 'category' ? x.name : x.key;
       const label = kind === 'category' ? name : titleCase(name);
       const lead = kind === 'category'
-        ? `<span class="s-emoji" aria-hidden="true">${CATEGORY_ICON[name] || '🏷️'}</span>` : icon(ico);
+        ? icon('tag') : icon(ico);
       return suggestOption(kind, name,
         `${lead}<span class="s-text">${highlight(label, typed)}</span><span class="s-count">${num(x.count)}</span>`);
     }).join('');
@@ -2552,10 +2532,15 @@
     $('#deal-grid').classList.toggle('list', view === 'list');
     $('#archive-grid').classList.toggle('list', view === 'list');
     $$('.viewtoggle [data-view]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
-    try { localStorage.setItem('dr-view', view); } catch { /* private mode */ }
   }
-  $$('.viewtoggle [data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
-  setView((() => { try { return localStorage.getItem('dr-view'); } catch { return null; } })() === 'list' ? 'list' : 'grid');
+  $$('.viewtoggle [data-view]').forEach((b) => b.addEventListener('click', () => {
+    setView(b.dataset.view);
+    try { localStorage.setItem('dr-layout', b.dataset.view); } catch { /* private mode */ }
+  }));
+  // Only a view the visitor actually picked is remembered ('dr-layout'); otherwise
+  // phones get the list, like the app, and wide screens the grid.
+  setView((() => { try { return localStorage.getItem('dr-layout'); } catch { return null; } })()
+    || (window.matchMedia('(max-width: 699px)').matches ? 'list' : 'grid'));
 
   /* ---------------- rail arrows ---------------- */
   function updateRailNav(nav) {
@@ -2674,131 +2659,6 @@
   $('#btn-sync').addEventListener('click', syncNow);
 
   /* ============================================================
-     CHANNELS
-     ============================================================ */
-  const AVATAR_HUES = [212, 258, 168, 24, 340, 190, 45, 285];
-
-  function channelAvatar(channel) {
-    const title = channel.title || '?';
-    let hash = 0;
-    for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
-    const hue = AVATAR_HUES[hash % AVATAR_HUES.length];
-    const initial = title.trim().slice(0, 1).toUpperCase() || '#';
-    return `<div class="channel-avatar" aria-hidden="true"
-                 style="background:linear-gradient(140deg, hsl(${hue} 72% 52%), hsl(${(hue + 28) % 360} 72% 44%))">
-              ${escapeHtml(initial)}</div>`;
-  }
-
-  async function loadAvailableChannels() {
-    const list = $('#channel-list');
-    list.innerHTML = Array.from({ length: 5 }, () => '<div class="skel skel-row"></div>').join('');
-    try {
-      const res = await api('/api/channels/available');
-      state.availableChannels = res.channels;
-      state.selectedChannels = new Set(res.channels.filter((c) => c.tracked).map((c) => c.tg_id));
-      renderChannels();
-    } catch (err) {
-      list.innerHTML = `
-        <div class="empty">
-          <span class="emoji">⚠️</span>
-          <h3>Couldn’t read your channels</h3>
-          <p>${escapeHtml(err.message)}</p>
-          <div class="empty-actions"><button class="btn btn-primary" id="ch-retry">Try again</button></div>
-        </div>`;
-      $('#ch-retry')?.addEventListener('click', loadAvailableChannels);
-    }
-  }
-
-  function channelCountLabel() {
-    return `${state.selectedChannels.size} selected · ${state.availableChannels.length} channels found`;
-  }
-
-  function renderChannels() {
-    const filter = $('#channel-filter').value.trim().toLowerCase();
-    const items = state.availableChannels.filter(
-      (c) => !filter || c.title.toLowerCase().includes(filter) || (c.username || '').toLowerCase().includes(filter)
-    );
-    $('#channel-count').textContent = channelCountLabel();
-
-    if (!items.length) {
-      $('#channel-list').innerHTML = `
-        <div class="empty">
-          <span class="emoji">📡</span>
-          <h3>${state.availableChannels.length ? 'No matches' : 'No channels found'}</h3>
-          <p>${state.availableChannels.length
-            ? 'No channels match that filter.'
-            : 'No broadcast channels found on your account. Join some deal channels in Telegram, then hit Refresh.'}</p>
-        </div>`;
-      return;
-    }
-
-    $('#channel-list').innerHTML = items.map((c) => {
-      const on = state.selectedChannels.has(c.tg_id);
-      const deals = state.channelDeals[c.tg_id];
-      return `
-      <label class="channel ${on ? 'on' : ''}" data-id="${c.tg_id}">
-        ${channelAvatar(c)}
-        <div class="channel-info">
-          <div class="channel-name">${escapeHtml(c.title)}</div>
-          <div class="channel-sub">
-            <span>${c.username ? '@' + escapeHtml(c.username) : 'private channel'}</span>
-            ${c.participants ? `<span class="dot"></span><span>${num(c.participants)} members</span>` : ''}
-            ${deals ? `<span class="dot"></span><span class="channel-deals">${num(deals)} deals</span>` : ''}
-          </div>
-        </div>
-        <span class="switch">
-          <input type="checkbox" ${on ? 'checked' : ''} aria-label="Track ${escapeHtml(c.title)}" />
-          <span class="track"></span>
-        </span>
-      </label>`;
-    }).join('');
-
-    $$('.channel').forEach((el) => {
-      el.querySelector('input').addEventListener('change', (e) => {
-        const id = Number(el.dataset.id);
-        if (e.target.checked) state.selectedChannels.add(id); else state.selectedChannels.delete(id);
-        el.classList.toggle('on', e.target.checked);
-        $('#channel-count').textContent = channelCountLabel();
-      });
-    });
-  }
-
-  $('#channel-filter').addEventListener('input', renderChannels);
-  $('#btn-refresh-channels').addEventListener('click', async (e) => {
-    busy(e.currentTarget, true);
-    await loadAvailableChannels();
-    busy(e.currentTarget, false);
-  });
-
-  $('#btn-save-channels').addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    busy(btn, true);
-    try {
-      await post('/api/channels/track', { tg_ids: Array.from(state.selectedChannels) });
-      toast(`Tracking ${state.selectedChannels.size} channels. Fetching deals…`, 'ok');
-      navigate('deals');
-      await syncNow();
-    } catch (err) {
-      toast(err.message, 'err');
-    } finally { busy(btn, false); }
-  });
-
-  $('#btn-add-public').addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    const username = $('#input-public').value.trim();
-    if (!username) return;
-    busy(btn, true);
-    try {
-      const res = await post('/api/channels/add-public', { username });
-      toast(`Added ${res.channel.title}.`, 'ok');
-      $('#input-public').value = '';
-      await loadAvailableChannels();
-    } catch (err) {
-      toast(err.message, 'err');
-    } finally { busy(btn, false); }
-  });
-
-  /* ============================================================
      ALERTS
      ============================================================ */
   async function loadAlerts() {
@@ -2810,7 +2670,7 @@
       if (!res.watchlists.length) {
         list.innerHTML = `
           <div class="empty">
-            <span class="emoji">🔔</span>
+            <span class="emoji">${icon('bell')}</span>
             <h3>No alerts yet</h3>
             <p>Create an alert above and DealRadar will message you in Telegram the moment a matching deal appears.</p>
           </div>`;
@@ -3137,6 +2997,17 @@
     loadSaleRail();
   })();
 
+  // Each store's own sale look (same as the app): its gradient, plus the accent for the "live" pill.
+  const SALE_THEME = {
+    amazon: { colors: ['#232f3e', '#131921'], accent: '#ff9900' },
+    flipkart: { colors: ['#2874f0', '#1c4fb8'], accent: '#ffe11b' },
+    myntra: { colors: ['#ff3f6c', '#ff7a45'], accent: '#ffffff' },
+    ajio: { colors: ['#2c4152', '#1b2833'], accent: '#e8c77a' },
+    meesho: { colors: ['#9f2089', '#6d1560'], accent: '#ffffff' },
+    nykaa: { colors: ['#fc2779', '#c8175d'], accent: '#ffffff' },
+    shopsy: { colors: ['#2874f0', '#1c4fb8'], accent: '#ffffff' },
+  };
+
   /* Upcoming sales rail (Big Billion Days, Great Indian Festival…), above the
      category chips. Silently hidden if there are none — never an empty strip. */
   async function loadSaleRail() {
@@ -3144,24 +3015,57 @@
     try { events = (await api('/api/sale-events')).events || []; } catch { return; }
     const rail = $('#sale-rail');
     if (!events.length) { rail.classList.add('hidden'); return; }
-    const fmtDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-    const countdown = (ts) => {
-      const days = Math.round((ts * 1000 - Date.now()) / 86400000);
-      if (days <= 0) return 'Live now';
-      if (days === 1) return 'Tomorrow';
-      return `In ${days}d`;
+    const fmtDate = (ts) => (ts ? new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '');
+    // Same timing words as the app: "Starts in 7 days" / "Live now · Ends 14 Oct".
+    const when = (e) => {
+      const now = Date.now(), start = e.starts_at ? e.starts_at * 1000 : null, end = e.ends_at ? e.ends_at * 1000 : null;
+      const range = `${fmtDate(e.starts_at)}${e.ends_at ? ` – ${fmtDate(e.ends_at)}` : ''}${e.approximate ? ' (expected)' : ''}`;
+      if (start && start > now) {
+        const hours = Math.ceil((start - now) / 3600000), days = Math.ceil((start - now) / 86400000);
+        return { status: hours < 24 ? `Starts in ${hours}h` : days === 1 ? 'Starts tomorrow' : `Starts in ${days} days`, detail: range, live: false };
+      }
+      if (end && end > now) {
+        const days = Math.ceil((end - now) / 86400000);
+        return { status: 'Live now', detail: days <= 1 ? 'Ends tomorrow' : `Ends ${fmtDate(e.ends_at)}`, live: true };
+      }
+      return { status: 'Live now', detail: range, live: true };
     };
-    rail.innerHTML = events.map((e) => `
-      <div class="salecard">
+    rail.innerHTML = events.map((e) => {
+      const key = String(e.store || '').trim().toLowerCase();
+      const theme = SALE_THEME[key];
+      const domain = storeDomain(key);
+      const label = key ? key.replace(/\.(com|in)$/, '').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Sale';
+      const url = e.url || (domain ? `https://www.${domain}/` : '');
+      const t = when(e);
+      const [c1, c2] = theme ? theme.colors : ['#17150f', '#2d2a22'];
+      const accent = theme ? theme.accent : '#ff7a45';
+      const pillInk = accent === '#ffffff' ? c1 : '#1a1a1a';
+      return `
+      <div class="salecard" style="--c1:${c1};--c2:${c2};--acc:${accent};--pill-ink:${pillInk}">
         <div class="salecard-top">
-          <span class="salecard-store">${escapeHtml(e.store || 'Sale')}</span>
-          <span class="salecard-when">${escapeHtml(countdown(e.starts_at))}</span>
+          <span class="salecard-brand">
+            <span class="salecard-logo">${domain ? `<img alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128"
+              onerror="this.replaceWith(document.createTextNode('${escapeHtml(label.slice(0, 1))}'))" />` : escapeHtml(label.slice(0, 1))}</span>
+            <span class="salecard-store">${escapeHtml(label.toUpperCase())} · SALE</span>
+          </span>
+          <span class="salecard-when ${t.live ? 'live' : ''}">${t.live ? '<i></i>' : ''}${escapeHtml(t.status)}</span>
         </div>
         <div class="salecard-name">${escapeHtml(e.name)}</div>
+        <div class="salecard-detail">${escapeHtml(t.detail)}</div>
         ${e.hype ? `<div class="salecard-hype">${escapeHtml(e.hype)}</div>` : ''}
-        <div class="salecard-approx">${e.approximate ? 'Approx. ' : ''}${escapeHtml(fmtDate(e.starts_at))}${
-          e.ends_at ? `–${escapeHtml(fmtDate(e.ends_at))}` : ''}</div>
-      </div>`).join('');
+        <div class="salecard-actions">
+          ${url ? `<a class="salecard-open" href="${escapeHtml(url)}" target="_blank" rel="noopener nofollow">${t.live ? 'Shop the sale' : 'Open sale'} ${icon('external')}</a>` : ''}
+          ${key ? `<button type="button" class="salecard-deals" data-sale-store="${escapeHtml(key)}">${escapeHtml(label)} deals</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    $$('[data-sale-store]', rail).forEach((btn) => btn.addEventListener('click', () => {
+      state.filters.store = btn.dataset.saleStore;
+      renderFacet('#f-stores', state.facets.stores, 'store');
+      renderStoreChips();
+      refreshDeals(true);
+      $('#grid-head').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+    }));
     rail.classList.remove('hidden');
   }
 
@@ -3176,14 +3080,12 @@
     if (!channel || !channel.url) return;
     await new Promise((r) => setTimeout(r, 1500));  // let the deals paint first
     if (!$('#modal').classList.contains('hidden')) return;  // never cover a dialog they opened
-    const handle = channel.username ? `@${escapeHtml(channel.username)}` : 'our channel';
     openModal(`
       <div class="tg-invite">
-        <button class="tg-invite-close" type="button" data-close aria-label="Close">✕</button>
-        <div class="tg-invite-icon" aria-hidden="true">✈️</div>
+        <button class="tg-invite-close" type="button" data-close aria-label="Close">${icon('close')}</button>
+        <div class="tg-invite-icon" aria-hidden="true">${icon('zap')}</div>
         <h2>Get the crazy deals first</h2>
-        <p class="muted">Verified loot deals — women's accessories, fashion and more — land on
-          our Telegram channel <b>${handle}</b> seconds after they go live, before anywhere else.</p>
+        <p class="muted">Our best finds go out on Telegram seconds after our price checks catch them — before anywhere else.</p>
         <a class="btn btn-primary tg-invite-join" href="${escapeHtml(channel.url)}" target="_blank"
            rel="noopener" id="tg-join">Join on Telegram</a>
         <button class="btn btn-soft tg-invite-later" type="button" data-close>Maybe later</button>
