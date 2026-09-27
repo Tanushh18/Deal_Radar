@@ -213,6 +213,30 @@ if os.path.isdir(STATIC_DIR):
     async def index():
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
+    @app.get("/.well-known/assetlinks.json", include_in_schema=False)
+    async def assetlinks():
+        """Proves this domain may open the Android app for its https links
+        (Android "App Links" — the /d/<id> share link opens DealRadar itself
+        instead of a browser, once the app ships with a matching intent
+        filter). The fingerprint must be the SHA-256 of the certificate Play
+        actually signs the app with (Play Console -> Setup -> App integrity ->
+        App signing key certificate), not necessarily the local upload key.
+        """
+        return JSONResponse([{
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "com.tanush.dealradar",
+                # Play's "App signing key certificate" (classical key) — the
+                # certificate Play actually re-signs the app with for every
+                # user. The newer post-quantum key isn't used by Android's
+                # Digital Asset Links verification yet, so it's not listed here.
+                "sha256_cert_fingerprints": [
+                    "B7:16:D8:CF:2A:BC:F6:40:E6:49:40:DC:8B:4A:8B:6F:36:FA:3F:10:7A:0D:4B:EC:30:C2:32:04:A7:3D:A1:E0",
+                ],
+            },
+        }])
+
     @app.get("/d/{deal_id}", include_in_schema=False)
     async def share_page(deal_id: str, request: Request):
         """Share link: WhatsApp/Telegram read these Open Graph tags for the

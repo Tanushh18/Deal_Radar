@@ -22,7 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { LIVE_HOST, getBaseUrl } from './config';
+import { resolveHost } from './config';
 import { TEMPLATES, type Need, type Template, type TimeOfDay } from './notificationTemplates';
 
 const STORE_KEY = 'dr.smart.v1';
@@ -527,7 +527,7 @@ export function enqueue(items: DealFields[]): Promise<void> {
 }
 
 async function fetchPicks(): Promise<DealFields[]> {
-  const base = (await getBaseUrl()) ?? LIVE_HOST;
+  const base = await resolveHost();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20_000);
   try {

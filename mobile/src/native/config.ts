@@ -3,7 +3,12 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const LIVE_HOST: string = 'https://dealradar-0oza.onrender.com';
+export const LIVE_HOST: string = 'https://dealradar.ggnhome.com';
+// The old Render URL, kept only so a phone that explicitly saved it (via the
+// Setup screen's "Live server" chip) migrates to the new domain automatically —
+// see getBaseUrl(). Render keeps this address alive, so it's a safe fallback,
+// but every fresh install and OTA now points at LIVE_HOST above.
+const RETIRED_HOST = 'https://dealradar-0oza.onrender.com';
 export const EMULATOR_HOST = 'http://10.0.2.2:8765';
 
 export const COLORS = {
@@ -35,7 +40,15 @@ export { KEYS as STORAGE_KEYS };
 export async function getBaseUrl(): Promise<string | null> {
   try {
     const v = await AsyncStorage.getItem(KEYS.baseUrl);
-    return v && v.trim() ? v : null;
+    if (!v || !v.trim()) return null;
+    // Migration: a phone that explicitly saved the old Render URL would
+    // otherwise keep using it forever, since an explicit save always wins
+    // over LIVE_HOST. Retire it silently onto the new domain.
+    if (v.replace(/\/+$/, '') === RETIRED_HOST) {
+      await AsyncStorage.removeItem(KEYS.baseUrl).catch(() => {});
+      return null;
+    }
+    return v;
   } catch {
     return null;
   }
@@ -45,6 +58,49 @@ export async function saveBaseUrl(url: string): Promise<string> {
   const normalized = normalize(url);
   await AsyncStorage.setItem(KEYS.baseUrl, normalized);
   return normalized;
+}
+
+/**
+ * Both hostnames point at the same backend. Some phones' DNS-level filtering
+ * or on-device ad/tracker blockers (NextDNS, AdGuard, several carrier
+ * filters) block specific hostnames outright — "onrender.com" in particular
+ * shows up in a few "free hosting abuse" blocklists, which is exactly the
+ * kind of thing that makes an app "just never load" on one phone but work
+ * fine on another. Trying the other hostname routes around a block on
+ * either specific name without needing the user to do anything.
+ */
+export const FALLBACK_HOSTS: readonly string[] = [LIVE_HOST, RETIRED_HOST];
+
+// Remembered only for this run of the app (never persisted): once a fallback
+// host is found to work, later requests try it first instead of eating the
+// blocked host's connection-failure delay every single time.
+let sessionHost: string | null = null;
+
+/**
+ * The host to use for the next request. An explicit base the user configured
+ * on the Setup screen (dev/emulator) always wins, with no substitution — the
+ * fallback chain only ever applies to the default, unconfigured case that
+ * real end users are in.
+ */
+export async function resolveHost(): Promise<string> {
+  const explicit = await getBaseUrl();
+  return explicit ?? sessionHost ?? LIVE_HOST;
+}
+
+/** True only when nothing was explicitly configured — i.e. the fallback chain may apply. */
+export async function usingDefaultHost(): Promise<boolean> {
+  return (await getBaseUrl()) == null;
+}
+
+/** The next candidate after `failed`, or null once every fallback has been tried. */
+export function nextFallbackHost(failed: string): string | null {
+  const i = FALLBACK_HOSTS.indexOf(failed.replace(/\/+$/, '') as (typeof FALLBACK_HOSTS)[number]);
+  return i >= 0 && i + 1 < FALLBACK_HOSTS.length ? FALLBACK_HOSTS[i + 1] : null;
+}
+
+/** Call once a fallback host answers, so the rest of this session prefers it. */
+export function rememberWorkingHost(host: string): void {
+  sessionHost = host;
 }
 
 /** scheme://host[:port] — tiny parser; RN's URL polyfill lacks some getters. */

@@ -21,7 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { getBaseUrl, LIVE_HOST, STORAGE_KEYS } from './config';
+import { resolveHost, STORAGE_KEYS } from './config';
 import { getDeviceId } from './device';
 import {
   NOT_INTERESTED_ACTION_ID,
@@ -434,7 +434,7 @@ export function pollNotifications(): Promise<number> {
 
 async function doPoll(): Promise<number> {
   try {
-    const base = (await getBaseUrl()) ?? LIVE_HOST;
+    const base = await resolveHost();
     const deviceId = await getDeviceId();
     const lastSeenRaw = await AsyncStorage.getItem(STORAGE_KEYS.lastSeen);
     const priming = lastSeenRaw == null;

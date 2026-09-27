@@ -1,4 +1,4 @@
-import { joinUrl } from '../native/config';
+import { joinUrl, nextFallbackHost, rememberWorkingHost, usingDefaultHost } from '../native/config';
 import { getServerUrl, onSignedOut } from '../native/session';
 
 export type ApiErrorKind = 'http' | 'network' | 'timeout' | 'aborted';
@@ -79,8 +79,8 @@ export function absoluteUrl(base: string, path: string | null | undefined): stri
   return joinUrl(base, path);
 }
 
-export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const base = await getServerUrl();
+/** One attempt at `path` against `base`. Throws ApiError('network'|'timeout'|'aborted') or returns the raw Response. */
+async function attempt(base: string, path: string, opts: RequestOptions): Promise<Response> {
   const url = joinUrl(base, path) + buildQuery(opts.query);
   const controller = new AbortController();
   let timedOut = false;
@@ -96,9 +96,8 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
     else outer.addEventListener('abort', forward);
   }
 
-  let res: Response;
   try {
-    res = await fetch(url, {
+    return await fetch(url, {
       method: opts.method ?? 'GET',
       credentials: 'include',
       headers: {
@@ -119,6 +118,26 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   } finally {
     clearTimeout(timer);
     outer?.removeEventListener('abort', forward);
+  }
+}
+
+export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  const base = await getServerUrl();
+  let res: Response;
+  try {
+    res = await attempt(base, path, opts);
+  } catch (e) {
+    // A genuine "can't even connect" failure (DNS/adblock/firewall — not a
+    // timeout, not a cancel) on the default, unconfigured host: some phones'
+    // DNS filtering or ad/tracker blockers block one hostname outright, so
+    // try the other one this app answers to before giving up. Never kicks in
+    // for a base URL someone explicitly configured on the Setup screen.
+    const fallback = e instanceof ApiError && e.kind === 'network' && (await usingDefaultHost())
+      ? nextFallbackHost(base)
+      : null;
+    if (!fallback) throw e;
+    res = await attempt(fallback, path, opts);
+    rememberWorkingHost(fallback);
   }
 
   let data: unknown = null;

@@ -17,7 +17,7 @@ import { CommonActions } from '@react-navigation/native';
 
 import { navigationRef } from '../navigation/types';
 import { startBackgroundPolling, stopBackgroundPolling } from './backgroundTask';
-import { getBaseUrl, LIVE_HOST, STORAGE_KEYS } from './config';
+import { resolveHost, STORAGE_KEYS } from './config';
 import { setRoutingReady } from './deepLinks';
 import { getRegisteredPushToken, registerDevice } from './device';
 import {
@@ -44,7 +44,7 @@ export function setPublicMode(on: boolean): void {
 }
 
 export async function getServerUrl(): Promise<string> {
-  return (await getBaseUrl()) ?? LIVE_HOST;
+  return resolveHost();
 }
 
 async function post(path: string, body: unknown): Promise<Response | null> {

@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#080b12",
+    "backgroundColor": "#14120e",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tanush.dealradar",
@@ -15,11 +15,11 @@
     },
     "android": {
       "package": "com.tanush.dealradar",
-      "versionCode": 2,
+      "versionCode": 3,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#2563eb",
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "backgroundColor": "#d9480f",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
@@ -38,7 +38,23 @@
         "android.permission.ACCESS_NOTIFICATION_POLICY"
       ],
       "softwareKeyboardLayoutMode": "resize",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "dealradar.ggnhome.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -48,16 +64,16 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "imageWidth": 120,
+          "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#080b12"
+          "backgroundColor": "#14120e"
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#2563eb",
+          "color": "#d9480f",
           "defaultChannel": "deal-alerts"
         }
       ],
@@ -112,7 +128,7 @@
       "./plugins/withAbiFilter"
     ],
     "extra": {
-      "defaultServerUrl": "https://dealradar-0oza.onrender.com",
+      "defaultServerUrl": "https://dealradar.ggnhome.com",
       "expo-navigation-bar": {
         "enforceContrast": false,
         "style": "light"

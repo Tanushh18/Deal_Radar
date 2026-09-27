@@ -7,7 +7,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-import { getBaseUrl, LIVE_HOST } from './config';
+import { resolveHost } from './config';
 
 const DEVICE_KEY = 'dr-device-id';
 const REGISTERED_KEY = 'dr.registered';
@@ -58,7 +58,7 @@ export type DeviceRegistration = {
 export type RegisteredDevice = Record<string, unknown>;
 
 async function server(): Promise<string> {
-  return (await getBaseUrl()) ?? LIVE_HOST;
+  return await resolveHost();
 }
 
 /**

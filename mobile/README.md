@@ -4,7 +4,7 @@ A native React Native app (Expo SDK 57, RN 0.86, New Architecture) that talks
 to the DealRadar FastAPI server's JSON API.
 
 - Package id `com.tanush.dealradar`, name **DealRadar**
-- Default server: `https://dealradar-0oza.onrender.com` (changeable in-app)
+- Default server: `https://dealradar.ggnhome.com` (changeable in-app; `https://dealradar-0oza.onrender.com` still works and is kept alive as the underlying Render host)
 - Auth: the server's `tgdeals_session` cookie. On Android, RN `fetch` goes
   through OkHttp + `ForwardingCookieHandler`, which is backed by
   `android.webkit.CookieManager` — the same persistent jar a WebView uses — so

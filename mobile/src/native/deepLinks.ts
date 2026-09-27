@@ -4,6 +4,7 @@
  * and launcher shortcuts. Targets that arrive before the navigator is mounted
  * on Main are held until setRoutingReady(true).
  */
+import { Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { CommonActions, StackActions } from '@react-navigation/native';
 
@@ -18,6 +19,41 @@ export type RouteTarget =
   | { kind: 'search' }
   | { kind: 'saved' }
   | { kind: 'home' };
+
+// Hosts this app answers for when Android/iOS hand it a tapped link instead of
+// opening a browser — the custom scheme always works; the https ones only
+// actually reach us once Android has verified the App Link (see LIVE_HOST's
+// assetlinks.json and app.json's android.intentFilters — both need a native
+// build to take effect). The retired Render host is kept here too: harmless,
+// and covers anyone who taps an old share link cached from before the move.
+const LINK_HOSTS = new Set(['dealradar.ggnhome.com', 'dealradar-0oza.onrender.com']);
+
+/** A tapped `dealradar://…` or `https://dealradar.ggnhome.com/…` link, as a RouteTarget. */
+export function parseExternalUrl(url: string | null | undefined): RouteTarget | null {
+  if (!url) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  const scheme = parsed.protocol.replace(':', '').toLowerCase();
+  if (scheme !== 'dealradar' && !(scheme === 'https' && LINK_HOSTS.has(parsed.hostname.toLowerCase()))) {
+    return null;
+  }
+  // dealradar:// URLs have no real host — the first path segment (host or
+  // pathname, RN's URL polyfill is inconsistent about which) carries it.
+  const segments = `${parsed.hostname}${parsed.pathname}`.split('/').filter(Boolean);
+  const dealId = parsed.searchParams.get('deal')
+    ?? (segments[0] === 'd' || segments[0] === 'deal' ? segments[1] : null);
+  if (dealId) return { kind: 'deal', id: decodeURIComponent(dealId) };
+  const q = parsed.searchParams.get('q');
+  if (q) return { kind: 'search' };
+  if (segments[0] === 'saved') return { kind: 'saved' };
+  if (segments[0] === 'check') return { kind: 'check', url: parsed.searchParams.get('url') ?? undefined };
+  if (!segments.length) return { kind: 'home' };
+  return { kind: 'path', path: `/${segments.join('/')}` };
+}
 
 let pending: RouteTarget | null = null;
 let ready = false;
@@ -130,8 +166,22 @@ export async function handleNotifeeEvent(
   if (type === EventType.DISMISSED && smart) await recordNotificationOutcome(smart.slot, 'dismiss', smart.deal);
 }
 
+/**
+ * Product links tapped outside the app: shared "Buy on…" links, a `/d/<id>`
+ * share card, or anything opened with the `dealradar://` scheme. Cold start
+ * (`getInitialURL`) and warm (`addEventListener`) both route the same way.
+ */
+function startExternalLinkRouting(): () => void {
+  Linking.getInitialURL()
+    .then((url) => routeTo(parseExternalUrl(url)))
+    .catch(() => {});
+  const sub = Linking.addEventListener('url', ({ url }) => routeTo(parseExternalUrl(url)));
+  return () => sub.remove();
+}
+
 /** Call once at startup. Returns an unsubscribe function. */
 export function startNotificationRouting(): () => void {
+  const unsubLinks = startExternalLinkRouting();
   const sub = Notifications.addNotificationResponseReceivedListener((r) => handleExpoResponse(r));
   const received = Notifications.addNotificationReceivedListener((n) => {
     const trigger = n.request.trigger as any;
@@ -154,6 +204,7 @@ export function startNotificationRouting(): () => void {
       .catch(() => {});
   }
   return () => {
+    unsubLinks();
     sub.remove();
     received.remove();
     unsubNotifee();
