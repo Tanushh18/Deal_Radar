@@ -260,6 +260,10 @@ async def ingest_channel(channel: Dict[str, Any]) -> Dict[str, Any]:
         # Set after resolution: resolving can change the deal's id.
         if getattr(message, "photo", None):
             deal["image_url"] = store.telegram_image_url(deal["id"], int(channel["tg_id"]), int(message.id))
+    try:
+        await links.fill_amazon_images([deal for deal, _ in candidates])
+    except Exception as exc:  # noqa: BLE001 — a missing photo only means the gate decides
+        log.warning("Amazon image lookup failed for %s: %s", channel.get("title"), exc)
 
     # Local SQLite only keeps a few days; pull these products' longer history
     # from Turso in one round trip so the ALL-TIME LOW and fake-MRP checks in

@@ -215,3 +215,52 @@ async def resolve_deals(deals: List[Dict[str, Any]]) -> int:
 
         await asyncio.gather(*(one(d) for d in todo), return_exceptions=True)
     return resolved
+
+
+# --- Amazon photos for text-only posts --------------------------------------
+# About a quarter of posts are just "Product @price + amzn.to link" with no
+# photo, and the photo gate drops them. Once the shortlink is resolved the ASIN
+# is known, and Amazon's own image CDN serves the product photo by ASIN — one
+# image request, never a product page (Amazon pages stay unscraped). An unknown
+# ASIN comes back as a tiny placeholder GIF, hence the size check.
+AMAZON_IMAGE_URL = "https://m.media-amazon.com/images/P/{asin}.01._SCLZZZZZZZ_.jpg"
+_MIN_IMAGE_BYTES = 1000
+_asin_images: "OrderedDict[str, str]" = OrderedDict()
+
+
+def amazon_asin(deal: Dict[str, Any]) -> Optional[str]:
+    key = deal.get("product_key") or ""
+    return key.split(":", 1)[1] if key.startswith("amazon:") else None
+
+
+async def fill_amazon_images(deals: List[Dict[str, Any]]) -> int:
+    """Give photo-less Amazon deals their product photo. Returns how many got one."""
+    todo = [d for d in deals if not d.get("image_url") and amazon_asin(d)]
+    if not todo:
+        return 0
+    semaphore = asyncio.Semaphore(CONCURRENCY)
+    filled = 0
+
+    async with httpx.AsyncClient(timeout=HOP_TIMEOUT, follow_redirects=True) as client:
+
+        async def one(deal: Dict[str, Any]) -> None:
+            nonlocal filled
+            asin = amazon_asin(deal) or ""
+            if asin not in _asin_images:
+                url = AMAZON_IMAGE_URL.format(asin=asin)
+                async with semaphore:
+                    try:
+                        r = await client.get(url)
+                        ok = (r.status_code == 200 and r.headers.get("content-type", "").startswith("image/")
+                              and len(r.content) >= _MIN_IMAGE_BYTES)
+                    except httpx.HTTPError:
+                        return  # network blip: try again on the next repost, don't cache
+                _asin_images[asin] = url if ok else ""
+                while len(_asin_images) > _CACHE_MAX:
+                    _asin_images.popitem(last=False)
+            if _asin_images[asin]:
+                deal["image_url"] = _asin_images[asin]
+                filled += 1
+
+        await asyncio.gather(*(one(d) for d in todo), return_exceptions=True)
+    return filled

@@ -186,6 +186,46 @@ def main() -> int:
     priority.reset_cache()
     check("a rule saved before exclusions picks them up", "beardo" in priority.get()["exclude_keywords"])
 
+    print("\n=== 8. AMAZON PHOTOS FOR TEXT-ONLY POSTS ===")
+    import asyncio
+    import httpx
+
+    real_httpx, hits = links.httpx, []
+
+    def cdn(request: httpx.Request) -> httpx.Response:
+        hits.append(str(request.url))
+        if "B0KNOWN001" in str(request.url):
+            return httpx.Response(200, headers={"content-type": "image/jpeg"}, content=b"\xff" * 5000)
+        return httpx.Response(200, headers={"content-type": "image/gif"}, content=b"GIF89a" + b"\0" * 37)
+
+    class _FakeHttpx:
+        def __getattr__(self, name):
+            return getattr(real_httpx, name)
+
+        def AsyncClient(self, **kw):  # noqa: N802
+            return real_httpx.AsyncClient(transport=httpx.MockTransport(cdn), **kw)
+
+    links.httpx = _FakeHttpx()
+    try:
+        known = post("Nippon Gold Interior Emulsion Paint, 4 Ltr @902.\n\nhttps://www.amazon.in/dp/B0KNOWN001",
+                     9, 1, photo=False)
+        unknown = post("Dove Men Care Oil Control Facewash 150 ml @227.\n\nhttps://www.amazon.in/dp/B0UNKNOWN2",
+                       9, 2, photo=False)
+        flip = post("Orient Areva Portable Room Heater @1399\n\nhttps://www.flipkart.com/x/p/itm123?pid=HTRABCDEFGH",
+                    9, 3, photo=False)
+        n = asyncio.run(links.fill_amazon_images([known, unknown, flip]))
+        check("text-only Amazon post gets its product photo", known["image_url"].startswith("https://m.media-amazon.com/")
+              and "B0KNOWN001" in known["image_url"], known["image_url"])
+        check("…and now passes the photo gate", quality.reject_reason(known) is None, str(quality.reject_reason(known)))
+        check("placeholder image for an unknown ASIN is ignored", not unknown["image_url"] and n == 1)
+        check("non-Amazon posts are left alone", not flip["image_url"] and len(hits) == 2, str(hits))
+        again = post("Nippon Gold Interior Emulsion Paint, 4 Ltr @899.\n\nhttps://www.amazon.in/dp/B0KNOWN001", 9, 4,
+                     photo=False)
+        asyncio.run(links.fill_amazon_images([again]))
+        check("an ASIN is looked up once, then cached", again["image_url"] and len(hits) == 2, str(hits))
+    finally:
+        links.httpx = real_httpx
+
     print("\n" + ("\033[92m✓ All checks passed.\033[0m" if not failures else f"\033[91m✗ {len(failures)} failed\033[0m"))
     return 1 if failures else 0
 

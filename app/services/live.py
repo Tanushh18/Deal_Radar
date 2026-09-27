@@ -84,6 +84,10 @@ async def handle_message(client: Any, message: Any) -> Optional[str]:
         log.info("Shortlink resolution failed: %s", exc)
     if getattr(message, "photo", None):
         deal["image_url"] = store.telegram_image_url(deal["id"], int(tg_id), int(message.id))
+    try:
+        await links.fill_amazon_images([deal])
+    except Exception as exc:  # noqa: BLE001
+        log.info("Amazon image lookup failed: %s", exc)
 
     # Full Turso history first, so the all-time-low and fake-MRP checks are right.
     await price_store.prefetch([deal["product_key"]] if deal.get("product_key") else [])
