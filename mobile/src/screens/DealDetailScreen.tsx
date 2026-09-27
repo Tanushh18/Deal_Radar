@@ -393,18 +393,6 @@ export function DealDetailScreen() {
               <HiddenPageReader url={lookup} onPage={onBrowserPage} onGiveUp={onBrowserGiveUp} />
             ) : null}
             {chartPoints ? <PriceChart points={chartPoints} /> : <ActivityIndicator color={t.c.text3} />}
-            {deal.price_history_url ? (
-              <Button
-                title="Price history & stock"
-                iconRight="external"
-                variant="soft"
-                size="sm"
-                onPress={() => {
-                  haptic.light();
-                  WebBrowser.openBrowserAsync(deal.price_history_url as string).catch(() => {});
-                }}
-              />
-            ) : null}
           </View>
 
           {!past && fresh && deal.price ? (
