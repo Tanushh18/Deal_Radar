@@ -33,6 +33,8 @@ _limit_image = ratelimit.limit("deal-image", max_requests=90, window_seconds=60)
 # actor or a runaway retry loop can't do that again.
 _limit_search = ratelimit.limit("deal-search", max_requests=90, window_seconds=60)
 _limit_sparklines = ratelimit.limit("deal-sparklines", max_requests=60, window_seconds=60)
+# Cost-based limit for sparklines: each deal processed is a DB query; max 500 deals per minute per IP
+_limit_sparklines_cost = ratelimit.cost_limit("deal-sparklines-cost", max_cost=500, window_seconds=60)
 
 
 def _scope(user: Optional[dict]) -> Optional[list]:
@@ -138,16 +140,26 @@ SPARKLINE_POINTS = 30  # recent points fetched per card, downsampled to 8 below
 
 
 @router.get("/sparklines")
-async def sparklines(ids: str = Query(..., max_length=2000), _rl=Depends(_limit_sparklines)):
+async def sparklines(
+    ids: str = Query(..., max_length=2000),
+    request: Request,
+    _rl=Depends(_limit_sparklines),
+):
     """Batch price trend for a grid of cards: last 8 points per deal, one query.
 
     Avoids N+1 calls to /history when rendering a page of cards — the
     frontend collects the visible ids and calls this once per page/scroll.
     Declared before /{deal_id} so FastAPI doesn't swallow it as a deal id.
+
+    Cost-limited: each deal is one DB query; max 500 per minute per IP
+    to prevent abuse from processing 50-deal batches repeatedly.
     """
-    deal_ids = [d.strip() for d in ids.split(",") if d.strip()][:100]
+    deal_ids = [d.strip() for d in ids.split(",") if d.strip()][:50]  # Reduced from 100 to 50
     if not deal_ids:
         return {"sparklines": {}}
+
+    # Check cost limit before processing
+    await _limit_sparklines_cost(request, cost=len(deal_ids))
     rows = db.query(
         f"SELECT id, product_key FROM deals WHERE id IN ({','.join('?' for _ in deal_ids)})",
         deal_ids,
