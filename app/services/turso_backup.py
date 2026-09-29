@@ -513,7 +513,7 @@ def _push_devices(client: httpx.Client) -> int:
 def _backup_round() -> None:
     # Each sub-step is independent — one failing must not skip the others;
     # whatever didn't go up is still flagged and goes next round.
-    with httpx.Client() as client:
+    with httpx.Client(timeout=REQUEST_TIMEOUT) as client:
         _ensure_schema(client)
         if not _price_migration_done and _split():
             try:
@@ -629,7 +629,7 @@ def restore(cache_days: float) -> Optional[Dict[str, Any]]:
     alerts: List[Dict[str, Any]] = []
     saved_devices: List[Dict[str, Any]] = []
     try:
-        with httpx.Client() as client:
+        with httpx.Client(timeout=REQUEST_TIMEOUT) as client:
             try:
                 _ensure_schema(client)
             except Exception as exc:  # noqa: BLE001 - try the reads anyway
