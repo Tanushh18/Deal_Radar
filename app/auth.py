@@ -106,11 +106,15 @@ async def optional_user(request: Request) -> Optional[Dict[str, Any]]:
 
 
 def require_admin(request: Request) -> None:
-    """Guards maintenance endpoints. Disabled unless ADMIN_TOKEN is set."""
+    """Guards maintenance endpoints. Disabled unless ADMIN_TOKEN is set.
+
+    Admin token must be passed in X-Admin-Token header (never in URL query params,
+    which can be logged by proxies, browsers, and monitoring services).
+    """
     if not settings.admin_token:
         raise HTTPException(status_code=403, detail="Admin endpoints are disabled.")
-    supplied = request.headers.get("x-admin-token") or request.query_params.get("token")
-    if not secrets.compare_digest(supplied or "", settings.admin_token):
+    supplied = request.headers.get("x-admin-token", "")
+    if not secrets.compare_digest(supplied, settings.admin_token):
         raise HTTPException(status_code=403, detail="Invalid admin token.")
 
 
