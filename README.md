@@ -1,539 +1,1108 @@
-# 📡 DealRadar
+# DealRadar: Deal Discovery Platform
 
-Turns the firehose of Telegram marketplace-deal channels into a searchable,
-de-duplicated catalog backed by Turso and MongoDB.
+A comprehensive deal aggregation and search platform that transforms Telegram marketplace channels into a centralized, searchable catalog with intelligent deduplication, price tracking, and real-time notifications.
 
-You sign in with your own Telegram account, pick the deal channels you already
-follow, and DealRadar reads them on a schedule: parsing each post into a
-structured deal, collapsing the same product posted across a dozen channels
-into one card, tracking price history, retiring dead links, and pinging you when
-something you're watching shows up.
+**Live Demo:** [dealradar.ggnhome.com](https://dealradar.ggnhome.com) | **Android App:** DealRadar on Play Store (coming soon)
 
 ---
 
-## Contents
+## Table of Contents
 
-- [How it works](#how-it-works)
-- [What makes the automation effective](#what-makes-the-automation-effective)
-- [Quick start (local)](#quick-start-local)
-- [MongoDB setup](#mongodb-setup)
-- [Deploying to Render (free tier)](#deploying-to-render-free-tier)
-- [Keeping it awake — the ping API](#keeping-it-awake--the-ping-api)
-- [API reference](#api-reference)
-- [Configuration](#configuration)
-- [Project layout](#project-layout)
-- [Troubleshooting](#troubleshooting)
-- [Security & limits](#security--limits)
+1. [Project Description](#project-description)
+2. [Tech Stack](#tech-stack)
+3. [Key Features](#key-features)
+4. [Project Architecture](#project-architecture)
+5. [Project Structure](#project-structure)
+6. [Installation Guide](#installation-guide)
+7. [Usage Guide](#usage-guide)
+8. [Configuration Reference](#configuration-reference)
+9. [API Documentation](#api-documentation)
+10. [Development](#development)
+11. [Database Setup](#database-setup)
+12. [Deployment](#deployment)
+13. [Troubleshooting](#troubleshooting)
+14. [Security & Limits](#security--limits)
+15. [Contributing Guide](#contributing-guide)
+16. [Dependencies](#dependencies)
+17. [License](#license)
 
 ---
 
-## How it works
+## Project Description
+
+DealRadar aggregates real-time deals from multiple Telegram marketplace channels and presents them through an intelligent web interface and mobile app. By parsing structured deal data from channel posts, deduplicating across channels, tracking price history, and applying sophisticated ranking algorithms, DealRadar transforms an overwhelming firehose of deal notifications into a curated, searchable catalog.
+
+**The Problem:** Telegram has become the primary marketplace for deals in India, with hundreds of channels posting thousands of messages daily. Users follow multiple channels but miss deals and can't easily search or compare prices.
+
+**The Solution:** DealRadar automatically fetches, parses, deduplicates, and indexes deals across all your followed channels, backing them with permanent price history and alert notifications delivered directly to your Telegram account.
+
+### Core Workflow
 
 ```
-Telegram channels                 DealRadar                        You
-─────────────────                 ─────────                        ───
-  @loot_deals    ─┐        ┌──────────────────────┐
-  @amazon_offers ─┼──────► │ 1. fetch (watermark) │
-  @fk_deals      ─┤        │ 2. parse   → deal    │        ┌──────────────┐
-  @fashion_loot  ─┘        │ 3. dedup   → 1 card  │───────►│  Web UI      │
-                           │ 4. expire  → TTL     │        │  search      │
-                           │ 5. verify  → live?   │        │  filters     │
-                           │ 6. alert   → Saved   │───────►│  alerts      │
-                           │ 7. flush   → Turso   │        └──────────────┘
-                           └──────────┬───────────┘
-                                      ▼
-                            ┌──────────────────┐
-                            │  Turso + Mongo   │  ← durable source of truth
-                            │  + SQLite cache  │  ← fast local index
-                            └──────────────────┘
+Telegram Channels              DealRadar Pipeline              Users
+├── @loot_deals          ┌──────────────────────┐       ┌────────────┐
+├── @amazon_offers   ──►│ 1. Fetch (watermark) │      │  Web UI    │
+├── @fk_deals        │  2. Parse → deal       │   ──►│  Search    │
+└── @fashion_loot    │  3. Dedup → 1 card     │      │  Filters   │
+                     │  4. Expire → TTL       │      │  Alerts    │
+                     │  5. Verify → live?     │      └────────────┘
+                     │  6. Alert → Saved      │
+                     │  7. Flush → Turso      │
+                     └──────────────────────┘
+                              ▼
+                     ┌──────────────────┐
+                     │ Turso + MongoDB  │
+                     │ + SQLite cache   │
+                     └──────────────────┘
 ```
 
-**Why MTProto, not a bot.** A Telegram bot can only read a channel where it is an
-admin. Public deal channels aren't yours, so the only way to read what you already
-follow is to act as your own account — that's what the phone-code login is for.
+---
 
-**Why two storage layers.** Render's free disk is wiped on every restart, so
-nothing there can be the source of truth. Turso holds every deal, its full
-price history and price alerts, permanently. MongoDB holds users, channels,
-channel-tracking links, watchlists and admin settings — the smaller, less
-write-heavy state. Local SQLite is just a fast cache the app reads from,
-rebuilt from Turso/MongoDB on cold start.
+## Tech Stack
 
-**Turso is the permanent store; local SQLite is a 15-day cache.** Every deal
-is upserted to Turso whenever it changes, along with every price change
-(`price_points`, keyed `(product_key, seen_at)`, WITHOUT ROWID so one product's
-history is a single range scan), a `products` row per item with its all-time
-min/max/last price, and visitors' price alerts. Uploads run every 3 minutes
-from a background thread. Local SQLite keeps only the last `LOCAL_CACHE_DAYS`
-(default 15) of deals plus anything still live, and drops a row only after
-Turso has it. The price chart, sparklines, "check price" lookup, the
-ALL-TIME LOW badge and the fake-MRP check all read full history from Turso,
-and a deal older than the cache still opens from Turso. On a restart the
-cache refills from Turso. Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to
-enable it.
+### Backend
+- **Framework:** FastAPI 0.115.6
+- **Async Server:** Uvicorn with ASGI
+- **Python:** 3.9+ (3.11 recommended)
+- **Telegram Client:** Telethon 1.38.1 (MTProto protocol)
 
-**Price history can live in its own, second Turso database.** `price_points`
-is by far the heaviest table — a row per price change, for every product,
-forever, versus one row per product for everything else. Setting
-`TURSO_DB_02` and `TURSO_DB_02_AUTH_TOKEN` to a second, separate Turso
-database moves it there, so it gets its own 5GB/500M-row-read free-tier
-allowance instead of sharing one with deals and alerts. On the first boot
-after setting them, any `price_points` already in the main database are
-migrated across in batches (resumable — safe to restart mid-migration) and
-then dropped from the main database. Everything else (`deals`, `products`,
-`price_alerts`) always stays in the main database. Without `TURSO_DB_02`,
-`price_points` simply stays in the main database, as it always has.
+### Databases
+- **Local Cache:** SQLite (ephemeral, 15-day rolling cache)
+- **Permanent Deals Store:** Turso (LibSQL) with optional split for price history
+- **User/Channel State:** MongoDB Atlas (optional but recommended for production)
 
-### Real-time: hot deals to your own Telegram channel
+### Frontend
+- **Web:** Vanilla JavaScript + HTML5/CSS3 (SPA, bundled static assets)
+- **Mobile:** React Native (Expo SDK 57, New Architecture)
+- **Auth:** Session cookies (httpOnly, SameSite=Lax, Secure on HTTPS)
 
-The poll cycle above feeds the website and app. Separately, a **live
-listener** (`app/services/live.py`) subscribes to the reader account's
-Telegram updates, so every post from a followed channel is handled the moment
-it's published: parsed, saved, and — if it's hot — posted to your own
-channel by a bot (`app/services/tg_post.py`), typically within a few seconds.
+### Core Libraries
+- **HTTP Client:** httpx (async requests)
+- **String Matching:** rapidfuzz (fuzzy title matching for dedup)
+- **Encryption:** cryptography + Fernet (session encryption)
+- **Data Validation:** Pydantic 2.10.4
+- **Environment:** python-dotenv
 
-A deal is **hot** if it's a new all-time low, at least `TG_HOT_MIN_DISCOUNT`
-% off (default 60), or carried by `TG_HOT_MIN_REPOSTS` channels (default 3).
-Deals flagged with a fake MRP are never posted. Each product is posted once;
-it's posted again only after `TG_REPOST_COOLDOWN_HOURS` (48) or if the price
-drops a further 3%. At most `TG_MAX_POSTS_PER_HOUR` (20) posts go out. If the
-listener was disconnected, the poll cycle posts what it missed, but only
-deals under `TG_POST_MAX_AGE_MINUTES` (15) old.
-
-Setup: create a channel, create a bot with @BotFather, add the bot to the
-channel as an admin allowed to post, then set `TG_BOT_TOKEN` and
-`TG_POST_CHANNEL` (`@yourchannel`, or `-100…` for a private channel). To add a
-source channel, follow it with the reader account; it's picked up within 30
-minutes, or immediately with **Refresh from Telegram** in `/admin`.
+### Deployment
+- **Production:** Render (free tier: Python 3 runtime, 512MB RAM, ephemeral disk)
+- **Build:** Docker via Render blueprint
+- **Health Checks:** Liveness probes, automated keepalive
+- **Monitoring:** Custom `/api/health` and `/api/stats` endpoints
 
 ---
 
-## What makes the automation effective
+## Key Features
 
-These are the parts that separate this from "dump messages into a spreadsheet":
+### 1. Deal Aggregation & Deduplication
+- **Multi-channel fetch:** Watermarked incremental polling (one request per channel per cycle)
+- **Cross-channel dedup:** Collapses identical products across channels into single cards
+- **Product key matching:** ASIN/Flipkart pid for exact matches, fuzzy title matching (token_sort_ratio ≥ 88) for shortlinks
+- **Affiliate link scrubbing:** Strips utm_*, affid, gclid, tag params for accurate comparison
 
-| # | Technique | Why it matters |
-|---|-----------|----------------|
-| 1 | **Watermarked incremental fetch** | Each channel stores its last-seen message id. A poll costs one small request per channel instead of re-reading history — the difference between viable and impossible on a free tier. |
-| 2 | **Cross-channel dedup** | The same product hits 10 channels in 10 minutes. Deals collapse onto a canonical product key (ASIN / Flipkart pid, else a normalised-title hash) into one card. |
-| 3 | **Fuzzy title fallback** | Shortlinks (`amzn.to/…`) hide the product id, so id matching alone misses duplicates. A `token_sort_ratio ≥ 88` match on normalised titles at near-identical prices catches them. |
-| 4 | **Repost count as a quality signal** | A deal 6 channels independently posted is almost always real. That count feeds ranking and the "Trending" row. |
-| 5 | **Affiliate-link scrubbing** | `tag`, `affid`, `utm_*`, `gclid` and ~30 more params are stripped so the same URL from two channels compares equal. |
-| 6 | **Price history + all-time-low flag** | Every price change is recorded per product. A new low earns an ALL-TIME LOW badge and a ranking boost. |
-| 7 | **Fake-discount detection** | An "MRP" more than 2.5× the historical median price gets flagged `suspicious_mrp` and pushed down the rankings. |
-| 8 | **Link liveness probing** | Live links get their expiry extended past the base TTL; 404s and "out of stock" pages are retired early. Deals live as long as they're real, not a fixed timer. |
-| 9 | **Synonym-expanded search** | "women dress" also matches gown, maxi, one-piece; "kurta" matches kurti and anarkali. 12 categories / 53 subcategories, all data-driven in `taxonomy.py`. |
-| 10 | **Spam filtering** | Join-our-channel, giveaway, and refer-and-earn posts never become deals. Posts with neither a price nor a link are dropped. |
-| 11 | **Composite deal score** | discount + corroboration + freshness (36h half-life) + all-time-low − penalties, recomputed each cycle so recency stays honest. |
-| 12 | **Alerts via your own Saved Messages** | We already hold your session, so alerts arrive in Telegram itself — no email service, no push infra, no extra cost. |
-| 13 | **Batched Sheets writes** | One `batch_update` + one `append_rows` per cycle using an in-memory row map, instead of one API call per deal. |
-| 14 | **Single-source channel reads** | If five users track the same channel, it's still fetched once globally. |
-| 15 | **Sheets retention mirrors the local cache** | Deals older than 14 days with no repost activity are dropped from the local cache *and* the same rows are removed from the Deals tab in Sheets — so the two never quietly drift apart, and Sheets doesn't grow forever. |
+### 2. Price Intelligence
+- **Price history tracking:** Every price change recorded per product (historical low badge, trend analysis)
+- **Turso split database:** Optional second Turso DB just for price_points (the heaviest table)
+- **All-time low detection:** Automatic flagging and ranking boost for new lows
+- **Fake MRP detection:** Suspicious markups (>2.5× median) flagged and ranked down
+
+### 3. Quality & Ranking
+- **Quality filter:** Only posts with price + store link + photo become deals
+- **Repost count signal:** Deal carried by 6 channels = almost certainly real
+- **Composite deal score:** discount + corroboration + freshness (36h half-life) + penalties
+- **Spam filtering:** Join-our-channel, giveaway, refer-and-earn posts auto-filtered
+
+### 4. Search & Discovery
+- **Synonym-expanded search:** "women dress" matches gown, maxi, one-piece (12 categories, 53 subcategories)
+- **Full-text search:** Query across titles, descriptions, store names
+- **Faceted filters:** Store, brand, category, price range, discount range
+- **Sort options:** relevance, best, newest, discount, price (low/high)
+- **Trending:** Most-reposted recent deals
+
+### 5. Real-Time Alerts
+- **Watchlist system:** Save searches with optional price/discount alerts
+- **Telegram delivery:** Alerts via Saved Messages (your own account, no external service)
+- **Hot deal broadcasts:** Live listener posts breaking deals to your channel within seconds
+- **Deal age filtering:** Posted within 15 minutes considered "hot"
+
+### 6. Link Liveness Probing
+- **Automated verification:** Periodically checks if deal links are still valid
+- **Early retirement:** 404/out-of-stock responses retire deals before TTL
+- **Extended TTL:** Live links get extended beyond base 96-hour TTL
+- **SSRF protection:** Blocks private/loopback/reserved IP ranges
+
+### 7. Performance Optimizations
+- **Batched writes:** One `batch_update` + one `append_rows` per Sheets cycle
+- **Single-source reads:** Shared channel fetches across users
+- **In-memory caching:** BuyHatke price history cached 3 days
+- **Local SQLite:** Fast 15-day rolling cache with cold-start restoration from Turso
+
+### 8. Mobile & Offline Support
+- **Visitor mode:** Browse without sign-in (device-based tracking)
+- **Native Android:** React Native (Expo), offline caching
+- **Push notifications:** FCM integration with Notifee rich display
+- **Deep links:** Notification taps, share intents, launcher shortcuts
 
 ---
 
-## Quick start (local)
+## Project Architecture
 
-**Prerequisites:** Python 3.9+ (3.11 recommended) and a Telegram account.
+### High-Level System Design
 
-### 1. Get Telegram API credentials
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    User Interfaces                          │
+├─────────────────────────────────────────────────────────────┤
+│  Web SPA (JS)  │  Android App (React Native)  │  API Docs   │
+└────────┬───────────────────────────────────────────────┬────┘
+         │                                               │
+         └───────────────────┬───────────────────────────┘
+                             │
+                             ▼
+         ┌───────────────────────────────────────┐
+         │       FastAPI + Uvicorn              │
+         │   (Single-worker, stateful Telethon)│
+         ├───────────────────────────────────────┤
+         │  Routers:                             │
+         │  • auth.py (phone/2FA login)          │
+         │  • channels.py (discovery, tracking) │
+         │  • deals.py (search, detail, history)│
+         │  • watchlists.py (alerts)            │
+         │  • health.py (ping, stats)           │
+         │  • devices.py (visitor tracking)     │
+         │  • notifications.py (push logic)     │
+         └───────────────┬───────────────────────┘
+                         │
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+┌─────────────┐  ┌────────────────┐  ┌──────────┐
+│   Telethon  │  │    Services    │  │ Ingest   │
+│  (MTProto   │  │ (parse, score, │  │ Cycle    │
+│  sessions)  │  │  search, rank) │  │ (async)  │
+└─────────────┘  └────────────────┘  └──────────┘
+        ▲                │
+        └────────┬───────┴──────────┐
+                 ▼                  ▼
+        ┌──────────────────────────────────┐
+        │     Data Layer (3-tier cache)    │
+        ├──────────────────────────────────┤
+        │  Layer 1: SQLite (15-day local)  │
+        │  Layer 2: Turso (permanent)      │
+        │  Layer 3: MongoDB (state)        │
+        └──────────────────────────────────┘
+```
 
-1. Visit <https://my.telegram.org> and log in with your phone number.
-2. Open **API development tools**.
-3. Create an app (any title, e.g. `DealRadar`).
-4. Copy the **api_id** and **api_hash**.
+### Data Flow
 
-### 2. Set up the project
+1. **Ingest Cycle** (every 40 minutes):
+   - Poll each channel for new messages (watermarked)
+   - Parse posts into structured deals
+   - Dedup across channels (ASIN/Flipkart ID or fuzzy title match)
+   - Score & rank (discount, corroboration, freshness, penalties)
+   - Probe link liveness, retire dead links
+   - Write to Turso (permanent) and local SQLite (cache)
+
+2. **Real-Time Listener** (background task):
+   - Subscribe to MTProto updates for followed channels
+   - Parse hot deals (new all-time low, high discount, multiple reposts)
+   - Post to user's channel via bot
+   - Write to databases
+
+3. **User Interaction**:
+   - Search / filter deals (read from SQLite + fallback to Turso)
+   - Save price alerts (store in MongoDB)
+   - Receive notifications (Telegram Saved Messages or FCM push)
+
+### Database Schema Overview
+
+**SQLite (Local Cache):**
+- `deals` - product cards with aggregate info
+- `products` - unique products with pricing summary
+- `price_points` - every price change (optional: moved to Turso DB 02)
+- `price_alerts` - user watchlist items
+
+**Turso (Permanent Store):**
+- `deals` - canonical deal records
+- `products` - product price history
+- `price_points` - full price change log
+- `price_alerts` - searchable watchlist state
+
+**MongoDB (Durable User State):**
+- `users` - accounts (id, username, login times)
+- `channels` - tracked channels with watermarks
+- `user_channels` - user-to-channel mappings
+- `watchlists` - saved searches
+- `settings` - admin config (priority rules, poll interval)
+- `devices` - visitor app installs, push tokens
+
+---
+
+## Project Structure
+
+```
+deal-radar/
+├── README.md                          # Main documentation
+├── DATABASE.md                        # Database schema & setup
+├── Makefile                           # Development commands
+├── requirements.txt                   # Python dependencies
+├── requirements-dev.txt               # Dev/test dependencies
+├── render.yaml                        # Render blueprint (deployment)
+├── .env.example                       # Configuration template
+├── .gitignore                         # Git exclusions
+│
+├── app/                               # FastAPI application
+│   ├── main.py                        # App entry, lifespan, SPA fallback
+│   ├── config.py                      # Environment-driven settings
+│   ├── db.py                          # SQLite schema & helpers
+│   ├── auth.py                        # Session management, auth guards
+│   │
+│   ├── routers/                       # API endpoint handlers
+│   │   ├── auth.py                    # Phone login, 2FA, logout
+│   │   ├── channels.py                # Channel discovery & tracking
+│   │   ├── deals.py                   # Search, detail, history, image proxy
+│   │   ├── watchlists.py              # Saved searches & alerts
+│   │   ├── price_alerts.py            # Price alert management
+│   │   ├── notifications.py           # Push notification routing
+│   │   ├── devices.py                 # Visitor device registration
+│   │   ├── health.py                  # Ping, health, stats
+│   │   ├── admin.py                   # Admin-only endpoints
+│   │   ├── lookup.py                  # Price lookups, BuyHatke integration
+│   │   └── sale_events.py             # Sale calendar
+│   │
+│   └── services/                      # Business logic & integrations
+│       ├── telegram.py                # Telethon clients, session encryption
+│       ├── parser.py                  # Message → structured deal parsing
+│       ├── taxonomy.py                # Categories, synonyms, brands, spam
+│       ├── store.py                   # Dedup, scoring, expiry logic
+│       ├── search.py                  # Query engine, facets, ranking
+│       ├── quality.py                 # Post quality filtering
+│       ├── mongo_store.py             # MongoDB ops (users, channels, etc)
+│       ├── turso_backup.py            # Turso sync (permanent store)
+│       ├── price_alerts.py            # Price alert matching
+│       ├── price_store.py             # Price history management
+│       ├── ingest.py                  # Automation cycle + schedulers
+│       ├── live.py                    # Real-time MTProto listener
+│       ├── tg_post.py                 # Hot deal poster (bot)
+│       ├── hot_push.py                # Mobile push broadcaster
+│       ├── fcm.py                     # Firebase Cloud Messaging
+│       ├── devices.py                 # Device registration & feed
+│       ├── notify_auto.py             # Automatic notifications
+│       ├── links.py                   # Link liveness probing
+│       ├── buyhatke.py                # BuyHatke price API integration
+│       ├── offers.py                  # Offers & promotions
+│       ├── ai_enrich.py               # AI product enrichment
+│       ├── public_reader.py           # Public-mode channel reader
+│       ├── autopoll.py                # Polling scheduler
+│       ├── activity.py                # User activity tracking
+│       ├── priority.py                # Audience priority ranking
+│       ├── sale_events.py             # Sale calendar logic
+│       ├── ratelimit.py               # Rate limiting
+│       └── push.py                    # Push notification service
+│
+├── static/                            # Frontend assets
+│   ├── index.html                     # SPA entry point
+│   ├── manifest.json                  # PWA manifest
+│   └── assets/
+│       ├── app.js                     # Main application logic
+│       └── styles.css                 # Styling
+│
+├── mobile/                            # React Native (Expo) app
+│   ├── README.md                      # Mobile-specific docs
+│   ├── app.json                       # Expo configuration
+│   ├── App.tsx                        # Root component, boot logic
+│   ├── package.json                   # Node dependencies
+│   ├── eas.json                       # EAS build config
+│   ├── google-services.json           # Firebase config (gitignored)
+│   │
+│   ├── src/
+│   │   ├── navigation/                # React Navigation setup
+│   │   ├── screens/                   # UI screens (Deals, Search, etc)
+│   │   ├── components/                # Reusable UI components
+│   │   ├── api/                       # API client wrapper
+│   │   ├── theme/                     # Colors, typography
+│   │   ├── native/                    # Platform-specific logic
+│   │   │   ├── config.ts              # Server URL, branding
+│   │   │   ├── session.ts             # Auth state management
+│   │   │   ├── device.ts              # Device ID, registration
+│   │   │   ├── notifications.ts       # Push setup, Notifee
+│   │   │   ├── backgroundTask.ts      # Background job scheduling
+│   │   │   ├── deepLinks.ts           # Deep link routing
+│   │   │   ├── shareIntent.ts         # Share-to-app intent
+│   │   │   └── updates.ts             # OTA update check
+│   │   └── hooks/                     # Custom React hooks
+│   │
+│   ├── assets/
+│   │   ├── icons/                     # App icon (multiple sizes)
+│   │   ├── notification_icon.png      # Monochrome notification icon
+│   │   └── shortcut-*.png             # Launcher shortcut icons
+│   │
+│   └── scripts/
+│       └── make-mono-icon.js          # Icon generator
+│
+├── tests/                             # Test suites
+│   ├── test_pipeline.py               # Full pipeline (46 checks)
+│   ├── test_search.py                 # Search & faceting
+│   ├── test_notifications.py          # Notification logic
+│   ├── test_reparse.py                # Parser edge cases
+│   ├── test_devices.py                # Device tracking
+│   ├── test_quality.py                # Quality filtering
+│   ├── test_ingest_cycle.py           # Full ingest cycle
+│   ├── test_turso.py                  # Turso integration
+│   ├── test_turso_split.py            # Turso split DB handling
+│   └── e2e/                           # Selenium-based browser tests
+│
+├── tools/                             # Utilities & scripts
+│   ├── make_session.py                # Generate public-mode session string
+│   ├── status.py                      # Full pipeline diagnostic
+│   └── ...                            # Other maintenance scripts
+│
+└── .github/                           # GitHub configuration
+    └── workflows/                     # CI/CD (if configured)
+```
+
+---
+
+## Installation Guide
+
+### Prerequisites
+
+- **Python:** 3.9+ (3.11+ recommended)
+- **Telegram Account:** Required for the reader account
+- **Telegram API Credentials:** From [my.telegram.org](https://my.telegram.org)
+- **Optional (Production):**
+  - MongoDB Atlas cluster (free tier)
+  - Turso account (free tier)
+  - Firebase project (for push notifications)
+  - Render account (for hosting)
+
+### Step 1: Get Telegram API Credentials
+
+1. Visit [https://my.telegram.org](https://my.telegram.org) and log in
+2. Navigate to **API development tools**
+3. Create an app (e.g., "DealRadar")
+4. Copy your **api_id** and **api_hash**
+
+### Step 2: Set Up the Project
 
 ```bash
-cd "/Users/t/Desktop/Tanush/Projects/Telegram Automation"
+# Clone the repository
+git clone https://github.com/Tanushh18/Deal_Radar.git
+cd Deal_Radar
 
-# create and activate a virtualenv
+# Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# install dependencies
+# Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# create your env file
+# Create .env file
 cp .env.example .env
-```
 
-Now edit `.env` and fill in at minimum:
-
-```bash
-TELEGRAM_API_ID=1234567
-TELEGRAM_API_HASH=0123456789abcdef0123456789abcdef
-SECRET_KEY=<paste a long random string>
-```
-
-Generate a good `SECRET_KEY`:
-
-```bash
+# Generate a secure SECRET_KEY
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-### 3. Run it
+### Step 3: Configure Environment
+
+Edit `.env` and set at minimum:
 
 ```bash
-# development — auto-reloads on file changes
+TELEGRAM_API_ID=<your_api_id>
+TELEGRAM_API_HASH=<your_api_hash>
+SECRET_KEY=<generated_secret_key>
+```
+
+### Step 4: Run Locally
+
+```bash
+# Development (with auto-reload)
+make dev
+# Or manually:
 uvicorn app.main:app --reload --port 8000
 
-# production-style
+# Production-style (single worker)
+make start
+# Or manually:
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
-Open <http://localhost:8000>.
+Open [http://localhost:8000](http://localhost:8000)
 
-> **Always `--workers 1`.** Telethon holds stateful MTProto connections and the
-> ingest scheduler must not run in duplicate. More workers means double-fetching
-> and Telegram rate limits.
-
-### 4. Verify everything
+### Step 5: Verify Installation
 
 ```bash
-# full pipeline test — parsing, dedup, search, scoring, expiry (no Telegram needed)
+# Test core pipeline (no Telegram needed)
 python -m tests.test_pipeline
 
-# health checks against a running server
+# Check if server is running
 curl http://localhost:8000/api/ping
-curl http://localhost:8000/api/health
-curl http://localhost:8000/api/stats
 
-# interactive API docs
+# View interactive API docs
 open http://localhost:8000/api/docs
+
+# Run full test suite
+make test
 ```
-
-### 5. Use it
-
-1. Sign in with your phone number → enter the code Telegram sends **in the app**
-   (not SMS) → 2FA password if you have one.
-2. You land on **Channels**. Tick the deal channels to track, hit **Save selection**.
-   Add public channels you haven't joined via `@username`.
-3. The first sync backfills ~120 recent messages per channel, then polls every 5 minutes.
-4. Search for anything — `charger`, `women kurta`, `running shoes`.
-5. Save a search on the **Alerts** tab to get matches in your Telegram Saved Messages.
 
 ---
 
-## MongoDB setup
+## Usage Guide
 
-Optional — without it users, channels, channel-tracking links and watchlists
-don't survive a Render restart (deals/price history/alerts always do — they
-live in Turso regardless). **On Render, set this up.**
+### Web Interface
 
-### 1. Create a free MongoDB Atlas cluster
+1. **Sign In:** Phone number → Telegram sends code (in-app, not SMS) → optional 2FA
+2. **Select Channels:** Check boxes for deal channels you follow → Save selection
+3. **First Sync:** ~120 recent messages per channel fetched, then polls every 40 minutes
+4. **Search:** Type anything ("charger", "women kurta", "shoes") → results ranked by relevance
+5. **Filters:** By category, subcategory, store, brand, price range, discount
+6. **Save Alerts:** Search → click "Save search" → get matches in Telegram Saved Messages
+7. **Price Charts:** Click a deal → see price history, all-time low status, trending indicator
 
-1. Go to <https://www.mongodb.com/cloud/atlas/register> and create a free account.
-2. Create a free (M0) cluster — any cloud/region.
-3. **Database Access** → add a database user with a username and password.
-4. **Network Access** → add `0.0.0.0/0` (allow access from anywhere) — Render's
-   outbound IP isn't fixed on the free plan.
-5. **Connect → Drivers** → copy the connection string, which looks like:
-   `mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/`
+### Android App
 
-### 2. Wire it up
+1. **Auto-login:** First launch auto-registers as anonymous "visitor" device
+2. **Browse Deals:** No login required; swipe through deals, search, filter
+3. **Notifications:** Opt-in to deal alerts → receive hot deals as push notifications
+4. **Saved Deals:** Bookmark items → accessed from your visitor device ID
+5. **Price Alerts:** Watch an item → get notified when price drops
+6. **Settings:** Change server URL, enable notifications, manage digest preferences
 
-Put it in `.env` (or Render's environment), with your actual username and
-password substituted in — not the `<username>`/`<password>` placeholders:
+### Command Reference
 
 ```bash
-MONGODB_URI=mongodb+srv://user1:yourpassword@cluster0.xxxxx.mongodb.net/
-```
-
-Restart. The app creates five collections automatically, each indexed on its
-natural key (never a clear-and-rewrite like Sheets needed):
-
-| Collection | Contents | Indexed on |
-|---|---|---|
-| **users** | Signed-in accounts (id, username, login times — **never** session secrets) | `telegram_id` |
-| **channels** | Tracked channels with their fetch watermarks | `tg_id` |
-| **user_channels** | Who tracks what | `(user_telegram_id, channel_tg_id)` |
-| **watchlists** | Saved searches | `(user_telegram_id, query)` |
-| **settings** | Admin settings (priority rule, upcoming-sales calendar, poll interval) | `key` |
-
-If your MongoDB password contains characters like `@`, `:`, `/` or `#`,
-URL-encode them in the connection string (e.g. `#` → `%23`), or the URI won't
-parse correctly.
-
----
-
-## Deploying to Render (free tier)
-
-### Option A — Blueprint (recommended)
-
-1. Push this repo to GitHub.
-2. Render dashboard → **New → Blueprint** → select the repo.
-   `render.yaml` is detected automatically.
-3. Fill in the variables marked `sync: false`:
-   `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TURSO_DATABASE_URL`,
-   `TURSO_AUTH_TOKEN`, `MONGODB_URI`.
-4. Deploy. After the first boot, copy your URL
-   (`https://dealradar-xxxx.onrender.com`) into the **`PUBLIC_URL`** env var and
-   redeploy — this enables the self-ping keepalive and secure cookies.
-
-### Option B — Manual web service
-
-| Setting | Value |
-|---------|-------|
-| Runtime | Python 3 |
-| Build command | `pip install -r requirements.txt` |
-| Start command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1` |
-| Health check path | `/api/ping` |
-| Plan | Free |
-
-Then add every variable from `.env.example` under **Environment**.
-
-### Free-tier realities
-
-- **512 MB RAM / 0.1 CPU.** Fine for ~40 channels. The image cache is capped at
-  120 thumbnails and link probing is bounded to 8 concurrent requests.
-- **Ephemeral disk.** SQLite is wiped on every restart (sleep/wake, every deploy).
-  Deals, price history and price alerts always survive it — they live in Turso.
-  **MongoDB setup isn't optional if you want everything else to survive too**
-  — without it, restarting loses tracked channels, watchlists and signed-in
-  accounts. With it, on boot the app restores users, channels, channel-tracking
-  links and watchlists from MongoDB automatically.
-  **One thing MongoDB deliberately does not restore: the Telegram session
-  itself** — it's a secret and is never written there. So after a restart,
-  each user needs to sign in again (same phone number), but the moment they
-  do, their tracked channels and saved alerts are exactly as they left them —
-  nothing needs re-selecting.
-- **Sleeps after 15 minutes idle**, and cold starts take ~30s. See below.
-- **750 instance-hours/month** — one always-on service fits.
-
----
-
-## Keeping it awake — the ping API
-
-`GET /api/ping` is deliberately the cheapest endpoint in the app: no database,
-no Telegram, no Mongo. Just a timestamp.
-
-```bash
-curl https://your-app.onrender.com/api/ping
-```
-```json
-{ "status": "ok", "service": "dealradar", "timestamp": 1786381421, "uptime_seconds": 3 }
-```
-
-`HEAD /api/ping` also works, for monitors that prefer an empty body.
-
-**Two layers of keepalive:**
-
-1. **Built-in self-ping** — set `PUBLIC_URL` and the app pings itself every 10
-   minutes. This keeps an awake instance awake, but can't wake a sleeping one
-   (the loop is asleep too).
-2. **External pinger (do this too)** — point a free uptime monitor at
-   `/api/ping` every 10 minutes:
-   - [UptimeRobot](https://uptimerobot.com) — free, 5-min intervals
-   - [cron-job.org](https://cron-job.org) — free, flexible
-   - [Better Stack](https://betterstack.com) — free tier
-
-   This is what actually wakes a sleeping instance.
-
-Also available: `GET /api/health` for a deeper check (database, Sheets
-connectivity, whether ingestion has gone stale).
-
----
-
-## API reference
-
-Interactive docs at **`/api/docs`**.
-
-### System
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET/HEAD | `/api/ping` | — | Liveness / keepalive. No DB access. |
-| GET | `/api/health` | — | Deep health: DB, Sheets, ingest freshness |
-| GET | `/api/stats` | — | Deal counts, channel counts, ingest state |
-
-### Auth
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/auth/config` | Whether the server has credentials configured |
-| POST | `/api/auth/send-code` | `{phone}` → sends a Telegram login code |
-| POST | `/api/auth/verify-code` | `{login_id, code}` → session, or `password_required` |
-| POST | `/api/auth/verify-password` | `{login_id, password}` → 2FA step |
-| GET | `/api/auth/me` | Current user |
-| POST | `/api/auth/logout` | Ends the web session |
-| DELETE | `/api/auth/account` | Erases the account, sessions, channels, alerts |
-
-### Channels *(auth required)*
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/channels/available` | Broadcast channels you follow |
-| GET | `/api/channels` | Channels you track |
-| POST | `/api/channels/track` | `{tg_ids: [...]}` — replaces your selection |
-| POST | `/api/channels/add-public` | `{username}` — resolve and join a public channel |
-| DELETE | `/api/channels/{tg_id}` | Stop tracking |
-| POST | `/api/channels/sync` | Run an ingest cycle now |
-
-### Deals
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/deals` | Search. Params: `q, category, subcategory, store, brand, min_price, max_price, min_discount, only_lowest, include_expired, all_channels, sort, limit, offset` |
-| GET | `/api/deals/categories` | The full taxonomy |
-| GET | `/api/deals/facets` | Filter counts by store / brand / category |
-| GET | `/api/deals/trending` | Most-reposted recent deals |
-| GET | `/api/deals/{id}` | One deal + price stats + original post |
-| GET | `/api/deals/{id}/history` | Price history points |
-| GET | `/api/deals/{id}/image` | Proxied Telegram photo (memory-cached) |
-
-`sort` accepts: `relevance`, `best`, `newest`, `discount`, `price_low`, `price_high`.
-
-```bash
-curl "https://your-app.onrender.com/api/deals?q=women%20kurta&max_price=800&min_discount=50&sort=best"
-```
-
-### Alerts *(auth required)*
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/watchlists` | Your saved searches |
-| POST | `/api/watchlists` | `{query, category, store, max_price, min_discount, notify}` |
-| PATCH | `/api/watchlists/{id}?notify=true` | Mute / unmute |
-| DELETE | `/api/watchlists/{id}` | Delete |
-| POST | `/api/watchlists/{id}/test` | Send a test alert to Saved Messages |
-
-### Admin *(requires `X-Admin-Token` header; disabled unless `ADMIN_TOKEN` is set)*
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/admin/ingest` | Force an ingest cycle |
-| POST | `/api/admin/sheets/flush` | Force a Sheets write |
-| POST | `/api/admin/sheets/restore` | Rebuild SQLite from Sheets |
-| POST | `/api/admin/sheets/sync-meta` | Rewrite the Channels + Users tabs |
-
-```bash
-curl -X POST https://your-app.onrender.com/api/admin/ingest -H "X-Admin-Token: $ADMIN_TOKEN"
+make help        # Show all available commands
+make setup       # One-time setup (venv, deps, .env)
+make dev         # Run with auto-reload (development)
+make start       # Run production-style (single worker)
+make test        # Run all test suites
+make e2e         # Browser automation (Chrome/Selenium)
+make ping        # Test /api/ping endpoint
+make health      # Deep health check
+make stats       # Deal & ingest statistics
+make status      # Full pipeline diagnostic
+make sync        # Force an ingest cycle (needs ADMIN_TOKEN)
+make secret      # Generate a new SECRET_KEY
+make clean       # Remove __pycache__ only
+make clean-data  # Delete local SQLite cache
 ```
 
 ---
 
-## Configuration
+## Configuration Reference
+
+### Required Environment Variables
 
 | Variable | Default | Notes |
 |----------|---------|-------|
 | `TELEGRAM_API_ID` | — | **Required.** From my.telegram.org |
-| `TELEGRAM_API_HASH` | — | **Required.** |
-| `SECRET_KEY` | `dev-insecure-change-me` | **Set this.** Signs cookies and encrypts stored sessions. Changing it logs everyone out. |
-| `ADMIN_TOKEN` | empty | Admin routes stay disabled while empty |
-| `MONGODB_URI` | empty | `mongodb+srv://user:pass@cluster.mongodb.net/` |
-| `MONGODB_DB_NAME` | `dealradar` | Database name within the cluster |
-| `PUBLIC_URL` | empty | Enables self-ping + secure cookies |
-| `POLL_INTERVAL_SECONDS` | `300` | Seconds between ingest cycles |
-| `DEAL_TTL_HOURS` | `96` | 4 days. Live links get extended beyond this. |
-| `BACKFILL_LIMIT` | `120` | Messages on a channel's first fetch |
-| `INCREMENTAL_LIMIT` | `60` | Messages per poll after that |
-| `MAX_CHANNELS_PER_USER` | `40` | |
-| `LIVENESS_CHECK` | `true` | Probe deal links |
+| `TELEGRAM_API_HASH` | — | **Required.** 32-char hex from my.telegram.org |
+| `SECRET_KEY` | `dev-insecure-change-me` | **Set this.** Signs cookies, encrypts sessions. Changing it logs everyone out. |
+
+### Recommended for Production
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `MONGODB_URI` | empty | `mongodb+srv://user:pass@cluster.mongodb.net/` for durable user/channel state |
+| `TURSO_DATABASE_URL` | empty | `libsql://<db>-<org>.turso.io` for permanent deal storage |
+| `TURSO_AUTH_TOKEN` | empty | Auth token for Turso |
+| `PUBLIC_URL` | empty | `https://your-domain.com` enables HTTPS-only cookies & self-ping |
+
+### Ingestion Tuning
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `POLL_INTERVAL_SECONDS` | `2400` | Seconds between ingest cycles (40 minutes) |
+| `DEAL_TTL_HOURS` | `96` | 4 days; live links get extended beyond this |
+| `BACKFILL_LIMIT` | `120` | Messages fetched on first channel poll |
+| `INCREMENTAL_LIMIT` | `60` | Messages fetched per poll thereafter |
+| `MAX_CHANNELS_PER_USER` | `40` | User can track at most this many channels |
+| `LOCAL_CACHE_DAYS` | `15` | Local SQLite keeps this many days; Turso keeps all |
+| `LIVENESS_CHECK` | `true` | Enable link probing (retire dead deals early) |
 | `LIVENESS_BATCH` | `40` | Links probed per cycle |
-| `KEEPALIVE_ENABLED` | `true` | Needs `PUBLIC_URL` |
-| `KEEPALIVE_SECONDS` | `600` | |
-| `DB_PATH` | `data/deals.db` | SQLite cache |
-| `LOG_LEVEL` | `INFO` | |
+| `QUALITY_FILTER` | `true` | Only posts with price + link + photo become deals |
+
+### Telegram Bot Setup (Hot Deals)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `TG_BOT_TOKEN` | empty | From @BotFather; bot must be channel admin |
+| `TG_POST_CHANNEL` | empty | `@channel_name` or numeric ID `-100…` |
+| `TG_HOT_MIN_DISCOUNT` | `60` | % off that counts as "hot" (all-time lows always hot) |
+| `TG_HOT_MIN_REPOSTS` | `3` | Or: carried by this many channels |
+| `TG_MAX_POSTS_PER_HOUR` | `20` | Rate limit for bot posts |
+| `TG_REPOST_COOLDOWN_HOURS` | `48` | Min hours between reposts of same product |
+| `TG_POST_MAX_AGE_MINUTES` | `15` | Only post deals posted within this many minutes |
+
+### Security & Limits
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `ADMIN_TOKEN` | empty | Enables admin-only endpoints; empty = disabled |
+| `SESSION_TTL_DAYS` | `180` | Web session lifetime in days |
+| `SESSION_COOKIE` | `tgdeals_session` | Cookie name |
+| `ALLOWED_ORIGINS` | `*` | CORS origins (for separate frontend) |
+
+### Advanced
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `MONGODB_DB_NAME` | `dealradar` | Database name within MongoDB cluster |
+| `DB_PATH` | `data/deals.db` | Local SQLite cache path |
+| `LOG_LEVEL` | `INFO` | Logging verbosity (DEBUG, INFO, WARNING, ERROR) |
+| `KEEPALIVE_ENABLED` | `true` | Self-ping keepalive (requires PUBLIC_URL) |
+| `KEEPALIVE_SECONDS` | `600` | Keepalive interval (10 min) |
+| `PRIORITY_AUDIENCE` | `women` | Priority category (affects ranking) |
+| `BUYHATKE_ENABLED` | `true` | Enable BuyHatke price API integration |
+| `TURSO_DB_02` | empty | Optional second Turso DB for price_points |
+| `TURSO_DB_02_AUTH_TOKEN` | empty | Auth token for second DB |
+| `FCM_SERVICE_ACCOUNT_JSON` | empty | Firebase service account (base64 or raw JSON) |
 
 ---
 
-## Project layout
+## API Documentation
+
+### Interactive Docs
+
+Swagger UI available at `http://localhost:8000/api/docs` (when running locally)
+
+### System Endpoints
 
 ```
-.
-├── app/
-│   ├── main.py               FastAPI app, lifespan, static mount, SPA fallback
-│   ├── config.py             env-driven settings
-│   ├── db.py                 SQLite schema + helpers
-│   ├── auth.py               web sessions, cookies, admin guard
-│   ├── routers/
-│   │   ├── auth.py           phone → code → 2FA login
-│   │   ├── channels.py       discovery, tracking, manual sync
-│   │   ├── deals.py          search, detail, history, image proxy
-│   │   ├── watchlists.py     saved searches + alerts
-│   │   └── health.py         ping, health, stats, admin
-│   └── services/
-│       ├── telegram.py       Telethon clients, encrypted sessions
-│       ├── parser.py         message → structured deal
-│       ├── taxonomy.py       categories, synonyms, brands, spam patterns
-│       ├── store.py          dedup, price history, scoring, expiry
-│       ├── search.py         query engine + facets
-│       ├── mongo_store.py    MongoDB read/write (users, channels, watchlists, settings)
-│       ├── turso_backup.py   Turso read/write (deals, price history, alerts)
-│       └── ingest.py         the automation cycle + schedulers
-├── static/
-│   ├── index.html
-│   └── assets/{styles.css, app.js}
-├── tests/test_pipeline.py    46 checks, no Telegram required
-├── requirements.txt
-├── render.yaml
-└── .env.example
+GET/HEAD  /api/ping                  # Liveness check (no DB)
+GET       /api/health                # Deep health check
+GET       /api/stats                 # Deal counts, ingest state
 ```
+
+### Auth Endpoints
+
+```
+GET       /api/auth/config           # Server has credentials?
+POST      /api/auth/send-code        # {phone} → login_id + code sent
+POST      /api/auth/verify-code      # {login_id, code} → session
+POST      /api/auth/verify-password  # {login_id, password} → session (2FA)
+GET       /api/auth/me               # Current user info
+POST      /api/auth/logout           # End web session
+DELETE    /api/auth/account          # Erase account + data
+```
+
+### Channels (auth required)
+
+```
+GET       /api/channels/available    # Your followed broadcast channels
+GET       /api/channels              # Channels you're tracking
+POST      /api/channels/track        # {tg_ids: [...]} → replace selection
+POST      /api/channels/add-public   # {username} → resolve & join
+DELETE    /api/channels/{tg_id}      # Stop tracking
+POST      /api/channels/sync         # Force ingest cycle now
+```
+
+### Deals (public)
+
+```
+GET       /api/deals                 # Search: q, category, store, price range, sort, etc.
+GET       /api/deals/categories      # Full taxonomy
+GET       /api/deals/facets          # Filter counts by store/brand/category
+GET       /api/deals/trending        # Most-reposted recent
+GET       /api/deals/{id}            # Deal detail + price stats
+GET       /api/deals/{id}/history    # Price history points
+GET       /api/deals/{id}/image      # Proxied Telegram photo
+```
+
+**Query Parameters (Deals):**
+- `q` - search query
+- `category` - filter by category
+- `subcategory` - filter by subcategory
+- `store` - filter by store
+- `brand` - filter by brand
+- `min_price`, `max_price` - price range
+- `min_discount` - min discount %
+- `only_lowest` - only show lowest-price items per product
+- `include_expired` - include expired deals
+- `all_channels` - search across all channels, not just your subscriptions
+- `sort` - relevance, best, newest, discount, price_low, price_high
+- `limit`, `offset` - pagination
+
+**Example:**
+```bash
+curl "https://your-app.com/api/deals?q=women%20kurta&max_price=800&min_discount=50&sort=best"
+```
+
+### Watchlists / Price Alerts (auth required)
+
+```
+GET       /api/watchlists            # Your saved searches
+POST      /api/watchlists            # {query, category, store, max_price, notify}
+PATCH     /api/watchlists/{id}       # ?notify=true/false to toggle
+DELETE    /api/watchlists/{id}       # Delete watchlist
+POST      /api/watchlists/{id}/test  # Send test alert
+```
+
+### Admin (requires `X-Admin-Token` header)
+
+```
+POST      /api/admin/ingest          # Force an ingest cycle
+POST      /api/admin/sheets/flush    # Force Sheets write
+POST      /api/admin/sheets/restore  # Rebuild SQLite from Sheets
+```
+
+**Example:**
+```bash
+curl -X POST https://your-app.com/api/admin/ingest \
+  -H "X-Admin-Token: $ADMIN_TOKEN"
+```
+
+### Devices (visitor mode, no auth)
+
+```
+POST      /api/devices/register      # {device_id, platform, push_token?, digest?}
+GET       /api/devices/feed          # New deals for this device
+```
+
+---
+
+## Development
+
+### Development Workflow
+
+```bash
+# Activate environment
+source .venv/bin/activate
+
+# Run with hot-reload
+make dev
+
+# In another terminal, run tests
+make test
+
+# Run specific test
+python -m tests.test_pipeline
+
+# Check type hints
+mypy app/
+```
+
+### Testing
+
+- **Unit/Integration:** `tests/test_*.py` (no Telegram needed)
+- **E2E:** `tests/e2e/` (browser automation)
+- **Ad-hoc:** `make ping`, `make health`, `make stats`
+
+Run all tests:
+```bash
+make test
+```
+
+### Code Structure Guidelines
+
+- **Routers** (`app/routers/`): API endpoint handlers (thin, delegate to services)
+- **Services** (`app/services/`): Business logic, integrations (stateless where possible)
+- **Config** (`app/config.py`): Environment-driven settings (single source of truth)
+- **DB** (`app/db.py`): Schema + query helpers (SQLite only)
+- **Auth** (`app/auth.py`): Session & permission guards
+
+### Adding a New Endpoint
+
+1. Create handler in `app/routers/feature.py`
+2. Import and include router in `app/main.py`
+3. Delegate business logic to `app/services/`
+4. Test with `curl` or `/api/docs`
+
+Example (new endpoint):
+```python
+# app/routers/feature.py
+from fastapi import APIRouter, Depends
+
+router = APIRouter(prefix="/api/feature", tags=["Feature"])
+
+@router.get("/something")
+async def get_something(session: Session = Depends(get_session)):
+    # Get current user, check auth
+    if not session:
+        raise HTTPException(status_code=401)
+    return {"result": "..."}
+```
+
+---
+
+## Database Setup
+
+### SQLite (Local Cache)
+
+Created automatically on first run. Schema defined in `app/db.py`.
+
+**Key tables:**
+- `deals` - product cards
+- `products` - unique products with pricing summary
+- `price_points` - every price change
+- `price_alerts` - watchlists
+
+**Features:**
+- 15-day rolling retention (older deals dropped)
+- Cold-start restoration from Turso
+- Indexed on natural keys for fast lookup
+
+### MongoDB (Durable User State)
+
+**Optional but recommended for production.**
+
+1. **Create free cluster:**
+   - Go to [mongodb.com/atlas](https://mongodb.com/atlas)
+   - Create account, free M0 cluster
+   - Create database user (username + password)
+   - Allow access from anywhere: `0.0.0.0/0`
+
+2. **Get connection string:**
+   - Drivers → copy URI template
+   - Format: `mongodb+srv://user:password@cluster.mongodb.net/`
+
+3. **Set in .env:**
+   ```bash
+   MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/
+   MONGODB_DB_NAME=dealradar
+   ```
+
+4. **Collections auto-created:**
+
+| Collection | Indexed on | Purpose |
+|---|---|---|
+| `users` | `telegram_id` | Accounts (id, username, login times) |
+| `channels` | `tg_id` | Tracked channels + watermarks |
+| `user_channels` | `(user_id, channel_id)` | Who tracks what |
+| `watchlists` | `(user_id, query)` | Saved searches |
+| `settings` | `key` | Admin config |
+
+### Turso (Permanent Deal Store)
+
+**Highly recommended for production (free tier: 5GB storage, 500M row-reads/month).**
+
+1. **Create account:** [turso.tech](https://turso.tech)
+2. **Create database:**
+   ```bash
+   turso db create dealradar
+   ```
+3. **Get credentials:**
+   ```bash
+   turso db show dealradar --json
+   ```
+4. **Set in .env:**
+   ```bash
+   TURSO_DATABASE_URL=libsql://<db>-<org>.turso.io
+   TURSO_AUTH_TOKEN=<token>
+   ```
+
+**Split price history (optional):**
+```bash
+turso db create dealradar_prices
+turso db tokens create dealradar_prices
+```
+
+Then in .env:
+```bash
+TURSO_DB_02=libsql://<db2>-<org>.turso.io
+TURSO_DB_02_AUTH_TOKEN=<token>
+```
+
+---
+
+## Deployment
+
+### Render (Recommended for Free Tier)
+
+**Why Render?**
+- Free Python 3 runtime
+- 512MB RAM, ephemeral disk (fine for deals cache)
+- Auto-redeploy on git push
+- PostgreSQL, Redis add-ons available
+- Blueprint deployment (infrastructure as code)
+
+**Deploy with Blueprint:**
+
+1. Push repo to GitHub
+2. Go to [render.com](https://render.com)
+3. Dashboard → **New** → **Blueprint**
+4. Select your repo
+5. Fill in required environment variables:
+   - `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`
+   - `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
+   - `MONGODB_URI`
+6. Deploy
+7. After first boot, set `PUBLIC_URL` to your Render URL and redeploy
+
+**Keepalive (prevent sleep):**
+- Set `PUBLIC_URL` → app pings itself every 10 min
+- Also set up external pinger ([UptimeRobot](https://uptimerobot.com), free tier)
+
+### Alternative: Docker
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+```
+
+```bash
+docker build -t dealradar .
+docker run -e TELEGRAM_API_ID=... -e TELEGRAM_API_HASH=... -p 8000:8000 dealradar
+```
+
+### Environment Variables (Render)
+
+All variables from `.env.example` can be set in Render dashboard under **Environment**.
+
+**Critical (mark `sync: false` in render.yaml):**
+- `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`
+- `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
+- `MONGODB_URI`
+- `PUBLIC_URL` (set after first deploy)
+
+**Optional but recommended:**
+- `ADMIN_TOKEN` (for `/api/admin/*` endpoints)
+- `TG_BOT_TOKEN`, `TG_POST_CHANNEL` (for hot deal posting)
 
 ---
 
 ## Troubleshooting
 
-**"Telegram API credentials are missing"** — `TELEGRAM_API_ID` / `TELEGRAM_API_HASH`
-aren't set, or the `.env` isn't being read. Confirm with `curl localhost:8000/api/health`.
+### "Telegram API credentials are missing"
 
-**The login code never arrives** — Telegram sends it *inside the Telegram app*
-(Saved Messages / the Telegram service chat), not by SMS. Check there first.
+**Cause:** `TELEGRAM_API_ID` or `TELEGRAM_API_HASH` not set.
 
-**"Your Telegram session expired"** — usually means `SECRET_KEY` changed, which
-makes stored sessions undecryptable. Sign in again. Keep `SECRET_KEY` stable.
+**Fix:** Check `.env` file and Render environment variables. Verify at `GET /api/health`.
 
-**No channels listed** — DealRadar only lists *broadcast channels*. Groups and
-private chats are excluded by design. Join some deal channels in Telegram, then
-hit **Refresh list**.
+### Login code never arrives
 
-**No deals after syncing** — some channels post only images with captions in a
-format the parser can't price. Check `/api/stats` for `deals_total`; try
-**Include untracked channels**; look at the logs for per-channel counts.
+**Cause:** Telegram sends the code *inside the app* (Saved Messages), not SMS.
 
-**Sheets errors** — confirm the sheet is shared with the service account's
-`client_email` as **Editor**, and that both the Sheets API and Drive API are
-enabled. `/api/health` surfaces the exact error under `checks.sheets.last_error`.
+**Fix:** Open Telegram app → Saved Messages → look for login code there.
 
-**Render deploy sleeps / is slow** — expected on free tier. Set `PUBLIC_URL` and
-add an external uptime pinger against `/api/ping`.
+### "Your Telegram session expired"
 
-**`FloodWaitError`** — Telegram rate-limiting. Raise `POLL_INTERVAL_SECONDS`,
-lower `INCREMENTAL_LIMIT`, or track fewer channels. The app already backs off
-and skips affected channels rather than crashing.
+**Cause:** `SECRET_KEY` changed (makes stored sessions undecryptable).
+
+**Fix:** Sign in again. Keep `SECRET_KEY` stable to avoid re-logins.
+
+### No channels listed
+
+**Cause:** Only *broadcast channels* are listed (groups/private chats excluded by design).
+
+**Fix:** Join some public deal channels in Telegram first, then hit **Refresh**.
+
+### No deals after syncing
+
+**Cause:** Some channels post only images with unstructured captions.
+
+**Fix:** Check `/api/stats` for `deals_total`. Enable unstructured posts in admin. Check logs.
+
+### Rate limit errors (`FloodWaitError`)
+
+**Cause:** Polling too frequently or tracking too many channels.
+
+**Fix:**
+- Raise `POLL_INTERVAL_SECONDS` (e.g., 3600 = 1 hour)
+- Lower `INCREMENTAL_LIMIT` (messages per poll)
+- Track fewer channels
+- App already backs off automatically
+
+### Render deploy is slow / sleeping
+
+**Expected on free tier:** 15-minute idle sleep, ~30s cold starts.
+
+**Mitigation:**
+- Set `PUBLIC_URL` and `KEEPALIVE_ENABLED=true` → self-ping every 10 min
+- Add external uptime monitor (UptimeRobot) → pings every 5 min
+- This keeps the dyno awake
 
 ---
 
-## Security & limits
+## Security & Limits
 
-- Your Telegram **session string is encrypted with Fernet** (key derived from
-  `SECRET_KEY`) before it's written anywhere. It is never sent to MongoDB.
-- Your **login code and 2FA password are never stored** — they live in memory
-  only for the seconds a sign-in takes.
-- Sessions are used to **read channel history and message your own Saved
-  Messages**. Nothing is posted anywhere else on your behalf.
-- Web sessions are httpOnly cookies, `SameSite=Lax`, `Secure` when `PUBLIC_URL`
-  is https.
-- `DELETE /api/auth/account` fully erases your account and session.
-- Outbound deal links carry `rel="noopener noreferrer nofollow"`.
-- **Rate limiting** on everything that spends a real Telegram API call under
-  the app's credentials: `/api/auth/send-code` (5 / 15 min per IP — without
-  this, anyone could spam a login code to an arbitrary phone number at no
-  cost to them), code/2FA verification (15 / 15 min), adding a public channel
-  (20 / 10 min), and the deal-image proxy on cache misses (90 / min). In-memory,
-  per-process — matches the single-worker requirement above.
-- **CORS**: `allow_origins=["*"]` and credentialed requests are mutually
-  exclusive per spec; the app disables credentials automatically when origins
-  are wildcarded, rather than sending an invalid combination. Only matters if
-  you build a separate client against this API — the bundled frontend is
-  same-origin and never goes through CORS at all.
-- **Link-liveness probing is SSRF-guarded**: deal links come from channel
-  posts DealRadar doesn't control, so before fetching one to check it's still
-  live, the destination is resolved and rejected if it's private, loopback,
-  link-local, or reserved (blocks a channel post pointing a link at an
-  internal address or a cloud metadata endpoint). Redirects are followed
-  manually, one hop at a time, re-checked at each hop. Response bodies are
-  capped at 200KB read via streaming, not truncated after a full download.
+### Encryption & Sessions
 
-**Be aware:** automating a *user* account is against a strict reading of
-Telegram's ToS if abused. Polling a handful of channels every few minutes for
-personal use is normal client behaviour; scraping hundreds of channels
-aggressively can get an account limited. The defaults here are deliberately
-conservative — keep them that way.
+- **Telegram session:** Encrypted with Fernet (key derived from `SECRET_KEY`)
+- **Web sessions:** httpOnly cookies, `SameSite=Lax`, `Secure` on HTTPS
+- **Login codes & 2FA:** Never stored, only in memory for seconds
+
+### Rate Limiting
+
+Per IP, in-memory (per-process, requires `--workers 1`):
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `/api/auth/send-code` | 5 | 15 min |
+| `/api/auth/verify-code` | 15 | 15 min |
+| `/api/auth/verify-password` | 15 | 15 min |
+| `/api/channels/add-public` | 20 | 10 min |
+| Deal image proxy (cache miss) | 90 | 1 min |
+
+### SSRF Protection
+
+Link liveness probing blocks:
+- Private IP ranges (10.x, 172.16-31.x, 192.168.x)
+- Loopback (127.x)
+- Link-local (169.254.x)
+- Reserved (0.x, 255.x)
+
+Redirects followed manually with per-hop validation.
+
+### Data Retention
+
+- **SQLite (local):** 15 days (configurable via `LOCAL_CACHE_DAYS`)
+- **Turso (permanent):** Forever (unless manually deleted)
+- **MongoDB (state):** Forever or until user deletes account
+
+Account deletion (`DELETE /api/auth/account`):
+- Erases user record from MongoDB
+- Removes all watchlists & alerts
+- Clears web sessions
+- **Does not** delete deals (shared across users)
+
+### Compliance Notes
+
+- **Terms of Service:** Automating a user account violates a strict reading of Telegram ToS if abused
+- **Recommended:** Polling a handful of channels every few minutes for personal use is normal behavior
+- **Not recommended:** Scraping hundreds of channels aggressively
+- **Defaults:** Deliberately conservative (40-min poll interval, limited channels, rate-limited)
+
+---
+
+## Contributing Guide
+
+### Code Standards
+
+1. **Python Style:** PEP 8 + Black formatter
+2. **Type Hints:** Annotate function arguments & returns
+3. **Docstrings:** Module, class, and public method docstrings
+4. **Testing:** New features require tests
+
+### Setting Up for Development
+
+```bash
+# Install dev dependencies
+pip install -r requirements-dev.txt
+
+# Run tests
+make test
+
+# Format code
+black app/ tests/
+
+# Type check
+mypy app/
+```
+
+### Pull Request Process
+
+1. **Branch:** Create a feature branch from `main`
+   ```bash
+   git checkout -b feature/my-feature
+   ```
+
+2. **Test:** Run full test suite
+   ```bash
+   make test
+   ```
+
+3. **Commit:** Clear, descriptive messages
+   ```bash
+   git commit -m "Add feature X to support Y"
+   ```
+
+4. **Push & PR:** Push branch and create pull request with description
+
+### Reporting Issues
+
+- **Bug:** Describe reproduction steps, expected vs. actual behavior
+- **Feature:** Explain use case and expected behavior
+- **Question:** Use discussions or contact maintainer
+
+### Areas for Contribution
+
+- **Parser:** Improve deal detection (new store formats, shortlinks)
+- **Dedup:** Better title matching for shortlinks
+- **Taxonomy:** Add categories, brands, synonyms
+- **Frontend:** UI/UX improvements
+- **Mobile:** React Native enhancements
+- **Tests:** Increase test coverage
+
+---
+
+## Dependencies
+
+### Core Runtime
+
+```
+fastapi==0.115.6             # Web framework
+uvicorn[standard]==0.34.0    # ASGI server (includes uvloop, httptools)
+telethon==1.38.1             # Telegram MTProto client
+cryptg==0.5.0.post0          # Optional: faster cryptography
+pymongo==4.10.1              # MongoDB driver
+dnspython==2.7.0             # DNS support for MongoDB SRV
+cryptography==44.0.0         # Encryption (Fernet for session storage)
+httpx==0.28.1                # Async HTTP client (link probing)
+python-dotenv==1.0.1         # .env file support
+pydantic==2.10.4             # Data validation
+rapidfuzz==3.11.0            # Fuzzy string matching (dedup)
+python-multipart==0.0.20     # Form parsing
+```
+
+### Development
+
+```
+pytest                        # Testing framework
+pytest-asyncio               # Async test support
+selenium                     # E2E browser testing
+black                        # Code formatter
+mypy                         # Type checker
+```
+
+### Optional (Production)
+
+- **Firebase Admin SDK** (for push notifications)
+- **Google Sheets API** (legacy support)
+- **Turso Python SDK** (if not using libsql)
+
+### Python Version
+
+- **Minimum:** 3.9
+- **Recommended:** 3.11+
+
+---
+
+## License
+
+This project is provided as-is for personal use and deal aggregation. Compliance with Telegram's Terms of Service is the user's responsibility.
+
+---
+
+## Contact & Support
+
+- **Issues:** GitHub issues for bugs and feature requests
+- **Discussions:** GitHub discussions for questions
+- **Maintainer:** [Tanushh18](https://github.com/Tanushh18)
+
+---
+
+## Changelog & Version History
+
+See [CHANGELOG.md](./CHANGELOG.md) (if available) for version history and breaking changes.
+
+---
+
+## Additional Resources
+
+- **Database Schema:** See [DATABASE.md](./DATABASE.md)
+- **Mobile App Docs:** See [mobile/README.md](./mobile/README.md)
+- **Telegram Bot API:** [core.telegram.org/bots](https://core.telegram.org/bots)
+- **Telethon Docs:** [telethon.readthedocs.io](https://telethon.readthedocs.io)
+- **FastAPI:** [fastapi.tiangolo.com](https://fastapi.tiangolo.com)
+- **Render Docs:** [render.com/docs](https://render.com/docs)
+
+---
+
+**Last Updated:** September 2026
+
+Made with ❤️ for deal hunters everywhere.
