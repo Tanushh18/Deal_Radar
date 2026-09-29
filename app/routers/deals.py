@@ -18,6 +18,8 @@ router = APIRouter(prefix="/api/deals", tags=["deals"])
 # doesn't re-download the same thumbnail. Bounded to protect a 512MB dyno.
 _image_cache: "OrderedDict[str, bytes]" = OrderedDict()
 _IMAGE_CACHE_MAX = 120
+_IMAGE_CACHE_MAX_BYTES = 50 * 1024 * 1024  # 50 MB cap to prevent OOM on shared hosts
+_IMAGE_SIZE_MAX = 5 * 1024 * 1024  # Reject individual images over 5 MB (clearly not thumbnails)
 
 # The deal catalog is intentionally browsable without signing in, so this
 # can't require auth without breaking anonymous browsing — but each miss
@@ -327,9 +329,19 @@ async def deal_image(deal_id: str, request: Request):
     if not data:
         raise HTTPException(status_code=404, detail="Image unavailable.")
 
+    # Reject oversized images (likely not a thumbnail) to prevent cache bloat
+    if len(data) > _IMAGE_SIZE_MAX:
+        return Response(content=data, media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=3600"})
+
+    # Add to cache and enforce limits
     _image_cache[deal_id] = data
-    while len(_image_cache) > _IMAGE_CACHE_MAX:
-        _image_cache.popitem(last=False)
+    current_size = sum(len(v) for v in _image_cache.values())
+
+    # Evict by count or size, whichever is violated first
+    while len(_image_cache) > _IMAGE_CACHE_MAX or current_size > _IMAGE_CACHE_MAX_BYTES:
+        key, old_data = _image_cache.popitem(last=False)
+        current_size -= len(old_data)
 
     return Response(content=data, media_type="image/jpeg",
                     headers={"Cache-Control": "public, max-age=86400"})
