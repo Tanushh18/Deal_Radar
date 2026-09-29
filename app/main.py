@@ -153,6 +153,12 @@ app = FastAPI(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Request size limit: protect against JSON bombs and accidental oversized uploads.
+# Typical payloads: phone number (20 bytes), code (10 bytes), queries (500 bytes).
+# Generous 1 MB limit covers all legitimate use cases while preventing attacks.
+MAX_REQUEST_SIZE = 1 * 1024 * 1024  # 1 MB
+
 # allow_origins=["*"] + allow_credentials=True is an invalid combination per
 # the CORS spec — browsers refuse to honor a wildcard origin on a credentialed
 # request. It's silent today because the bundled frontend is same-origin and
@@ -166,6 +172,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def limit_request_size(request: Request, call_next):
+    """Protect against JSON bombs and oversized uploads."""
+    if request.method in ("POST", "PUT", "PATCH"):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > MAX_REQUEST_SIZE:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=413,
+                content={"detail": f"Request body too large (max {MAX_REQUEST_SIZE // 1024}KB)"},
+            )
+    return await call_next(request)
+
 
 app.include_router(health_router.router)
 app.include_router(auth_router.router)
