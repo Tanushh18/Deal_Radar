@@ -91,10 +91,10 @@ async def more_offers(
 @router.get("")
 async def list_deals(
     q: str = Query("", max_length=120),
-    category: str = "",
-    subcategory: str = "",
-    store_name: str = Query("", alias="store"),
-    brand: str = "",
+    category: str = Query("", max_length=100),  # Added max_length for defense in depth
+    subcategory: str = Query("", max_length=100),  # Added max_length for defense in depth
+    store_name: str = Query("", alias="store", max_length=100),
+    brand: str = Query("", max_length=100),
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
     min_discount: int = Query(0, ge=0, le=99),
@@ -111,6 +111,7 @@ async def list_deals(
     user=Depends(auth.optional_user),
     _rl=Depends(_limit_search),
 ):
+    # Validate sort parameter against whitelist — prevents SQL injection
     if sort not in search.SORTS:
         raise HTTPException(status_code=400, detail=f"sort must be one of {list(search.SORTS)}")
     scope = None if (all_channels or archive) else _scope(user)
