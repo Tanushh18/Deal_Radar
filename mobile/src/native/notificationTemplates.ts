@@ -26,6 +26,8 @@ export type Template = {
   categories?: string[];
   kinds?: string[];
   personal?: boolean;
+  /** Only used when the deal's discount is at least this (lines that call a discount big or rare). */
+  minDiscount?: number;
 };
 
 const WOMEN = ['Women Fashion'];

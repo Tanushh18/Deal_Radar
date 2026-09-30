@@ -24,6 +24,7 @@ import { Platform } from 'react-native';
 
 import { resolveHost } from './config';
 import { TEMPLATES, type Need, type Template, type TimeOfDay } from './notificationTemplates';
+import { activeTemplates, warmTemplates } from './remoteTemplates';
 
 const STORE_KEY = 'dr.smart.v1';
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -460,7 +461,7 @@ function chooseTemplate(s: State, c: Candidate, at: number): Template {
   const personal = (s.interests[`c:${(c.category ?? '').toLowerCase()}`] ?? 0) >= 5;
   const lastUsed = new Map<string, number>();
   for (const x of s.slots) lastUsed.set(x.templateId, Math.max(lastUsed.get(x.templateId) ?? 0, x.fireAt));
-  const fits = TEMPLATES.filter(
+  const fits = activeTemplates().filter(
     (tpl) =>
       (!tpl.time || tpl.time.includes(tod)) &&
       (!tpl.day || (tpl.day === 'weekend') === isWeekend(d)) &&
@@ -468,6 +469,7 @@ function chooseTemplate(s: State, c: Candidate, at: number): Template {
       (!tpl.categories || (c.category != null && tpl.categories.includes(c.category))) &&
       (!tpl.kinds || (c.kind != null && tpl.kinds.includes(c.kind))) &&
       (!tpl.personal || personal) &&
+      (!tpl.minDiscount || (Number(c.discount_pct) || 0) >= tpl.minDiscount) &&
       (tpl.needs ?? []).every((n) => has(c, n, at)),
   );
   // Crazy deals and come-back nudges mean something specific: when this kind
@@ -666,6 +668,8 @@ export function smartTick(): Promise<void> {
 
 async function doTick(): Promise<void> {
   if (!displayer) return;
+  // The server's copy (cached on the phone, refreshed in the background); the built-in set until it arrives.
+  await warmTemplates();
   const needPicks = await withState((s) => {
     const fresh = s.queue.filter((c) => !expired(c, Date.now() + HOUR_MS)).length;
     return fresh < PICKS_WANTED && Date.now() - s.picksFetchedAt > PICKS_REFRESH_MS;
