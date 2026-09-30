@@ -1,0 +1,736 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (extra_3). Built from src/extra_3.txt."
+ },
+ "templates": [
+  {
+   "id": "x3001",
+   "category": "Any",
+   "mood": "wish",
+   "tone": "tease",
+   "title": "Wishlist ne chupke se ek naam likha hai 📝",
+   "body": "{name}, {price}. Padh lo, phir soch lo.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3002",
+   "category": "Any",
+   "mood": "wish",
+   "tone": "dost",
+   "title": "Ek cheez jo kabhi na kabhi chahiye thi 🎯",
+   "body": "{name} at {price}. Aaj ka din shayad wahi din hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3003",
+   "category": "Any",
+   "mood": "wish",
+   "tone": "self",
+   "title": "Cart mein daalna easy, checkout mushkil 😅",
+   "body": "{name}, {discount}% off. Aaj ek kadam aur.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3004",
+   "category": "Any",
+   "mood": "wish",
+   "tone": "heart",
+   "title": "Kabhi kabhi ek chhoti si cheez poora din badal deti hai 🌈",
+   "body": "{name} for {price}. Chhoti khushi, poora din.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3005",
+   "category": "Any",
+   "mood": "wish",
+   "tone": "tease",
+   "title": "Ye cheez sabki wishlist mein hoti hai, tumhari mein? 😏",
+   "body": "{name}, {price}. Jawab ka intezaar hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3006",
+   "category": "Any",
+   "mood": "banter",
+   "tone": "dost",
+   "title": "Dost ne bola tha 'sasti mile to batana' 📲",
+   "body": "{name} at {price}. Bata do, ya khud rakh lo.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3007",
+   "category": "Any",
+   "mood": "banter",
+   "tone": "tease",
+   "title": "Bhai ne kaha 'ye kahan se mila?' 😎",
+   "body": "{name}, {price}. Jawab: hum se.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3008",
+   "category": "Any",
+   "mood": "banter",
+   "tone": "self",
+   "title": "Kya tumhare paas bhi 'kal le lunga' wala cart hai? 🛒",
+   "body": "{name} for {price}. Aaj hi kal hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3009",
+   "category": "Any",
+   "mood": "banter",
+   "tone": "dost",
+   "title": "Group chat mein forward karne layak deal 💬",
+   "body": "{name} — {discount}% off. Dekhne mein harj nahi.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3010",
+   "category": "Any",
+   "mood": "banter",
+   "tone": "tease",
+   "title": "Sabne 'nahi chahiye' bola, phir sabne le liya 🙈",
+   "body": "{name} at {price}. Bheed ki baat ka bharosa kam.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3011",
+   "category": "Any",
+   "mood": "mood",
+   "tone": "tease",
+   "title": "Mood off? Ek deal on 💡",
+   "body": "{name}, {price}. Off mood ka switch on.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3012",
+   "category": "Any",
+   "mood": "mood",
+   "tone": "heart",
+   "title": "Aaj thoda alag sa mahsoos ho raha hai? Koi baat nahi 🫶",
+   "body": "{name} for {price}. Chhoti khushi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening",
+    "night"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3013",
+   "category": "Any",
+   "mood": "mood",
+   "tone": "dost",
+   "title": "Boring din ko thoda interesting banao 🎨",
+   "body": "{name}, {discount}% off. Aaj ka discount aaj hi dikh raha hai.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3014",
+   "category": "Any",
+   "mood": "mood",
+   "tone": "self",
+   "title": "Kuch achha karne ka mood hai (khud ke liye) 💜",
+   "body": "{name} at {price}. Khud ke liye kuch achha.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3015",
+   "category": "Any",
+   "mood": "mood",
+   "tone": "tease",
+   "title": "Ye deal dekh ke smile 10% badhegi (scientifically nahi) 😄",
+   "body": "{name}, {price}. Scientifically nahi, par dil se.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3016",
+   "category": "Any",
+   "mood": "time",
+   "tone": "dost",
+   "title": "Sirf 2 minute ka kaam: ye deal dekh lo ⏱️",
+   "body": "{name} for {price}. Do minute mein dekh lo, kaam nahi rukega.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3017",
+   "category": "Any",
+   "mood": "time",
+   "tone": "tease",
+   "title": "Reel scroll karne se pehle ek deal 😌",
+   "body": "{name}, {discount}% off. Calculator nikaalne ki zaroorat nahi.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3018",
+   "category": "Any",
+   "mood": "time",
+   "tone": "self",
+   "title": "Break mein aur kuch nahi, ye dekh lo ☕",
+   "body": "{name} at {price}. Break ka best use.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3019",
+   "category": "Any",
+   "mood": "time",
+   "tone": "dost",
+   "title": "Bus mein, metro mein, ya chhat pe: kahin bhi dekh lo 🚌",
+   "body": "{name}, {price}. Safar chhota ho ya lamba.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning",
+    "evening"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3020",
+   "category": "Any",
+   "mood": "time",
+   "tone": "tease",
+   "title": "Line mein khade ho? Ye dekh lo 🧍",
+   "body": "{name} for {price}. Line agle hi minute mein khisak jaayegi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3021",
+   "category": "Any",
+   "mood": "gift2",
+   "tone": "heart",
+   "title": "Kisi ko surprise dena hai? 🎁",
+   "body": "{name}, {price}. Chhoti cheez, badi yaad.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3022",
+   "category": "Any",
+   "mood": "gift2",
+   "tone": "dost",
+   "title": "Anniversary aa rahi hai? Ye idea dekho 💐",
+   "body": "{name} at {price}. Yaadgaar gift ka idea.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3023",
+   "category": "Any",
+   "mood": "gift2",
+   "tone": "tease",
+   "title": "Dost ka birthday kal hai (yaad hai na?) 🎂",
+   "body": "{name}, {discount}% off. Ek tap ki doori par.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3024",
+   "category": "Any",
+   "mood": "gift2",
+   "tone": "self",
+   "title": "Gift dhoondhte dhoondhte apne liye le liya 🙈",
+   "body": "{name} for {price}. Pakde gaye: apne liye le liya.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3025",
+   "category": "Any",
+   "mood": "gift2",
+   "tone": "heart",
+   "title": "Achha gift wahi jo dil se chuna jaye 💜",
+   "body": "{name}, {price}. Dil se chuna hua, dil tak pahunche.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3026",
+   "category": "Any",
+   "mood": "value",
+   "tone": "tease",
+   "title": "Paisa vasool wali feeling 💰",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3027",
+   "category": "Any",
+   "mood": "value",
+   "tone": "dost",
+   "title": "Smart shopping ka ek aur example 🧠",
+   "body": "{name}, {price}. Sochke lena, dekh ke lena.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3028",
+   "category": "Any",
+   "mood": "value",
+   "tone": "self",
+   "title": "Dhyan se dekha, price theek lagi ✅",
+   "body": "{name} for {price}. Ab tumhari baari.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3029",
+   "category": "Any",
+   "mood": "value",
+   "tone": "tease",
+   "title": "Ye deal report card mein A+ le aayi 📊",
+   "body": "{name}, {discount}% off. Kam price ka kya kehna.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3030",
+   "category": "Any",
+   "mood": "value",
+   "tone": "dost",
+   "title": "Bhaav taav ka zamana gaya, discount ka zamana hai 🏷️",
+   "body": "{name} at {price}. Discount padhna ab kala hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3031",
+   "category": "Any",
+   "mood": "lazy",
+   "tone": "self",
+   "title": "Aaj kuch karne ka mann nahi, shopping ka hai 🛋️",
+   "body": "{name}, {price}. Sofa se nahi hile, deal tak pahunche.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3032",
+   "category": "Any",
+   "mood": "lazy",
+   "tone": "tease",
+   "title": "Sofa se uthe bina bhi shopping ho sakti hai 📱",
+   "body": "{name} for {price}. Sofa se uthe bina bhi kaam ho jaata hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3033",
+   "category": "Any",
+   "mood": "lazy",
+   "tone": "dost",
+   "title": "Aalas aur deal ka rishta purana hai 😴",
+   "body": "{name} — {discount}% off. Rate dekh ke muskaan aa gayi.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3034",
+   "category": "Any",
+   "mood": "lazy",
+   "tone": "heart",
+   "title": "Aaj ka din aaram ka hai, deal bhi aaram se dekho 🌿",
+   "body": "{name} at {price}. Aaram se dekho, aaram se socho.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3035",
+   "category": "Any",
+   "mood": "lazy",
+   "tone": "tease",
+   "title": "Chai pi lo, phir decide karo (par pehle dekh lo) ☕",
+   "body": "{name}, {price}. Chai ke baad decide karna theek hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3036",
+   "category": "Any",
+   "mood": "tiny",
+   "tone": "heart",
+   "title": "Chhoti si deal, chhoti si khushi 🍬",
+   "body": "{name} for {price}. Chhoti si toffee wali khushi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3037",
+   "category": "Any",
+   "mood": "tiny",
+   "tone": "dost",
+   "title": "Roz ek chhoti khushi banti hai 🌼",
+   "body": "{name} — {discount}% off. Rate ne sabko chaunka diya.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3038",
+   "category": "Any",
+   "mood": "tiny",
+   "tone": "tease",
+   "title": "Chhoti deals bhi kabhi kabhi badi nikalti hain 🔮",
+   "body": "{name} at {price}. Kabhi kabhi chhoti deal poora din bana deti hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3039",
+   "category": "Any",
+   "mood": "tiny",
+   "tone": "self",
+   "title": "Ye wali dekh ke dil ne bola 'haan' 🫀",
+   "body": "{name}, {price}. Dil ne pehle haan bol diya.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3040",
+   "category": "Any",
+   "mood": "tiny",
+   "tone": "dost",
+   "title": "Halki phulki si deal, sahi timing pe 🎈",
+   "body": "{name} for {price}. Hawa jaisi halki deal.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3041",
+   "category": "Any",
+   "mood": "spot",
+   "tone": "tease",
+   "title": "Humne dekha, humein laga aapko bhi dikhana chahiye 👀",
+   "body": "{name}, {price}. Humne dekhi, ab tumhari baari.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3042",
+   "category": "Any",
+   "mood": "spot",
+   "tone": "dost",
+   "title": "Scroll karte karte ye nazar aayi 🔍",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3043",
+   "category": "Any",
+   "mood": "spot",
+   "tone": "self",
+   "title": "Ye deal aapki nazar ka intezaar kar rahi thi 🎯",
+   "body": "{name}, {price}. Nazar aa gayi, ab tap karo.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3044",
+   "category": "Any",
+   "mood": "spot",
+   "tone": "heart",
+   "title": "Achhi cheezein dhoondhne se milti hain 🌟",
+   "body": "{name} for {price}. Dhoondhne wale ko milta hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3045",
+   "category": "Any",
+   "mood": "spot",
+   "tone": "tease",
+   "title": "Dhoondh ke laaye hain, dekh lo 🧭",
+   "body": "{name} — {discount}% off. Chhoti bachat bhi badi lagti hai.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3046",
+   "category": "Any",
+   "mood": "pause",
+   "tone": "dost",
+   "title": "Ek pal ruko, ye dekho 🛑",
+   "body": "{name} at {price}. Do second ruk ke dekho.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3047",
+   "category": "Any",
+   "mood": "pause",
+   "tone": "tease",
+   "title": "Phone side mein rakhne se pehle ek nazar 📵",
+   "body": "{name}, {price}. Phir waapas scroll pe.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3048",
+   "category": "Any",
+   "mood": "pause",
+   "tone": "self",
+   "title": "Ek minute nikaalo apne liye ⏳",
+   "body": "{name} for {price}. Sirf ek minute apne liye.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3049",
+   "category": "Any",
+   "mood": "pause",
+   "tone": "heart",
+   "title": "Din ke beech mein ek chhoti si khushi 🌤️",
+   "body": "{name}, {discount}% off. Dekh lo, phir apni marzi.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "x3050",
+   "category": "Any",
+   "mood": "pause",
+   "tone": "dost",
+   "title": "Deep breath, phir ye deal 🌬️",
+   "body": "{name} at {price}. Saans andar, deal bahar.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  }
+ ]
+}

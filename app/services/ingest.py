@@ -617,11 +617,15 @@ def _app_alert(query: str, deal: Dict[str, Any]) -> Dict[str, str]:
         body_bits.append("lowest price we've seen")
     if deal.get("coupon"):
         body_bits.append(f"code {deal['coupon']}")
-    return {
-        "title": f"🔔 \"{query}\": {price}{name}".strip(),
-        "body": " · ".join(body_bits) or "New deal matching your alert",
-        "url": f"/?deal={deal['id']}",
-    }
+    title = f"🔔 \"{query}\": {price}{name}".strip()
+    body = " · ".join(body_bits) or "New deal matching your alert"
+    from . import pitara  # the pitara writes it when it has a line that fits; the text above is the fallback
+    picked = pitara.pick("watchlist", deal, ctx={"query": query})
+    if picked:
+        title, body = picked.title, picked.body
+        if deal.get("coupon") and len(body) + len(str(deal["coupon"])) + 9 <= 160:
+            body += f" · code {deal['coupon']}"
+    return {"title": title, "body": body, "url": f"/?deal={deal['id']}"}
 
 
 async def run_watchlist_alerts(max_per_watchlist: int = 3) -> Dict[str, int]:

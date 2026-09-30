@@ -41,6 +41,8 @@ test:            ## Run the backend test suites (no Telegram needed)
 	$(PY) -m tests.test_ingest_cycle
 	$(PY) -m tests.test_turso
 	$(PY) -m tests.test_turso_split
+	$(PY) -m tests.test_notify_auto
+	$(PY) -m tests.test_pitara
 
 e2e:             ## Click through the website in Chrome on screen (E2E_HEADLESS=1 to hide it)
 	$(PIP) install -q -r requirements-dev.txt

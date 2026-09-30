@@ -1,0 +1,739 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Sports & Fitness (fitness). Built from src/fitness.txt."
+ },
+ "templates": [
+  {
+   "id": "ft001",
+   "category": "Sports & Fitness",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai ya protein shake? Aaj chai hi sahi ☕",
+   "body": "{name}, {price}. Kal se pakka gym.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "ft002",
+   "category": "Sports & Fitness",
+   "mood": "chai",
+   "tone": "self",
+   "title": "Gym jaane se pehle chai, gym ke baad chai 😅",
+   "body": "{name} at {price}. Beech mein workout.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft003",
+   "category": "Sports & Fitness",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, sehat pe bhi invest 💪",
+   "body": "{name}, {price}. Sabse achha nivesh.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft004",
+   "category": "Sports & Fitness",
+   "mood": "salary",
+   "tone": "self",
+   "title": "Gym membership aur salary: dono ka use kam 😅",
+   "body": "{name} for {price}. Is baar sach mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft005",
+   "category": "Sports & Fitness",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end: gym ki fee yaad aayi, gym nahi 🏋️",
+   "body": "{name}, {price}. Fee gayi, ab gear bhi le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft006",
+   "category": "Sports & Fitness",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Ghar pe workout, budget ke andar 💪",
+   "body": "{name} at {price}. Yoga mat bhi kaafi hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft007",
+   "category": "Sports & Fitness",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: aaj se pakka shuru 🏃",
+   "body": "{name}, {price}. Kal ka bahana kal.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "ft008",
+   "category": "Sports & Fitness",
+   "mood": "sunday",
+   "tone": "self",
+   "title": "Sunday ko fitness ka plan, Monday ko bhool 😅",
+   "body": "{name} for {price}. Plan Sunday ka, amal roz ka.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "ft009",
+   "category": "Sports & Fitness",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj gym nahi gaye? Ghar pe hi ek round 🧘",
+   "body": "{name} — {discount}% off. Tumhari pasand ka rate.",
+   "needs": [
+    "discount"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "ft010",
+   "category": "Sports & Fitness",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday se diet? Ya agle Monday se? 😂",
+   "body": "{name} at {price}. Agle Monday ka wada, is Monday ka gear.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "ft011",
+   "category": "Sports & Fitness",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Monday: naya hafta, naya sankalp 💪",
+   "body": "{name}, {price}. Pehle din hi mat todna.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "ft012",
+   "category": "Sports & Fitness",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein kursi se fridge tak: roz ka workout 🚶",
+   "body": "{name} for {price}. Ab thoda aur chalo.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "ft013",
+   "category": "Sports & Fitness",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Laptop ke saamne 9 ghante? Ek stretch to banta hai 🧘",
+   "body": "{name}, {price}. Ek stretch, ek deal.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "ft014",
+   "category": "Sports & Fitness",
+   "mood": "wfh",
+   "tone": "tease",
+   "title": "Meeting ke beech mein squat? Camera off karo 😂",
+   "body": "{name} at {price}. Camera off, mat pe on.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "ft015",
+   "category": "Sports & Fitness",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "PG mein jagah nahi, par yoga mat bichaya jaa sakta hai 🧘",
+   "body": "{name}, {price}. Chhoti jagah mein bhi kasrat ho sakti hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft016",
+   "category": "Sports & Fitness",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Roommate bhi saath mein workout karega? 💪",
+   "body": "{name} for {price}. Do log, ek motivation.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft017",
+   "category": "Sports & Fitness",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy: 'chalo walk pe' Tum: 'kal' 😅",
+   "body": "{name}, {price}. Aaj shoes pehen ke dekho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft018",
+   "category": "Sports & Fitness",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Ghar ke sab log saath mein sehatmand raho 💜",
+   "body": "{name} at {price}. Sab saath chalenge to sab fit rahenge.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft019",
+   "category": "Sports & Fitness",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Tyohaar ki mithai ke baad workout ka plan 🍬",
+   "body": "{name}, {price}. Aaj mithai, kal gym.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft020",
+   "category": "Sports & Fitness",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Wedding season se pehle thoda fit ho jao 💃",
+   "body": "{name} for {price}. Shaadi se pehle thoda sa kasrat ka plan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft021",
+   "category": "Sports & Fitness",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Match dekhte hue stretching? 🏏",
+   "body": "{name}, {price}. Chhakke pe squat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft022",
+   "category": "Sports & Fitness",
+   "mood": "match",
+   "tone": "tease",
+   "title": "Cricket khelne ka mann? Bat, ball, aur ek naya gear 🏏",
+   "body": "{name} at {price}. Weekend ka simple plan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft023",
+   "category": "Sports & Fitness",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Har kadam ek nayi shuruat 🌟",
+   "body": "{name}, {price}. Aaj ek kadam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft024",
+   "category": "Sports & Fitness",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Sehat sabse badi daulat 💜",
+   "body": "{name} for {price}. Sehat pehle, baaki baad mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft025",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "dost",
+   "title": "Gym bag: kal se pakka jaana hai 🎒",
+   "body": "{name}, {price}. Kal se pakka, aaj se bag.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft026",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "tease",
+   "title": "Dumbbell: ghar pe hi mazaa 💪",
+   "body": "{name} at {price}. Padosi ko shor ki aadat daal do.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft027",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "self",
+   "title": "Gym membership hai, gym nahi jaate 🏋️",
+   "body": "{name}, {discount}% off. Ghar pe hi sahi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "ft028",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "heart",
+   "title": "Khud ko behtar banana: roz ek chhota kadam 💜",
+   "body": "{name} for {price}. Ek kadam roz, ek saal mein safar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft029",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "dost",
+   "title": "Protein shaker: gym ka sabse chhota hero 🥤",
+   "body": "{name}, {price}. Chhota shaker, bada kaam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft030",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "tease",
+   "title": "Resistance bands: chhote, halke, dumdaar 💪",
+   "body": "{name} at {price}. Bag mein aa jayenge.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft031",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "self",
+   "title": "Gym gloves: haath ki pakad ke liye 🧤",
+   "body": "{name}, {discount}% off. Kabhi kabhi sab kuch theek baithta hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "ft032",
+   "category": "Sports & Fitness",
+   "mood": "gym",
+   "tone": "dost",
+   "title": "Skipping rope: sabse sasti cardio 🪢",
+   "body": "{name} for {price}. Sabse sasti cardio ka saathi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft033",
+   "category": "Sports & Fitness",
+   "mood": "yoga",
+   "tone": "dost",
+   "title": "Yoga mat: shanti ka pehla kadam 🧘",
+   "body": "{name}, {price}. Saans andar, shanti bahar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft034",
+   "category": "Sports & Fitness",
+   "mood": "yoga",
+   "tone": "tease",
+   "title": "Yoga: bas shavasana pasand hai 😌",
+   "body": "{name} at {price}. Baaki ke poses baad mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft035",
+   "category": "Sports & Fitness",
+   "mood": "yoga",
+   "tone": "heart",
+   "title": "Saans, dhyaan, aur ek mat 🌿",
+   "body": "{name} — {discount}% off. Price ne kaha 'aao'.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "ft036",
+   "category": "Sports & Fitness",
+   "mood": "yoga",
+   "tone": "self",
+   "title": "Yoga karna hai, par mat ke bina kaise? 🧘",
+   "body": "{name} for {price}. Mat ke bina bhi, mat le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft037",
+   "category": "Sports & Fitness",
+   "mood": "yoga",
+   "tone": "dost",
+   "title": "Meditation: 5 minute ka aaram 🕉️",
+   "body": "{name}, {price}. Paanch minute, poora aaram.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft038",
+   "category": "Sports & Fitness",
+   "mood": "running",
+   "tone": "dost",
+   "title": "Running shoes: kal se dauden ge 🏃",
+   "body": "{name} at {price}. Aaj bhi shuru kar sakte ho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft039",
+   "category": "Sports & Fitness",
+   "mood": "running",
+   "tone": "tease",
+   "title": "Daudne ka mann ho to shoes ready rakhna 👟",
+   "body": "{name}, {price}. Shoes ready, ab mood ready.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft040",
+   "category": "Sports & Fitness",
+   "mood": "running",
+   "tone": "self",
+   "title": "Marathon nahi, bas society ke gate tak 😅",
+   "body": "{name} for {price}. Society ke gate se aage ki soch.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft041",
+   "category": "Sports & Fitness",
+   "mood": "running",
+   "tone": "heart",
+   "title": "Har dauda hua kilometre ek jeet hai 🏅",
+   "body": "{name}, {discount}% off. Chalo, ek nazar to banti hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "ft042",
+   "category": "Sports & Fitness",
+   "mood": "running",
+   "tone": "dost",
+   "title": "Track pants: comfort bhi, style bhi 👖",
+   "body": "{name} at {price}. Aaram bhi, style bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft043",
+   "category": "Sports & Fitness",
+   "mood": "running",
+   "tone": "tease",
+   "title": "Sports watch: kadam gino 🏃",
+   "body": "{name}, {price}. Aaj 5000 hue?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft044",
+   "category": "Sports & Fitness",
+   "mood": "cycling",
+   "tone": "dost",
+   "title": "Cycle: pollution kam, pait kam 🚴",
+   "body": "{name} for {price}. Bas helmet lagana mat bhoolna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft045",
+   "category": "Sports & Fitness",
+   "mood": "cycling",
+   "tone": "tease",
+   "title": "Cycling: sabse sasti gaadi 🚲",
+   "body": "{name}, {discount}% off. Petrol ka kharcha zero.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "ft046",
+   "category": "Sports & Fitness",
+   "mood": "cycling",
+   "tone": "heart",
+   "title": "Hawa mein udne ka ehsaas 🌬️",
+   "body": "{name} at {price}. Hawa mein baat karne ka mazaa.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft047",
+   "category": "Sports & Fitness",
+   "mood": "cycling",
+   "tone": "self",
+   "title": "Cycle ke tyre mein hawa kam, mood mein zyada 😅",
+   "body": "{name}, {price}. Hawa bharwa lo, mood pehle se full hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft048",
+   "category": "Sports & Fitness",
+   "mood": "outdoor",
+   "tone": "dost",
+   "title": "Trekking ka plan? Bag aur shoes ready? 🥾",
+   "body": "{name} for {price}. Pahad ka bulawa aa gaya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft049",
+   "category": "Sports & Fitness",
+   "mood": "outdoor",
+   "tone": "tease",
+   "title": "Camping: ek tent aur bahut saari maggi ⛺",
+   "body": "{name}, {price}. Torch bhi lena.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft050",
+   "category": "Sports & Fitness",
+   "mood": "outdoor",
+   "tone": "heart",
+   "title": "Pahad bulate hain, thoda safar karo 🏔️",
+   "body": "{name} at {price}. Thoda safar, bahut sukoon.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft051",
+   "category": "Sports & Fitness",
+   "mood": "outdoor",
+   "tone": "self",
+   "title": "Outdoor ka plan: banata hu, jaata nahi 😅",
+   "body": "{name}, {discount}% off. Is baar pakka.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "ft052",
+   "category": "Sports & Fitness",
+   "mood": "swim",
+   "tone": "dost",
+   "title": "Swimming: garmi ka sabse achha bahana 🏊",
+   "body": "{name}, {price}. Paani mein hi mazaa.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft053",
+   "category": "Sports & Fitness",
+   "mood": "swim",
+   "tone": "tease",
+   "title": "Swimming goggles: paani ka nazara 🥽",
+   "body": "{name} for {price}. Neeche ka nazara saaf dikhega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft054",
+   "category": "Sports & Fitness",
+   "mood": "badminton",
+   "tone": "dost",
+   "title": "Badminton: society ke court ka champion 🏸",
+   "body": "{name}, {price}. Shuttle bhi lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft055",
+   "category": "Sports & Fitness",
+   "mood": "badminton",
+   "tone": "tease",
+   "title": "Racket: jo hamesha ghar mein padi rehti hai 🏸",
+   "body": "{name} at {price}. Aaj nikalo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft056",
+   "category": "Sports & Fitness",
+   "mood": "football",
+   "tone": "dost",
+   "title": "Football: weekend ka simple plan ⚽",
+   "body": "{name}, {discount}% off. Jeb halki, dil halka.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "ft057",
+   "category": "Sports & Fitness",
+   "mood": "football",
+   "tone": "tease",
+   "title": "Ball, goal post, aur ek bahut lamba ground 🥅",
+   "body": "{name} for {price}. Ek goal, ek smile.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "ft058",
+   "category": "Sports & Fitness",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka gear dekha? 🏋️",
+   "body": "{name}, {discount}% off. Fitness ka jazba saath.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "ft059",
+   "category": "Sports & Fitness",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand}: workout ka naya saathi? 💪",
+   "body": "{name}, {price}. Naya saathi, purani himmat.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "ft060",
+   "category": "Sports & Fitness",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Fitness deal: {discount}% off 💪",
+   "body": "{name}, {price}. Kal se pakka, aaj order.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "ft061",
+   "category": "Sports & Fitness",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Sehat ka kharcha kam.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "ft062",
+   "category": "Sports & Fitness",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ke saath sehat bhi 💜",
+   "body": "{name} at {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

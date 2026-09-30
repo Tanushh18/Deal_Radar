@@ -1,0 +1,59 @@
+# category: Any
+# prefix: nd
+# kinds: nudge
+away|dost|{count} nayi deals aayi hain jab aap gaye the 👀|Top pick: {name}, {price}.
+away|tease|Kaafi din ho gaye, deals badh gayi hain 📈|{count} naye deals. Ek: {name}, {price}.
+away|heart|Aap yaad aaye 💜|{count} deals nayi aayi. Aapke liye ek: {name}.
+away|dost|Aapke jaane ke baad {count} deals aayi 🎁|{name}, {price}. Ek nazar.
+away|tease|Hum yahin hain, aap kahan? 👋|{count} nayi deals. Sabse acchi: {name}.
+away|self|Kaafi din se app khola nahi? Koi baat nahi 😌|{count} nayi deals ready hain.
+away|dost|{count} naye deals, aur wapas aane ka koi jhanjhat nahi 🙌|{name}, {price}. Jab bhi mann kare, ek nazar.
+away|tease|Deals chalti rahi, aap chhutti pe the? 🏖️|{count} nayi. {name}, {price}.
+away|heart|Jab bhi mann kare, hum yahin hain 🌷|{count} nayi deals. Ek: {name}.
+away|dost|Ek chhota sa update: {count} nayi deals 📬|{name}, {price}. Chhota sa update, seedha aap tak.
+away|tease|Kuch deals aapka intezaar kar rahi hain ⌛|{count} nayi. {name} — {price}.
+away|self|App ko yaad aayi, aapki 😄|{count} nayi deals. {name}, {price}.
+away|dost|Aaj ki top deal: {name} 🏆|{count} nayi deals aur. Price: {price}.
+away|tease|Aap nahi the, deals ne party kar li 🎉|{count} nayi. {name}, {price}.
+away|heart|Aapke bina thoda soona tha 💜|{count} nayi deals. {name}.
+away|dost|Sirf ek nazar: {count} nayi deals 👀|{name}, {price}. Bas ek nazar, phir aapki marzi.
+away|tease|Kaafi kuch badla hai jab aap the nahi 🔄|{count} nayi deals. {name}, {price}.
+away|self|Time nahi mila tha na? Chalo, ek minute 😊|{count} nayi deals. {name} — {price}.
+away|dost|Aapke liye kuch alag chun ke rakha hai 🎯|{name}, {price}. {count} nayi deals bhi.
+away|tease|Ye deal dekh ke aap wapas aa jaoge 😏|{name}, {price}. Wapas aane ka ek aur bahana.
+away|heart|Wapas aana hamesha achha lagta hai 🏡|{count} nayi deals. {name}.
+away|dost|Aaj ke best: {name} 🌟|{count} nayi deals, price {price}.
+away|tease|Bahut kuch miss kiya aapne 😄|{count} nayi deals. {name}, {price}.
+away|self|Pichli baar ka wishlist yaad hai? Naye deals aa gaye 📝|{count} nayi. {name}.
+away|dost|Ek chhota sa yaad dilaana 🔔|{count} nayi deals. {name}, {price}.
+away|tease|Deals badh gayi, aap kahan the? 🤔|{count} nayi. {name}, {price}.
+away|heart|Aapki pasand ka kuch mila 💜|{name}, {price}. {count} nayi deals aur.
+away|dost|Kaafi din baad, ek achhi deal 🌤️|{name}, {price}. Kaafi din baad bhi wahi deal wali baat.
+away|tease|Bina notice diye {count} deals aa gayi 📢|{name}, {price}. Bina bataye aa gayi, ab batate hain.
+away|self|Ek baar dekh lo, phir jaao 😌|{count} nayi deals. {name}.
+lowest|dost|Lowest price we've seen: {price} 📉|{name}. Hamare data ke hisaab se sabse kam.|L
+lowest|tease|Ye ab tak ki sabse kam price hai 🎯|{name} — {price}. Hamare data mein.|L
+lowest|heart|Aisa mauka kam aata hai, par aaya hai 💜|{name}, {price}. Hamare records mein sabse kam.|L
+lowest|dost|Record price: {price} 📊|{name}. Ye humne abhi tak ki sabse kam dekhi.|L
+lowest|tease|Price ne apna hi record tod diya 🏅|{name} — {price}. Ab tak ki sabse kam.|L
+lowest|self|Kaafi din se dekh rahe the? Ye price ab sabse kam hai 😌|{name}, {price}. Hamare data mein iski sabse kam price.|L
+lowest|dost|Sabse kam price, humare data ke hisaab se 🔎|{name} at {price}. Hamare records mein ab tak ki sabse kam.|L
+lowest|tease|Ye deal aap miss mat karna (par decide aapka hai) 😄|{name} — {price}. Hamare data mein lowest.|L
+lowest|heart|Aaj ka special: ab tak ki sabse achhi price 💜|{name}, {price}. Hamare data mein sabse achhi price.|L
+sale|dost|{sale} {when} 🎉|Hum prices track kar rahe hain, taaki asli deals pehchano.
+sale|tease|{sale} {when}. Taiyaar? 😏|Hum nazar rakhe hue hain, aap aaram karo.
+sale|heart|{sale} {when} 💜|Hum kaam par hain: asli deal aur hype mein farak dikhayenge.
+sale|dost|{sale} {when} 🛍️|Ham prices dekh rahe hain, aap bas sahi waqt pe aana.
+sale|tease|{sale} {when} 👀|Deals aur hype alag alag hote hain. Hum batayenge kaunsi asli hai.
+sale|self|{sale} {when} 📅|Calendar mein daal lo, baaki hum sambhal lenge.
+sale|dost|{sale} {when} 🎯|Asli discount aur pura hype: hum alag karenge.
+sale|heart|{sale} {when} ✨|Hum price history dekh ke sahi deals dhundhenge.
+sale|tease|{sale} {when} 🔍|Hum hoshiyari se nazar rakhe hue hain. Aap chai piyo.
+sale|dost|{sale} {when} 🔔|Reminder ke liye hi bheja hai. Koi pressure nahi.
+sale|self|{sale} {when} 📆|Dates approximate ho sakti hain. Hum track kar rahe hain, calendar mein daal lo.
+sale|tease|{sale} {when} 🏷️|Deals ke saath price history bhi dikhayenge.
+evening|dost|Shaam ho gayi, ek nazar dalo 🌆|{count} nayi deals. {name}, {price}.
+evening|tease|Chai ka time hai, deals ka bhi ☕|{count} nayi deals. {name}.
+evening|heart|Din ke baad ka aaram, ek deal ke saath 🌇|{name}, {price}. Din ke baad thoda sa aaram.
+evening|dost|Aaj ka din kaisa raha? Ek deal dekh lo 😊|{name}, {price}. Din kaisa bhi ho, ye deal achhi hai.
+evening|tease|Shaam ki scrolling: hum ready hain 📱|{count} nayi deals. {name}.

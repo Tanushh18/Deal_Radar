@@ -1,0 +1,841 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Home & Kitchen (home_kitchen). Built from src/home_kitchen.txt."
+ },
+ "templates": [
+  {
+   "id": "hk001",
+   "category": "Home & Kitchen",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai banane ka naya tareeka 🫖",
+   "body": "{name}, {price}. Doodh ubalne se bachna.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning",
+    "evening"
+   ]
+  },
+  {
+   "id": "hk002",
+   "category": "Home & Kitchen",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai ka pateela purana ho gaya? ☕",
+   "body": "{name} at {price}. Adrak wali chai ko bhi izzat chahiye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk003",
+   "category": "Home & Kitchen",
+   "mood": "chai",
+   "tone": "heart",
+   "title": "Ghar ki chai, ghar ka sukoon 🏠",
+   "body": "{name} — {discount}% off. Chhoti bachat bhi badi lagti hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk004",
+   "category": "Home & Kitchen",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, ghar ke liye kuch achha 🏠",
+   "body": "{name} for {price}. Ghar bhi apna, cheez bhi apni.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk005",
+   "category": "Home & Kitchen",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Pehli tareekh ka kitchen upgrade 🍳",
+   "body": "{name}, {price}. Maggi ab bhi banegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk006",
+   "category": "Home & Kitchen",
+   "mood": "salary",
+   "tone": "self",
+   "title": "Salary ka aadha ghar ke saaman mein jaata hai 🧺",
+   "body": "{name} at {price}. Ye wala kaam ka hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk007",
+   "category": "Home & Kitchen",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end: kitchen mein sirf namak aur pyaz 🧅",
+   "body": "{name}, {price}. Baaki jugaad se.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk008",
+   "category": "Home & Kitchen",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Steel ke dabbe: kitchen ki rongak 🥘",
+   "body": "{name} for {price}. Kabhi na kabhi zaroor kaam aayenge.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk009",
+   "category": "Home & Kitchen",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: safai ka din, ya sirf shopping ka? 🧹",
+   "body": "{name}, {price}. Dono chalega.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "hk010",
+   "category": "Home & Kitchen",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj biryani banane ka mann hai? 🍚",
+   "body": "{name} at {price}. Handi ready rakho.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "hk011",
+   "category": "Home & Kitchen",
+   "mood": "sunday",
+   "tone": "self",
+   "title": "Sunday ko cooker ki seeti se neend khulti hai 🍲",
+   "body": "{name}, {discount}% off. Dekh lo, phir apni marzi.",
+   "needs": [
+    "discount"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "hk012",
+   "category": "Home & Kitchen",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday: lunch box mein wahi purani sabzi 🍱",
+   "body": "{name}, {price}. Naya dabba, naya mood.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "hk013",
+   "category": "Home & Kitchen",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Subah ke nashte ka scene 🍳",
+   "body": "{name} for {price}. Alarm ke baad jaldi ho jayega.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "hk014",
+   "category": "Home & Kitchen",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "WFH: kitchen aur office ke beech ek desk 🍽️",
+   "body": "{name}, {price}. Lunch break mein seedha chulha.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "hk015",
+   "category": "Home & Kitchen",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "Ghar se kaam: bartan dhone ka time nahi 🍽️",
+   "body": "{name} at {price}. Dishwasher nahi to jugaad hi sahi.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "hk016",
+   "category": "Home & Kitchen",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "PG ka kitchen: ek gas, sau jhagde 🔥",
+   "body": "{name}, {price}. Apna induction lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk017",
+   "category": "Home & Kitchen",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Maggi ke liye ek kettle 🍜",
+   "body": "{name} for {price}. Electric kettle ka jalwa.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk018",
+   "category": "Home & Kitchen",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Roommate ka bartan mat jhoota karo 😜",
+   "body": "{name}, {price}. Apni plate alag rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk019",
+   "category": "Home & Kitchen",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy: 'kitchen mein kuch nahi hai?' Tum: 'ab hai' 😎",
+   "body": "{name}, {price}. Ab kitchen mein sach mein kuch hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk020",
+   "category": "Home & Kitchen",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Mummy ke haath ka khana, sabse alag 💜",
+   "body": "{name} at {price}. Unki madad karne wali cheez.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk021",
+   "category": "Home & Kitchen",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Papa: 'ye kya naya aaya?' 🤨",
+   "body": "{name}, {discount}% off. Kaam ki cheez hai, papa.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk022",
+   "category": "Home & Kitchen",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar aa raha hai, ghar saja lo 🪔",
+   "body": "{name}, {price}. Rangoli ke saath diyas.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk023",
+   "category": "Home & Kitchen",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Mehmaan aa rahe hain? Kitchen ready? 🍽️",
+   "body": "{name} for {price}. Plate aur glasses bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk024",
+   "category": "Home & Kitchen",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Diwali ki safai ke baad naya kuch 🪔",
+   "body": "{name} — {discount}% off. Tumhari pasand ka rate.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk025",
+   "category": "Home & Kitchen",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Match ke liye snacks ready 🍿",
+   "body": "{name}, {price}. Bowl bhi chahiye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk026",
+   "category": "Home & Kitchen",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Ghar wo jagah jahan tum aaraam karte ho 🏡",
+   "body": "{name} at {price}. Use aur sundar banao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk027",
+   "category": "Home & Kitchen",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Chhoti cheezein ghar ko ghar banati hain 💜",
+   "body": "{name}, {price}. Chhoti cheezein, ghar ki jaan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk028",
+   "category": "Home & Kitchen",
+   "mood": "cookware",
+   "tone": "dost",
+   "title": "Kadhai: har ghar ki jaan 🍳",
+   "body": "{name} for {price}. Tadka pakka lagega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk029",
+   "category": "Home & Kitchen",
+   "mood": "cookware",
+   "tone": "tease",
+   "title": "Non-stick pan: sabzi ki pehli pasand 🍳",
+   "body": "{name}, {price}. Tadka lagane ko taiyaar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk030",
+   "category": "Home & Kitchen",
+   "mood": "cookware",
+   "tone": "self",
+   "title": "Cooker ka gasket dhila ho gaya? 🍲",
+   "body": "{name} at {price}. Seeti ab aur zor se.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk031",
+   "category": "Home & Kitchen",
+   "mood": "cookware",
+   "tone": "dost",
+   "title": "Tawa: roti ka best friend 🫓",
+   "body": "{name}, {discount}% off. Kabhi kabhi sab kuch theek baithta hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk032",
+   "category": "Home & Kitchen",
+   "mood": "cookware",
+   "tone": "tease",
+   "title": "Pressure cooker: 3 seeti ka scene 🔔",
+   "body": "{name} for {price}. Dal ready, kaam done.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk033",
+   "category": "Home & Kitchen",
+   "mood": "cookware",
+   "tone": "heart",
+   "title": "Ek achhi kadhai, pyaar ka tadka 💜",
+   "body": "{name}, {price}. Tadke ki aawaz hi ghar ki pehchaan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk034",
+   "category": "Home & Kitchen",
+   "mood": "cookware",
+   "tone": "self",
+   "title": "Purana pan? Ab replace ka time 🥲",
+   "body": "{name} at {price}. Purane ko aaram, naye ko kaam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk035",
+   "category": "Home & Kitchen",
+   "mood": "storage",
+   "tone": "dost",
+   "title": "Dabbe: sab kuch alag, ghar saaf 🧺",
+   "body": "{name}, {price}. Masale ek jagah.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk036",
+   "category": "Home & Kitchen",
+   "mood": "storage",
+   "tone": "tease",
+   "title": "Container: jo hamesha kam padta hai 😅",
+   "body": "{name} for {price}. Ek aur kharido.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk037",
+   "category": "Home & Kitchen",
+   "mood": "storage",
+   "tone": "self",
+   "title": "Fridge ke andar ka scene: pyaz, ek bottle, aur khaali dabba 🥶",
+   "body": "{name} — {discount}% off. Price ne kaha 'aao'.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk038",
+   "category": "Home & Kitchen",
+   "mood": "storage",
+   "tone": "dost",
+   "title": "Lunch box: subah ki bhaag daud mein 🍱",
+   "body": "{name} at {price}. Bag mein daalne se pehle dhakkan check karna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk039",
+   "category": "Home & Kitchen",
+   "mood": "storage",
+   "tone": "heart",
+   "title": "Ghar ki har cheez ki apni jagah hoti hai 🏠",
+   "body": "{name}, {price}. Sabki apni jagah, sabka apna kaam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk040",
+   "category": "Home & Kitchen",
+   "mood": "storage",
+   "tone": "tease",
+   "title": "Bottle: paani peena bhoolna band 💧",
+   "body": "{name} for {price}. Har ghante ek glass.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk041",
+   "category": "Home & Kitchen",
+   "mood": "cleaning",
+   "tone": "dost",
+   "title": "Jhadu ko chhutti dene ka time 🧹",
+   "body": "{name}, {price}. Ghar ki safai ab aasan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk042",
+   "category": "Home & Kitchen",
+   "mood": "cleaning",
+   "tone": "tease",
+   "title": "Mop: farsh ko bhi chamak chahiye ✨",
+   "body": "{name} at {price}. Peeche hate ke chalna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk043",
+   "category": "Home & Kitchen",
+   "mood": "cleaning",
+   "tone": "self",
+   "title": "Safai ka mann hai, par bahana bhi 😅",
+   "body": "{name}, {discount}% off. Chalo, ek nazar to banti hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk044",
+   "category": "Home & Kitchen",
+   "mood": "cleaning",
+   "tone": "heart",
+   "title": "Saaf ghar, saaf mann 💜",
+   "body": "{name} for {price}. Saaf ghar mein mann bhi halka.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk045",
+   "category": "Home & Kitchen",
+   "mood": "cleaning",
+   "tone": "dost",
+   "title": "Washing machine ka size: ghar ke hisaab se 🧺",
+   "body": "{name}, {price}. Ghar ke hisaab se chuno.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk046",
+   "category": "Home & Kitchen",
+   "mood": "cleaning",
+   "tone": "tease",
+   "title": "Kapde dhone ka jhanjhat khatam 👕",
+   "body": "{name} at {price}. Kapde dhulne ka intezaar bhi aaram se.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk047",
+   "category": "Home & Kitchen",
+   "mood": "decor",
+   "tone": "dost",
+   "title": "Ghar ki deewarein bhi kuch kehna chahti hain 🖼️",
+   "body": "{name}, {price}. Ek frame lagao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk048",
+   "category": "Home & Kitchen",
+   "mood": "decor",
+   "tone": "tease",
+   "title": "Cushion covers: ek naya rang, ek naya mood 🛋️",
+   "body": "{name} for {price}. Naya rang, naye mehmaan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk049",
+   "category": "Home & Kitchen",
+   "mood": "decor",
+   "tone": "heart",
+   "title": "Ghar ko ghar banane wali chhoti cheezein 🌿",
+   "body": "{name}, {discount}% off. Jeb halki, dil halka.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk050",
+   "category": "Home & Kitchen",
+   "mood": "decor",
+   "tone": "self",
+   "title": "Deewar khali hai, par hum bharenge 😅",
+   "body": "{name} at {price}. Deewar bhi kuch kehna chahti hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk051",
+   "category": "Home & Kitchen",
+   "mood": "decor",
+   "tone": "dost",
+   "title": "Plant: hara-bhara ghar, hara-bhara mann 🌱",
+   "body": "{name}, {price}. Hara-bhara ghar, hara-bhara mann.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk052",
+   "category": "Home & Kitchen",
+   "mood": "decor",
+   "tone": "tease",
+   "title": "Lights: ghar bhi party mood mein 💡",
+   "body": "{name} for {price}. Tyohaar ke baad bhi chalega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk053",
+   "category": "Home & Kitchen",
+   "mood": "decor",
+   "tone": "heart",
+   "title": "Ek kone mein ek chhoti si khushi 💜",
+   "body": "{name}, {price}. Ek kona, ek nayi khushi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk054",
+   "category": "Home & Kitchen",
+   "mood": "bed",
+   "tone": "dost",
+   "title": "Bedsheet: neend ka sabse achha dost 🛏️",
+   "body": "{name} at {price}. Dhoop mein sukhana mat bhoolna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk055",
+   "category": "Home & Kitchen",
+   "mood": "bed",
+   "tone": "tease",
+   "title": "Pillow: gardan bolti hai 'thank you' 🙏",
+   "body": "{name}, {discount}% off. Kaam ki cheez, kaam ka rate.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk056",
+   "category": "Home & Kitchen",
+   "mood": "bed",
+   "tone": "self",
+   "title": "Blanket: sardi ka pehla pyaar ❄️",
+   "body": "{name} for {price}. Subah uthna mushkil hi rahega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk057",
+   "category": "Home & Kitchen",
+   "mood": "bed",
+   "tone": "heart",
+   "title": "Achhi neend, achha din 🌙",
+   "body": "{name}, {price}. Subah taazgi se uthoge.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "hk058",
+   "category": "Home & Kitchen",
+   "mood": "bed",
+   "tone": "dost",
+   "title": "Curtains: dhoop ko bhi rukna padega ☀️",
+   "body": "{name} at {price}. Dhoop ko thodi der ka break.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk059",
+   "category": "Home & Kitchen",
+   "mood": "bed",
+   "tone": "tease",
+   "title": "Mattress: peeth ko bhi aaram chahiye 🛌",
+   "body": "{name}, {price}. Bhaari mann se le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk060",
+   "category": "Home & Kitchen",
+   "mood": "appliance",
+   "tone": "dost",
+   "title": "Mixer grinder: chatni ka shahenshah 🌶️",
+   "body": "{name} for {price}. Aawaz thodi zyada hogi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk061",
+   "category": "Home & Kitchen",
+   "mood": "appliance",
+   "tone": "tease",
+   "title": "Toaster: brown bread ka best friend 🍞",
+   "body": "{name}, {discount}% off. Aaj kuch sasta, kuch sahi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "hk062",
+   "category": "Home & Kitchen",
+   "mood": "appliance",
+   "tone": "self",
+   "title": "Kettle: chai ka jugaad 🫖",
+   "body": "{name} at {price}. Chai ki pehli boond ka intezaar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk063",
+   "category": "Home & Kitchen",
+   "mood": "appliance",
+   "tone": "heart",
+   "title": "Air fryer: samose ka naya ghar 🍟",
+   "body": "{name}, {price}. Chai bhi ready rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk064",
+   "category": "Home & Kitchen",
+   "mood": "appliance",
+   "tone": "dost",
+   "title": "Rice cooker: chawal ka tension khatam 🍚",
+   "body": "{name} for {price}. Chawal ka tension khatam, chain shuru.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk065",
+   "category": "Home & Kitchen",
+   "mood": "appliance",
+   "tone": "tease",
+   "title": "Induction: ek plate, sau dishes 🍳",
+   "body": "{name}, {price}. Ek plate, sau swaad.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk066",
+   "category": "Home & Kitchen",
+   "mood": "appliance",
+   "tone": "self",
+   "title": "Iron: kapdon ki salvatein bhi rulati hain 👔",
+   "body": "{name} at {price}. Naya le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "hk067",
+   "category": "Home & Kitchen",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka kitchen saaman dekha? 🍳",
+   "body": "{name}, {discount}% off. Kaam ka hai.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "hk068",
+   "category": "Home & Kitchen",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand}: ghar ke liye ek achhi cheez 🏠",
+   "body": "{name}, {price}. Ye wali ghar pe achhi lagegi.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "hk069",
+   "category": "Home & Kitchen",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Ghar ki deal: {discount}% off 🏠",
+   "body": "{name}, {price}. Bhaari cheez hai, price halka.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "hk070",
+   "category": "Home & Kitchen",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Math simple hai, ghar khush.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "hk071",
+   "category": "Home & Kitchen",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ka ghar mein bhi jagah hai 💜",
+   "body": "{name} at {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

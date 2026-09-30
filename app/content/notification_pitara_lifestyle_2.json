@@ -1,0 +1,392 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (lifestyle_2). Built from src/lifestyle_2.txt."
+ },
+ "templates": [
+  {
+   "id": "l2001",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "dost",
+   "title": "Skincare ka scene: ek serum ya do 💧",
+   "body": "{name}, {price}. Chehra bhi thank you bolega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2002",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "tease",
+   "title": "Lipstick ka shade: aaj ka mood 💄",
+   "body": "{name} at {price}. Aaj kaunsa shade, kaunsa mood?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2003",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "self",
+   "title": "Face wash: din mein 2 baar, yaad kitni baar? 🫧",
+   "body": "{name} — {discount}% off. Rate aaj tumhari taraf hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2004",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "heart",
+   "title": "Khud ka khayal, ek chhoti si cheez se shuru 🌷",
+   "body": "{name} for {price}. Shuruat ek chhoti cheez se hoti hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2005",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "dost",
+   "title": "Perfume: jo yaad reh jaye, wo achha 🌸",
+   "body": "{name}, {price}. Log poochenge, 'kaun sa perfume?'",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2006",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "tease",
+   "title": "Hair oil ka mausam wapas aaya 🌿",
+   "body": "{name} at {price}. Baalon ka mausam phir aa gaya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2007",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "self",
+   "title": "Makeup remover: raat ka sabse zaroori kaam 🌙",
+   "body": "{name}, {price}. Raat ko chehra bhi aaram maangta hai.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "l2008",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "dost",
+   "title": "Compact: chhota, handy, hamesha saath 🪞",
+   "body": "{name} for {price}. Bag mein aaram se aa jaye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2009",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "tease",
+   "title": "Nail polish: haath ki shaan 💅",
+   "body": "{name} — {discount}% off. Wallet ko bhi tasalli.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2010",
+   "category": "Any",
+   "mood": "beauty",
+   "tone": "heart",
+   "title": "Sunscreen: roz ka chhota sa pyaar ☀️",
+   "body": "{name} at {price}. Roz ka chhota sa pyaar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2011",
+   "category": "Any",
+   "mood": "home",
+   "tone": "dost",
+   "title": "Kitchen mein ek naya gadget ka mann? 🍳",
+   "body": "{name}, {price}. Kitchen ko ek naya dost.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2012",
+   "category": "Any",
+   "mood": "home",
+   "tone": "tease",
+   "title": "Ghar ki safai ko aasan banao 🧹",
+   "body": "{name} for {price}. Jhadu ko chhutti.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2013",
+   "category": "Any",
+   "mood": "home",
+   "tone": "self",
+   "title": "Alamari mein jagah nahi? Storage box ka scene 📦",
+   "body": "{name}, {discount}% off. Aaj discount ne dil jeeta.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2014",
+   "category": "Any",
+   "mood": "home",
+   "tone": "dost",
+   "title": "Bedsheet: neend ka pehla dost 🛏️",
+   "body": "{name}, {price}. Neend ko naya bistar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2015",
+   "category": "Any",
+   "mood": "home",
+   "tone": "tease",
+   "title": "Cushion: sofa ka mood 🛋️",
+   "body": "{name} for {price}. Sofa ka mood aaj naya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2016",
+   "category": "Any",
+   "mood": "home",
+   "tone": "dost",
+   "title": "Bottle: din bhar paani, din bhar tazgi 💧",
+   "body": "{name} at {price}. Paani peena mat bhoolna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2017",
+   "category": "Any",
+   "mood": "foot",
+   "tone": "dost",
+   "title": "Naye joote: pehla kadam naya 👟",
+   "body": "{name}, {price}. Naya kadam, naya rasta.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2018",
+   "category": "Any",
+   "mood": "foot",
+   "tone": "tease",
+   "title": "Chappal: ghar ka sabse comfy dost 🩴",
+   "body": "{name} for {price}. Ghar ke andar aaram sabse pehle.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2019",
+   "category": "Any",
+   "mood": "foot",
+   "tone": "self",
+   "title": "Joote ka sole ghis gaya: time to retire 🥲",
+   "body": "{name}, {discount}% off. Discount ka sach dekh ke lo.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2020",
+   "category": "Any",
+   "mood": "foot",
+   "tone": "heart",
+   "title": "Chalte raho, achhe joote ke saath 🚶",
+   "body": "{name} at {price}. Chalte raho, aage badhte raho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2021",
+   "category": "Any",
+   "mood": "foot",
+   "tone": "dost",
+   "title": "Sneakers: jeans ke saath hamesha hit 👖",
+   "body": "{name}, {price}. Jeans ke saath ye hamesha hit.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2022",
+   "category": "Any",
+   "mood": "foot",
+   "tone": "tease",
+   "title": "Heels: confidence ka ek inch 👠",
+   "body": "{name} for {price}. Confidence ka ek inch.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2023",
+   "category": "Any",
+   "mood": "kid",
+   "tone": "tease",
+   "title": "Khilona: jo bachcha ek din mein todega 🧸",
+   "body": "{name} at {price}. Ek din to todega hi, par khelega bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2024",
+   "category": "Any",
+   "mood": "kid",
+   "tone": "heart",
+   "title": "Bachche ki muskaan sabse achhi deal hai 💜",
+   "body": "{name} — {discount}% off. Ek nazar, ek tap, ek muskaan.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2025",
+   "category": "Any",
+   "mood": "kid",
+   "tone": "dost",
+   "title": "Stationery: pencil gayab, phir naya 🖍️",
+   "body": "{name}, {price}. Pencil gayab hone ki parampara jaari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2026",
+   "category": "Any",
+   "mood": "fit",
+   "tone": "tease",
+   "title": "Dumbbell: ghar pe hi gym 💪",
+   "body": "{name}, {price}. Ghar pe gym, bina fees ke.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2027",
+   "category": "Any",
+   "mood": "fit",
+   "tone": "heart",
+   "title": "Sehat ke liye ek chhota kadam 🌟",
+   "body": "{name} — {discount}% off. Price tag ne bhi lachak dikhayi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2028",
+   "category": "Any",
+   "mood": "book",
+   "tone": "tease",
+   "title": "Diary: aapke shabd, aapki kahani 📔",
+   "body": "{name} for {price}. Likho, jo dil mein aaye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2029",
+   "category": "Any",
+   "mood": "book",
+   "tone": "heart",
+   "title": "Kitaab: sabse achha saathi 💜",
+   "body": "{name} at {price}. Purana dost, hamesha naya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2030",
+   "category": "Any",
+   "mood": "bag",
+   "tone": "self",
+   "title": "Wallet: paisa nahi, par style hai 💳",
+   "body": "{name} — {discount}% off. Bas ek nazar, phir jo dil kahe.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2031",
+   "category": "Any",
+   "mood": "snack",
+   "tone": "tease",
+   "title": "Chocolate: mood theek karne ka jugaad 🍫",
+   "body": "{name} for {price}. Mood theek karne ka meetha jugaad.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "l2032",
+   "category": "Any",
+   "mood": "snack",
+   "tone": "self",
+   "title": "Diet kal se, snacks aaj se 😅",
+   "body": "{name} — {discount}% off. Wallet ne dheere se 'theek hai' bola.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "l2033",
+   "category": "Any",
+   "mood": "snack",
+   "tone": "dost",
+   "title": "Chai patti: subah ki jaan ☕",
+   "body": "{name}, {price}. Subah ki chai, subah ka jaan.",
+   "needs": [
+    "price"
+   ]
+  }
+ ]
+}

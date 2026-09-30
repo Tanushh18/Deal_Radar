@@ -1,0 +1,53 @@
+# category: Any
+# prefix: pd
+# kinds: price_drop
+alert|heart|📉 Price drop: {price}|{name} — aapke {target} alert se neeche aa gayi.
+alert|tease|🎯 Target hit: {price}|{name} ne aapka {target} wala target chhoo liya.
+alert|dost|📉 Ye gir gayi: {price}|{name} — aapka {target} ka alert kaam kar gaya.
+alert|tease|Aapki wait ka phal mila 🍎|{name} ab {price} mein. Alert {target} tha.
+alert|dost|Bell baji 🔔 {price}|{name} — {target} ke andar aa gayi.
+alert|heart|Intezaar khatam 💜|{name} ab {price}. Aapne {target} pe alert rakha tha.
+alert|tease|Alert laga ke so gaye? Deal ne jagaya 😄|{name}, {price}. Target: {target}.
+alert|dost|Price ne aapki baat maan li 🙌|{name} ab {price}. Aapka target {target} tha.
+alert|tease|Aapka {target} wala alert baj gaya 🔔|{name} — {price}. Ab aap batao.
+alert|heart|Sabr ka meetha phal 🍯|{name} at {price}. Target {target} se neeche.
+alert|self|Alert lagaya tha, bhool gaye the na? 😅|{name} ab {price}. Hum nahi bhoole.
+alert|dost|Ye lo, wahi cheez, kam price mein 🎉|{name}, {price}. Aapka target: {target}.
+alert|tease|Price ne gym join kar liya, ab neeche aa gayi 🏋️|{name} — {price}. Price neeche, tum upar.
+alert|dost|{price} ho gaya. Ab decide karo 👇|{name}. Aapka {target} wala alert.
+alert|tease|Alert ne kaha: 'bhai, ab dekh le' 📣|{name} — {price}, {target} se neeche.
+alert|heart|Aapki pasand, ab aapke budget mein 💜|{name} at {price}. Alert {target}.
+alert|dost|Alert on, deal on 🔔|{name}, {price}. Target {target} cross.
+alert|tease|Chhupke se price gir gayi 🤫|{name} — {price}. Aapne {target} maanga tha.
+alert|self|Ek alert, ek intezaar, ek khushi ✨|{name} ab {price}.
+alert|dost|Ye wali price aapne hi maangi thi 😌|{name} — {price}. Target: {target}.
+alert|tease|Alert set karna: sabse smart shopping 🧠|{name} at {price}. Aapka {target} pass.
+alert|heart|Aaj ka din achha hai 🌞|{name} ab {price}. Aapka {target} ka alert hit.
+alert|dost|Price hit! 🎯|{name} — {price}. Target {target} se neeche.
+alert|tease|Aapki mehnat rang layi (alert lagana bhi mehnat hai) 😄|{name}, {price}. Alert lagana bhi ek hunar hai.
+alert|dost|{price}: aapke target ke andar 📉|{name}. Alert {target}.
+alert|self|Sabr rakha, price gir gayi 🧘|{name} — {price}. Alert {target}.
+alert|tease|Hum kehte the na, price girti hai 🍂|{name}, {price}. Aapka {target} pass.
+alert|heart|Dhairya ka phal meetha hota hai 🍬|{name} — {price}. Target {target}.
+alert|dost|Ye wahi hai jo aap chahte the 🎁|{name} at {price}. Alert {target} tha.
+alert|tease|Alert ka jawab: 'haan, ab le lo' ✅|{name}, {price}. Target {target}.
+alert|dost|Price aapke target ke neeche 🎉|{name} — {price}. Ab aapki baari.
+alert|self|Ab to bahana bhi nahi 😅|{name} ab {price}. Target {target} pass.
+alert|tease|Alert lagane wale hi jeette hain 🏆|{name} at {price}. Alert lagane wale kabhi haarte nahi.
+alert|heart|Aapka wait aapko yahan tak laya 💜|{name} — {price}. Target {target}.
+alert|dost|Deal aapki shart pe khari utri 📏|{name}, {price}. Shart: {target}.
+alert|tease|Aapka {target} ab peeche reh gaya 😎|{name} ab {price}.
+alert|dost|Price gir gayi, ab aapki baari 🔔|{name} — {price}. Ab decision tumhara.
+alert|self|Alert ne kaam kar diya, ab aap kar do 😄|{name}, {price}. Target {target}.
+alert|tease|Lo, phir se deal ne aapka naam liya 📢|{name} at {price}. Alert {target}.
+alert|heart|Aapki cheez ab aur paas aa gayi 💜|{name} — {price}. Target {target}.
+alert|dost|Price aapke target se {target} ke andar 📉|{name}, {price}. Target ke andar, tumhare paas.
+alert|tease|Alert bajta hai to kuch achha hota hai 🔔|{name} — {price}. Aapka {target} pass.
+alert|self|Bhool jao alert, price ne yaad rakha 😌|{name}, {price}. Target {target}.
+alert|dost|Deal ne aapko yaad kiya 💌|{name} — {price}. Target {target} se neeche.
+alert|tease|Shukr hai alert lagaya tha 🙏|{name}, {price}. Aapka {target} cross.
+alert|dost|Price fell, aap khush hue 😊|{name} — {price}. Target {target}.
+alert|heart|Aapki pasand, aapki price pe 💜|{name} at {price}. Aapki pasand, aapke budget mein.
+alert|tease|Wait ka scene khatam, deal ka scene shuru 🎬|{name}, {price}. Target {target}.
+alert|dost|{name} ne {target} ko haraa diya 🏆|Ab {price}. Dekh lo.
+alert|self|Achha hua alert lagaya 🧠|{name} — {price}. Aapka {target} pass.

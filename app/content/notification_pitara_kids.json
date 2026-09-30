@@ -1,0 +1,732 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Baby & Kids (kids). Built from src/kids.txt."
+ },
+ "templates": [
+  {
+   "id": "kd001",
+   "category": "Baby & Kids",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai thandi, bachcha uth gaya ☕",
+   "body": "{name}, {price}. Chai aur bachcha, dono garam rakhne padte hain.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "kd002",
+   "category": "Baby & Kids",
+   "mood": "chai",
+   "tone": "heart",
+   "title": "Chai ka ek ghoont, bachche ki ek muskaan 💜",
+   "body": "{name} at {price}. Chai garam, bachcha khush.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd003",
+   "category": "Baby & Kids",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, bachche ke liye ek chhota sa treat 🧸",
+   "body": "{name}, {price}. Uski muskaan wapas mil jayegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd004",
+   "category": "Baby & Kids",
+   "mood": "salary",
+   "tone": "self",
+   "title": "Salary ka aadha bachche ke sapno mein jaata hai 👶",
+   "body": "{name} for {price}. Sapne bhi sasta nahi hote.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd005",
+   "category": "Baby & Kids",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end: diapers ka stock aur wallet dono kam 😅",
+   "body": "{name}, {price}. Bachche ki cheez pehle.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd006",
+   "category": "Baby & Kids",
+   "mood": "monthend",
+   "tone": "dost",
+   "title": "Bachche ki zaroorat pehle, baaki baad mein 🍼",
+   "body": "{name} at {price}. Baaki kharche thoda ruk sakte hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd007",
+   "category": "Baby & Kids",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: bachche ke saath khelne ka din 🧩",
+   "body": "{name}, {price}. Games raat tak chalenge.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "kd008",
+   "category": "Baby & Kids",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj bachche ko bahar le jao 🌳",
+   "body": "{name} for {price}. Ghar mein chaos ka time nahi.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "kd009",
+   "category": "Baby & Kids",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday: school ka bag, lunch box, aur late 😅",
+   "body": "{name}, {price}. Subah ki daud mein help.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "kd010",
+   "category": "Baby & Kids",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "School ka pehla din: bachcha nervous, tum bhi 🎒",
+   "body": "{name} at {price}. Pehla din yaadgar hoga.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "kd011",
+   "category": "Baby & Kids",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein bachcha camera ke peeche aa jata hai 😂",
+   "body": "{name}, {price}. Meeting ka celebrity.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "kd012",
+   "category": "Baby & Kids",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Kaam bhi karna hai, bachche ko busy bhi rakhna hai 🧩",
+   "body": "{name} for {price}. Puzzle 10 minute ka shanti.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "kd013",
+   "category": "Baby & Kids",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Dadi-nani ki kahaniyan aur naye khilone 👵",
+   "body": "{name}, {price}. Kahaniyon ke saath ye bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd014",
+   "category": "Baby & Kids",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Ghar mein khilone ka ambaar? Ek aur ka jugaad 🧸",
+   "body": "{name} at {price}. Bachche ki khushi ke aage kuch nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd015",
+   "category": "Baby & Kids",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Bachcha: 'mujhe ye chahiye'. Tum: 'dekhte hain' 😄",
+   "body": "{name} — {discount}% off. Paisa vasool wali feeling.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "kd016",
+   "category": "Baby & Kids",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar pe bachche ke naye kapde 👶",
+   "body": "{name} for {price}. Photo ke liye ready.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd017",
+   "category": "Baby & Kids",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Diwali pe bachcha ki muskaan sabse badi roshni 🪔",
+   "body": "{name}, {price}. Diyon se badi roshni uski hansi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd018",
+   "category": "Baby & Kids",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Birthday aa raha hai? Gift ka scene 🎂",
+   "body": "{name} at {price}. Return gift bhi dekh lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd019",
+   "category": "Baby & Kids",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Bachcha bhi match dekhna chahta hai, jersey ke saath 🏏",
+   "body": "{name}, {price}. Chhote fan ka bada jazba.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd020",
+   "category": "Baby & Kids",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Bachpan sirf ek baar aata hai 🧸",
+   "body": "{name} for {price}. Jitna ho sake, khush rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd021",
+   "category": "Baby & Kids",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Bachche ki muskaan: duniya ki sabse achhi deal 💜",
+   "body": "{name}, {price}. Uski hansi ka koi MRP nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd022",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "dost",
+   "title": "Khilona: dimaag bhi, dil bhi 🧩",
+   "body": "{name} at {price}. Khelte khelte seekhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd023",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "tease",
+   "title": "Naya khilona aaya, purane ko chhutti 🧸",
+   "body": "{name}, {price}. Kitne khilone ek saath chalenge?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd024",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "self",
+   "title": "Ghar mein khilone ki jagah kam, chaah zyada 😅",
+   "body": "{name} for {price}. Jagah kam padi to dil bada kar lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd025",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "heart",
+   "title": "Jo khilona bachpan ki yaad bane 💜",
+   "body": "{name}, {discount}% off. Halki jeb, bhaari khushi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "kd026",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "dost",
+   "title": "Building blocks: bachche ka pehla architect 🏗️",
+   "body": "{name} at {price}. Kal ka architect aaj ka builder.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd027",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "tease",
+   "title": "Soft toy: neend ka sabse achha saathi 🧸",
+   "body": "{name}, {price}. Neend ke liye ek naram saathi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd028",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "self",
+   "title": "Ek aur toy car? Pichli kahan gayi? 🚗",
+   "body": "{name} for {price}. Sofa ke neeche shayad.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd029",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "dost",
+   "title": "Colouring book: rang bhar do 🎨",
+   "body": "{name}, {price}. Deewar bachi rahe.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd030",
+   "category": "Baby & Kids",
+   "mood": "toys",
+   "tone": "heart",
+   "title": "Bachcha soch raha hai ki ye kya bana? 🎭",
+   "body": "{name} at {price}. Kalpana ko kholne ka mauka.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd031",
+   "category": "Baby & Kids",
+   "mood": "diapers",
+   "tone": "dost",
+   "title": "Diapers: raat ki neend ki guarantee nahi, par help 🍼",
+   "body": "{name}, {price}. Stock rakhna ek achhi idea.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd032",
+   "category": "Baby & Kids",
+   "mood": "diapers",
+   "tone": "self",
+   "title": "Diapers khatam? Raat ke 11 baje ka scene 🌙",
+   "body": "{name} for {price}. Aage se stock rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd033",
+   "category": "Baby & Kids",
+   "mood": "diapers",
+   "tone": "tease",
+   "title": "Baby wipes: sab jagah ke nishan hatane ke liye 🧻",
+   "body": "{name}, {discount}% off. MRP ki ab koi nahi sunta.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "kd034",
+   "category": "Baby & Kids",
+   "mood": "diapers",
+   "tone": "heart",
+   "title": "Nanha mehmaan, badi zimmedariyan 👶",
+   "body": "{name} at {price}. Naye mehmaan ki poori taiyari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd035",
+   "category": "Baby & Kids",
+   "mood": "diapers",
+   "tone": "dost",
+   "title": "Bachcha bada ho raha hai, size bhi badlega 📏",
+   "body": "{name}, {price}. Badhta bachcha, badhti zaroorat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd036",
+   "category": "Baby & Kids",
+   "mood": "feeding",
+   "tone": "dost",
+   "title": "Baby bottle: raat ke doodh ka saathi 🍼",
+   "body": "{name} for {price}. Raat ke doodh ka bharosemand saathi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd037",
+   "category": "Baby & Kids",
+   "mood": "feeding",
+   "tone": "heart",
+   "title": "Mummy-papa ka pyaar, doodh ke saath 💜",
+   "body": "{name}, {price}. Pyaar ke saath poshan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd038",
+   "category": "Baby & Kids",
+   "mood": "feeding",
+   "tone": "tease",
+   "title": "Baby food: naye swaad ka pehla din 🥣",
+   "body": "{name} at {price}. Muh bane, photo lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd039",
+   "category": "Baby & Kids",
+   "mood": "feeding",
+   "tone": "self",
+   "title": "Bachcha kuch nahi khata, par plate mein sab hai 😅",
+   "body": "{name} — {discount}% off. Price tag ne bhi haath jod liye.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "kd040",
+   "category": "Baby & Kids",
+   "mood": "feeding",
+   "tone": "dost",
+   "title": "High chair: khana bhi sath, chaos bhi sath 🪑",
+   "body": "{name} for {price}. Khana saath mein, chaos bhi saath mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd041",
+   "category": "Baby & Kids",
+   "mood": "clothes",
+   "tone": "dost",
+   "title": "Bachche ke kapde: 3 mahine mein chhote 😅",
+   "body": "{name}, {price}. Badhte bachche ki nishani.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd042",
+   "category": "Baby & Kids",
+   "mood": "clothes",
+   "tone": "heart",
+   "title": "Ek chhoti si frock, badi si muskaan 👗",
+   "body": "{name} at {price}. Chhoti si frock, badi si muskaan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd043",
+   "category": "Baby & Kids",
+   "mood": "clothes",
+   "tone": "tease",
+   "title": "Bachcha kapde pehen ke bhaagta hai 🏃",
+   "body": "{name}, {discount}% off. Photo ke liye ek second ruk jao.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "kd044",
+   "category": "Baby & Kids",
+   "mood": "clothes",
+   "tone": "self",
+   "title": "Bachche ka wardrobe: mera wardrobe se bada 😂",
+   "body": "{name} for {price}. Bachche ka wardrobe hamesha jeetega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd045",
+   "category": "Baby & Kids",
+   "mood": "clothes",
+   "tone": "dost",
+   "title": "Jacket: sardi ka pehla hamla 🧥",
+   "body": "{name}, {price}. Bachche ko bhi garam rakhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd046",
+   "category": "Baby & Kids",
+   "mood": "clothes",
+   "tone": "heart",
+   "title": "School uniform: naya saal, naya jazba 🎒",
+   "body": "{name} at {price}. Naya saal, naya jazba.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd047",
+   "category": "Baby & Kids",
+   "mood": "clothes",
+   "tone": "tease",
+   "title": "Sneakers bachche ke liye: dauden ya girein, style mein 👟",
+   "body": "{name}, {price}. Girne ka dar nahi, dauden ka mazaa.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd048",
+   "category": "Baby & Kids",
+   "mood": "school",
+   "tone": "dost",
+   "title": "School ka bag: kitaabein bhi, khilone bhi 🎒",
+   "body": "{name} for {price}. Bhaari hone se pehle check karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd049",
+   "category": "Baby & Kids",
+   "mood": "school",
+   "tone": "tease",
+   "title": "Stationery: jo hamesha khatam ho jaati hai ✏️",
+   "body": "{name}, {discount}% off. Pencil ka scene har mahine.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "kd050",
+   "category": "Baby & Kids",
+   "mood": "school",
+   "tone": "self",
+   "title": "Bachche ka homework: aadha tumhara 😅",
+   "body": "{name} at {price}. Kitaabein le lo, dimaag alag.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd051",
+   "category": "Baby & Kids",
+   "mood": "school",
+   "tone": "heart",
+   "title": "Padhai ki shuruaat, ek chhota sa gift 📚",
+   "body": "{name}, {price}. Padhai ki shuruaat mein ek chhota gift.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd052",
+   "category": "Baby & Kids",
+   "mood": "school",
+   "tone": "dost",
+   "title": "Lunch box: bachcha khaye ya na khaye, ready hai 🍱",
+   "body": "{name} for {price}. Khaye ya na khaye, dabba ready.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd053",
+   "category": "Baby & Kids",
+   "mood": "school",
+   "tone": "tease",
+   "title": "Water bottle: jo gum ho jaati hai roz 💧",
+   "body": "{name}, {price}. Naam likh do.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd054",
+   "category": "Baby & Kids",
+   "mood": "gift",
+   "tone": "heart",
+   "title": "Birthday gift: bachche ki aankhon ki chamak 🎁",
+   "body": "{name} at {price}. Aankhon ki chamak ka koi price nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd055",
+   "category": "Baby & Kids",
+   "mood": "gift",
+   "tone": "dost",
+   "title": "Baby shower ka gift dhoondh rahe ho? 🎀",
+   "body": "{name}, {discount}% off. Aaj price ne sharafat dikhayi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "kd056",
+   "category": "Baby & Kids",
+   "mood": "gift",
+   "tone": "tease",
+   "title": "Return gift: 20 bachche, ek budget 😅",
+   "body": "{name} for {price}. Budget ke andar, sabki muskaan.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd057",
+   "category": "Baby & Kids",
+   "mood": "gift",
+   "tone": "heart",
+   "title": "Chhoti si cheez, badi yaadein 💜",
+   "body": "{name}, {price}. Chhoti cheez, lambi yaad.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "kd058",
+   "category": "Baby & Kids",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka naya khilona dekha? 🧸",
+   "body": "{name}, {discount}% off. Bachche ko pasand aayega.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "kd059",
+   "category": "Baby & Kids",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand}: bachche ki pasand ka brand? 👶",
+   "body": "{name}, {price}. Bachche ka pasandeeda naam.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "kd060",
+   "category": "Baby & Kids",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Bachche ki deal: {discount}% off 🧸",
+   "body": "{name}, {price}. Muskaan ke saath.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "kd061",
+   "category": "Baby & Kids",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Bachche ka budget bhi to hota hai.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "kd062",
+   "category": "Baby & Kids",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ka matlab: bachche ke liye kuch aur 💜",
+   "body": "{name} at {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

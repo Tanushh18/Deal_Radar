@@ -1,0 +1,54 @@
+# category: Any
+# prefix: fl
+# kinds: follow
+follow|dost|{value} mein kuch naya aaya 🔔|{name}, {price}. Aapne follow kiya tha na?
+follow|tease|{value} ki nayi deal, seedhe aapke liye 🎯|{name} — {price}. Follow karne wale ko pehle pata chalta hai.
+follow|heart|Jo follow kiya, wahi mila 💜|{name} at {price}. {value} se.
+follow|dost|{value}: nayi deal aayi 📢|{name}, {price}. Ek nazar.
+follow|tease|Aap {value} follow karte ho, hum khabar dete hain 📬|{name} for {price}. Khabar dena hamara kaam.
+follow|self|{value} ka naya kuch, aur aap sabse pehle 🥇|{name}, {price}. Pehla number, aapka.
+follow|dost|{value} follow karna kaam aaya 😄|{name}, {discount}% off. Kaam ki cheez, kaam ka rate.
+follow|tease|{value} ka scene: deal aayi 🛎️|{name} — {price}, {discount}% off.
+follow|heart|Aapki pasand ka naya update 🌟|{name}, {price}. Source: {value}.
+follow|dost|{value} ne naya kuch bheja 📨|{name} at {price}. Naya kuch aaya, aap tak.
+follow|tease|Follow kiya tha, ab reward 🎁|{name}, {price}. {value} se.
+follow|dost|{value}: tazi deal, tazi khushi 🍃|{name} for {price}. Tazi deal, tazi shuruat.
+follow|self|Hum bhool nahi sakte the aapka {value} 😄|{name}, {price}. Aapka follow humein yaad hai.
+follow|tease|Naya {value} deal aaya. Aap decide karo 🤷|{name}, {discount}% off. Aaj kuch sasta, kuch sahi.
+follow|heart|{value} mein ek chhoti si khushi 💜|{name}, {price}. Chhoti khushi, aapki list se.
+follow|dost|{value} follow karne walon ke liye 🎯|{name} at {price}. {discount}% off.
+follow|tease|Follow karne ka fayda: sabse pehle pata chalta hai 🏃|{name}, {price}. Sabse pehle wahi jo follow karta hai.
+follow|self|{value} ki notification, sirf aapke liye 🔔|{name} for {price}. Sirf aapke liye, dobara.
+follow|dost|Aapki {value} list mein kuch naya 📝|{name} — {discount}% off. Paisa vasool wali feeling.
+follow|tease|{value} ne wapas apna jalwa dikhaya ✨|{name} — {price}. Wapas aaya, wahi jalwa.
+follow|heart|{value} follow karna sahi decision tha 💜|{name}, {price}. Decision sahi nikla.
+follow|dost|{value}: naye deals ka pehla notification 🔔|{name} at {price}. Naye deals ka pehla dhamaka.
+follow|tease|Aapka {value} aaj special hai 🌟|{name}, {discount}% off. Halki jeb, bhaari khushi.
+follow|self|{value} ka scene: ek aur deal 🎬|{name} for {price}. Ek aur scene, ek aur deal.
+follow|dost|{value} follow karo, deals aate rahenge 🌊|{name}, {price}. Deals aate rahenge, hum bataate rahenge.
+follow|tease|Aapko {value} pasand hai, hume pata hai 😉|{name} — {price}. Pasand pata hai, isliye bheja.
+follow|heart|{value} mein ek nayi shuruaat 🌱|{name}, {price}. Nayi shuruaat, nayi deal.
+follow|dost|Aapki pasand ka {value} phir se aaya 🔁|{name}, {discount}% off. MRP ki ab koi nahi sunta.
+follow|tease|{value} ka fresh deal: garma garam 🔥|{name} for {price}. Abhi ki abhi.
+follow|self|Notification aayi, kyunki aapne {value} follow kiya 😄|{name}, {price}. Wajah aapka follow hai.
+follow|dost|{value} — naya deal, aapka naam 📣|{name} at {price}. Aapke naam ka deal.
+follow|tease|{value} ke deals kabhi khatam nahi hote (lagbhag) 😏|{name} — {discount}% off. Price tag ne bhi haath jod liye.
+follow|heart|Aapke {value} ka ek pyaara sa update 💌|{name}, {price}. Pyaara sa update, seedha aap tak.
+follow|dost|{value}: chalo, dekhte hain 👀|{name} for {price}. Ek nazar to banti hai.
+follow|tease|{value} ki nayi baat 🗞️|{name} — {price}. Nayi baat, nayi deal.
+follow|self|{value} pasand hai? Ye lo 🎁|{name}, {price}. {discount}% off.
+follow|dost|{value} ke liye aaj kuch naya 🆕|{name} at {price}. Aaj ka naya.
+follow|tease|Follow list mein sabse upar: {value} 📌|{name}, {discount}% off. Aaj price ne sharafat dikhayi.
+follow|heart|Aapki pasand: {value}. Hamara kaam: khabar dena 💜|{name}, {price}. Aap chuno, hum batayenge.
+follow|dost|Ye {value} ki deal aap miss na karo (par decide aapka) 😄|{name} for {price}. Decide aap karo, hum bas bata dete hain.
+follow|tease|{value}: aaj ka surprise 🎉|{name} — {price}. Aaj ka chhota sa surprise.
+follow|self|{value} ne naya kuch nikaala 🚀|{name}, {price}. Naya nikla, aap tak pahuncha.
+follow|dost|{value} follow karne ka ek aur reason 🎯|{name} at {price}. Follow ka ek aur fayda.
+follow|tease|Aapke {value} ka naya step 👣|{name} — {discount}% off. Rate aaj tumhari taraf hai.
+follow|heart|{value} — fir ek nayi deal 💜|{name} for {price}. Ek aur nayi.
+follow|dost|{value} ke fans ke liye 🙌|{name}, {price}. Fans ke liye ekdum sahi.
+follow|tease|{value} ne kuch alag hi kar diya 😮|{name} — {price}. Kuch alag hi hua hai.
+follow|self|{value}: dekhne layak deal 🔍|{name} — {discount}% off. Wallet ko bhi tasalli.
+follow|dost|Aaj ka {value} update 📱|{name} at {price}. Aaj ka update.
+follow|tease|{value} ka ek aur tohfa 🎁|{name}, {price}. Tohfa samajh ke le lo.
+follow|heart|Jo aapne chuna, wo aapko mila 💜|{name} for {price}. {value}.

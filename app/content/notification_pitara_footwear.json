@@ -1,0 +1,782 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Footwear (footwear). Built from src/footwear.txt."
+ },
+ "templates": [
+  {
+   "id": "fw001",
+   "category": "Footwear",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai lene chalo, naye joote pehen ke ☕",
+   "body": "{name}, {price}. Tapri tak ka fashion show.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening"
+   ]
+  },
+  {
+   "id": "fw002",
+   "category": "Footwear",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai gir jaye to bhi joote na kharab hon 😄",
+   "body": "{name} at {price}. Chai gir jaye to joota bacha rahe.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw003",
+   "category": "Footwear",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, pairon ko bhi treat do 👟",
+   "body": "{name} for {price}. Din bhar chalte hain, thoda pyaar banta hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw004",
+   "category": "Footwear",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Salary ka pehla din, joote ka best din 💸",
+   "body": "{name}, {discount}% off. Aaj discount ne dil jeeta.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "fw005",
+   "category": "Footwear",
+   "mood": "salary",
+   "tone": "self",
+   "title": "Salary: aayi, gayi, joota reh gaya 😅",
+   "body": "{name} at {price}. Kam se kam ye to rahega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw006",
+   "category": "Footwear",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end mein bhi paon ka budget hota hai 🦶",
+   "body": "{name}, {price}. Paon ka bhi to budget hota hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw007",
+   "category": "Footwear",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Chappal tooti? Choti si deal ye hai 🩴",
+   "body": "{name} for {price}. Pin lagana band karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw008",
+   "category": "Footwear",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: joote polish karne ka din 🧽",
+   "body": "{name}, {price}. Ya naye le lo, jugaad kam.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "fw009",
+   "category": "Footwear",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj kahin nahi jana, phir bhi joote dekh lo 👟",
+   "body": "{name} at {price}. Ghar mein baithe bhi dekh sakte ho.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "fw010",
+   "category": "Footwear",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday: office ke joote ki polish kahan hai? 💼",
+   "body": "{name}, {price}. Polish nahi hui to naya le lo.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "fw011",
+   "category": "Footwear",
+   "mood": "monday",
+   "tone": "tease",
+   "title": "Alarm ke baad joote khojna band karo 🔍",
+   "body": "{name} for {price}. Ek jagah rakhna seekho.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "fw012",
+   "category": "Footwear",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein neeche chappal, upar formal 🩴",
+   "body": "{name}, {price}. Camera sirf upar tak dekhta hai.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "fw013",
+   "category": "Footwear",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Ghar ke andar bhi comfy chappal chahiye 🏠",
+   "body": "{name} at {price}. Tiles thandi hoti hain.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "fw014",
+   "category": "Footwear",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "PG mein jootay bahar rakhne ka jhagda 🚪",
+   "body": "{name}, {price}. Shoe rack bhi le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw015",
+   "category": "Footwear",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Roommate ke jootay pehne? Ab apne lo 😜",
+   "body": "{name} for {price}. Size alag hoga, dost.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw016",
+   "category": "Footwear",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy: 'joote kahan rakhe? Darwaze pe kyun?' 😅",
+   "body": "{name}, {price}. Darwaze ke paas hi sahi, par rack le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw017",
+   "category": "Footwear",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Dadi kehti thi: joote achhe ho to raste achhe 👵",
+   "body": "{name} at {price}. Achhe joote, achhi shuruaat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw018",
+   "category": "Footwear",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Shaadi mein joote bhi match karne hain 👞",
+   "body": "{name}, {price}. Sherwani ke saath.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw019",
+   "category": "Footwear",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Baraat mein naachte hue joote ka sahara 💃",
+   "body": "{name} for {price}. Comfort pehle, fashion saath.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw020",
+   "category": "Footwear",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Tyohaar ke liye naye joote 🪔",
+   "body": "{name}, {discount}% off. Ghar mein nayi roshni.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "fw021",
+   "category": "Footwear",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Match ke liye jersey ke saath sneakers 👟",
+   "body": "{name}, {price}. Jersey ke saath fit ho jayega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw022",
+   "category": "Footwear",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Jo pair tumhe roz le chalte hain, unka bhi khayal 🦶",
+   "body": "{name} at {price}. Roz ke saathi ko naya ghar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw023",
+   "category": "Footwear",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Kadam kadam par ek nayi shuruaat 🚶",
+   "body": "{name}, {price}. Pehla kadam naya, agla aur naya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw024",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "tease",
+   "title": "Sneakers ka scene: fresh pair, fresh mood 👟",
+   "body": "{name} for {price}. Pehle din hi mud mat lagao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw025",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "dost",
+   "title": "Sneaker collection mein ek aur entry? 👟",
+   "body": "{name}, {price}. Alamari ka side wala kona khali hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw026",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "self",
+   "title": "Sneaker ko cover kar ke rakhna hai, pehenna nahi 😅",
+   "body": "{name} at {price}. Pehen lo, din bhi khush honge.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw027",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "tease",
+   "title": "Ye sneakers dekhe? Bahut naya hai 🔥",
+   "body": "{name}, {discount}% off. Discount ka sach dekh ke lo.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "fw028",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "dost",
+   "title": "Sneakers + jeans: classic combo 👖",
+   "body": "{name} for {price}. Ye jodi kabhi purani nahi hoti.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw029",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "heart",
+   "title": "Walk karte hue sochna acha lagta hai 🚶",
+   "body": "{name}, {price}. Chalte chalte ideas aate hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw030",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "tease",
+   "title": "Daag pade to bhi cool lagenge 😎",
+   "body": "{name} at {price}. Style ki kahani.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw031",
+   "category": "Footwear",
+   "mood": "sneakers",
+   "tone": "self",
+   "title": "Purane sneakers ka sole ghis gaya 🥲",
+   "body": "{name}, {price}. Dil bhaari, par naye aa gaye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw032",
+   "category": "Footwear",
+   "mood": "formal",
+   "tone": "dost",
+   "title": "Interview ke joote: pehla impression 👞",
+   "body": "{name}, {price}. Polish zaroor karna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw033",
+   "category": "Footwear",
+   "mood": "formal",
+   "tone": "tease",
+   "title": "Formal joote: office ka silent hero 💼",
+   "body": "{name} for {price}. Sabse pehle wahi dikhte hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw034",
+   "category": "Footwear",
+   "mood": "formal",
+   "tone": "self",
+   "title": "Meeting mein joote ki awaaz: khat khat 😂",
+   "body": "{name}, {discount}% off. Thodi soft sole wale lo.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "fw035",
+   "category": "Footwear",
+   "mood": "formal",
+   "tone": "heart",
+   "title": "Naye kaam ka pehla din, naye joote ke saath 🌟",
+   "body": "{name} at {price}. Pehle din ka confidence kadmon se hi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw036",
+   "category": "Footwear",
+   "mood": "formal",
+   "tone": "dost",
+   "title": "Formal ho ya party, ek achhi jodi chahiye 👞",
+   "body": "{name}, {price}. Ek jodi, do kaam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw037",
+   "category": "Footwear",
+   "mood": "formal",
+   "tone": "tease",
+   "title": "Shaadi ka moka, joote ka jalwa 💍",
+   "body": "{name} for {price}. Naachne ka poora intezaam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw038",
+   "category": "Footwear",
+   "mood": "formal",
+   "tone": "self",
+   "title": "Joote ka size galat liya? Ye baar dhyan se 📏",
+   "body": "{name}, {price}. Dhyan se naapo, phir order karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw039",
+   "category": "Footwear",
+   "mood": "sandal",
+   "tone": "dost",
+   "title": "Chappal: garmi ka sabse achha dost 🩴",
+   "body": "{name} at {price}. Paon ko hawa lagegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw040",
+   "category": "Footwear",
+   "mood": "sandal",
+   "tone": "tease",
+   "title": "Flip flop: beach ho ya bathroom 🏖️",
+   "body": "{name}, {price}. Dono mein chalega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw041",
+   "category": "Footwear",
+   "mood": "sandal",
+   "tone": "self",
+   "title": "Chappal ke strap ka jugaad ab nahi chalega 🪡",
+   "body": "{name} for {price}. Naya strap, naya mood.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw042",
+   "category": "Footwear",
+   "mood": "sandal",
+   "tone": "heart",
+   "title": "Sunday ki sair, halki chappal ke saath 🌤️",
+   "body": "{name} — {discount}% off. Ek nazar, ek tap, ek muskaan.",
+   "needs": [
+    "discount"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "fw043",
+   "category": "Footwear",
+   "mood": "sandal",
+   "tone": "dost",
+   "title": "Sandal: haath mein bhi, pair mein bhi 😄",
+   "body": "{name} at {price}. Haath mein bhi jachti hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw044",
+   "category": "Footwear",
+   "mood": "heels",
+   "tone": "tease",
+   "title": "Heels: ek inch ka confidence 👠",
+   "body": "{name}, {price}. Kadam dhyan se rakhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw045",
+   "category": "Footwear",
+   "mood": "heels",
+   "tone": "dost",
+   "title": "Party ke liye heels ready? 🎉",
+   "body": "{name} for {price}. Aakhir mein hath mein hi lena padega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw046",
+   "category": "Footwear",
+   "mood": "heels",
+   "tone": "self",
+   "title": "Heels pehen ke chalna: art hai 🎭",
+   "body": "{name}, {discount}% off. Practice pehle ghar mein.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "fw047",
+   "category": "Footwear",
+   "mood": "heels",
+   "tone": "heart",
+   "title": "Chhoti si heel, badi si baat 👠",
+   "body": "{name} at {price}. Ek inch aur confidence.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw048",
+   "category": "Footwear",
+   "mood": "heels",
+   "tone": "tease",
+   "title": "Flats aur heels: dono ka mood alag 👟",
+   "body": "{name}, {price}. Mood dekh ke chuno.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw049",
+   "category": "Footwear",
+   "mood": "kids",
+   "tone": "dost",
+   "title": "Bachon ke joote: 3 mahine mein chhote ho jaate hain 👶",
+   "body": "{name} for {price}. Badh rahe hain, achhi baat hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw050",
+   "category": "Footwear",
+   "mood": "kids",
+   "tone": "heart",
+   "title": "School ke liye naye joote 🎒",
+   "body": "{name}, {price}. Pehle din ki excitement.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw051",
+   "category": "Footwear",
+   "mood": "kids",
+   "tone": "tease",
+   "title": "Bachcha kahega 'mujhe ye hi chahiye' 😄",
+   "body": "{name} at {price}. Bachche ki pasand ka fashion.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw052",
+   "category": "Footwear",
+   "mood": "kids",
+   "tone": "self",
+   "title": "Joote ka ek pair bhi dhang se nahi rakhta koi 😅",
+   "body": "{name}, {price}. Bachcha hi sahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw053",
+   "category": "Footwear",
+   "mood": "monsoon",
+   "tone": "dost",
+   "title": "Baarish aa gayi? Gum boots ready hain? 🌧️",
+   "body": "{name} for {price}. Paon bhi khush, baarish bhi khush.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw054",
+   "category": "Footwear",
+   "mood": "monsoon",
+   "tone": "tease",
+   "title": "Chappal phisal jaye to gaya din 😅",
+   "body": "{name}, {discount}% off. Grip wale lo.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "fw055",
+   "category": "Footwear",
+   "mood": "monsoon",
+   "tone": "self",
+   "title": "Paon geele, mood geela 🥲",
+   "body": "{name} at {price}. Geele mood ka ilaaj.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw056",
+   "category": "Footwear",
+   "mood": "monsoon",
+   "tone": "heart",
+   "title": "Baarish mein chalne ka mazaa alag hai 🌧️",
+   "body": "{name}, {price}. Bas paon dry rahen.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw057",
+   "category": "Footwear",
+   "mood": "sports",
+   "tone": "dost",
+   "title": "Running shoes: kal se pakka daudenge 🏃",
+   "body": "{name}, {price}. Aaj bhi shuru kar sakte ho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw058",
+   "category": "Footwear",
+   "mood": "sports",
+   "tone": "tease",
+   "title": "Running shoes: alamari mein sabse healthy cheez 😌",
+   "body": "{name} for {price}. Shoe rack mein sabse mehnati.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw059",
+   "category": "Footwear",
+   "mood": "sports",
+   "tone": "self",
+   "title": "Sports shoes khareede, gym nahi gaye 😅",
+   "body": "{name}, {discount}% off. Is baar pakka.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "fw060",
+   "category": "Footwear",
+   "mood": "sports",
+   "tone": "heart",
+   "title": "Har kadam ek nayi koshish 🌟",
+   "body": "{name} at {price}. Har kadam ka ek naya saath.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw061",
+   "category": "Footwear",
+   "mood": "sports",
+   "tone": "dost",
+   "title": "Trekking ke shoes: pahad bulate hain 🏔️",
+   "body": "{name}, {price}. Pahad ke raaste ka saathi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "fw062",
+   "category": "Footwear",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka jodi dekhi? 👀",
+   "body": "{name}, {price}. Jodi nayi, saath purana.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "fw063",
+   "category": "Footwear",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand} ki jodi, paon ko pasand aayegi 👟",
+   "body": "{name}, {discount}% off. Size check kar lena.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "fw064",
+   "category": "Footwear",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Joota deal: {discount}% off 👟",
+   "body": "{name}, {price}. Size check karna mat bhoolna.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "fw065",
+   "category": "Footwear",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Kadam aage badhao.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "fw066",
+   "category": "Footwear",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ke saath ek naya safar 💜",
+   "body": "{name} at {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,62 @@
+# category: Books & Stationery
+# prefix: bk
+chai|dost|Chai ke saath ek kitaab ☕|{name}, {price}. Sabse achha combination.|t=morning,evening
+chai|tease|Chai aur kitaab: sabse purani jodi 📖|{name} at {price}. Pakoda bookmark ban jaayega.
+salary|heart|Salary aayi, dimaag ko bhi kuch khilao 📚|{name}, {price}. Sabse achha nivesh.
+salary|tease|Salary ka ek hissa kitaabon ke naam 📖|{name} for {price}. Shelf mein jagah hai?
+monthend|self|Month-end: kitaab khareedna hai, padhna baad mein 😅|{name}, {price}. Shelf mein aur ek kitaab.
+monthend|dost|Padhne ka time nahi, par khareedne ka hai 📚|{name} at {price}. Sabse honest bahana.
+sunday|dost|Sunday: kitaab aur chai, aur kuch nahi 📖|{name}, {price}. Phone silent rakhna.|w=0
+sunday|tease|Aaj padhna hai, ya sirf sochna hai? 🤔|{name} for {price}. Sochne se pehle padhna to shuru karo.|w=0
+monday|self|Monday: kitaab dekh ke neend aa jaati hai 😴|{name}, {price}. Fir bhi le lo.|w=1
+monday|dost|Monday ki subah, ek achhi kitaab ki tarah ☀️|{name} at {price}. Chai ke saath dhoop aur ek page.|w=1 t=morning
+wfh|self|WFH mein lunch break mein kitaab padhna 📖|{name}, {price}. 10 pages roz.|d=weekday
+wfh|dost|Screen se thodi chhutti, kitaab ke saath 📚|{name} for {price}. Aankhon ko aaram, dimaag ko khurak.|d=weekday
+hostel|self|Hostel ki alamari mein kitaabein kam, notes zyada 📝|{name}, {price}. Kitaabon ke liye ek shelf bana lo.
+hostel|dost|Exam se pehle ek raat ki padhai 🌙|{name} at {price}. Chai bhi taiyaar.|t=night
+hostel|tease|Roommate ke notes mat churao, apne banao 😜|{name} — {discount}% off. Percent bada, sochna chhota.
+ghar|heart|Mummy ki purani kitaabein aur naye page 👵|{name} for {price}. Purani kitaab ke saath ye bhi shelf mein.
+ghar|dost|Ghar mein ek kona sirf kitaabon ka 📚|{name}, {price}. Kona chhota, duniya badi.
+festival|dost|Tyohaar pe kitaab gift karo 🎁|{name} at {price}. Sabse alag gift.
+festival|heart|Diwali pe ek achhi kitaab aur ek diya 🪔|{name}, {price}. Roshni ke saath ek kahani.
+match|dost|Match ke break mein 5 pages 📖|{name} for {price}. Ad break lamba hota hai.
+heart|heart|Kitaabein: sabse achhe dost 💜|{name}, {price}. Ye kabhi mute nahi hote.
+heart|heart|Ek page, ek nayi duniya 🌍|{name} at {price}. Palat ke dekho, kya nikla.
+novel|dost|Novel: raat ke 2 baje tak padhna hai 🌙|{name}, {price}. Sirf ek chapter, phir 10 aur.
+novel|tease|Novel: kahani mein kho jao 📖|{name} for {price}. Chai thandi ho jaayegi.
+novel|self|Kitaab shuru ki, bookmark wahin reh gaya 🔖|{name}, {discount}% off. Is baar khatam karenge.
+novel|heart|Ek achhi kahani, ek achha din 📚|{name} at {price}. Bookmark ko is baar wahin rehne do.
+novel|dost|Thriller: dil ki dhadkan badh jaayegi 😱|{name}, {price}. Raat ke 2 baje tak ka intezaam.
+novel|tease|Romance: chai ke saath aur bhi achha ❤️|{name} for {price}. Chai thandi hui to bhi kahani garam.
+novel|self|TBR list: 50 kitaabein, padhi: 2 📚|{name}, {price}. Ek aur add karo.
+novel|dost|Fantasy: dusri duniya ki sair 🐉|{name} at {price}. Raaste mein ajgar nahi, bas kahaniyan.
+selfhelp|dost|Self-help: kal se badal jaayenge 💭|{name}, {price}. Aaj shuru karo.
+selfhelp|tease|Self-help kitaab: padh li, ab amal karna hai 😅|{name} for {price}. Padhna easy hai, amal mushkil, koshish karo.
+selfhelp|heart|Khud ko behtar banane ka ek chhota kadam 🌟|{name}, {discount}% off. Ek deal, ek tasalli.
+selfhelp|self|Kitaab padhi, motivation aaya, phir so gaye 😴|{name} at {price}. Motivation ki batti kabhi kabhi hi jalti hai, is baar jala do.
+exam|dost|Exam ki taiyari: notes, kitaab, aur chai 📝|{name}, {price}. Best of luck.
+exam|tease|Syllabus dekh ke dimaag ghoom gaya? 😵|{name} for {price}. Ek ek chapter.
+exam|self|Exam kal hai, aaj padhai shuru 😅|{name} — {discount}% off. Kabhi kabhi price bhi meherbaan ho jaati hai.
+exam|heart|Mehnat kabhi bekaar nahi jaati 💪|{name} at {price}. Aaj ka ek chapter, kal ka result.
+exam|dost|Previous year papers: sabse achha guide 📄|{name}, {price}. Sawaal purane, tayyari nayi.
+stationery|dost|Pen: jo hamesha khatam ho jaata hai ✒️|{name} for {price}. Ek dozen le lo.
+stationery|tease|Notebook: khali pages ki khubsurti 📓|{name}, {discount}% off. Likhne ka mann kare to.
+stationery|self|Sticky notes: reminders ka ambar 📌|{name} at {price}. Kaunsa kya tha?
+stationery|heart|Diary: aapki kahani, aapke shabd 📔|{name}, {price}. Aaj ka din kis rang ka tha?
+stationery|dost|Highlighter: sab kuch important lagta hai 🖍️|{name} for {price}. Sab kuch peela mat kar dena.
+stationery|tease|Planner: plan banate hain, follow nahi 😅|{name}, {price}. Plan likho, follow karne ki koshish karo.
+stationery|self|Pencil box: ghar mein 10, exam mein 0 ✏️|{name} at {price}. Pencil ka koi ghar nahi hota.
+stationery|dost|Desk organiser: chhoti si vyavastha 🗂️|{name}, {discount}% off. Kam mein zyada wali baat.
+stationery|tease|Colour pencils: bachpan wapas 🎨|{name} for {price}. Rang bharne se koi bada nahi hota.
+kids|dost|Bachche ki kahani ki kitaab 🧸|{name}, {price}. Sone se pehle ek kahani.|t=night
+kids|heart|Bachche ko padhne ka shauk lagao 📚|{name} at {price}. Aadat bachpan se hi lagti hai.
+kids|tease|Colouring book: deewar bachi rahe 🖍️|{name}, {price}. Kagaz pe rang, deewar par nahi.
+kids|self|Bachcha: 'ek aur kahani' 🌙|{name}, {discount}% off. Aakhri wali, sach mein.
+gift|heart|Kitaab: sabse achha gift 🎁|{name} for {price}. Jo hamesha yaad rahe.
+gift|dost|Birthday gift: ek achhi kitaab aur ek note 💌|{name}, {price}. Note mein kuch pyaara likh dena.
+gift|tease|Kitaab gift karo, dimaag khush rahega 🎀|{name} at {price}. Dimaag ki khurak sabse achhi hoti hai.
+brand|tease|{brand} ki kitaab dekhi? 📚|{name}, {discount}% off. Padhne layak.|p
+brand|dost|{brand}: kitaabon ka pasandeeda naam? 📖|{name}, {price}. Naam bharosemand, panne bhi.|p
+deal|tease|Kitaab deal: {discount}% off 📚|{name}, {price}. Padhne ka bahana mil gaya.
+deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Kitaab sasti, gyaan anmol.
+deal|heart|Bachat ke saath ek nayi kahani 💜|{name} at {price}. Save: {save}.

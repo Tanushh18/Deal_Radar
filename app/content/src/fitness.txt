@@ -1,0 +1,64 @@
+# category: Sports & Fitness
+# prefix: ft
+chai|dost|Chai ya protein shake? Aaj chai hi sahi ☕|{name}, {price}. Kal se pakka gym.|t=morning
+chai|self|Gym jaane se pehle chai, gym ke baad chai 😅|{name} at {price}. Beech mein workout.
+salary|heart|Salary aayi, sehat pe bhi invest 💪|{name}, {price}. Sabse achha nivesh.
+salary|self|Gym membership aur salary: dono ka use kam 😅|{name} for {price}. Is baar sach mein.
+monthend|self|Month-end: gym ki fee yaad aayi, gym nahi 🏋️|{name}, {price}. Fee gayi, ab gear bhi le lo.
+monthend|tease|Ghar pe workout, budget ke andar 💪|{name} at {price}. Yoga mat bhi kaafi hai.
+sunday|dost|Sunday: aaj se pakka shuru 🏃|{name}, {price}. Kal ka bahana kal.|w=0
+sunday|self|Sunday ko fitness ka plan, Monday ko bhool 😅|{name} for {price}. Plan Sunday ka, amal roz ka.|w=0
+sunday|tease|Aaj gym nahi gaye? Ghar pe hi ek round 🧘|{name} — {discount}% off. Tumhari pasand ka rate.|w=0
+monday|self|Monday se diet? Ya agle Monday se? 😂|{name} at {price}. Agle Monday ka wada, is Monday ka gear.|w=1
+monday|dost|Monday: naya hafta, naya sankalp 💪|{name}, {price}. Pehle din hi mat todna.|w=1 t=morning
+wfh|self|WFH mein kursi se fridge tak: roz ka workout 🚶|{name} for {price}. Ab thoda aur chalo.|d=weekday
+wfh|dost|Laptop ke saamne 9 ghante? Ek stretch to banta hai 🧘|{name}, {price}. Ek stretch, ek deal.|d=weekday
+wfh|tease|Meeting ke beech mein squat? Camera off karo 😂|{name} at {price}. Camera off, mat pe on.|d=weekday
+hostel|self|PG mein jagah nahi, par yoga mat bichaya jaa sakta hai 🧘|{name}, {price}. Chhoti jagah mein bhi kasrat ho sakti hai.
+hostel|dost|Roommate bhi saath mein workout karega? 💪|{name} for {price}. Do log, ek motivation.
+ghar|self|Mummy: 'chalo walk pe' Tum: 'kal' 😅|{name}, {price}. Aaj shoes pehen ke dekho.
+ghar|heart|Ghar ke sab log saath mein sehatmand raho 💜|{name} at {price}. Sab saath chalenge to sab fit rahenge.
+festival|tease|Tyohaar ki mithai ke baad workout ka plan 🍬|{name}, {price}. Aaj mithai, kal gym.
+festival|dost|Wedding season se pehle thoda fit ho jao 💃|{name} for {price}. Shaadi se pehle thoda sa kasrat ka plan.
+match|dost|Match dekhte hue stretching? 🏏|{name}, {price}. Chhakke pe squat.
+match|tease|Cricket khelne ka mann? Bat, ball, aur ek naya gear 🏏|{name} at {price}. Weekend ka simple plan.
+heart|heart|Har kadam ek nayi shuruat 🌟|{name}, {price}. Aaj ek kadam.
+heart|heart|Sehat sabse badi daulat 💜|{name} for {price}. Sehat pehle, baaki baad mein.
+gym|dost|Gym bag: kal se pakka jaana hai 🎒|{name}, {price}. Kal se pakka, aaj se bag.
+gym|tease|Dumbbell: ghar pe hi mazaa 💪|{name} at {price}. Padosi ko shor ki aadat daal do.
+gym|self|Gym membership hai, gym nahi jaate 🏋️|{name}, {discount}% off. Ghar pe hi sahi.
+gym|heart|Khud ko behtar banana: roz ek chhota kadam 💜|{name} for {price}. Ek kadam roz, ek saal mein safar.
+gym|dost|Protein shaker: gym ka sabse chhota hero 🥤|{name}, {price}. Chhota shaker, bada kaam.
+gym|tease|Resistance bands: chhote, halke, dumdaar 💪|{name} at {price}. Bag mein aa jayenge.
+gym|self|Gym gloves: haath ki pakad ke liye 🧤|{name}, {discount}% off. Kabhi kabhi sab kuch theek baithta hai.
+gym|dost|Skipping rope: sabse sasti cardio 🪢|{name} for {price}. Sabse sasti cardio ka saathi.
+yoga|dost|Yoga mat: shanti ka pehla kadam 🧘|{name}, {price}. Saans andar, shanti bahar.
+yoga|tease|Yoga: bas shavasana pasand hai 😌|{name} at {price}. Baaki ke poses baad mein.
+yoga|heart|Saans, dhyaan, aur ek mat 🌿|{name} — {discount}% off. Price ne kaha 'aao'.
+yoga|self|Yoga karna hai, par mat ke bina kaise? 🧘|{name} for {price}. Mat ke bina bhi, mat le lo.
+yoga|dost|Meditation: 5 minute ka aaram 🕉️|{name}, {price}. Paanch minute, poora aaram.
+running|dost|Running shoes: kal se dauden ge 🏃|{name} at {price}. Aaj bhi shuru kar sakte ho.
+running|tease|Daudne ka mann ho to shoes ready rakhna 👟|{name}, {price}. Shoes ready, ab mood ready.
+running|self|Marathon nahi, bas society ke gate tak 😅|{name} for {price}. Society ke gate se aage ki soch.
+running|heart|Har dauda hua kilometre ek jeet hai 🏅|{name}, {discount}% off. Chalo, ek nazar to banti hai.
+running|dost|Track pants: comfort bhi, style bhi 👖|{name} at {price}. Aaram bhi, style bhi.
+running|tease|Sports watch: kadam gino 🏃|{name}, {price}. Aaj 5000 hue?
+cycling|dost|Cycle: pollution kam, pait kam 🚴|{name} for {price}. Bas helmet lagana mat bhoolna.
+cycling|tease|Cycling: sabse sasti gaadi 🚲|{name}, {discount}% off. Petrol ka kharcha zero.
+cycling|heart|Hawa mein udne ka ehsaas 🌬️|{name} at {price}. Hawa mein baat karne ka mazaa.
+cycling|self|Cycle ke tyre mein hawa kam, mood mein zyada 😅|{name}, {price}. Hawa bharwa lo, mood pehle se full hai.
+outdoor|dost|Trekking ka plan? Bag aur shoes ready? 🥾|{name} for {price}. Pahad ka bulawa aa gaya.
+outdoor|tease|Camping: ek tent aur bahut saari maggi ⛺|{name}, {price}. Torch bhi lena.
+outdoor|heart|Pahad bulate hain, thoda safar karo 🏔️|{name} at {price}. Thoda safar, bahut sukoon.
+outdoor|self|Outdoor ka plan: banata hu, jaata nahi 😅|{name}, {discount}% off. Is baar pakka.
+swim|dost|Swimming: garmi ka sabse achha bahana 🏊|{name}, {price}. Paani mein hi mazaa.
+swim|tease|Swimming goggles: paani ka nazara 🥽|{name} for {price}. Neeche ka nazara saaf dikhega.
+badminton|dost|Badminton: society ke court ka champion 🏸|{name}, {price}. Shuttle bhi lo.
+badminton|tease|Racket: jo hamesha ghar mein padi rehti hai 🏸|{name} at {price}. Aaj nikalo.
+football|dost|Football: weekend ka simple plan ⚽|{name}, {discount}% off. Jeb halki, dil halka.
+football|tease|Ball, goal post, aur ek bahut lamba ground 🥅|{name} for {price}. Ek goal, ek smile.
+brand|tease|{brand} ka gear dekha? 🏋️|{name}, {discount}% off. Fitness ka jazba saath.|p
+brand|dost|{brand}: workout ka naya saathi? 💪|{name}, {price}. Naya saathi, purani himmat.|p
+deal|tease|Fitness deal: {discount}% off 💪|{name}, {price}. Kal se pakka, aaj order.
+deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Sehat ka kharcha kam.
+deal|heart|Bachat ke saath sehat bhi 💜|{name} at {price}. Save: {save}.

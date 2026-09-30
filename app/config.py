@@ -110,6 +110,10 @@ class Settings:
         # POLL_INTERVAL_SECONDS must never turn into a push every few minutes.
         self.hot_push_min_gap_minutes: int = int(os.getenv("HOT_PUSH_MIN_GAP_MINUTES", "60"))
         self.push_quiet_hours: str = os.getenv("PUSH_QUIET_HOURS", "23-8").strip()
+        # Notification copy comes from app/content/notification_pitara*.json
+        # (services/pitara.py). "false" goes back to the built-in text at every
+        # call site — an instant switch if a line ever needs pulling.
+        self.notification_pitara_enabled: bool = _bool(os.getenv("NOTIFICATION_PITARA_ENABLED", "true"))
 
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
         # Render sets RENDER_EXTERNAL_URL on every web service. Falling back to it

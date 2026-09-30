@@ -1,0 +1,23 @@
+# category: Any
+# prefix: lh
+# kinds: hot_deal
+low|dost|📉 Lowest price ever: {name}|Hamare data mein ab tak ki sabse kam price: {price}.|L
+low|tease|Price ne apna hi record tod diya 🏅|{name} — {price}. Hamare records mein sabse kam.|L
+low|heart|Ye price kam hi dekhne ko milti hai 💜|{name} at {price}. Ab tak ki sabse kam.|L
+low|dost|Sabse kam price abhi: {price} 🔎|{name}. Humne ab tak itni kam nahi dekhi.|L
+low|self|Kaafi dino se nazar thi? Ye sabse kam price hai 😌|{name}, {price}.|L
+low|tease|Lowest price alert 🚨|{name} at {price}. Hamare records ke hisaab se.|L
+low|dost|Record low: {price} 📊|{name}. Hamare price history mein sabse neeche.|L
+low|heart|Ek achha mauka, hamare data ke mutabiq 💜|{name} — {price}, ab tak ki lowest.|L
+low|tease|Price history dekhi, ye sabse neeche hai 📉|{name} at {price}.|L
+low|dost|Ab tak ki sabse kam price, {store} pe 🏷️|{name} — {price}.|L
+low|tease|Ye wali price hamare notebook mein record hui 📓|{name}, {price}. Sabse kam.|L
+low|self|Sabse kam price wali deal aayi hai 🎯|{name} for {price}. Data se check ki hai.|L
+low|dost|📉 {price}: humne ab tak ki sabse kam dekhi|{name}. Decision aapka.|L
+low|heart|Kabhi kabhi price sach mein kam hoti hai 🌷|{name} at {price}. Hamare data mein sabse kam.|L
+low|tease|Ye price abhi tak ka sabse neeche hai 🔻|{name} — {price}. Baaki aap dekh lo.|L
+low|dost|Lowest yet: {price} 🏆|{name}. Hamari price history ke hisaab se.|L
+low|self|Price history ne bola: ye sabse achhi hai 📈|{name}, {price}.|L
+low|tease|Sabse kam price. Hum bhi chaunke 😮|{name} at {price}. Records mein ye sabse neeche.|L
+low|heart|Ab tak ka sabse achha rate 💜|{name} — {price}. Hamare data ke mutabiq.|L
+low|dost|Ye deal hamare records mein sabse sasti hai 🧾|{name} for {price}.|L

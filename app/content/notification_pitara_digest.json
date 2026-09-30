@@ -1,0 +1,695 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (digest). Built from src/digest.txt."
+ },
+ "templates": [
+  {
+   "id": "dg001",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "🔥 Today's best: {price} {name}",
+   "body": "{count} nayi deals aaj. Top picks dekhne ke liye tap karo.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg002",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "☀️ Aaj ka pick: {price}",
+   "body": "{name} — plus {count} nayi deals aaj.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg003",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Aaj ka din, aaj ki deal 💜",
+   "body": "{name}, {price}. {count} nayi deals aur.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg004",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Subah subah ek deal ☕",
+   "body": "{name} at {price}. {count} nayi deals bhi hain.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg005",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj ke {count} naye deals mein se ek 🎯",
+   "body": "{name}, {price}. {count} mein se ye pehle number par.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg006",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "self",
+   "title": "Daily digest: chai jaise zaroori ☕",
+   "body": "{name} for {price}. {count} deals aaj.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg007",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Aaj ki top deal: {name} 🏆",
+   "body": "{price}. Baaki {count} deals bhi dekh lo.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg008",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj ke {count} deals mein sabse alag 🌟",
+   "body": "{name} — {price}. Baaki {count} bhi dekh lena.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg009",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Aaj kuch achha mila 💜",
+   "body": "{name}, {price}. {count} nayi deals.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg010",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Din ka pehla update 📬",
+   "body": "{count} nayi deals. Top: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg011",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj ka best of the best 🥇",
+   "body": "{name} at {price}. {count} deals aaj.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg012",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "self",
+   "title": "Chalo, aaj ka pick dekhte hain 👀",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg013",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Aapki daily dose of deals 💊",
+   "body": "{name} for {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg014",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj ka top: {name} 🔝",
+   "body": "{price}. {count} deals aur.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg015",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Din ki shuruaat ek achhi deal se 🌞",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg016",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Aaj ki khaas deal 🎁",
+   "body": "{name} at {price}. Total nayi: {count}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg017",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj sirf {count} deals, par ye khaas 🎯",
+   "body": "{name}, {price}. Kam hain, par khaas hain.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg018",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "self",
+   "title": "Roz ek deal, roz ek khushi 🎈",
+   "body": "{name} for {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg019",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Subah ka scroll shuru karo 📱",
+   "body": "{name}, {price}. {count} nayi deals.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg020",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Chai ke saath aaj ki deal ☕",
+   "body": "{name} at {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg021",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Naya din, nayi deal 🌅",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg022",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Shaam ka digest: aaj ki khaas deal 🌇",
+   "body": "{name} for {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg023",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Din ka summary: {count} nayi deals 📊",
+   "body": "Top: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg024",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "self",
+   "title": "Aaj kuch miss to nahi kiya? Dekh lo 🔍",
+   "body": "{name} at {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg025",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Aaj ke deals ka roundup 🗞️",
+   "body": "{name}, {price}. Total {count}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg026",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "{count} deals aaj, par ek ne dil jeeta 💜",
+   "body": "{name} for {price}. {count} mein se ye dil ko chhu gayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg027",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Aaj bhi kuch achha aaya hai 🌷",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg028",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Roz ka ek mauka 🔔",
+   "body": "{name} at {price}. {count} deals.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg029",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj ka digest: ek nazar, ek muskaan 😊",
+   "body": "{name}, {price}. Ek nazar, ek muskaan, ek tap.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg030",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "self",
+   "title": "Din ka kaam: ek deal check karna 📋",
+   "body": "{name} for {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg031",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Aaj ki fresh picks 🍃",
+   "body": "{name}, {price}. {count} nayi deals.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg032",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj ke top deals mein se ek 🏅",
+   "body": "{name} at {price}. Aaj ke top deals ki list se.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg033",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Roz thodi thodi khushi 💜",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg034",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Subah ki khabar: {count} nayi deals 📰",
+   "body": "Top: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg035",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Din bhar ke liye ek deal 🌞",
+   "body": "{name} for {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg036",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "self",
+   "title": "Ek aur din, ek aur digest 😄",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg037",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Aaj ki sabse achhi deal, humare hisaab se 🎯",
+   "body": "{name} at {price}. Humne dekha, humein pasand aayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg038",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Aaj ka {count} mein se best 🏆",
+   "body": "{name}, {price}. {count} mein se ye jeeti.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg039",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Aaj ki deal aapke liye chuni hai 💜",
+   "body": "{name} for {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg040",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Dopahar ka digest 🍽️",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "afternoon"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg041",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Lunch ke saath ek deal 🍱",
+   "body": "{name} at {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "afternoon"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg042",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "self",
+   "title": "Break mein dekh lo 😌",
+   "body": "{name}, {price}. {count} nayi deals.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "afternoon"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg043",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "dost",
+   "title": "Raat ka digest 🌙",
+   "body": "{name} for {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg044",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "heart",
+   "title": "Din khatam, ek chhoti si khushi 🌌",
+   "body": "{name}, {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  },
+  {
+   "id": "dg045",
+   "category": "Any",
+   "mood": "daily",
+   "tone": "tease",
+   "title": "Sone se pehle ek deal 😴",
+   "body": "{name} at {price}. {count} nayi.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ],
+   "kinds": [
+    "digest"
+   ]
+  }
+ ]
+}

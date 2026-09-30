@@ -1,0 +1,58 @@
+# category: Any
+# prefix: cz
+# kinds: crazy_deal
+rare|dost|Ab tak ki sabse kam price: {price}|{name} — {discount}% off. Hamare data mein lowest.|L
+rare|tease|Ye price kam hi dikhti hai 🎯|{name}, {price}. Hamare records mein sabse kam.|L
+rare|heart|Aisi price hum kam hi dekhte hain 💜|{name} — {price}. Ab tak ki lowest.|L
+rare|dost|Record low: {price} 📉|{name}, {discount}% off. Hamare data ke mutabiq.|L
+rare|tease|Price ne record tod diya 🏅|{name} — {price}. Ab tak ki sabse kam.|L
+rare|self|Kaafi dino se dekh rahe the? Ye sabse kam hai 😌|{name} at {price}. Hamare data mein iski sabse kam price yahi hai.|L
+rare|dost|Hamare data mein iski sabse kam price 🔎|{name} — {price}, {discount}% off.|L
+rare|tease|Aisa mauka kam aata hai 🎫|{name}, {price}. Lowest we've seen.|L
+rare|heart|Ye price bahut pyaari hai 💜|{name} — {price}. Ab tak ki sabse kam.|L
+rare|dost|Sabse kam price: {price} 🏷️|{name}. {discount}% off. Data se pakka.|L
+rare|tease|Lowest price alert 🚨|{name} at {price}. Hamare records mein.|L
+rare|self|Ye price dekh ke humne bhi do baar check kiya 👀|{name}, {price}. Hamare records mein ye sabse kam hai.|L
+rare|dost|Ab tak ki sabse achhi price 🌟|{name} — {price}, {discount}% off.|L
+rare|tease|Ye deal record book mein jayegi 📖|{name}, {price}. Hamare data mein ab tak ki sabse kam.|L
+rare|heart|Aaj ka din special hai 🎉|{name} — {price}. Hamari lowest.|L
+big|dost|{discount}% off. Kam hi dikhta hai 😮|{name}, {price}. Itna discount kam hi dikhta hai.|md=50
+big|tease|{discount}% ka discount: aankhein khol ke dekho 👀|{name} — {price}. Ek baar phir se padh lo, sach hai.|md=50
+big|heart|Bada discount, badi khushi 💜|{name}, {discount}% off. {price}.|md=50
+big|dost|{discount}% off: dhyan se dekho 🔍|{name} at {price}. Dhyan se dekho, price hi asli kahani hai.|md=50
+big|tease|Itna discount kam hi dikhta hai 🎯|{name} — {discount}% off, {price}.|md=50
+big|self|{discount}% off aur koi shart nahi 😌|{name}, {price}. Shart nahi, sirf discount.|md=50
+big|dost|{discount}% off, {store} pe 🏷️|{name} — {price}. Ek jagah, ek deal.|md=50
+big|tease|{mrp} se {price} tak ka safar 🚀|{name} — {discount}% off. Bachat ka mazaa alag hota hai.|md=50
+big|heart|Bachat ka bada mauka 💜|{name} — {price}. Save: {save}.|md=50
+big|dost|{discount}% off: aaj ki khaas deal 🌟|{name}, {price}. Sirf aaj ki list mein.|md=50
+big|tease|Ye discount kuch alag hai 😏|{name} — {discount}% off, {price}.|md=50
+big|self|{save} ki bachat: chhoti nahi 💰|{name} at {price}. Chhoti bachat nahi, kaam ki bachat.|md=50
+big|dost|{discount}% off. Data check kar liya ✅|{name}, {price}. Humne dobara check kiya, price sahi hai.|md=50
+big|tease|Discount ka jalwa: {discount}% 🔥|{name} — {price}. Aag lagi hai, price mein.|md=50
+big|heart|{save} bachao, khushi kamao 🌷|{name}, {price}. Bachat ka hisaab khud lagao.|md=50
+mrp|dost|{mrp} se seedha {price} 📉|{name}. Bada farak hai.|md=40
+mrp|tease|{mrp} ka {price} ho gaya 😮|{name}, {discount}% off. Ye wala bina soche nahi, soch ke lo.|md=40
+mrp|heart|Bachat: {save}. Achha lagta hai na? 💜|{name} at {price}. Achha lagta hai na, jab paise bachte hain?|md=40
+mrp|dost|Pehle {mrp}, ab {price} 🔄|{name} — {discount}% off. Chalo, ek aur achha rate.|md=40
+mrp|tease|Price ne {save} ki chhalaang lagai 🏃|{name}, {price}. Ek chhalaang mein bachat.|md=40
+mrp|self|{mrp} → {price}. Simple math 🧮|{name} — {discount}% off. Aaj price ki taraf se salaam.|md=40
+mrp|dost|{save} kam. Kaam ki deal hai 👍|{name}, {price}. Kaam ki deal, kaam ka time.|md=40
+mrp|tease|MRP {mrp}, price {price}. Farak dekho 👀|{name}.|md=40
+mrp|heart|{save} ki bachat aaj ki special 💜|{name} at {price}. Aaj ki bachat aaj hi dikhe.|md=40
+mrp|dost|Discount ke saath price bhi achhi 🎯|{name} — {mrp} se {price}.|md=40
+best|dost|Aaj ki sabse achhi deal 🏆|{name}, {price}. {discount}% off.
+best|tease|Aaj ka top pick: ye wali 🥇|{name} — {price}. Aaj ki list ka pehla naam.
+best|heart|Aaj ki khaas deal, aapke liye 💜|{name}, {discount}% off. Cart ko bhi ek mauka do.
+best|dost|Humne aaj ki best deal chun li ✅|{name} at {price}. Hazaaron mein se chuni hui.
+best|tease|Hazaaron deals mein se ek 🌟|{name}, {price}. {discount}% off.
+best|self|Aaj ka score: ye deal 🎯|{name} — {price}. Aaj ke score mein sabse upar.
+best|dost|Top deal, {store} pe 🏬|{name}, {price}. Ek hi dukaan, ek hi deal.
+best|tease|Ye deal aaj sabse upar hai 📈|{name} — {discount}% off. Bachat ki ghanti baji hai.
+best|heart|Jo aaj dekhna chahiye, wo yahi hai 💜|{name}, {price}. Bas ek nazar, phir aapka decision.
+best|dost|Aaj ka standout: {name} 🌟|{price}. {discount}% off.
+best|tease|Aaj sabse achhi kaun si? Ye wali 😌|{name}, {price}. Sawaal simple tha, jawab ye.
+best|self|Aaj ka best pick 🥇|{name} at {price}. {discount}% off.
+best|dost|Humne dekha, humne chuna 👍|{name}, {price}. Dekh ke chuna hai, bina soche nahi.
+best|tease|Aaj ke deals mein ye alag hai 🔎|{name} — {price}. Bheed mein alag dikhti hai.
+best|heart|Aaj ka special: aapke liye 🎁|{name} — {discount}% off. Bachat wali khushi ka koi alternative nahi.

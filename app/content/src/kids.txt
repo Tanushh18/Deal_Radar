@@ -1,0 +1,64 @@
+# category: Baby & Kids
+# prefix: kd
+chai|dost|Chai thandi, bachcha uth gaya ☕|{name}, {price}. Chai aur bachcha, dono garam rakhne padte hain.|t=morning
+chai|heart|Chai ka ek ghoont, bachche ki ek muskaan 💜|{name} at {price}. Chai garam, bachcha khush.
+salary|heart|Salary aayi, bachche ke liye ek chhota sa treat 🧸|{name}, {price}. Uski muskaan wapas mil jayegi.
+salary|self|Salary ka aadha bachche ke sapno mein jaata hai 👶|{name} for {price}. Sapne bhi sasta nahi hote.
+monthend|self|Month-end: diapers ka stock aur wallet dono kam 😅|{name}, {price}. Bachche ki cheez pehle.
+monthend|dost|Bachche ki zaroorat pehle, baaki baad mein 🍼|{name} at {price}. Baaki kharche thoda ruk sakte hain.
+sunday|dost|Sunday: bachche ke saath khelne ka din 🧩|{name}, {price}. Games raat tak chalenge.|w=0
+sunday|tease|Aaj bachche ko bahar le jao 🌳|{name} for {price}. Ghar mein chaos ka time nahi.|w=0
+monday|self|Monday: school ka bag, lunch box, aur late 😅|{name}, {price}. Subah ki daud mein help.|w=1
+monday|dost|School ka pehla din: bachcha nervous, tum bhi 🎒|{name} at {price}. Pehla din yaadgar hoga.|w=1
+wfh|self|WFH mein bachcha camera ke peeche aa jata hai 😂|{name}, {price}. Meeting ka celebrity.|d=weekday
+wfh|dost|Kaam bhi karna hai, bachche ko busy bhi rakhna hai 🧩|{name} for {price}. Puzzle 10 minute ka shanti.|d=weekday
+ghar|heart|Dadi-nani ki kahaniyan aur naye khilone 👵|{name}, {price}. Kahaniyon ke saath ye bhi.
+ghar|dost|Ghar mein khilone ka ambaar? Ek aur ka jugaad 🧸|{name} at {price}. Bachche ki khushi ke aage kuch nahi.
+ghar|self|Bachcha: 'mujhe ye chahiye'. Tum: 'dekhte hain' 😄|{name} — {discount}% off. Paisa vasool wali feeling.
+festival|dost|Tyohaar pe bachche ke naye kapde 👶|{name} for {price}. Photo ke liye ready.
+festival|heart|Diwali pe bachcha ki muskaan sabse badi roshni 🪔|{name}, {price}. Diyon se badi roshni uski hansi.
+festival|tease|Birthday aa raha hai? Gift ka scene 🎂|{name} at {price}. Return gift bhi dekh lo.
+match|dost|Bachcha bhi match dekhna chahta hai, jersey ke saath 🏏|{name}, {price}. Chhote fan ka bada jazba.
+heart|heart|Bachpan sirf ek baar aata hai 🧸|{name} for {price}. Jitna ho sake, khush rakho.
+heart|heart|Bachche ki muskaan: duniya ki sabse achhi deal 💜|{name}, {price}. Uski hansi ka koi MRP nahi.
+toys|dost|Khilona: dimaag bhi, dil bhi 🧩|{name} at {price}. Khelte khelte seekhna.
+toys|tease|Naya khilona aaya, purane ko chhutti 🧸|{name}, {price}. Kitne khilone ek saath chalenge?
+toys|self|Ghar mein khilone ki jagah kam, chaah zyada 😅|{name} for {price}. Jagah kam padi to dil bada kar lo.
+toys|heart|Jo khilona bachpan ki yaad bane 💜|{name}, {discount}% off. Halki jeb, bhaari khushi.
+toys|dost|Building blocks: bachche ka pehla architect 🏗️|{name} at {price}. Kal ka architect aaj ka builder.
+toys|tease|Soft toy: neend ka sabse achha saathi 🧸|{name}, {price}. Neend ke liye ek naram saathi.
+toys|self|Ek aur toy car? Pichli kahan gayi? 🚗|{name} for {price}. Sofa ke neeche shayad.
+toys|dost|Colouring book: rang bhar do 🎨|{name}, {price}. Deewar bachi rahe.
+toys|heart|Bachcha soch raha hai ki ye kya bana? 🎭|{name} at {price}. Kalpana ko kholne ka mauka.
+diapers|dost|Diapers: raat ki neend ki guarantee nahi, par help 🍼|{name}, {price}. Stock rakhna ek achhi idea.
+diapers|self|Diapers khatam? Raat ke 11 baje ka scene 🌙|{name} for {price}. Aage se stock rakho.
+diapers|tease|Baby wipes: sab jagah ke nishan hatane ke liye 🧻|{name}, {discount}% off. MRP ki ab koi nahi sunta.
+diapers|heart|Nanha mehmaan, badi zimmedariyan 👶|{name} at {price}. Naye mehmaan ki poori taiyari.
+diapers|dost|Bachcha bada ho raha hai, size bhi badlega 📏|{name}, {price}. Badhta bachcha, badhti zaroorat.
+feeding|dost|Baby bottle: raat ke doodh ka saathi 🍼|{name} for {price}. Raat ke doodh ka bharosemand saathi.
+feeding|heart|Mummy-papa ka pyaar, doodh ke saath 💜|{name}, {price}. Pyaar ke saath poshan.
+feeding|tease|Baby food: naye swaad ka pehla din 🥣|{name} at {price}. Muh bane, photo lo.
+feeding|self|Bachcha kuch nahi khata, par plate mein sab hai 😅|{name} — {discount}% off. Price tag ne bhi haath jod liye.
+feeding|dost|High chair: khana bhi sath, chaos bhi sath 🪑|{name} for {price}. Khana saath mein, chaos bhi saath mein.
+clothes|dost|Bachche ke kapde: 3 mahine mein chhote 😅|{name}, {price}. Badhte bachche ki nishani.
+clothes|heart|Ek chhoti si frock, badi si muskaan 👗|{name} at {price}. Chhoti si frock, badi si muskaan.
+clothes|tease|Bachcha kapde pehen ke bhaagta hai 🏃|{name}, {discount}% off. Photo ke liye ek second ruk jao.
+clothes|self|Bachche ka wardrobe: mera wardrobe se bada 😂|{name} for {price}. Bachche ka wardrobe hamesha jeetega.
+clothes|dost|Jacket: sardi ka pehla hamla 🧥|{name}, {price}. Bachche ko bhi garam rakhna.
+clothes|heart|School uniform: naya saal, naya jazba 🎒|{name} at {price}. Naya saal, naya jazba.
+clothes|tease|Sneakers bachche ke liye: dauden ya girein, style mein 👟|{name}, {price}. Girne ka dar nahi, dauden ka mazaa.
+school|dost|School ka bag: kitaabein bhi, khilone bhi 🎒|{name} for {price}. Bhaari hone se pehle check karo.
+school|tease|Stationery: jo hamesha khatam ho jaati hai ✏️|{name}, {discount}% off. Pencil ka scene har mahine.
+school|self|Bachche ka homework: aadha tumhara 😅|{name} at {price}. Kitaabein le lo, dimaag alag.
+school|heart|Padhai ki shuruaat, ek chhota sa gift 📚|{name}, {price}. Padhai ki shuruaat mein ek chhota gift.
+school|dost|Lunch box: bachcha khaye ya na khaye, ready hai 🍱|{name} for {price}. Khaye ya na khaye, dabba ready.
+school|tease|Water bottle: jo gum ho jaati hai roz 💧|{name}, {price}. Naam likh do.
+gift|heart|Birthday gift: bachche ki aankhon ki chamak 🎁|{name} at {price}. Aankhon ki chamak ka koi price nahi.
+gift|dost|Baby shower ka gift dhoondh rahe ho? 🎀|{name}, {discount}% off. Aaj price ne sharafat dikhayi.
+gift|tease|Return gift: 20 bachche, ek budget 😅|{name} for {price}. Budget ke andar, sabki muskaan.
+gift|heart|Chhoti si cheez, badi yaadein 💜|{name}, {price}. Chhoti cheez, lambi yaad.
+brand|tease|{brand} ka naya khilona dekha? 🧸|{name}, {discount}% off. Bachche ko pasand aayega.|p
+brand|dost|{brand}: bachche ki pasand ka brand? 👶|{name}, {price}. Bachche ka pasandeeda naam.|p
+deal|tease|Bachche ki deal: {discount}% off 🧸|{name}, {price}. Muskaan ke saath.
+deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Bachche ka budget bhi to hota hai.
+deal|heart|Bachat ka matlab: bachche ke liye kuch aur 💜|{name} at {price}. Save: {save}.

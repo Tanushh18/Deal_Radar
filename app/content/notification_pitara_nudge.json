@@ -1,0 +1,775 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (nudge). Built from src/nudge.txt."
+ },
+ "templates": [
+  {
+   "id": "nd001",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "{count} nayi deals aayi hain jab aap gaye the 👀",
+   "body": "Top pick: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd002",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Kaafi din ho gaye, deals badh gayi hain 📈",
+   "body": "{count} naye deals. Ek: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd003",
+   "category": "Any",
+   "mood": "away",
+   "tone": "heart",
+   "title": "Aap yaad aaye 💜",
+   "body": "{count} deals nayi aayi. Aapke liye ek: {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd004",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Aapke jaane ke baad {count} deals aayi 🎁",
+   "body": "{name}, {price}. Ek nazar.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd005",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Hum yahin hain, aap kahan? 👋",
+   "body": "{count} nayi deals. Sabse acchi: {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd006",
+   "category": "Any",
+   "mood": "away",
+   "tone": "self",
+   "title": "Kaafi din se app khola nahi? Koi baat nahi 😌",
+   "body": "{count} nayi deals ready hain.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd007",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "{count} naye deals, aur wapas aane ka koi jhanjhat nahi 🙌",
+   "body": "{name}, {price}. Jab bhi mann kare, ek nazar.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd008",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Deals chalti rahi, aap chhutti pe the? 🏖️",
+   "body": "{count} nayi. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd009",
+   "category": "Any",
+   "mood": "away",
+   "tone": "heart",
+   "title": "Jab bhi mann kare, hum yahin hain 🌷",
+   "body": "{count} nayi deals. Ek: {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd010",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Ek chhota sa update: {count} nayi deals 📬",
+   "body": "{name}, {price}. Chhota sa update, seedha aap tak.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd011",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Kuch deals aapka intezaar kar rahi hain ⌛",
+   "body": "{count} nayi. {name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd012",
+   "category": "Any",
+   "mood": "away",
+   "tone": "self",
+   "title": "App ko yaad aayi, aapki 😄",
+   "body": "{count} nayi deals. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd013",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Aaj ki top deal: {name} 🏆",
+   "body": "{count} nayi deals aur. Price: {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd014",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Aap nahi the, deals ne party kar li 🎉",
+   "body": "{count} nayi. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd015",
+   "category": "Any",
+   "mood": "away",
+   "tone": "heart",
+   "title": "Aapke bina thoda soona tha 💜",
+   "body": "{count} nayi deals. {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd016",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Sirf ek nazar: {count} nayi deals 👀",
+   "body": "{name}, {price}. Bas ek nazar, phir aapki marzi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd017",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Kaafi kuch badla hai jab aap the nahi 🔄",
+   "body": "{count} nayi deals. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd018",
+   "category": "Any",
+   "mood": "away",
+   "tone": "self",
+   "title": "Time nahi mila tha na? Chalo, ek minute 😊",
+   "body": "{count} nayi deals. {name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd019",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Aapke liye kuch alag chun ke rakha hai 🎯",
+   "body": "{name}, {price}. {count} nayi deals bhi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd020",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Ye deal dekh ke aap wapas aa jaoge 😏",
+   "body": "{name}, {price}. Wapas aane ka ek aur bahana.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd021",
+   "category": "Any",
+   "mood": "away",
+   "tone": "heart",
+   "title": "Wapas aana hamesha achha lagta hai 🏡",
+   "body": "{count} nayi deals. {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd022",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Aaj ke best: {name} 🌟",
+   "body": "{count} nayi deals, price {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd023",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Bahut kuch miss kiya aapne 😄",
+   "body": "{count} nayi deals. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd024",
+   "category": "Any",
+   "mood": "away",
+   "tone": "self",
+   "title": "Pichli baar ka wishlist yaad hai? Naye deals aa gaye 📝",
+   "body": "{count} nayi. {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd025",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Ek chhota sa yaad dilaana 🔔",
+   "body": "{count} nayi deals. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd026",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Deals badh gayi, aap kahan the? 🤔",
+   "body": "{count} nayi. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd027",
+   "category": "Any",
+   "mood": "away",
+   "tone": "heart",
+   "title": "Aapki pasand ka kuch mila 💜",
+   "body": "{name}, {price}. {count} nayi deals aur.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd028",
+   "category": "Any",
+   "mood": "away",
+   "tone": "dost",
+   "title": "Kaafi din baad, ek achhi deal 🌤️",
+   "body": "{name}, {price}. Kaafi din baad bhi wahi deal wali baat.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd029",
+   "category": "Any",
+   "mood": "away",
+   "tone": "tease",
+   "title": "Bina notice diye {count} deals aa gayi 📢",
+   "body": "{name}, {price}. Bina bataye aa gayi, ab batate hain.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd030",
+   "category": "Any",
+   "mood": "away",
+   "tone": "self",
+   "title": "Ek baar dekh lo, phir jaao 😌",
+   "body": "{count} nayi deals. {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd031",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "dost",
+   "title": "Lowest price we've seen: {price} 📉",
+   "body": "{name}. Hamare data ke hisaab se sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd032",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "tease",
+   "title": "Ye ab tak ki sabse kam price hai 🎯",
+   "body": "{name} — {price}. Hamare data mein.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd033",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "heart",
+   "title": "Aisa mauka kam aata hai, par aaya hai 💜",
+   "body": "{name}, {price}. Hamare records mein sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd034",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "dost",
+   "title": "Record price: {price} 📊",
+   "body": "{name}. Ye humne abhi tak ki sabse kam dekhi.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd035",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "tease",
+   "title": "Price ne apna hi record tod diya 🏅",
+   "body": "{name} — {price}. Ab tak ki sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd036",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "self",
+   "title": "Kaafi din se dekh rahe the? Ye price ab sabse kam hai 😌",
+   "body": "{name}, {price}. Hamare data mein iski sabse kam price.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd037",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "dost",
+   "title": "Sabse kam price, humare data ke hisaab se 🔎",
+   "body": "{name} at {price}. Hamare records mein ab tak ki sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd038",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "tease",
+   "title": "Ye deal aap miss mat karna (par decide aapka hai) 😄",
+   "body": "{name} — {price}. Hamare data mein lowest.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd039",
+   "category": "Any",
+   "mood": "lowest",
+   "tone": "heart",
+   "title": "Aaj ka special: ab tak ki sabse achhi price 💜",
+   "body": "{name}, {price}. Hamare data mein sabse achhi price.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd040",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "dost",
+   "title": "{sale} {when} 🎉",
+   "body": "Hum prices track kar rahe hain, taaki asli deals pehchano.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd041",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "tease",
+   "title": "{sale} {when}. Taiyaar? 😏",
+   "body": "Hum nazar rakhe hue hain, aap aaram karo.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd042",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "heart",
+   "title": "{sale} {when} 💜",
+   "body": "Hum kaam par hain: asli deal aur hype mein farak dikhayenge.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd043",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "dost",
+   "title": "{sale} {when} 🛍️",
+   "body": "Ham prices dekh rahe hain, aap bas sahi waqt pe aana.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd044",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "tease",
+   "title": "{sale} {when} 👀",
+   "body": "Deals aur hype alag alag hote hain. Hum batayenge kaunsi asli hai.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd045",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "self",
+   "title": "{sale} {when} 📅",
+   "body": "Calendar mein daal lo, baaki hum sambhal lenge.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd046",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "dost",
+   "title": "{sale} {when} 🎯",
+   "body": "Asli discount aur pura hype: hum alag karenge.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd047",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "heart",
+   "title": "{sale} {when} ✨",
+   "body": "Hum price history dekh ke sahi deals dhundhenge.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd048",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "tease",
+   "title": "{sale} {when} 🔍",
+   "body": "Hum hoshiyari se nazar rakhe hue hain. Aap chai piyo.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd049",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "dost",
+   "title": "{sale} {when} 🔔",
+   "body": "Reminder ke liye hi bheja hai. Koi pressure nahi.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd050",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "self",
+   "title": "{sale} {when} 📆",
+   "body": "Dates approximate ho sakti hain. Hum track kar rahe hain, calendar mein daal lo.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd051",
+   "category": "Any",
+   "mood": "sale",
+   "tone": "tease",
+   "title": "{sale} {when} 🏷️",
+   "body": "Deals ke saath price history bhi dikhayenge.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd052",
+   "category": "Any",
+   "mood": "evening",
+   "tone": "dost",
+   "title": "Shaam ho gayi, ek nazar dalo 🌆",
+   "body": "{count} nayi deals. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd053",
+   "category": "Any",
+   "mood": "evening",
+   "tone": "tease",
+   "title": "Chai ka time hai, deals ka bhi ☕",
+   "body": "{count} nayi deals. {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd054",
+   "category": "Any",
+   "mood": "evening",
+   "tone": "heart",
+   "title": "Din ke baad ka aaram, ek deal ke saath 🌇",
+   "body": "{name}, {price}. Din ke baad thoda sa aaram.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd055",
+   "category": "Any",
+   "mood": "evening",
+   "tone": "dost",
+   "title": "Aaj ka din kaisa raha? Ek deal dekh lo 😊",
+   "body": "{name}, {price}. Din kaisa bhi ho, ye deal achhi hai.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "nudge"
+   ]
+  },
+  {
+   "id": "nd056",
+   "category": "Any",
+   "mood": "evening",
+   "tone": "tease",
+   "title": "Shaam ki scrolling: hum ready hain 📱",
+   "body": "{count} nayi deals. {name}.",
+   "needs": [],
+   "kinds": [
+    "nudge"
+   ]
+  }
+ ]
+}

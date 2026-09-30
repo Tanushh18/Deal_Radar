@@ -173,9 +173,20 @@ def main() -> int:
                   str([(d["title"][:20], round(r, 1)) for d, _, r in ranked[:3]]))
             check("it's recognised as a women's item", ranked and ranked[0][1] is True)
             title, body = hot_push.compose(ranked[0][0], True)
-            check("title carries an emoji hook and the product", title[0] not in "abcdefghijklmnopqrstuvwxyz" and "Libas" in title, title)
-            check("body quotes the price and what it was", "₹649" in body and "₹2,199" in body, body)
-            check("title never repeats the price or channel hype", "₹" not in title and "Loot" not in title, title)
+            check("pitara copy: filled in, names the product, no channel hype",
+                  "{" not in title + body and "Libas" in title + body and "Loot" not in title + body
+                  and 0 < len(title) <= 90 and 0 < len(body) <= 160, f"{title} / {body}")
+            from app.config import settings as _settings
+            _settings.notification_pitara_enabled = False
+            try:
+                title, body = hot_push.compose(ranked[0][0], True)
+            finally:
+                _settings.notification_pitara_enabled = True
+            check("pitara off -> title carries an emoji hook and the product", title[0] not in "abcdefghijklmnopqrstuvwxyz" and "Libas" in title, title)
+            check("…body quotes the price and what it was", "₹649" in body and "₹2,199" in body, body)
+            check("…title never repeats the price or channel hype", "₹" not in title and "Loot" not in title, title)
+            check("…and no fake scarcity in the fallback closers",
+                  not any(w in body.lower() for w in ("selling fast", "limited stock", "gone", "won't last")), body)
             for raw, want in [("Loot: AGEasy Relief Compact Massage Gun @799", "AGEasy Relief Compact Massage Gun"),
                               ("86% Off - Kamiliant Large Suitcase (78 cm) At Rs.1,899", "Kamiliant Large Suitcase (78 cm)"),
                               ("Flat Iron Hair Straightener at Rs 499", "Flat Iron Hair Straightener"),

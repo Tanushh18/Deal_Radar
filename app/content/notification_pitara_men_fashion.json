@@ -1,0 +1,917 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Men Fashion (men_fashion). Built from src/men_fashion.txt."
+ },
+ "templates": [
+  {
+   "id": "mf001",
+   "category": "Men Fashion",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai peete peete ek shirt bhi dekh lo ☕",
+   "body": "{name} — {price}. Shirt pe chai mat girana.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf002",
+   "category": "Men Fashion",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai thandi hui, deal abhi garam hai ☕",
+   "body": "{name} for {price}. Deal garam, chai thandi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf003",
+   "category": "Men Fashion",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Ek chai, ek scroll, ek naya look",
+   "body": "{name} at {price}. Pakoda alag se.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning",
+    "evening"
+   ]
+  },
+  {
+   "id": "mf004",
+   "category": "Men Fashion",
+   "mood": "chai",
+   "tone": "self",
+   "title": "Chai ka bill bhi yaad nahi, ye deal yaad rakhna",
+   "body": "{name} — {price}. Bill bhool jao, deal yaad rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf005",
+   "category": "Men Fashion",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Tapri pe baithe ho? Ye dekh lo 👇",
+   "body": "{name} for {price}. Bhaiya, ek aur chai.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening"
+   ]
+  },
+  {
+   "id": "mf006",
+   "category": "Men Fashion",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, thoda apne liye bhi 💸",
+   "body": "{name} — {price}. Tum deserve karte ho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf007",
+   "category": "Men Fashion",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Salary ka pehla din, wallet ka best din",
+   "body": "{name} at {price}. Bas dekhna hai... na? 😏",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf008",
+   "category": "Men Fashion",
+   "mood": "salary",
+   "tone": "dost",
+   "title": "Pehli tareekh ka swag 😎",
+   "body": "{name}, {discount}% off. Discount sach mein hai, mazaak nahi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "mf009",
+   "category": "Men Fashion",
+   "mood": "salary",
+   "tone": "self",
+   "title": "Salary aayi, EMI ne hello bola, deal ne bhi",
+   "body": "{name} for {price}. Salary, EMI, aur ek chhota treat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf010",
+   "category": "Men Fashion",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Mehnat ki kamai, ek chhota sa treat 🎁",
+   "body": "{name} at {price}. Mehnat ka phal, apni pasand ka.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf011",
+   "category": "Men Fashion",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end mein bhi style ka budget hota hai",
+   "body": "{name} — {price}. Wallet-friendly.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf012",
+   "category": "Men Fashion",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Balance: 'rehne do'. Deal: 'dekh to lo'",
+   "body": "{name} for {price}. Balance kuch bhi bole, dekh lene mein harj nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf013",
+   "category": "Men Fashion",
+   "mood": "monthend",
+   "tone": "dost",
+   "title": "Aakhri hafte ki chill wali deal 🧊",
+   "body": "{name} at {price}. Bas ek nazar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf014",
+   "category": "Men Fashion",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Paisa kam, taste high 😌",
+   "body": "{name} — {price}. Paisa kam, taste unchi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf015",
+   "category": "Men Fashion",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Dekhna free hai, bhai 😄",
+   "body": "{name} — {price}. Tap ka koi charge nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf016",
+   "category": "Men Fashion",
+   "mood": "sunday",
+   "tone": "self",
+   "title": "Sunday ko bhi kuch productive karna hai? Ye lo",
+   "body": "{name} — {price}. Scroll karo, sochna baad mein.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "mf017",
+   "category": "Men Fashion",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Chhutti ka din, shirt ka scene 👔",
+   "body": "{name} for {price}. Chhutti ka din, style ka scene.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekend"
+  },
+  {
+   "id": "mf018",
+   "category": "Men Fashion",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Sunday ki safai ke baad naya kuch chahiye 🧺",
+   "body": "{name}, {discount}% off. Aaj ka special, aaj ke liye.",
+   "needs": [
+    "discount"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "mf019",
+   "category": "Men Fashion",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Pyjama mein baithe ho na? Koi baat nahi 😄",
+   "body": "{name} at {price}. Bas dekh lo.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekend"
+  },
+  {
+   "id": "mf020",
+   "category": "Men Fashion",
+   "mood": "sunday",
+   "tone": "self",
+   "title": "Aaj gym skip, shopping on 🛋️",
+   "body": "{name} — {price}. Gym kal, shopping aaj.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "mf021",
+   "category": "Men Fashion",
+   "mood": "monday",
+   "tone": "tease",
+   "title": "Monday ko bhi swag chahiye 💼",
+   "body": "{name} — {price}. Office mein entry filmy.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "mf022",
+   "category": "Men Fashion",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Alarm ne uthaya, deal ne hansaya ⏰",
+   "body": "{name} at {price}. Monday sorted.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "mf023",
+   "category": "Men Fashion",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday blues ko blue shirt se hara do 💙",
+   "body": "{name} — {price}. Blue shirt, blue mood, blue jeans.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "mf024",
+   "category": "Men Fashion",
+   "mood": "monday",
+   "tone": "tease",
+   "title": "Boss ka mood kaisa bhi ho, tumhara look pakka",
+   "body": "{name} for {price}. Boss ka mood alag, tumhara look alag.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday",
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "mf025",
+   "category": "Men Fashion",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein upar shirt, neeche shorts 😂",
+   "body": "{name} — {price}. Camera sirf upar tak dekhta hai.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "mf026",
+   "category": "Men Fashion",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Meeting se pehle do minute hain? ⏱️",
+   "body": "{name} at {price}. Call pe bhi chalega.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "mf027",
+   "category": "Men Fashion",
+   "mood": "wfh",
+   "tone": "tease",
+   "title": "Camera on karna hai ya off? Shirt to nayi rakho",
+   "body": "{name}, {discount}% off. Score: discount 1, MRP 0.",
+   "needs": [
+    "discount"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "mf028",
+   "category": "Men Fashion",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "Laptop ke peeche bhi personality chahiye 💻",
+   "body": "{name} for {price}. Screen ke peeche bhi personality chalti hai.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "mf029",
+   "category": "Men Fashion",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Lunch break mein ek chhoti si shopping 🍱",
+   "body": "{name} — {price}. Dal thandi hone se pehle.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "afternoon"
+   ]
+  },
+  {
+   "id": "mf030",
+   "category": "Men Fashion",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "Roommate ki shirt pehni? Ab apni le lo 😜",
+   "body": "{name} — {price}. Udhaar band.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf031",
+   "category": "Men Fashion",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "PG ki alamari mein ek hanger khali hai 🚪",
+   "body": "{name} at {price}. Hanger khali, shirt bhi taiyar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf032",
+   "category": "Men Fashion",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Raat ke 2 baje ki 'kal kya pehnu?' chat 🌙",
+   "body": "Answer: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "mf033",
+   "category": "Men Fashion",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Bhai ki shirt bhai ko wapas karo, apni le lo 👕",
+   "body": "{name} for {price}. Bhai ki shirt bhai ko, apni shirt apne ko.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf034",
+   "category": "Men Fashion",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy poochhengi 'kitne ka?' 😎",
+   "body": "Bolna: {price}. Aur confidence ke saath bolna. {name}",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf035",
+   "category": "Men Fashion",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Papa: 'ye kab liya?' Tum: 'deal thi' 😌",
+   "body": "{name} — {price}, {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ]
+  },
+  {
+   "id": "mf036",
+   "category": "Men Fashion",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy ki line: 'itni shirts to hain!' 🙄",
+   "body": "Par ye wali {name} nahi hai. {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf037",
+   "category": "Men Fashion",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Ghar wale kehte hain 'apne liye bhi socho' 💜",
+   "body": "{name} at {price}. Aaj sun li unki baat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf038",
+   "category": "Men Fashion",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Didi bolegi 'achhi hai, kahan se li?' 😏",
+   "body": "Answer: {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf039",
+   "category": "Men Fashion",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Cousin ki sangeet, tumhari entry 🕺",
+   "body": "{name} — {price}. Naach baad mein, kurta pehle.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf040",
+   "category": "Men Fashion",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Tyohaar aa raha hai, alamari taiyar? 🪔",
+   "body": "{name} — {price}. Tyohaar ke liye alamari ready.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf041",
+   "category": "Men Fashion",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar koi bhi ho, look apna 🎉",
+   "body": "{name} at {price}. Look apna, rang apna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf042",
+   "category": "Men Fashion",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Baraat mein sabse sharp kaun? Tum 😎",
+   "body": "{name}, {discount}% off. Price ne aaj mood achha rakha hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "mf043",
+   "category": "Men Fashion",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Photo mein achhe dikhne ka koi zimmedar nahi, par shirt hai 📸",
+   "body": "{name} at {price}. Camera ready, shirt ready.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf044",
+   "category": "Men Fashion",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Jersey nahi to shirt hi sahi 👕",
+   "body": "{name} at {price}. Jersey na sahi, shirt to hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf045",
+   "category": "Men Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Aaj tumne bahut kuch sambhala 🫶",
+   "body": "Ek chhoti si khushi: {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf046",
+   "category": "Men Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Khud ke liye bhi kuch le lo, bhai",
+   "body": "{name} — {price}. Tumhare liye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf047",
+   "category": "Men Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Sab ka khayal rakhte ho, apna bhi rakho 💜",
+   "body": "{name} at {price}. Dusron ke baad apni baari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf048",
+   "category": "Men Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Aaj kisi ne shabaash nahi bola? Hum bolte hain 👏",
+   "body": "Reward: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening",
+    "night"
+   ]
+  },
+  {
+   "id": "mf049",
+   "category": "Men Fashion",
+   "mood": "dost",
+   "tone": "tease",
+   "title": "{brand} ka fan hai koi? 😉",
+   "body": "{name} — {price}. Fan ho to ye deal pasand aayegi.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "mf050",
+   "category": "Men Fashion",
+   "mood": "dost",
+   "tone": "dost",
+   "title": "Tumhare taste ki cheez: {name} 🎯",
+   "body": "{price}. Dekh lo.",
+   "needs": [
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "mf051",
+   "category": "Men Fashion",
+   "mood": "morning",
+   "tone": "tease",
+   "title": "Good morning ☀️ aaj ka mood: nayi shirt",
+   "body": "{name} at {price}. Nayi shirt, naya din.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "mf052",
+   "category": "Men Fashion",
+   "mood": "morning",
+   "tone": "dost",
+   "title": "Alarm ke baad ye dekh lo, phir uthna ⏰",
+   "body": "{name} — {price}. Alarm baad mein, deal pehle.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "mf053",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Ye shirt iron karne ka bahana nahi dega 😄",
+   "body": "{name} — {price}. Iron karne ka bahana khatam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf054",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Formal ho ya casual, mood tumhara 🎭",
+   "body": "{name} at {price}. Formal, casual — jo mood.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf055",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Interview wali shirt ka replacement 👔",
+   "body": "{name} — {price}. Ab aur kaam aayegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf056",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "self",
+   "title": "Purani shirt ne bhi bahut saath diya, ab retire 🎖️",
+   "body": "{name} for {price}. Puraani shirt ko salaam, naye ko swagat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf057",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "T-shirt collection mein ek aur entry? 👕",
+   "body": "{name} at {price}. Collection mein ek aur naam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf058",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Kurta pehnne ka bahana chahiye? Ye raha 🙌",
+   "body": "{name} — {price}. Kurta pehnne ka naya bahana.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf059",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "self",
+   "title": "Alamari mein jagah nahi, par deal to hai 🪑",
+   "body": "{name}, {price}. Jagah nahi hai to bhi deal hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf060",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Ye jacket dekh ke mausam bhi jalega 🧥",
+   "body": "{name} — {price}. Mausam bhi jalega, tum chill.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf061",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Sneakers ke saath ye combo pakka chalega 👟",
+   "body": "{name} at {price}. Sneakers ke saath fit hoga.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf062",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Date pe, dost ki shaadi pe, ya bas mood pe 😌",
+   "body": "{name} — {price}. Har mauke ke liye ek mood.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf063",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Shirt ka size bhi dekh lena, mood ka size to perfect hai",
+   "body": "{name} at {price}. Size dekh lena, mood sahi hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf064",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "heart",
+   "title": "Ek achhi shirt, ek achha din 🌤️",
+   "body": "{name} — {price}. Achha din, achhi shirt.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf065",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Compliment milega ya nahi, deal to sach mein live hai",
+   "body": "{name} for {price}. Deal live hai, compliment tumhare upar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf066",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Colour choose karna mushkil? Hum ne pehle hi kar diya 🎨",
+   "body": "{name} — {price}. Rang ka jhagda hum sulta lenge.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf067",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Ye hoodie sardi se pehle ka jugaad hai 🧣",
+   "body": "{name} at {price}. Sardi aane se pehle taiyari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf068",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Jeans ka pocket bada ho to wallet bhi khush 😄",
+   "body": "{name} — {price}. Wallet ko bhi jeb chahiye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf069",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "self",
+   "title": "Aaj bhi wahi purani t-shirt? Aaj badlo 😅",
+   "body": "{name} for {price}. Purani t-shirt ko chhutti do.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf070",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Belt, watch, wallet — sab set karna hai kya? ⌚",
+   "body": "{name} — {price}. Poora set, poora look.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf071",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Sharma ji ka beta bhi yahi dekh raha tha 😏",
+   "body": "{name} at {price}. Tum pehle le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf072",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Look aisa jaise pehle se plan tha 😎",
+   "body": "{name} — {price}. Aisa dikhna jaise plan tha.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf073",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Mirror ne bola 'aaj kuch naya?' 🪞",
+   "body": "{name} — {price}. Jawab: haan, aaj kuch naya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf074",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Ye shirt tumhare mood se match karti hai",
+   "body": "{name} at {price}. Mood ke saath match karti hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf075",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "tease",
+   "title": "Aaj 'main character' energy 🎬",
+   "body": "{name} — {price}. Aaj ki script mein tum hero.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "mf076",
+   "category": "Men Fashion",
+   "mood": "shirts",
+   "tone": "dost",
+   "title": "Aaj ki deal: tumhare swag jitni sharp ✂️",
+   "body": "{name} at {price}. Swag sharp, look bhi sharp.",
+   "needs": [
+    "price"
+   ]
+  }
+ ]
+}

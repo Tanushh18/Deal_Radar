@@ -1,0 +1,736 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Bags & Luggage (bags). Built from src/bags.txt."
+ },
+ "templates": [
+  {
+   "id": "bg001",
+   "category": "Bags & Luggage",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai ke saath safar ka plan ☕",
+   "body": "{name}, {price}. Bag pehle, ticket baad mein.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning",
+    "evening"
+   ]
+  },
+  {
+   "id": "bg002",
+   "category": "Bags & Luggage",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai gir gayi bag pe? Naya le lo 😅",
+   "body": "{name} at {price}. Chai dhabbe wali bag aur nahi chalegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg003",
+   "category": "Bags & Luggage",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, ek trip ka plan banta hai ✈️",
+   "body": "{name}, {price}. Bag pehle taiyaar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg004",
+   "category": "Bags & Luggage",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Pehli tareekh: bag ka naya scene 🎒",
+   "body": "{name} for {price}. Pehli tareekh, pehli khareedari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg005",
+   "category": "Bags & Luggage",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end: bag ki zip bhi wallet ki tarah band hai 😅",
+   "body": "{name}, {price}. Zip ko bhi aaram chahiye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg006",
+   "category": "Bags & Luggage",
+   "mood": "monthend",
+   "tone": "dost",
+   "title": "Trip nahi ho raha? Kam se kam bag to dekh lo 🎒",
+   "body": "{name} at {price}. Sapne pehle.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg007",
+   "category": "Bags & Luggage",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: purani bag saaf karne ka din 🧺",
+   "body": "{name}, {price}. Ya naya le lo.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "bg008",
+   "category": "Bags & Luggage",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj koi plan nahi? Trip ka plan banao ✈️",
+   "body": "{name} for {price}. Plan ka pehla paanna: bag.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "bg009",
+   "category": "Bags & Luggage",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday: laptop bag ka zip kharab 💼",
+   "body": "{name}, {price}. Office ka scene.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "bg010",
+   "category": "Bags & Luggage",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Alarm ke baad bag mein sab kuch daalna 🎒",
+   "body": "{name} at {price}. Charger mat bhoolna.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "bg011",
+   "category": "Bags & Luggage",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein bag sirf kabhi kabhi nikalta hai 😂",
+   "body": "{name}, {price}. Office aane pe kaam aayega.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "bg012",
+   "category": "Bags & Luggage",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Workation ka plan? Laptop bag ready? 🏝️",
+   "body": "{name} for {price}. Laptop bag ke saath saath sapne bhi pack.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "bg013",
+   "category": "Bags & Luggage",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "Hostel ka trunk aur bag: jagah ki kami 🧳",
+   "body": "{name}, {price}. Bade wale mein sab aa jayega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg014",
+   "category": "Bags & Luggage",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Ghar jaane ka mann? Bag pack karo 🏠",
+   "body": "{name} at {price}. Mummy ke liye kuch rakhna mat bhoolna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg015",
+   "category": "Bags & Luggage",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Ghar wapas jaane ki khushi, bag mein sab kuch 🏠",
+   "body": "{name}, {price}. Mummy ke liye kuch.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg016",
+   "category": "Bags & Luggage",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Mummy: 'bag mein zyada mat bharna' Tum: 'ye zaroori hai' 😅",
+   "body": "{name} for {price}. Zaroori cheezon ki list badi hoti hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg017",
+   "category": "Bags & Luggage",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar pe ghar ja rahe ho? Trolley ready? 🧳",
+   "body": "{name}, {price}. Ghar ka rasta lamba, bag halka rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg018",
+   "category": "Bags & Luggage",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Shaadi ka safar: bag bhi shaandar chahiye 💍",
+   "body": "{name} at {price}. Lehenga bhi aayega, jagah hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg019",
+   "category": "Bags & Luggage",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Ghar wapas aane ka safar sabse pyaara 💜",
+   "body": "{name}, {price}. Mummy ke haath ki mithai ke liye jagah bachi rakhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg020",
+   "category": "Bags & Luggage",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Stadium jaane wala bag: chhota aur handy 🏟️",
+   "body": "{name} for {price}. Sirf zaroori cheezein, jagah ki tension nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg021",
+   "category": "Bags & Luggage",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Safar chhota ho ya lamba, bag apna hi bhala 🎒",
+   "body": "{name}, {price}. Apna bag, apna raasta.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg022",
+   "category": "Bags & Luggage",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Ek bag, hazaaron yaadein 💜",
+   "body": "{name} at {price}. Har kone mein ek kahani.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg023",
+   "category": "Bags & Luggage",
+   "mood": "backpack",
+   "tone": "dost",
+   "title": "Backpack: college se office tak 🎒",
+   "body": "{name}, {price}. Sabka best friend.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg024",
+   "category": "Bags & Luggage",
+   "mood": "backpack",
+   "tone": "tease",
+   "title": "Bag ke chain kharab hote hi wahi hota hai 😅",
+   "body": "{name} for {price}. Naya le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg025",
+   "category": "Bags & Luggage",
+   "mood": "backpack",
+   "tone": "self",
+   "title": "Bag mein sab kuch hai, jo chahiye wo nahi 🤦",
+   "body": "{name}, {discount}% off. Pockets kam pade.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bg026",
+   "category": "Bags & Luggage",
+   "mood": "backpack",
+   "tone": "heart",
+   "title": "Roz ka saathi, roz ka bharosa 💜",
+   "body": "{name} at {price}. Subah se shaam tak, saath nibhata hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg027",
+   "category": "Bags & Luggage",
+   "mood": "backpack",
+   "tone": "dost",
+   "title": "Laptop compartment: chhoti si suraksha 💻",
+   "body": "{name}, {price}. Laptop ko gaddi ka aaram.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg028",
+   "category": "Bags & Luggage",
+   "mood": "backpack",
+   "tone": "tease",
+   "title": "Bag ka size: 'itna kaafi hai?' Haan, kaafi hai 😄",
+   "body": "{name} for {price}. Bag chhota lage to samajhna, cheezein zyada hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg029",
+   "category": "Bags & Luggage",
+   "mood": "backpack",
+   "tone": "self",
+   "title": "Purani bag ka kandha pukaar raha hai 🥲",
+   "body": "{name} — {discount}% off. Discount dekho, decision tumhara.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bg030",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "dost",
+   "title": "Trolley: airport pe jalwa 🧳",
+   "body": "{name} at {price}. Pahiya chalne chahiye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg031",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "tease",
+   "title": "Trip ka plan banta hai, trolley ka scene 🧳",
+   "body": "{name}, {price}. Passport pehle, packing baad mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg032",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "self",
+   "title": "Bag mein 4 kapde, wapas aate hue 10 kilo extra 😂",
+   "body": "{name} for {price}. Bade wala lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg033",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "heart",
+   "title": "Naye shehar, nayi kahaniyan 🌍",
+   "body": "{name} — {discount}% off. Aaj ka rate yaad rakhna.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bg034",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "dost",
+   "title": "Duffel bag: weekend trip ka saathi 🏕️",
+   "body": "{name} at {price}. Do din ka trip, ek hi bag.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg035",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "tease",
+   "title": "Travel organiser: sab kuch apni jagah 🧳",
+   "body": "{name}, {price}. Chaabi ab bag ke ek hi kone mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg036",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "self",
+   "title": "Passport aur charger: dono bag mein hain? 📘",
+   "body": "{name} for {price}. Dhyan se check karna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg037",
+   "category": "Bags & Luggage",
+   "mood": "travel",
+   "tone": "heart",
+   "title": "Har safar ek nayi shuruat hai 🛫",
+   "body": "{name}, {price}. Naye raaste, naya bag.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg038",
+   "category": "Bags & Luggage",
+   "mood": "handbag",
+   "tone": "dost",
+   "title": "Handbag: chhoti si, par sab kuch andar 👜",
+   "body": "{name} at {price}. Chhoti dikhti hai, sabka bharosa uthati hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg039",
+   "category": "Bags & Luggage",
+   "mood": "handbag",
+   "tone": "tease",
+   "title": "Handbag: 'ismein kya hai?' 'Sab kuch' 😅",
+   "body": "{name} — {discount}% off. Ye wali list mein upar aayi hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bg040",
+   "category": "Bags & Luggage",
+   "mood": "handbag",
+   "tone": "self",
+   "title": "Purse mein sikke, chabiyan, aur ek lipstick 💄",
+   "body": "{name} for {price}. Ek lipstick nikaalo to sab kuch bahar aa jaata hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg041",
+   "category": "Bags & Luggage",
+   "mood": "handbag",
+   "tone": "heart",
+   "title": "Ek pyaari si bag, ek pyaara sa mood 💜",
+   "body": "{name}, {price}. Pyaari cheez ko pyaari jagah.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg042",
+   "category": "Bags & Luggage",
+   "mood": "handbag",
+   "tone": "dost",
+   "title": "Sling bag: haath khali, style bhari 🎒",
+   "body": "{name} at {price}. Haath khali, kaam bhari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg043",
+   "category": "Bags & Luggage",
+   "mood": "handbag",
+   "tone": "tease",
+   "title": "Clutch: shaadi mein entry 💃",
+   "body": "{name}, {price}. Shaadi mein sabki nazar ispe.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg044",
+   "category": "Bags & Luggage",
+   "mood": "wallet",
+   "tone": "dost",
+   "title": "Wallet: jo hamesha khali lagta hai 😅",
+   "body": "{name} for {price}. Naya le lo, paisa apne aap aayega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg045",
+   "category": "Bags & Luggage",
+   "mood": "wallet",
+   "tone": "tease",
+   "title": "Wallet mein cards zyada, cash kam 💳",
+   "body": "{name}, {discount}% off. Kam kharch, zyada khushi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bg046",
+   "category": "Bags & Luggage",
+   "mood": "wallet",
+   "tone": "self",
+   "title": "Purana wallet: fata hua, par pyaara 🥲",
+   "body": "{name} at {price}. Naya wallet, purani yaadein alag rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg047",
+   "category": "Bags & Luggage",
+   "mood": "wallet",
+   "tone": "heart",
+   "title": "Ek achha wallet, ek achhi shuruaat 💜",
+   "body": "{name}, {price}. Shuruaat achhi ho to sab achha.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg048",
+   "category": "Bags & Luggage",
+   "mood": "wallet",
+   "tone": "dost",
+   "title": "Card holder: chhota, slim, smart 💳",
+   "body": "{name} for {price}. Cards ki ab apni jagah.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg049",
+   "category": "Bags & Luggage",
+   "mood": "laptop",
+   "tone": "dost",
+   "title": "Laptop bag: chhoti si safety 💻",
+   "body": "{name}, {price}. Charger ka jagah bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg050",
+   "category": "Bags & Luggage",
+   "mood": "laptop",
+   "tone": "tease",
+   "title": "Laptop sleeve: jhatka-proof nahi, par better 🛡️",
+   "body": "{name} at {price}. Jhatka lage, laptop na hile.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg051",
+   "category": "Bags & Luggage",
+   "mood": "laptop",
+   "tone": "self",
+   "title": "Laptop bag ka strap toot gaya 🥲",
+   "body": "{name}, {discount}% off. Aaj ki list mein ye bhi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bg052",
+   "category": "Bags & Luggage",
+   "mood": "laptop",
+   "tone": "heart",
+   "title": "Office ke safar ka saathi 💼",
+   "body": "{name} for {price}. Office ke raaste mein saath.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg053",
+   "category": "Bags & Luggage",
+   "mood": "school",
+   "tone": "dost",
+   "title": "School bag: kitaabein bhi, khilone bhi 🎒",
+   "body": "{name}, {price}. Kitaab, khilona, tiffin — sab andar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg054",
+   "category": "Bags & Luggage",
+   "mood": "school",
+   "tone": "tease",
+   "title": "Bachche ka bag: 5 kilo ki kitaabein 📚",
+   "body": "{name} at {price}. Kandhe ka khayal.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg055",
+   "category": "Bags & Luggage",
+   "mood": "school",
+   "tone": "heart",
+   "title": "Padhai ka safar, ek achhe bag ke saath 📚",
+   "body": "{name}, {price}. Bachche ki pehli class ki tayyari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg056",
+   "category": "Bags & Luggage",
+   "mood": "gym",
+   "tone": "dost",
+   "title": "Gym bag: kal se pakka jaana hai 💪",
+   "body": "{name} for {price}. Gym kal se, bag aaj se.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bg057",
+   "category": "Bags & Luggage",
+   "mood": "gym",
+   "tone": "tease",
+   "title": "Gym bag: andar joote, bahar bhi joote 😅",
+   "body": "{name}, {discount}% off. Percent kam nahi, mauka bhi kam nahi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bg058",
+   "category": "Bags & Luggage",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka bag dekha? 👀",
+   "body": "{name}, {discount}% off. Style bhi, jagah bhi.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "bg059",
+   "category": "Bags & Luggage",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand}: bag ka pasandeeda brand? 🎒",
+   "body": "{name}, {price}. Bag aisa jo bahut kuch jhel jaye.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "bg060",
+   "category": "Bags & Luggage",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Bag deal: {discount}% off 🎒",
+   "body": "{name}, {price}. Safar ka mazaa.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "bg061",
+   "category": "Bags & Luggage",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Math simple hai, bag bhari.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "bg062",
+   "category": "Bags & Luggage",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ke saath chalte raho 💜",
+   "body": "{name} at {price}. Save: {save}. Aage ka rasta aasan.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

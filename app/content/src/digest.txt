@@ -1,0 +1,48 @@
+# category: Any
+# prefix: dg
+# kinds: digest
+daily|dost|🔥 Today's best: {price} {name}|{count} nayi deals aaj. Top picks dekhne ke liye tap karo.
+daily|tease|☀️ Aaj ka pick: {price}|{name} — plus {count} nayi deals aaj.
+daily|heart|Aaj ka din, aaj ki deal 💜|{name}, {price}. {count} nayi deals aur.
+daily|dost|Subah subah ek deal ☕|{name} at {price}. {count} nayi deals bhi hain.
+daily|tease|Aaj ke {count} naye deals mein se ek 🎯|{name}, {price}. {count} mein se ye pehle number par.
+daily|self|Daily digest: chai jaise zaroori ☕|{name} for {price}. {count} deals aaj.
+daily|dost|Aaj ki top deal: {name} 🏆|{price}. Baaki {count} deals bhi dekh lo.
+daily|tease|Aaj ke {count} deals mein sabse alag 🌟|{name} — {price}. Baaki {count} bhi dekh lena.
+daily|heart|Aaj kuch achha mila 💜|{name}, {price}. {count} nayi deals.
+daily|dost|Din ka pehla update 📬|{count} nayi deals. Top: {name}, {price}.
+daily|tease|Aaj ka best of the best 🥇|{name} at {price}. {count} deals aaj.
+daily|self|Chalo, aaj ka pick dekhte hain 👀|{name}, {price}. {count} nayi.
+daily|dost|Aapki daily dose of deals 💊|{name} for {price}. {count} nayi.
+daily|tease|Aaj ka top: {name} 🔝|{price}. {count} deals aur.
+daily|heart|Din ki shuruaat ek achhi deal se 🌞|{name}, {price}. {count} nayi.
+daily|dost|Aaj ki khaas deal 🎁|{name} at {price}. Total nayi: {count}.
+daily|tease|Aaj sirf {count} deals, par ye khaas 🎯|{name}, {price}. Kam hain, par khaas hain.
+daily|self|Roz ek deal, roz ek khushi 🎈|{name} for {price}. {count} nayi.
+daily|dost|Subah ka scroll shuru karo 📱|{name}, {price}. {count} nayi deals.|t=morning
+daily|tease|Chai ke saath aaj ki deal ☕|{name} at {price}. {count} nayi.|t=morning
+daily|heart|Naya din, nayi deal 🌅|{name}, {price}. {count} nayi.|t=morning
+daily|dost|Shaam ka digest: aaj ki khaas deal 🌇|{name} for {price}. {count} nayi.|t=evening
+daily|tease|Din ka summary: {count} nayi deals 📊|Top: {name}, {price}.|t=evening
+daily|self|Aaj kuch miss to nahi kiya? Dekh lo 🔍|{name} at {price}. {count} nayi.|t=evening
+daily|dost|Aaj ke deals ka roundup 🗞️|{name}, {price}. Total {count}.
+daily|tease|{count} deals aaj, par ek ne dil jeeta 💜|{name} for {price}. {count} mein se ye dil ko chhu gayi.
+daily|heart|Aaj bhi kuch achha aaya hai 🌷|{name}, {price}. {count} nayi.
+daily|dost|Roz ka ek mauka 🔔|{name} at {price}. {count} deals.
+daily|tease|Aaj ka digest: ek nazar, ek muskaan 😊|{name}, {price}. Ek nazar, ek muskaan, ek tap.
+daily|self|Din ka kaam: ek deal check karna 📋|{name} for {price}. {count} nayi.
+daily|dost|Aaj ki fresh picks 🍃|{name}, {price}. {count} nayi deals.
+daily|tease|Aaj ke top deals mein se ek 🏅|{name} at {price}. Aaj ke top deals ki list se.
+daily|heart|Roz thodi thodi khushi 💜|{name}, {price}. {count} nayi.
+daily|dost|Subah ki khabar: {count} nayi deals 📰|Top: {name}, {price}.|t=morning
+daily|tease|Din bhar ke liye ek deal 🌞|{name} for {price}. {count} nayi.
+daily|self|Ek aur din, ek aur digest 😄|{name}, {price}. {count} nayi.
+daily|dost|Aaj ki sabse achhi deal, humare hisaab se 🎯|{name} at {price}. Humne dekha, humein pasand aayi.
+daily|tease|Aaj ka {count} mein se best 🏆|{name}, {price}. {count} mein se ye jeeti.
+daily|heart|Aaj ki deal aapke liye chuni hai 💜|{name} for {price}. {count} nayi.
+daily|dost|Dopahar ka digest 🍽️|{name}, {price}. {count} nayi.|t=afternoon
+daily|tease|Lunch ke saath ek deal 🍱|{name} at {price}. {count} nayi.|t=afternoon
+daily|self|Break mein dekh lo 😌|{name}, {price}. {count} nayi deals.|t=afternoon
+daily|dost|Raat ka digest 🌙|{name} for {price}. {count} nayi.|t=night
+daily|heart|Din khatam, ek chhoti si khushi 🌌|{name}, {price}. {count} nayi.|t=night
+daily|tease|Sone se pehle ek deal 😴|{name} at {price}. {count} nayi.|t=night

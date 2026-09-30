@@ -1,0 +1,653 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Women Fashion (women_fashion_2). Built from src/women_fashion_2.txt."
+ },
+ "templates": [
+  {
+   "id": "w2001",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "tease",
+   "title": "Ye kurti pehen ke chai bhi fashionable lagegi ☕",
+   "body": "{name} — {price}. Chai ke daag pe mera koi zimmedari nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2002",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "dost",
+   "title": "Cotton kurti: garmi ki sabse achhi saheli 🌿",
+   "body": "{name} at {price}. Pasina bhi dost ban jaata hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2003",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "self",
+   "title": "Alamari mein 30 kurtiyan, 'kuch pehnne ko nahi hai' 😅",
+   "body": "{name}, {price}. Ye 31st bilkul alag hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2004",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "heart",
+   "title": "Ek kurti, jo tumhari muskaan ke saath match kare 🌸",
+   "body": "{name} for {price}. Muskaan ke saath match hoti hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2005",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "tease",
+   "title": "Kurti + jeans: combo jo kabhi purana nahi hota 👖",
+   "body": "{name} — {discount}% off. Chalo, ek aur achha rate.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2006",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "dost",
+   "title": "Office wali kurti ka naya option 💼",
+   "body": "{name} at {price}. Meeting mein comfy, photo mein filmy.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2007",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "self",
+   "title": "Purani kurti ka rang phika, tumhari smile nahi 🙂",
+   "body": "{name}, {price}. Rang phika, smile pakki.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2008",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "tease",
+   "title": "Anarkali: ghoomne ka bahana 💃",
+   "body": "{name} for {price}. Spin karke dekho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2009",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "dost",
+   "title": "Ek kurti, teen dupatte, hazaar combinations 🧣",
+   "body": "{name}, {price}. Ek kurti, kai combinations.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2010",
+   "category": "Women Fashion",
+   "mood": "kurti",
+   "tone": "heart",
+   "title": "Kurti wo jo maa ki purani saree yaad dilaye 👵",
+   "body": "{name} at {price}. Maa ki saree ki yaad, naye andaaz mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2011",
+   "category": "Women Fashion",
+   "mood": "saree",
+   "tone": "heart",
+   "title": "Saree: 6 gaz ki kahani 🥻",
+   "body": "{name}, {price}. Har pleat ek yaad.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2012",
+   "category": "Women Fashion",
+   "mood": "saree",
+   "tone": "tease",
+   "title": "Saree pehenna ek art hai, deal dhundhna doosra 🎨",
+   "body": "{name} for {price}. Saree ek art hai, ye deal ek moka.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2013",
+   "category": "Women Fashion",
+   "mood": "saree",
+   "tone": "dost",
+   "title": "Saree ke saath blouse bhi soch lena 🧵",
+   "body": "{name}, {discount}% off. Darzi ka appointment baad mein.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2014",
+   "category": "Women Fashion",
+   "mood": "saree",
+   "tone": "self",
+   "title": "Saree pin kahan gayi? Roz ki kahani 📌",
+   "body": "{name} at {price}. Pin dhoondhne se pehle order kar do.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2015",
+   "category": "Women Fashion",
+   "mood": "saree",
+   "tone": "tease",
+   "title": "Shaadi mein sabse alag dikhne ka mauka 💍",
+   "body": "{name}, {price}. Shaadi mein sabse alag.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2016",
+   "category": "Women Fashion",
+   "mood": "saree",
+   "tone": "heart",
+   "title": "Tyohaar ki saree, ek nayi shuruat 🪔",
+   "body": "{name} for {price}. Tyohaar ki nayi shuruat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2017",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "tease",
+   "title": "Ye dress dekhte hi 'photo lo' bolne ka mann karega 📸",
+   "body": "{name}, {price}. Photo lene ka mann to karega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2018",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "dost",
+   "title": "Ek dress: brunch, date, ya bas mood ke liye 🥂",
+   "body": "{name} at {price}. Brunch, date ya mood: sab set.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2019",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "self",
+   "title": "Dress khareedi, pehenne ka occasion dhundh rahe hain 😅",
+   "body": "{name} — {discount}% off. Aaj price ki taraf se salaam.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2020",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "heart",
+   "title": "Ek dress jo tumhe tumhari tarah dikhaye 🌷",
+   "body": "{name} for {price}. Tumhari tarah hi khaas.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2021",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "tease",
+   "title": "Maxi dress: hawa mein udta hua confidence 🌬️",
+   "body": "{name}, {price}. Hawa mein udta confidence.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2022",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "dost",
+   "title": "Party dress ki khoj khatam 🎉",
+   "body": "{name} at {price}. Party ki khoj yahin khatam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2023",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "self",
+   "title": "Aaj kuch bhi pehen lo, dress ka intezaar tha 😌",
+   "body": "{name}, {price}. Intezaar ka phal.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2024",
+   "category": "Women Fashion",
+   "mood": "dress",
+   "tone": "tease",
+   "title": "Little black dress: classic kabhi galat nahi jaata 🖤",
+   "body": "{name} for {price}. Classic kabhi galat nahi jaata.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2025",
+   "category": "Women Fashion",
+   "mood": "jeans",
+   "tone": "dost",
+   "title": "Jeans jo fit ho aur mood bhi 👖",
+   "body": "{name}, {price}. Fit bhi, mood bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2026",
+   "category": "Women Fashion",
+   "mood": "jeans",
+   "tone": "tease",
+   "title": "High waist, high confidence 💪",
+   "body": "{name} at {price}. Confidence ek kamar ooncha.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2027",
+   "category": "Women Fashion",
+   "mood": "jeans",
+   "tone": "self",
+   "title": "Jeans khareedne ka trial room ka safar: ek epic 😂",
+   "body": "{name}, {discount}% off. Cart ko bhi ek mauka do.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2028",
+   "category": "Women Fashion",
+   "mood": "jeans",
+   "tone": "heart",
+   "title": "Comfy jeans: dil bhi khush, din bhi 💜",
+   "body": "{name} for {price}. Aaram ke saath style.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2029",
+   "category": "Women Fashion",
+   "mood": "jeans",
+   "tone": "dost",
+   "title": "Jeans aur top ka combo, weekend ready 🎒",
+   "body": "{name}, {price}. Weekend ke liye taiyar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2030",
+   "category": "Women Fashion",
+   "mood": "top",
+   "tone": "tease",
+   "title": "Ek top, sau tarah ki styling ✨",
+   "body": "{name} at {price}. Sau tarah ki styling, ek top.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2031",
+   "category": "Women Fashion",
+   "mood": "top",
+   "tone": "dost",
+   "title": "Crop top ya oversized? Dono ke liye mood 🎭",
+   "body": "{name}, {price}. Mood dekh ke chuno.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2032",
+   "category": "Women Fashion",
+   "mood": "top",
+   "tone": "self",
+   "title": "Top khareeda, matching bottom nahi hai 😅",
+   "body": "{name} for {price}. Alamari mein dhoondhte hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2033",
+   "category": "Women Fashion",
+   "mood": "top",
+   "tone": "heart",
+   "title": "Ek soft si top, ek soft sa din 🌸",
+   "body": "{name} — {discount}% off. Bachat ki ghanti baji hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2034",
+   "category": "Women Fashion",
+   "mood": "top",
+   "tone": "tease",
+   "title": "Top jo sab poochenge 'kahan se?' 😏",
+   "body": "{name} at {price}. Sab poochenge, 'kahan se?'",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2035",
+   "category": "Women Fashion",
+   "mood": "ethnic",
+   "tone": "dost",
+   "title": "Lehenga: shaadi ki rani 👑",
+   "body": "{name}, {price}. Twirl practice shuru karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2036",
+   "category": "Women Fashion",
+   "mood": "ethnic",
+   "tone": "tease",
+   "title": "Sharara: chalna bhi ek performance hai 💃",
+   "body": "{name} for {price}. Chalna bhi ek performance hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2037",
+   "category": "Women Fashion",
+   "mood": "ethnic",
+   "tone": "heart",
+   "title": "Ethnic wear: apni jadon ki khushboo 🪔",
+   "body": "{name} — {discount}% off. Bachat wali khushi ka koi alternative nahi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2038",
+   "category": "Women Fashion",
+   "mood": "ethnic",
+   "tone": "self",
+   "title": "Dupatta sambhalna: full time job 🧣",
+   "body": "{name} at {price}. Sambhalna ek full-time kaam hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2039",
+   "category": "Women Fashion",
+   "mood": "ethnic",
+   "tone": "dost",
+   "title": "Palazzo: hawa jaisa comfy, style jaisa royal 🌬️",
+   "body": "{name}, {price}. Hawa jaisa comfy, royal look.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2040",
+   "category": "Women Fashion",
+   "mood": "winter",
+   "tone": "dost",
+   "title": "Sweater: sardi ka sabse pyaara hug 🧶",
+   "body": "{name} for {price}. Sardi ka sabse pyaara hug.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2041",
+   "category": "Women Fashion",
+   "mood": "winter",
+   "tone": "tease",
+   "title": "Jacket jo photo mein bhi kamaal lage 🧥",
+   "body": "{name} — {discount}% off. Naya sapna, purana budget.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2042",
+   "category": "Women Fashion",
+   "mood": "winter",
+   "tone": "self",
+   "title": "Sardi: kapde bhaari, mood halka 😂",
+   "body": "{name} at {price}. Kapde bhaari, mood halka.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2043",
+   "category": "Women Fashion",
+   "mood": "winter",
+   "tone": "heart",
+   "title": "Garam kapde, garam chai, garam yaadein ☕",
+   "body": "{name}, {price}. Chai, yaadein, aur ye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2044",
+   "category": "Women Fashion",
+   "mood": "accessory",
+   "tone": "tease",
+   "title": "Ek scarf, aur poora look badal jaaye 🧣",
+   "body": "{name} for {price}. Ek scarf, poora naya look.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2045",
+   "category": "Women Fashion",
+   "mood": "accessory",
+   "tone": "dost",
+   "title": "Jhumke: chhoti cheez, bada asar 💫",
+   "body": "{name}, {price}. Chhoti cheez, bada asar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2046",
+   "category": "Women Fashion",
+   "mood": "accessory",
+   "tone": "self",
+   "title": "Earrings ka ek jodi gum, doosri mil gayi 🤦",
+   "body": "{name} at {price}. Ek jodi gum, doosri ka jugaad.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2047",
+   "category": "Women Fashion",
+   "mood": "accessory",
+   "tone": "heart",
+   "title": "Ek chhota sa accessory, ek badi si muskaan 💜",
+   "body": "{name} — {discount}% off. Sochte reh jaoge to sochte hi reh jaoge.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2048",
+   "category": "Women Fashion",
+   "mood": "accessory",
+   "tone": "tease",
+   "title": "Sunglasses: mood chhupane ka best tareeka 🕶️",
+   "body": "{name} for {price}. Mood chhupane ka best tareeka.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2049",
+   "category": "Women Fashion",
+   "mood": "accessory",
+   "tone": "dost",
+   "title": "Bracelet: haath ki kahani 🌟",
+   "body": "{name}, {price}. Haath ki kahani, aapki zubaani.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2050",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "tease",
+   "title": "Mummy: 'ye sab kab liya?' Tum: 'purana hai' 🙊",
+   "body": "{name} at {price}. Bill dikhana mat.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2051",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Ghar mein sab bolte hain 'tum ye pehen ke jao' 😄",
+   "body": "{name}, {price}. Ye wali sab ko pasand aayegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2052",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Behen ke saath shopping ki yaad 👭",
+   "body": "{name} for {price}. Behen ke saath shopping ki yaad.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2053",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar koi bhi ho, outfit sabke liye 🌙",
+   "body": "{name}, {price}. Rang tumhare, mood tumhara.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2054",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Party ki entry ka look yahan hai 🎊",
+   "body": "{name} at {price}. Party ki entry ka look.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2055",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Tyohaar ki subah, naye kapdon ka pyaar 🌅",
+   "body": "{name}, {discount}% off. Kharcha bhi smart, khushi bhi smart.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "w2056",
+   "category": "Women Fashion",
+   "mood": "monsoon",
+   "tone": "dost",
+   "title": "Baarish mein bhi style: quick dry kapde 🌧️",
+   "body": "{name} for {price}. Baarish mein bhi style, jaldi sukhne wala.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "w2057",
+   "category": "Women Fashion",
+   "mood": "monsoon",
+   "tone": "tease",
+   "title": "Baarish aur chai: kurti ki kahani ☔",
+   "body": "{name}, {price}. Chai aur baarish, dono ke saath.",
+   "needs": [
+    "price"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+# category: Men Fashion
+# prefix: m2
+shirt|tease|Formal shirt: interview ka pehla round yahin jeeto 💼|{name} — {price}. Baaki sawaal tumhare upar.
+shirt|dost|Casual shirt: weekend ka asli hero 🕶️|{name} at {price}. Jeans ke saath default.
+shirt|self|Shirt ki sleeve fold karne ki kala seekh li? 😎|{name} — {discount}% off. Price gir gayi, tum utho.
+shirt|heart|Ek achhi shirt: aatmavishwas ki pehli parat 💜|{name} for {price}. Aatmavishwas ki pehli parat.
+shirt|tease|Checks ya solid? Dono khareed lo, jhagda khatam 😄|{name}, {price}. Dono le lo, jhagda khatam.
+shirt|dost|Linen shirt: garmi mein bhi crisp look 🌿|{name} at {price}. Garmi mein bhi crisp.
+tshirt|dost|Graphic tee: mood ko bhi tees pe likh do 👕|{name} — {price}. Tee pe mood likha ho to baat hi kya.
+tshirt|tease|Ek t-shirt: gym, ghar, aur date sab jagah 😌|{name} for {price}. Gym, ghar, date: sab jagah chalegi.
+tshirt|self|Purani t-shirt ki kahani: 'ye to comfortable hai' 😅|{name} — {discount}% off. Discount dekho, decision tumhara.
+tshirt|heart|T-shirt wo jo har din pehen sako 🧡|{name} at {price}. Har din ka saathi.
+jeans|dost|Jeans jo har mausam kaam aaye 👖|{name}, {price}. Har mausam mein kaam aaye.
+jeans|tease|Slim fit ya relaxed? Mood pe depend hai 🎭|{name} for {price}. Mood se chuno, fit se pehno.
+jeans|self|Jeans ki jeb mein kabhi kabhi paisa nikal aata hai 😂|{name} — {discount}% off. Aaj ka rate yaad rakhna.
+jeans|heart|Ek fit jeans, ek fit din 💜|{name} at {price}. Ek fit din ke liye fit jeans.
+kurta|dost|Kurta: tyohaar ka pehla dost 🪔|{name}, {price}. Tyohaar ka pehla dost.
+kurta|tease|Kurta-pajama: comfort aur culture ek saath 🧡|{name} for {price}. Comfort aur culture, ek saath.
+kurta|self|Kurta pehnna hai, par ironing ka dar 😅|{name} — {discount}% off. Ye wali list mein upar aayi hai.
+kurta|heart|Kurta wo jo dada ki yaad dilaye 👴|{name} at {price}. Dada ki yaad ke saath naya andaaz.
+kurta|dost|Shaadi ke liye kurta ka naya option 💍|{name}, {price}. Shaadi ke liye ek naya option.
+jacket|dost|Jacket: sardi mein sabse pehla pyaar 🧥|{name} for {price}. Sardi ka pehla pyaar.
+jacket|tease|Leather look ya denim? Dono ka craze 🔥|{name}, {discount}% off. Kam kharch, zyada khushi.
+jacket|self|Jacket ki zip phansti hai, par dil nahi 🙃|{name} at {price}. Zip phanse to phanse, dil nahi.
+jacket|heart|Sardi ki subah, jacket ki garmi 🧣|{name}, {price}. Garmi sardi ki subah ki.
+hoodie|dost|Hoodie: comfort ka doosra naam 🧘|{name} for {price}. Aaram ka doosra naam.
+hoodie|tease|Hoodie pehen ke duniya se chhup jao 😶|{name}, {price}. Chhupne ka mauka.
+hoodie|self|Hoodie khareedi, ab gharmi mein kaun pehne? 😅|{name} at {price}. Garmi ke liye alag jugaad.
+watch|dost|Ghadi: time bhi, style bhi ⌚|{name}, {price}. Time bhi, style bhi.
+watch|tease|Watch jo har shirt ke saath match kare 😎|{name} for {price}. Har shirt ke saath fit.
+watch|heart|Ek ghadi, jo yaadein bhi gine ⏳|{name}, {discount}% off. Aaj ki list mein ye bhi.
+belt|dost|Belt: chhoti cheez, poore look ka anchor 🪢|{name} at {price}. Chhoti cheez, bada asar.
+belt|tease|Belt aur joote ka match: sabse pehli nazar 👞|{name}, {price}. Pehli nazar joote aur belt pe.
+sunglasses|dost|Chashma: dhoop bhi, style bhi 🕶️|{name} for {price}. Dhoop bhi, style bhi.
+sunglasses|tease|Sunglasses laga ke 'main character' feel 🎬|{name}, {discount}% off. Percent kam nahi, mauka bhi kam nahi.
+ethnic|dost|Sherwani: shaadi ka royal look 👑|{name} at {price}. Shaadi mein royal entry.
+ethnic|tease|Baraat mein sabse pehle nazar tumpe 🕺|{name}, {price}. Baraat mein sabki nazar tumpe.
+sports|dost|Track pants: aaram ka doosra naam 🏃|{name} for {price}. Aaram ka doosra naam.
+sports|tease|Shorts: garmi ka sabse achha dost 🩳|{name} — {discount}% off. Percent dekho, phir dil ki suno.
+sports|self|Gym ke kapde khareede, gym baad mein 😂|{name} at {price}. Gym baad mein, kapde pehle.
+innerwear|dost|Basics: sab kuch inhi pe tika hai 🧦|{name}, {price}. Chhupe hero, roz ke kaam.
+innerwear|tease|Socks: jo hamesha ek gayab ho jaati hai 🧦|{name} for {price}. Ek mile, ek gayab, ye roz ka kissa.
