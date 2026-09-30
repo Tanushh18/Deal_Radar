@@ -1,0 +1,726 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (price_drop). Built from src/price_drop.txt."
+ },
+ "templates": [
+  {
+   "id": "pd001",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "📉 Price drop: {price}",
+   "body": "{name} — aapke {target} alert se neeche aa gayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd002",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "🎯 Target hit: {price}",
+   "body": "{name} ne aapka {target} wala target chhoo liya.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd003",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "📉 Ye gir gayi: {price}",
+   "body": "{name} — aapka {target} ka alert kaam kar gaya.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd004",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Aapki wait ka phal mila 🍎",
+   "body": "{name} ab {price} mein. Alert {target} tha.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd005",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Bell baji 🔔 {price}",
+   "body": "{name} — {target} ke andar aa gayi.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd006",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Intezaar khatam 💜",
+   "body": "{name} ab {price}. Aapne {target} pe alert rakha tha.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd007",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Alert laga ke so gaye? Deal ne jagaya 😄",
+   "body": "{name}, {price}. Target: {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd008",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Price ne aapki baat maan li 🙌",
+   "body": "{name} ab {price}. Aapka target {target} tha.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd009",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Aapka {target} wala alert baj gaya 🔔",
+   "body": "{name} — {price}. Ab aap batao.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd010",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Sabr ka meetha phal 🍯",
+   "body": "{name} at {price}. Target {target} se neeche.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd011",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "self",
+   "title": "Alert lagaya tha, bhool gaye the na? 😅",
+   "body": "{name} ab {price}. Hum nahi bhoole.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd012",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Ye lo, wahi cheez, kam price mein 🎉",
+   "body": "{name}, {price}. Aapka target: {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd013",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Price ne gym join kar liya, ab neeche aa gayi 🏋️",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd014",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "{price} ho gaya. Ab decide karo 👇",
+   "body": "{name}. Aapka {target} wala alert.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd015",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Alert ne kaha: 'bhai, ab dekh le' 📣",
+   "body": "{name} — {price}, {target} se neeche.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd016",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Aapki pasand, ab aapke budget mein 💜",
+   "body": "{name} at {price}. Alert {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd017",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Alert on, deal on 🔔",
+   "body": "{name}, {price}. Target {target} cross.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd018",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Chhupke se price gir gayi 🤫",
+   "body": "{name} — {price}. Aapne {target} maanga tha.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd019",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "self",
+   "title": "Ek alert, ek intezaar, ek khushi ✨",
+   "body": "{name} ab {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd020",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Ye wali price aapne hi maangi thi 😌",
+   "body": "{name} — {price}. Target: {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd021",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Alert set karna: sabse smart shopping 🧠",
+   "body": "{name} at {price}. Aapka {target} pass.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd022",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Aaj ka din achha hai 🌞",
+   "body": "{name} ab {price}. Aapka {target} ka alert hit.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd023",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Price hit! 🎯",
+   "body": "{name} — {price}. Target {target} se neeche.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd024",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Aapki mehnat rang layi (alert lagana bhi mehnat hai) 😄",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd025",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "{price}: aapke target ke andar 📉",
+   "body": "{name}. Alert {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd026",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "self",
+   "title": "Sabr rakha, price gir gayi 🧘",
+   "body": "{name} — {price}. Alert {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd027",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Hum kehte the na, price girti hai 🍂",
+   "body": "{name}, {price}. Aapka {target} pass.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd028",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Dhairya ka phal meetha hota hai 🍬",
+   "body": "{name} — {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd029",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Ye wahi hai jo aap chahte the 🎁",
+   "body": "{name} at {price}. Alert {target} tha.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd030",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Alert ka jawab: 'haan, ab le lo' ✅",
+   "body": "{name}, {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd031",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Price aapke target ke neeche 🎉",
+   "body": "{name} — {price}. Ab aapki baari.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd032",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "self",
+   "title": "Ab to bahana bhi nahi 😅",
+   "body": "{name} ab {price}. Target {target} pass.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd033",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Alert lagane wale hi jeette hain 🏆",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd034",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Aapka wait aapko yahan tak laya 💜",
+   "body": "{name} — {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd035",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Deal aapki shart pe khari utri 📏",
+   "body": "{name}, {price}. Shart: {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd036",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Aapka {target} ab peeche reh gaya 😎",
+   "body": "{name} ab {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd037",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Price gir gayi, ab aapki baari 🔔",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd038",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "self",
+   "title": "Alert ne kaam kar diya, ab aap kar do 😄",
+   "body": "{name}, {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd039",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Lo, phir se deal ne aapka naam liya 📢",
+   "body": "{name} at {price}. Alert {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd040",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Aapki cheez ab aur paas aa gayi 💜",
+   "body": "{name} — {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd041",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Price aapke target se {target} ke andar 📉",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd042",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Alert bajta hai to kuch achha hota hai 🔔",
+   "body": "{name} — {price}. Aapka {target} pass.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd043",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "self",
+   "title": "Bhool jao alert, price ne yaad rakha 😌",
+   "body": "{name}, {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd044",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Deal ne aapko yaad kiya 💌",
+   "body": "{name} — {price}. Target {target} se neeche.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd045",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Shukr hai alert lagaya tha 🙏",
+   "body": "{name}, {price}. Aapka {target} cross.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd046",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "Price fell, aap khush hue 😊",
+   "body": "{name} — {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd047",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "heart",
+   "title": "Aapki pasand, aapki price pe 💜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd048",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "tease",
+   "title": "Wait ka scene khatam, deal ka scene shuru 🎬",
+   "body": "{name}, {price}. Target {target}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd049",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "dost",
+   "title": "{name} ne {target} ko haraa diya 🏆",
+   "body": "Ab {price}. Dekh lo.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  },
+  {
+   "id": "pd050",
+   "category": "Any",
+   "mood": "alert",
+   "tone": "self",
+   "title": "Achha hua alert lagaya 🧠",
+   "body": "{name} — {price}. Aapka {target} pass.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "price_drop"
+   ]
+  }
+ ]
+}

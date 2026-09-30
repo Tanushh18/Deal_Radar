@@ -1,0 +1,726 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (watchlist). Built from src/watchlist.txt."
+ },
+ "templates": [
+  {
+   "id": "wl001",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "🔔 \"{query}\" mein kuch mila",
+   "body": "{name} — {price}. {store} pe.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl002",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Aapki khoj ka jawab 🎯",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl003",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Jo dhoondh rahe the, wo mila 💜",
+   "body": "\"{query}\" ke liye {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl004",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" alert: naya kuch aaya 📢",
+   "body": "{name} at {price}. {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl005",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Aapki search ne kaam kar diya 🔎",
+   "body": "\"{query}\" — {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl006",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Search yaad thi? Deal aa gayi 😄",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl007",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "🔔 \"{query}\" ka match",
+   "body": "{name}, {price} pe {store} par.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl008",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "\"{query}\" dhoondhne wale ko yahi milta hai 😏",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl009",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Aapki wishlist ki khoj 💌",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl010",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" mein nayi deal 🆕",
+   "body": "{name} — {price} on {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl011",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Ye dekho, \"{query}\" ke liye 👇",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl012",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Alert laga ke bhool gaye the na? 😅",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl013",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" ka scene set 🎬",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl014",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Aapke alert ka reply aa gaya 📬",
+   "body": "{name} — {price}. \"{query}\".",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl015",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Aapki pasand ka match mil gaya 💜",
+   "body": "{name}, {price}. {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl016",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "Search ka jawab 🎯",
+   "body": "\"{query}\" ke liye {name} — {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl017",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "\"{query}\" ki khoj ab khatam 🏁",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl018",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Ek search, ek alert, ek khushi ✨",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl019",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" ke liye taaza deal 🍃",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl020",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Alert ne bataya, ab aap dekho 👀",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl021",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Aapki khoj ko mili manzil 🏡",
+   "body": "{name}, {price} on {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl022",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" alert 🔔 {price}",
+   "body": "{name}. Dekh lo.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl023",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "\"{query}\": ye wali dekhi? 🧐",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl024",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Search mein ye aaya, ab aap decide karo 🤷",
+   "body": "{name}, {price}. \"{query}\".",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl025",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" ki nayi deal, seedhe aap tak 📲",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl026",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Alert ne mehnat ki, ab aap karo 😄",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl027",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Jo naam socha tha, wo mil gaya 💜",
+   "body": "\"{query}\" — {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl028",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" ki khoj mein ek naya naam 📝",
+   "body": "{name}, {price}. {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl029",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Aapki search alert aaj active hui 🔔",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl030",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Alert ne kaha: 'ye dekho' 👇",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl031",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" pe {discount}% off 🏷️",
+   "body": "{name}, {price}. {store}.",
+   "needs": [
+    "discount",
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl032",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Alert ka mazaa: sabse pehle pata chalta hai 🏃",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl033",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Aapki search, aapki deal 💜",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl034",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\": aaj ka match 🎯",
+   "body": "{name} at {price} on {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl035",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Ye deal \"{query}\" ke liye hi bani lagti hai 😌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl036",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Search alert set karna: smart move 🧠",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl037",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" mein kuch achha mila ✅",
+   "body": "{name} — {price}. {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl038",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Aapki wishlist aage badhi 📈",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl039",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Kuch mila jo aapko pasand aayega 🌷",
+   "body": "{name}, {price}. \"{query}\".",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl040",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" ke liye ek nayi option 🆕",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl041",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Dhoondhne wale ko mil hi jaata hai 🔍",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl042",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Alert ne jagaya, ab dekh lo 😴",
+   "body": "{name} — {price}. \"{query}\".",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl043",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" — {store} pe nayi deal 🛒",
+   "body": "{name}, {price}.",
+   "needs": [
+    "store",
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl044",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Ye aapki search se match kar gayi 💘",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl045",
+   "category": "Any",
+   "mood": "search",
+   "tone": "heart",
+   "title": "Jo khoja, wo paaya 🌟",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl046",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\": deal alert! 🚨",
+   "body": "{name} for {price}. {store}.",
+   "needs": [
+    "price",
+    "store"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl047",
+   "category": "Any",
+   "mood": "search",
+   "tone": "tease",
+   "title": "Aapke alert ka result 📊",
+   "body": "\"{query}\": {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl048",
+   "category": "Any",
+   "mood": "search",
+   "tone": "self",
+   "title": "Ye alert kaam ka nikla 🎉",
+   "body": "{name}, {price}. \"{query}\".",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  },
+  {
+   "id": "wl049",
+   "category": "Any",
+   "mood": "search",
+   "tone": "dost",
+   "title": "\"{query}\" ka fresh match 🍃",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "watchlist"
+   ]
+  }
+ ]
+}

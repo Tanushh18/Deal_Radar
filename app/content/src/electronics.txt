@@ -1,0 +1,82 @@
+# category: Electronics
+# prefix: el
+chai|dost|Chai ke saath ek gadget ka scene ☕|{name}, {price}. Keyboard pe chai mat girana.|t=morning,evening
+chai|tease|Chai peete peete ye deal dekh li 🔌|{name} at {price}. Phone se tapri tak.
+salary|heart|Salary aayi, ek upgrade to banta hai 📱|{name} for {price}. Purane wale ne bhi bahut saath diya.
+salary|tease|Salary ka pehla din, gadget ka best din 💸|{name}, {discount}% off.
+salary|self|Salary aur charger — dono ki kami rehti hai 🔋|{name} at {price}.
+monthend|self|Month-end: phone ka battery aur wallet dono 5% pe 🪫|{name}, {price}. Charge dono ko karo.
+monthend|tease|Dekhna free hai, cart mein daalna optional 🛒|{name} for {price}.
+sunday|dost|Sunday: specs padhne ka perfect din 📖|{name}, {price}. Reviews bhi padh lena.|w=0
+sunday|tease|Aaj koi kaam nahi? Comparison table banao 📊|{name} at {price}. Ek row ye bhi.|w=0
+monday|self|Monday ko laptop ka charger chahiye, motivation nahi 💼|{name}, {price}.|w=1
+monday|tease|Alarm ke baad phone ka battery: 3% 🪫|{name} for {price}. Ab to power bank le lo.|w=1 t=morning
+wfh|self|WFH ki jaan: stable internet aur ek achha headset 🎧|{name}, {price}. Mute button yaad rakhna.|d=weekday
+wfh|dost|Meeting mein 'aapki awaaz nahi aa rahi' band karo 🎤|{name} at {price}.|d=weekday
+wfh|tease|Video call ka background bhi chahiye? 💻|{name}, {discount}% off. Kam se kam light achhi rakho.|d=weekday
+wfh|self|Laptop stand kharido, gardan ka pyaar milega 🙏|{name} for {price}.|d=weekday
+hostel|self|PG mein extension board ke bina kya zindagi? 🔌|{name}, {price}. Roommate ke charger ko chhodo.
+hostel|tease|Roommate ka charger mat chalao, apna lo 🔋|{name} at {price}. Dosti bani rahe.
+hostel|dost|Raat ko padhai ke liye ek desk lamp 💡|{name}, {price}. Roommate soyega, tum padhoge.|t=night
+ghar|self|Mummy: 'itna kya karta hai phone pe?' 📱|{name} for {price}. Kaam kar raha hu, sach mein.
+ghar|heart|Ghar ka TV purana ho gaya hai? 📺|{name}, {discount}% off. Sabke saath dekhne ka maza alag hai.
+ghar|dost|Papa ka remote: hamesha gayab 🔍|{name} at {price}. Naya le lo, purana milega nahi.
+festival|dost|Tyohaar pe ghar ko roshan karo 🪔|{name}, {price}. Lights ke saath speaker bhi.
+festival|tease|Tyohaar ka gift: kuch aisa jo kaam aaye 🎁|{name} for {price}.
+festival|heart|Kisi apne ko gadget gift karo 💜|{name} at {price}. Roz kaam aayega.
+match|dost|Match ke liye bada screen chahiye 📺|{name}, {price}. Chhakka bhi bada dikhega.
+match|tease|Match ke break mein ek gadget deal 🏏|{name} for {price}.
+match|self|Phone pe match, gardan tedhi, ab TV lo 📺|{name}, {discount}% off.
+heart|heart|Dost ko gift dena hai? 🎁|{name} at {price}. Useful gadgets kabhi bekaar nahi jaate.
+heart|heart|Jo gadget roz kaam aaye, wahi asli gift 🔌|{name}, {price}.
+phone|tease|Phone ka screen crack hua? Time ho gaya 📱|{name} for {price}. Ab to tempered glass bhi lo.
+phone|self|Phone ka storage full: 'space nahi hai' 😩|{name}, {price}. Photos delete karne ka mann nahi.
+phone|dost|Phone case: chhoti cheez, badi suraksha 🛡️|{name} at {price}. Haath se girega to pata chalega.
+phone|tease|Charger ke bina phone: 4 ghante ka dost 🔋|{name}, {discount}% off.
+phone|self|Ek aur tempered glass? Pichla bhi kahan gaya 🤔|{name} for {price}.
+phone|dost|Phone ki battery bhi thak jaati hai 🪫|{name}, {price}. Power bank le lo.
+phone|heart|Selfie stick: yaadein bhi, group photo bhi 📸|{name} at {price}.
+phone|tease|Phone holder: gaadi mein GPS wala scene 🚗|{name}, {price}. Sadak pe dhyan rakhna.
+phone|dost|Cable: jo hamesha tootta hai, ab strong wala 🔌|{name} for {price}.
+audio|dost|Earphone: uljhe taar ka zamana khatam 🎧|{name}, {price}. Taar ka gola ab nahi bandega.
+audio|tease|Music sunne wale ke liye ek achha headphone 🎶|{name} at {price}. Volume padosi ka khayal rakhna.
+audio|self|Tumhare earbuds ki battery kitni chalti hai? 🔋|{name}, {discount}% off. Naye wale mein chalegi.
+audio|heart|Gaana wahi, mazaa naya 🎵|{name} for {price}.
+audio|dost|Speaker: chhoti party, bade mood 🔊|{name}, {price}. Padosi ko bhi bulao.
+audio|tease|Noise cancellation: 'kya bola?' 'kuch nahi suna' 🙉|{name} at {price}.
+audio|self|Earphone kho gaye? Roz ka scene 😅|{name}, {price}.
+audio|dost|Podcast sunne ka mood hai? 🎙️|{name} for {price}.
+laptop|self|Laptop hang ho raha hai? Restart nahi, replace 😅|{name}, {price}. Sach mein.
+laptop|dost|Laptop ka fan awaaz kar raha hai? 💻|{name} at {price}.
+laptop|tease|Mouse aur keyboard: jodi jo kaam aati hai ⌨️|{name}, {discount}% off. Trackpad pe kaam karna chhodo.
+laptop|self|Battery 2 ghante? Office ka charger ghar rehta hai 🔌|{name} for {price}.
+laptop|dost|Pen drive: chhoti cheez, badi zaroorat 💾|{name}, {price}. Kabhi kabhi hi milti hai jab chahiye.
+laptop|heart|Ek achha laptop bag bhi lo, gadget ka khayal rakho 🎒|{name} at {price}.
+laptop|tease|Monitor bada, aankhein khush 🖥️|{name}, {price}. Gardan bhi seedhi.
+laptop|dost|Webcam: chehra dikhana bhi zaroori 📷|{name} for {price}.
+home|dost|Ghar ke liye smart plug: bulb bhi ho gaya smart 💡|{name}, {price}. Tum kab smart hoge?
+home|tease|Iron: kapdon ki salvatein bhi rulati hain 👔|{name} at {price}. Shirt ki shaan wapas.
+home|self|Fan ki awaaz jaise helicopter 🚁|{name}, {discount}% off. Naya wala sunta hi nahi.
+home|dost|Geyser: sardi ka pehla dost ♨️|{name} for {price}. Bucket ka jugaad band.
+home|tease|Room heater: sardiyon ka rishta 🔥|{name}, {price}. Rajai ke andar se bhi dikhega.
+home|heart|Air purifier: saans lene ka pyaar 🌬️|{name} at {price}.
+home|dost|Mixer: chatni aur juice ka partner 🍹|{name}, {price}.
+home|self|Toaster: subah ke nashte ka hero 🍞|{name} for {price}.
+home|tease|Vacuum cleaner: jhadu ko chhutti 🧹|{name}, {discount}% off. Ab sirf button dabana hai.
+camera|dost|Photo lene ka shauk? 📸|{name}, {price}. Reels ka bharosa mat karo.
+camera|heart|Yaadein kaid karo 📷|{name} at {price}. Jo pal guzar jaate hain.
+camera|tease|Tripod: haath hilna band 🎥|{name}, {price}. Blur wale din gaye.
+camera|self|Memory card full? 💾|{name} for {price}. Photos ko delete karna mushkil hota hai.
+smartwatch|dost|Smartwatch: kadam gino, dil khush karo ⌚|{name}, {price}. Aaj 10,000 steps?
+smartwatch|tease|Watch: time bhi dekho, notification bhi ⌚|{name} at {price}. Phone jeb mein hi rahega.
+smartwatch|self|Smartwatch kehta hai 'uth jao' 🪑|{name}, {discount}% off. Aaj bhi nahi uthe.
+smartwatch|heart|Sehat ka khayal rakho, roz thoda chalo 🚶|{name} for {price}.
+gaming|dost|Gaming ke shauqeen? Ek naya controller 🎮|{name}, {price}. Thumb ko bhi rest.
+gaming|tease|Gaming mouse: 'lag' ka bahana khatam 🖱️|{name} at {price}. Ping ka ilzaam phir bhi router pe.
+gaming|self|Aaj sirf ek match... phir teen ghante 🕹️|{name}, {discount}% off.
+gaming|dost|Gaming chair: kamar ko bhi jeetna hai 🪑|{name} for {price}.
+brand|tease|{brand} ka gadget dekha? 👀|{name}, {price}.|p
+brand|dost|{brand} ka naya model, tumhare radar pe? 📡|{name}, {discount}% off. Spec sheet ready rakho.|p
+deal|tease|Gadget deal: {discount}% off 🔌|{name}, {price}. Spec sheet padhne ke baad.
+deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Math simple hai, warranty dekh lena.
+deal|heart|Bachat bhi ek gadget hai 💜|{name} at {price}. Save: {save}.

@@ -1,0 +1,42 @@
+# category: Men Fashion
+# prefix: m2
+shirt|tease|Formal shirt: interview ka pehla round yahin jeeto 💼|{name} — {price}. Baaki sawaal tumhare upar.
+shirt|dost|Casual shirt: weekend ka asli hero 🕶️|{name} at {price}. Jeans ke saath default.
+shirt|self|Shirt ki sleeve fold karne ki kala seekh li? 😎|{name}, {discount}% off.
+shirt|heart|Ek achhi shirt: aatmavishwas ki pehli parat 💜|{name} for {price}.
+shirt|tease|Checks ya solid? Dono khareed lo, jhagda khatam 😄|{name}, {price}.
+shirt|dost|Linen shirt: garmi mein bhi crisp look 🌿|{name} at {price}.
+tshirt|dost|Graphic tee: mood ko bhi tees pe likh do 👕|{name} — {price}.
+tshirt|tease|Ek t-shirt: gym, ghar, aur date sab jagah 😌|{name} for {price}.
+tshirt|self|Purani t-shirt ki kahani: 'ye to comfortable hai' 😅|{name}, {discount}% off.
+tshirt|heart|T-shirt wo jo har din pehen sako 🧡|{name} at {price}.
+jeans|dost|Jeans jo har mausam kaam aaye 👖|{name}, {price}.
+jeans|tease|Slim fit ya relaxed? Mood pe depend hai 🎭|{name} for {price}.
+jeans|self|Jeans ki jeb mein kabhi kabhi paisa nikal aata hai 😂|{name}, {discount}% off.
+jeans|heart|Ek fit jeans, ek fit din 💜|{name} at {price}.
+kurta|dost|Kurta: tyohaar ka pehla dost 🪔|{name}, {price}.
+kurta|tease|Kurta-pajama: comfort aur culture ek saath 🧡|{name} for {price}.
+kurta|self|Kurta pehnna hai, par ironing ka dar 😅|{name}, {discount}% off.
+kurta|heart|Kurta wo jo dada ki yaad dilaye 👴|{name} at {price}.
+kurta|dost|Shaadi ke liye kurta ka naya option 💍|{name}, {price}.
+jacket|dost|Jacket: sardi mein sabse pehla pyaar 🧥|{name} for {price}.
+jacket|tease|Leather look ya denim? Dono ka craze 🔥|{name}, {discount}% off.
+jacket|self|Jacket ki zip phansti hai, par dil nahi 🙃|{name} at {price}.
+jacket|heart|Sardi ki subah, jacket ki garmi 🧣|{name}, {price}.
+hoodie|dost|Hoodie: comfort ka doosra naam 🧘|{name} for {price}.
+hoodie|tease|Hoodie pehen ke duniya se chhup jao 😶|{name}, {price}.
+hoodie|self|Hoodie khareedi, ab gharmi mein kaun pehne? 😅|{name} at {price}.
+watch|dost|Ghadi: time bhi, style bhi ⌚|{name}, {price}.
+watch|tease|Watch jo har shirt ke saath match kare 😎|{name} for {price}.
+watch|heart|Ek ghadi, jo yaadein bhi gine ⏳|{name}, {discount}% off.
+belt|dost|Belt: chhoti cheez, poore look ka anchor 🪢|{name} at {price}.
+belt|tease|Belt aur joote ka match: sabse pehli nazar 👞|{name}, {price}.
+sunglasses|dost|Chashma: dhoop bhi, style bhi 🕶️|{name} for {price}.
+sunglasses|tease|Sunglasses laga ke 'main character' feel 🎬|{name}, {discount}% off.
+ethnic|dost|Sherwani: shaadi ka royal look 👑|{name} at {price}.
+ethnic|tease|Baraat mein sabse pehle nazar tumpe 🕺|{name}, {price}.
+sports|dost|Track pants: aaram ka doosra naam 🏃|{name} for {price}.
+sports|tease|Shorts: garmi ka sabse achha dost 🩳|{name}, {discount}% off.
+sports|self|Gym ke kapde khareede, gym baad mein 😂|{name} at {price}.
+innerwear|dost|Basics: sab kuch inhi pe tika hai 🧦|{name}, {price}.
+innerwear|tease|Socks: jo hamesha ek gayab ho jaati hai 🧦|{name} for {price}.

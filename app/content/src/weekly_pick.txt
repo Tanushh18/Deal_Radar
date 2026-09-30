@@ -1,0 +1,43 @@
+# category: Any
+# prefix: wk
+# kinds: weekly_pick
+weekly|heart|⭐ Picked for you: {price}|{name} · {discount}% off. Aapke follows se.
+weekly|dost|⭐ Is hafte ki khoj: {price}|{name}, {discount}% off. Aapke follow kiye hue se.
+weekly|tease|Hafte ka best pick 🏆|{name} — {price}. Aapki pasand ke hisaab se.
+weekly|heart|Is hafte aapke liye ek khaas cheez 💜|{name}, {price}.
+weekly|dost|Hafte bhar ki khoj 🔎|{name} at {price}. Aapke follows se.
+weekly|tease|Weekly pick: sirf aapke liye 🎯|{name}, {discount}% off.
+weekly|self|Ek hafta, ek pick 📅|{name} for {price}.
+weekly|dost|Is hafte ki best deal 🥇|{name}, {price}. {discount}% off.
+weekly|tease|Aapke follows ka star 🌟|{name} at {price}.
+weekly|heart|Hafte ki sabse achhi cheez aapke liye 💜|{name}, {discount}% off.
+weekly|dost|Aapke hafte ka best pick 📬|{name} for {price}.
+weekly|tease|Ye hafte ki deal, aapke naam 📢|{name}, {price}.
+weekly|self|Weekly dose of deals 💊|{name} at {price}. {discount}% off.
+weekly|dost|Hafte ka sabse achha mauka 🎁|{name}, {price}.
+weekly|tease|Is hafte ka winner: {name} 🏅|{price}, {discount}% off.
+weekly|heart|Aapke follows mein se ek chuni hui deal 🌷|{name} for {price}.
+weekly|dost|Is hafte kya mila? Ye dekho 👇|{name}, {price}.
+weekly|tease|Hafta khatam, deal shuru 🔔|{name} at {price}. {discount}% off.
+weekly|self|Ek hafta, ek khaas deal ✨|{name}, {price}.
+weekly|dost|Aapke follows ka sabse best 🎯|{name} for {price}.
+weekly|tease|Hafte ke aakhir mein ek treat 🎉|{name}, {discount}% off.|d=weekend
+weekly|heart|Weekend se pehle ek khushi 💜|{name} at {price}.|w=5
+weekly|dost|Is hafte ki chuni hui cheez 📌|{name}, {price}.
+weekly|tease|Sirf aapke follows se, sirf aapke liye 🔒|{name} for {price}.
+weekly|self|Weekly pick: chhota, seedha, kaam ka 🎯|{name}, {discount}% off.
+weekly|dost|Aapke liye is hafte ka special ⭐|{name}, {price}.
+weekly|tease|Hafte bhar ka intezaar khatam 🎬|{name} at {price}. {discount}% off.
+weekly|heart|Aapki pasand ka weekly update 💌|{name}, {price}.
+weekly|dost|Aaj ka weekly pick 📬|{name} for {price}.
+weekly|tease|Is hafte ki khoj yahan hai 🔍|{name}, {discount}% off.
+weekly|self|Ek pick, hafte bhar ka khayal 🧠|{name} at {price}.
+weekly|dost|Aapke follows se nikla hua best 🌟|{name}, {price}.
+weekly|tease|Weekly pick ka jalwa ✨|{name} for {price}. {discount}% off.
+weekly|heart|Hafte ki sabse pyaari cheez 💜|{name}, {price}.
+weekly|dost|Is hafte kuch khaas 🎁|{name} at {price}.
+weekly|tease|Aapke naam ka weekly pick 📛|{name}, {discount}% off.
+weekly|self|Ek hafta khatam, ek nayi cheez 🆕|{name} for {price}.
+weekly|dost|Is hafte ki top deal aapke follows se 🏆|{name}, {price}.
+weekly|tease|Weekly pick: ek nazar kaafi hai 👀|{name} at {price}.
+weekly|heart|Aapke liye chuna hai, dil se 💜|{name}, {discount}% off.

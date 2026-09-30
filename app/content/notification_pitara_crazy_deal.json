@@ -1,0 +1,886 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (crazy_deal). Built from src/crazy_deal.txt."
+ },
+ "templates": [
+  {
+   "id": "cz001",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "dost",
+   "title": "Ab tak ki sabse kam price: {price}",
+   "body": "{name} — {discount}% off. Hamare data mein lowest.",
+   "needs": [
+    "price",
+    "discount",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz002",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "tease",
+   "title": "Ye price kam hi dikhti hai 🎯",
+   "body": "{name}, {price}. Hamare records mein sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz003",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "heart",
+   "title": "Aisi price hum kam hi dekhte hain 💜",
+   "body": "{name} — {price}. Ab tak ki lowest.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz004",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "dost",
+   "title": "Record low: {price} 📉",
+   "body": "{name}, {discount}% off. Hamare data ke mutabiq.",
+   "needs": [
+    "price",
+    "discount",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz005",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "tease",
+   "title": "Price ne record tod diya 🏅",
+   "body": "{name} — {price}. Ab tak ki sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz006",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "self",
+   "title": "Kaafi dino se dekh rahe the? Ye sabse kam hai 😌",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz007",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "dost",
+   "title": "Hamare data mein iski sabse kam price 🔎",
+   "body": "{name} — {price}, {discount}% off.",
+   "needs": [
+    "price",
+    "discount",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz008",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "tease",
+   "title": "Aisa mauka kam aata hai 🎫",
+   "body": "{name}, {price}. Lowest we've seen.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz009",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "heart",
+   "title": "Ye price bahut pyaari hai 💜",
+   "body": "{name} — {price}. Ab tak ki sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz010",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "dost",
+   "title": "Sabse kam price: {price} 🏷️",
+   "body": "{name}. {discount}% off. Data se pakka.",
+   "needs": [
+    "price",
+    "discount",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz011",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "tease",
+   "title": "Lowest price alert 🚨",
+   "body": "{name} at {price}. Hamare records mein.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz012",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "self",
+   "title": "Ye price dekh ke humne bhi do baar check kiya 👀",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz013",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "dost",
+   "title": "Ab tak ki sabse achhi price 🌟",
+   "body": "{name} — {price}, {discount}% off.",
+   "needs": [
+    "price",
+    "discount",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz014",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "tease",
+   "title": "Ye deal record book mein jayegi 📖",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz015",
+   "category": "Any",
+   "mood": "rare",
+   "tone": "heart",
+   "title": "Aaj ka din special hai 🎉",
+   "body": "{name} — {price}. Hamari lowest.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz016",
+   "category": "Any",
+   "mood": "big",
+   "tone": "dost",
+   "title": "{discount}% off. Kam hi dikhta hai 😮",
+   "body": "{name}, {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz017",
+   "category": "Any",
+   "mood": "big",
+   "tone": "tease",
+   "title": "{discount}% ka discount: aankhein khol ke dekho 👀",
+   "body": "{name} — {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz018",
+   "category": "Any",
+   "mood": "big",
+   "tone": "heart",
+   "title": "Bada discount, badi khushi 💜",
+   "body": "{name}, {discount}% off. {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz019",
+   "category": "Any",
+   "mood": "big",
+   "tone": "dost",
+   "title": "{discount}% off: dhyan se dekho 🔍",
+   "body": "{name} at {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz020",
+   "category": "Any",
+   "mood": "big",
+   "tone": "tease",
+   "title": "Itna discount kam hi dikhta hai 🎯",
+   "body": "{name} — {discount}% off, {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz021",
+   "category": "Any",
+   "mood": "big",
+   "tone": "self",
+   "title": "{discount}% off aur koi shart nahi 😌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz022",
+   "category": "Any",
+   "mood": "big",
+   "tone": "dost",
+   "title": "{discount}% off, {store} pe 🏷️",
+   "body": "{name} — {price}.",
+   "needs": [
+    "discount",
+    "store",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz023",
+   "category": "Any",
+   "mood": "big",
+   "tone": "tease",
+   "title": "{mrp} se {price} tak ka safar 🚀",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz024",
+   "category": "Any",
+   "mood": "big",
+   "tone": "heart",
+   "title": "Bachat ka bada mauka 💜",
+   "body": "{name} — {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp",
+    "discount"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz025",
+   "category": "Any",
+   "mood": "big",
+   "tone": "dost",
+   "title": "{discount}% off: aaj ki khaas deal 🌟",
+   "body": "{name}, {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz026",
+   "category": "Any",
+   "mood": "big",
+   "tone": "tease",
+   "title": "Ye discount kuch alag hai 😏",
+   "body": "{name} — {discount}% off, {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz027",
+   "category": "Any",
+   "mood": "big",
+   "tone": "self",
+   "title": "{save} ki bachat: chhoti nahi 💰",
+   "body": "{name} at {price}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz028",
+   "category": "Any",
+   "mood": "big",
+   "tone": "dost",
+   "title": "{discount}% off. Data check kar liya ✅",
+   "body": "{name}, {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz029",
+   "category": "Any",
+   "mood": "big",
+   "tone": "tease",
+   "title": "Discount ka jalwa: {discount}% 🔥",
+   "body": "{name} — {price}.",
+   "needs": [
+    "discount",
+    "price"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz030",
+   "category": "Any",
+   "mood": "big",
+   "tone": "heart",
+   "title": "{save} bachao, khushi kamao 🌷",
+   "body": "{name}, {price}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 50,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz031",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "dost",
+   "title": "{mrp} se seedha {price} 📉",
+   "body": "{name}. Bada farak hai.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz032",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "tease",
+   "title": "{mrp} ka {price} ho gaya 😮",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz033",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "heart",
+   "title": "Bachat: {save}. Achha lagta hai na? 💜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz034",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "dost",
+   "title": "Pehle {mrp}, ab {price} 🔄",
+   "body": "{name} — {discount}% off.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz035",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "tease",
+   "title": "Price ne {save} ki chhalaang lagai 🏃",
+   "body": "{name}, {price}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz036",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "self",
+   "title": "{mrp} → {price}. Simple math 🧮",
+   "body": "{name} — {discount}% off.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz037",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "dost",
+   "title": "{save} kam. Kaam ki deal hai 👍",
+   "body": "{name}, {price}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz038",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "tease",
+   "title": "MRP {mrp}, price {price}. Farak dekho 👀",
+   "body": "{name}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz039",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "heart",
+   "title": "{save} ki bachat aaj ki special 💜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz040",
+   "category": "Any",
+   "mood": "mrp",
+   "tone": "dost",
+   "title": "Discount ke saath price bhi achhi 🎯",
+   "body": "{name} — {mrp} se {price}.",
+   "needs": [
+    "mrp",
+    "price",
+    "discount"
+   ],
+   "min_discount": 40,
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz041",
+   "category": "Any",
+   "mood": "best",
+   "tone": "dost",
+   "title": "Aaj ki sabse achhi deal 🏆",
+   "body": "{name}, {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz042",
+   "category": "Any",
+   "mood": "best",
+   "tone": "tease",
+   "title": "Aaj ka top pick: ye wali 🥇",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz043",
+   "category": "Any",
+   "mood": "best",
+   "tone": "heart",
+   "title": "Aaj ki khaas deal, aapke liye 💜",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz044",
+   "category": "Any",
+   "mood": "best",
+   "tone": "dost",
+   "title": "Humne aaj ki best deal chun li ✅",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz045",
+   "category": "Any",
+   "mood": "best",
+   "tone": "tease",
+   "title": "Hazaaron deals mein se ek 🌟",
+   "body": "{name}, {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz046",
+   "category": "Any",
+   "mood": "best",
+   "tone": "self",
+   "title": "Aaj ka score: ye deal 🎯",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz047",
+   "category": "Any",
+   "mood": "best",
+   "tone": "dost",
+   "title": "Top deal, {store} pe 🏬",
+   "body": "{name}, {price}.",
+   "needs": [
+    "store",
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz048",
+   "category": "Any",
+   "mood": "best",
+   "tone": "tease",
+   "title": "Ye deal aaj sabse upar hai 📈",
+   "body": "{name} — {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz049",
+   "category": "Any",
+   "mood": "best",
+   "tone": "heart",
+   "title": "Jo aaj dekhna chahiye, wo yahi hai 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz050",
+   "category": "Any",
+   "mood": "best",
+   "tone": "dost",
+   "title": "Aaj ka standout: {name} 🌟",
+   "body": "{price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz051",
+   "category": "Any",
+   "mood": "best",
+   "tone": "tease",
+   "title": "Aaj sabse achhi kaun si? Ye wali 😌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz052",
+   "category": "Any",
+   "mood": "best",
+   "tone": "self",
+   "title": "Aaj ka best pick 🥇",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz053",
+   "category": "Any",
+   "mood": "best",
+   "tone": "dost",
+   "title": "Humne dekha, humne chuna 👍",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz054",
+   "category": "Any",
+   "mood": "best",
+   "tone": "tease",
+   "title": "Aaj ke deals mein ye alag hai 🔎",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  },
+  {
+   "id": "cz055",
+   "category": "Any",
+   "mood": "best",
+   "tone": "heart",
+   "title": "Aaj ka special: aapke liye 🎁",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "crazy_deal"
+   ]
+  }
+ ]
+}

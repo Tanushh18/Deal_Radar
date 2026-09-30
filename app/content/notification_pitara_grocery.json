@@ -1,0 +1,829 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Grocery (grocery). Built from src/grocery.txt."
+ },
+ "templates": [
+  {
+   "id": "gr001",
+   "category": "Grocery",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai patti khatam ho rahi hai? ☕",
+   "body": "{name}, {price}. Subah ki chai ka tension khatam.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "gr002",
+   "category": "Grocery",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai ke saath biscuit bhi 🍪",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr003",
+   "category": "Grocery",
+   "mood": "chai",
+   "tone": "heart",
+   "title": "Ghar ki chai, ghar ki mehak 💜",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "gr004",
+   "category": "Grocery",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, ghar ka rashan bharo 🛒",
+   "body": "{name}, {price}. Sabse zaroori kharcha.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr005",
+   "category": "Grocery",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Pehli tareekh ka monthly rashan 🛍️",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr006",
+   "category": "Grocery",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end: daal chawal aur bas 🍚",
+   "body": "{name}, {price}. Sabse achha khana.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr007",
+   "category": "Grocery",
+   "mood": "monthend",
+   "tone": "dost",
+   "title": "Fridge khaali, wallet bhi? 😅",
+   "body": "{name} at {price}. Kam mein kaam chalao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr008",
+   "category": "Grocery",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: special khana banane ka din 🍛",
+   "body": "{name}, {price}. Sabki pasand.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "gr009",
+   "category": "Grocery",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj biryani ka mann hai 🍚",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "gr010",
+   "category": "Grocery",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday: tiffin mein kya banaun? 🍱",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "gr011",
+   "category": "Grocery",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Subah ka nashta: oats ya paratha? 🥣",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "gr012",
+   "category": "Grocery",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein fridge ke chakkar roz 😂",
+   "body": "{name}, {price}. Snacks stock kar lo.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "gr013",
+   "category": "Grocery",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Lunch break mein kuch achha khana hai? 🍽️",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "gr014",
+   "category": "Grocery",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "Hostel: maggi, poha, aur upma 🍜",
+   "body": "{name}, {price}. Kabhi kuch alag bhi karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr015",
+   "category": "Grocery",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Roommate ne phir se meri maggi kha li 😤",
+   "body": "{name} at {price}. Apna stock, apna raj.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr016",
+   "category": "Grocery",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Raat ko bhookh lagi? 🌙",
+   "body": "{name}, {discount}% off. Snacks ready.",
+   "needs": [
+    "discount"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "gr017",
+   "category": "Grocery",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Mummy ke haath ka khana: koi jawab nahi 💜",
+   "body": "{name} for {price}. Unki madad ke liye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr018",
+   "category": "Grocery",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Ghar ka rashan: list bhi lambi, budget bhi 😅",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr019",
+   "category": "Grocery",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar ki taiyari: mithai, dry fruits, sab kuch 🪔",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr020",
+   "category": "Grocery",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Meetha khao, khushiyan baanto 🍬",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr021",
+   "category": "Grocery",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Mehmaan aane wale hain, fridge bharo 🍽️",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr022",
+   "category": "Grocery",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Match ke liye snacks ready? 🍿",
+   "body": "{name}, {price}. Chips aur cold drink.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr023",
+   "category": "Grocery",
+   "mood": "match",
+   "tone": "tease",
+   "title": "Chakka maara? Namkeen khaao 🏏",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr024",
+   "category": "Grocery",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Ghar ka har kona khushi se bhara ho 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr025",
+   "category": "Grocery",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Khana sirf bhookh nahi, pyaar bhi hai 🍲",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr026",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "dost",
+   "title": "Chips: raat ke 12 baje ka saathi 🥔",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr027",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "tease",
+   "title": "Namkeen: chai ka best friend 🍪",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr028",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "self",
+   "title": "Snacks khatam? Kal hi to khareede the 😅",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "gr029",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "heart",
+   "title": "Chhoti chhoti khushiyan snacks mein 🍿",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr030",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "dost",
+   "title": "Chocolate: mood theek karne ki dawa 🍫",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr031",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "tease",
+   "title": "Biscuit: chai mein dubaane ke liye 🍪",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr032",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "self",
+   "title": "Diet kal se, chips aaj se 🥔",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr033",
+   "category": "Grocery",
+   "mood": "snacks",
+   "tone": "dost",
+   "title": "Popcorn: movie night ka hero 🍿",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr034",
+   "category": "Grocery",
+   "mood": "breakfast",
+   "tone": "dost",
+   "title": "Nashta: din ka sabse zaroori khana 🥣",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr035",
+   "category": "Grocery",
+   "mood": "breakfast",
+   "tone": "tease",
+   "title": "Cornflakes ya paratha? Dono? 🥣",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr036",
+   "category": "Grocery",
+   "mood": "breakfast",
+   "tone": "self",
+   "title": "Nashta chhod diya? Kal se pakka 😅",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "gr037",
+   "category": "Grocery",
+   "mood": "breakfast",
+   "tone": "heart",
+   "title": "Achha nashta, achha din 🌞",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "gr038",
+   "category": "Grocery",
+   "mood": "breakfast",
+   "tone": "dost",
+   "title": "Oats: dost ke jaise, halka aur healthy 🥣",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr039",
+   "category": "Grocery",
+   "mood": "breakfast",
+   "tone": "tease",
+   "title": "Peanut butter: bread ka naya dost 🥜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr040",
+   "category": "Grocery",
+   "mood": "staples",
+   "tone": "dost",
+   "title": "Atta, chawal, daal: ghar ki neev 🌾",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr041",
+   "category": "Grocery",
+   "mood": "staples",
+   "tone": "tease",
+   "title": "Rashan ka scene: list bhi lambi, budget bhi chhota 📝",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr042",
+   "category": "Grocery",
+   "mood": "staples",
+   "tone": "self",
+   "title": "Daal khatam, chawal bhi? 🍚",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "gr043",
+   "category": "Grocery",
+   "mood": "staples",
+   "tone": "heart",
+   "title": "Ghar ki rasoi: pyaar ka ghar 💜",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr044",
+   "category": "Grocery",
+   "mood": "staples",
+   "tone": "dost",
+   "title": "Tel, namak, masale: sab kuch ek jagah 🧂",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr045",
+   "category": "Grocery",
+   "mood": "staples",
+   "tone": "tease",
+   "title": "Cooking oil: tadka ke liye zaroori 🫗",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr046",
+   "category": "Grocery",
+   "mood": "staples",
+   "tone": "self",
+   "title": "Masale ka dabba ek baar khaali hone pe hi yaad aata hai 🧂",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr047",
+   "category": "Grocery",
+   "mood": "beverages",
+   "tone": "dost",
+   "title": "Cold drink: garmi ka saathi 🥤",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr048",
+   "category": "Grocery",
+   "mood": "beverages",
+   "tone": "tease",
+   "title": "Juice: fruits ka aasan tareeka 🧃",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "gr049",
+   "category": "Grocery",
+   "mood": "beverages",
+   "tone": "self",
+   "title": "Coffee: subah ki jaan ☕",
+   "body": "{name} at {price}. Bina coffee ke kuch nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr050",
+   "category": "Grocery",
+   "mood": "beverages",
+   "tone": "heart",
+   "title": "Ek chhota sa break, ek chhoti si khushi 🥤",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr051",
+   "category": "Grocery",
+   "mood": "beverages",
+   "tone": "dost",
+   "title": "Green tea: sehat ke liye ek chhota kadam 🍵",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr052",
+   "category": "Grocery",
+   "mood": "beverages",
+   "tone": "tease",
+   "title": "Energy drink: raat ke kaam ke liye ⚡",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr053",
+   "category": "Grocery",
+   "mood": "sweets",
+   "tone": "dost",
+   "title": "Mithai: tyohaar ka pyaar 🍬",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr054",
+   "category": "Grocery",
+   "mood": "sweets",
+   "tone": "tease",
+   "title": "Chocolate: 'ek aur' kehke khatam 🍫",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "gr055",
+   "category": "Grocery",
+   "mood": "sweets",
+   "tone": "heart",
+   "title": "Meetha khao, meethi baat karo 🍭",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr056",
+   "category": "Grocery",
+   "mood": "sweets",
+   "tone": "self",
+   "title": "Meetha: diet ka sabse bada dushman 🍰",
+   "body": "{name}, {price}. Aaj cheat day.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr057",
+   "category": "Grocery",
+   "mood": "dryfruit",
+   "tone": "dost",
+   "title": "Dry fruits: din bhar ka energy 🥜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr058",
+   "category": "Grocery",
+   "mood": "dryfruit",
+   "tone": "tease",
+   "title": "Kaju, badam, kishmish: sab kuch ek dabbe mein 🌰",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr059",
+   "category": "Grocery",
+   "mood": "dryfruit",
+   "tone": "heart",
+   "title": "Ghar ka har member khush ho 💜",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr060",
+   "category": "Grocery",
+   "mood": "fresh",
+   "tone": "dost",
+   "title": "Sabzi, phal: ghar ki sehat 🥕",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr061",
+   "category": "Grocery",
+   "mood": "fresh",
+   "tone": "tease",
+   "title": "Fruit basket: gift ka sabse healthy tareeka 🍎",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr062",
+   "category": "Grocery",
+   "mood": "pantry",
+   "tone": "dost",
+   "title": "Pasta, sauce, aur ek chhoti si party 🍝",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "gr063",
+   "category": "Grocery",
+   "mood": "pantry",
+   "tone": "tease",
+   "title": "Noodles: bhookh ka sabse jaldi ka jawab 🍜",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr064",
+   "category": "Grocery",
+   "mood": "pantry",
+   "tone": "self",
+   "title": "Instant food: ghar ka emergency plan 🥫",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr065",
+   "category": "Grocery",
+   "mood": "pantry",
+   "tone": "heart",
+   "title": "Ghar ki rasoi hamesha bhari rahe 💜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "gr066",
+   "category": "Grocery",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka swaad dekha? 😋",
+   "body": "{name}, {discount}% off. Rashan mein ek naya naam.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "gr067",
+   "category": "Grocery",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand}: ghar ka bharosemand brand? 🛒",
+   "body": "{name}, {price}.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "gr068",
+   "category": "Grocery",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Rashan deal: {discount}% off 🛒",
+   "body": "{name}, {price}. Fridge khush.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "gr069",
+   "category": "Grocery",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Rashan sasta, ghar khush.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "gr070",
+   "category": "Grocery",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ke saath ghar bhara rahe 💜",
+   "body": "{name} at {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

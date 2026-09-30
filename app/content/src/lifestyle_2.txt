@@ -1,0 +1,35 @@
+# category: Any
+# prefix: l2
+beauty|dost|Skincare ka scene: ek serum ya do 💧|{name}, {price}. Chehra bhi thank you bolega.
+beauty|tease|Lipstick ka shade: aaj ka mood 💄|{name} at {price}.
+beauty|self|Face wash: din mein 2 baar, yaad kitni baar? 🫧|{name}, {discount}% off.
+beauty|heart|Khud ka khayal, ek chhoti si cheez se shuru 🌷|{name} for {price}.
+beauty|dost|Perfume: jo yaad reh jaye, wo achha 🌸|{name}, {price}.
+beauty|tease|Hair oil ka mausam wapas aaya 🌿|{name} at {price}.
+beauty|self|Makeup remover: raat ka sabse zaroori kaam 🌙|{name}, {price}.|t=night
+beauty|dost|Compact: chhota, handy, hamesha saath 🪞|{name} for {price}.
+beauty|tease|Nail polish: haath ki shaan 💅|{name}, {discount}% off.
+beauty|heart|Sunscreen: roz ka chhota sa pyaar ☀️|{name} at {price}.
+home|dost|Kitchen mein ek naya gadget ka mann? 🍳|{name}, {price}.
+home|tease|Ghar ki safai ko aasan banao 🧹|{name} for {price}. Jhadu ko chhutti.
+home|self|Alamari mein jagah nahi? Storage box ka scene 📦|{name}, {discount}% off.
+home|dost|Bedsheet: neend ka pehla dost 🛏️|{name}, {price}.
+home|tease|Cushion: sofa ka mood 🛋️|{name} for {price}.
+home|dost|Bottle: din bhar paani, din bhar tazgi 💧|{name} at {price}.
+foot|dost|Naye joote: pehla kadam naya 👟|{name}, {price}.
+foot|tease|Chappal: ghar ka sabse comfy dost 🩴|{name} for {price}.
+foot|self|Joote ka sole ghis gaya: time to retire 🥲|{name}, {discount}% off.
+foot|heart|Chalte raho, achhe joote ke saath 🚶|{name} at {price}.
+foot|dost|Sneakers: jeans ke saath hamesha hit 👖|{name}, {price}.
+foot|tease|Heels: confidence ka ek inch 👠|{name} for {price}.
+kid|tease|Khilona: jo bachcha ek din mein todega 🧸|{name} at {price}.
+kid|heart|Bachche ki muskaan sabse achhi deal hai 💜|{name}, {discount}% off.
+kid|dost|Stationery: pencil gayab, phir naya 🖍️|{name}, {price}.
+fit|tease|Dumbbell: ghar pe hi gym 💪|{name}, {price}.
+fit|heart|Sehat ke liye ek chhota kadam 🌟|{name}, {discount}% off.
+book|tease|Diary: aapke shabd, aapki kahani 📔|{name} for {price}.
+book|heart|Kitaab: sabse achha saathi 💜|{name} at {price}.
+bag|self|Wallet: paisa nahi, par style hai 💳|{name}, {discount}% off.
+snack|tease|Chocolate: mood theek karne ka jugaad 🍫|{name} for {price}.
+snack|self|Diet kal se, snacks aaj se 😅|{name}, {discount}% off.
+snack|dost|Chai patti: subah ki jaan ☕|{name}, {price}.

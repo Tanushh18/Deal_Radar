@@ -1,0 +1,598 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (weekly_pick). Built from src/weekly_pick.txt."
+ },
+ "templates": [
+  {
+   "id": "wk001",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "⭐ Picked for you: {price}",
+   "body": "{name} · {discount}% off. Aapke follows se.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk002",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "⭐ Is hafte ki khoj: {price}",
+   "body": "{name}, {discount}% off. Aapke follow kiye hue se.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk003",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Hafte ka best pick 🏆",
+   "body": "{name} — {price}. Aapki pasand ke hisaab se.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk004",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "Is hafte aapke liye ek khaas cheez 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk005",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Hafte bhar ki khoj 🔎",
+   "body": "{name} at {price}. Aapke follows se.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk006",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Weekly pick: sirf aapke liye 🎯",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk007",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "self",
+   "title": "Ek hafta, ek pick 📅",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk008",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Is hafte ki best deal 🥇",
+   "body": "{name}, {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk009",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Aapke follows ka star 🌟",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk010",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "Hafte ki sabse achhi cheez aapke liye 💜",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk011",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Aapke hafte ka best pick 📬",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk012",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Ye hafte ki deal, aapke naam 📢",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk013",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "self",
+   "title": "Weekly dose of deals 💊",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk014",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Hafte ka sabse achha mauka 🎁",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk015",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Is hafte ka winner: {name} 🏅",
+   "body": "{price}, {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk016",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "Aapke follows mein se ek chuni hui deal 🌷",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk017",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Is hafte kya mila? Ye dekho 👇",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk018",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Hafta khatam, deal shuru 🔔",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk019",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "self",
+   "title": "Ek hafta, ek khaas deal ✨",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk020",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Aapke follows ka sabse best 🎯",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk021",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Hafte ke aakhir mein ek treat 🎉",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "day": "weekend",
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk022",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "Weekend se pehle ek khushi 💜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    5
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk023",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Is hafte ki chuni hui cheez 📌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk024",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Sirf aapke follows se, sirf aapke liye 🔒",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk025",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "self",
+   "title": "Weekly pick: chhota, seedha, kaam ka 🎯",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk026",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Aapke liye is hafte ka special ⭐",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk027",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Hafte bhar ka intezaar khatam 🎬",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk028",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "Aapki pasand ka weekly update 💌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk029",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Aaj ka weekly pick 📬",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk030",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Is hafte ki khoj yahan hai 🔍",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk031",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "self",
+   "title": "Ek pick, hafte bhar ka khayal 🧠",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk032",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Aapke follows se nikla hua best 🌟",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk033",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Weekly pick ka jalwa ✨",
+   "body": "{name} for {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk034",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "Hafte ki sabse pyaari cheez 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk035",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Is hafte kuch khaas 🎁",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk036",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Aapke naam ka weekly pick 📛",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk037",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "self",
+   "title": "Ek hafta khatam, ek nayi cheez 🆕",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk038",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "dost",
+   "title": "Is hafte ki top deal aapke follows se 🏆",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk039",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "tease",
+   "title": "Weekly pick: ek nazar kaafi hai 👀",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  },
+  {
+   "id": "wk040",
+   "category": "Any",
+   "mood": "weekly",
+   "tone": "heart",
+   "title": "Aapke liye chuna hai, dil se 💜",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "weekly_pick"
+   ]
+  }
+ ]
+}

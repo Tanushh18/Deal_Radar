@@ -1,0 +1,743 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (follow). Built from src/follow.txt."
+ },
+ "templates": [
+  {
+   "id": "fl001",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} mein kuch naya aaya 🔔",
+   "body": "{name}, {price}. Aapne follow kiya tha na?",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl002",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ki nayi deal, seedhe aapke liye 🎯",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl003",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "Jo follow kiya, wahi mila 💜",
+   "body": "{name} at {price}. {value} se.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl004",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value}: nayi deal aayi 📢",
+   "body": "{name}, {price}. Ek nazar.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl005",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Aap {value} follow karte ho, hum khabar dete hain 📬",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl006",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "{value} ka naya kuch, aur aap sabse pehle 🥇",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl007",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} follow karna kaam aaya 😄",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl008",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ka scene: deal aayi 🛎️",
+   "body": "{name} — {price}, {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl009",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "Aapki pasand ka naya update 🌟",
+   "body": "{name}, {price}. Source: {value}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl010",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} ne naya kuch bheja 📨",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl011",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Follow kiya tha, ab reward 🎁",
+   "body": "{name}, {price}. {value} se.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl012",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value}: tazi deal, tazi khushi 🍃",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl013",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "Hum bhool nahi sakte the aapka {value} 😄",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl014",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Naya {value} deal aaya. Aap decide karo 🤷",
+   "body": "{name} — {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl015",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "{value} mein ek chhoti si khushi 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl016",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} follow karne walon ke liye 🎯",
+   "body": "{name} at {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl017",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Follow karne ka fayda: sabse pehle pata chalta hai 🏃",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl018",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "{value} ki notification, sirf aapke liye 🔔",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl019",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "Aapki {value} list mein kuch naya 📝",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl020",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ne wapas apna jalwa dikhaya ✨",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl021",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "{value} follow karna sahi decision tha 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl022",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value}: naye deals ka pehla notification 🔔",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl023",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Aapka {value} aaj special hai 🌟",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl024",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "{value} ka scene: ek aur deal 🎬",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl025",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} follow karo, deals aate rahenge 🌊",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl026",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Aapko {value} pasand hai, hume pata hai 😉",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl027",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "{value} mein ek nayi shuruaat 🌱",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl028",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "Aapki pasand ka {value} phir se aaya 🔁",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl029",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ka fresh deal: garma garam 🔥",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl030",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "Notification aayi, kyunki aapne {value} follow kiya 😄",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl031",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} — naya deal, aapka naam 📣",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl032",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ke deals kabhi khatam nahi hote (lagbhag) 😏",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl033",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "Aapke {value} ka ek pyaara sa update 💌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl034",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value}: chalo, dekhte hain 👀",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl035",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ki nayi baat 🗞️",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl036",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "{value} pasand hai? Ye lo 🎁",
+   "body": "{name}, {price}. {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl037",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} ke liye aaj kuch naya 🆕",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl038",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Follow list mein sabse upar: {value} 📌",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl039",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "Aapki pasand: {value}. Hamara kaam: khabar dena 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl040",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "Ye {value} ki deal aap miss na karo (par decide aapka) 😄",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl041",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value}: aaj ka surprise 🎉",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl042",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "{value} ne naya kuch nikaala 🚀",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl043",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} follow karne ka ek aur reason 🎯",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl044",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "Aapke {value} ka naya step 👣",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl045",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "{value} — fir ek nayi deal 💜",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl046",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "{value} ke fans ke liye 🙌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl047",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ne kuch alag hi kar diya 😮",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl048",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "self",
+   "title": "{value}: dekhne layak deal 🔍",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl049",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "dost",
+   "title": "Aaj ka {value} update 📱",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl050",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "tease",
+   "title": "{value} ka ek aur tohfa 🎁",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  },
+  {
+   "id": "fl051",
+   "category": "Any",
+   "mood": "follow",
+   "tone": "heart",
+   "title": "Jo aapne chuna, wo aapko mila 💜",
+   "body": "{name} for {price}. {value}.",
+   "needs": [
+    "price"
+   ],
+   "kinds": [
+    "follow"
+   ]
+  }
+ ]
+}

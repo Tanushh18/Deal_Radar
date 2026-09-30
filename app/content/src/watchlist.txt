@@ -1,0 +1,52 @@
+# category: Any
+# prefix: wl
+# kinds: watchlist
+search|dost|🔔 "{query}" mein kuch mila|{name} — {price}. {store} pe.
+search|tease|Aapki khoj ka jawab 🎯|"{query}": {name}, {price}.
+search|heart|Jo dhoondh rahe the, wo mila 💜|"{query}" ke liye {name}, {price}.
+search|dost|"{query}" alert: naya kuch aaya 📢|{name} at {price}. {store}.
+search|tease|Aapki search ne kaam kar diya 🔎|"{query}" — {name}, {price}.
+search|self|Search yaad thi? Deal aa gayi 😄|"{query}": {name}, {price}.
+search|dost|🔔 "{query}" ka match|{name}, {price} pe {store} par.
+search|tease|"{query}" dhoondhne wale ko yahi milta hai 😏|{name} for {price}.
+search|heart|Aapki wishlist ki khoj 💌|"{query}": {name}, {price}.
+search|dost|"{query}" mein nayi deal 🆕|{name} — {price} on {store}.
+search|tease|Ye dekho, "{query}" ke liye 👇|{name}, {price}.
+search|self|Alert laga ke bhool gaye the na? 😅|"{query}": {name}, {price}.
+search|dost|"{query}" ka scene set 🎬|{name} at {price}. {discount}% off.
+search|tease|Aapke alert ka reply aa gaya 📬|{name} — {price}. "{query}".
+search|heart|Aapki pasand ka match mil gaya 💜|{name}, {price}. {store}.
+search|dost|Search ka jawab 🎯|"{query}" ke liye {name} — {discount}% off.
+search|tease|"{query}" ki khoj ab khatam 🏁|{name}, {price}.
+search|self|Ek search, ek alert, ek khushi ✨|"{query}": {name}, {price}.
+search|dost|"{query}" ke liye taaza deal 🍃|{name} for {price}.
+search|tease|Alert ne bataya, ab aap dekho 👀|"{query}": {name}, {price}.
+search|heart|Aapki khoj ko mili manzil 🏡|{name}, {price} on {store}.
+search|dost|"{query}" alert 🔔 {price}|{name}. Dekh lo.
+search|tease|"{query}": ye wali dekhi? 🧐|{name} — {price}.
+search|self|Search mein ye aaya, ab aap decide karo 🤷|{name}, {price}. "{query}".
+search|dost|"{query}" ki nayi deal, seedhe aap tak 📲|{name} at {price}.
+search|tease|Alert ne mehnat ki, ab aap karo 😄|"{query}": {name}, {price}.
+search|heart|Jo naam socha tha, wo mil gaya 💜|"{query}" — {name}, {price}.
+search|dost|"{query}" ki khoj mein ek naya naam 📝|{name}, {price}. {store}.
+search|tease|Aapki search alert aaj active hui 🔔|{name} — {price}.
+search|self|Alert ne kaha: 'ye dekho' 👇|"{query}": {name}, {price}.
+search|dost|"{query}" pe {discount}% off 🏷️|{name}, {price}. {store}.
+search|tease|Alert ka mazaa: sabse pehle pata chalta hai 🏃|"{query}": {name}, {price}.
+search|heart|Aapki search, aapki deal 💜|{name} — {price}.
+search|dost|"{query}": aaj ka match 🎯|{name} at {price} on {store}.
+search|tease|Ye deal "{query}" ke liye hi bani lagti hai 😌|{name}, {price}.
+search|self|Search alert set karna: smart move 🧠|"{query}": {name}, {price}.
+search|dost|"{query}" mein kuch achha mila ✅|{name} — {price}. {store}.
+search|tease|Aapki wishlist aage badhi 📈|"{query}": {name}, {price}.
+search|heart|Kuch mila jo aapko pasand aayega 🌷|{name}, {price}. "{query}".
+search|dost|"{query}" ke liye ek nayi option 🆕|{name} for {price}.
+search|tease|Dhoondhne wale ko mil hi jaata hai 🔍|"{query}": {name}, {price}.
+search|self|Alert ne jagaya, ab dekh lo 😴|{name} — {price}. "{query}".
+search|dost|"{query}" — {store} pe nayi deal 🛒|{name}, {price}.
+search|tease|Ye aapki search se match kar gayi 💘|{name} at {price}.
+search|heart|Jo khoja, wo paaya 🌟|"{query}": {name}, {price}.
+search|dost|"{query}": deal alert! 🚨|{name} for {price}. {store}.
+search|tease|Aapke alert ka result 📊|"{query}": {name}, {price}.
+search|self|Ye alert kaam ka nikla 🎉|{name}, {price}. "{query}".
+search|dost|"{query}" ka fresh match 🍃|{name} — {price}.

@@ -1,0 +1,939 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Electronics (electronics). Built from src/electronics.txt."
+ },
+ "templates": [
+  {
+   "id": "el001",
+   "category": "Electronics",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai ke saath ek gadget ka scene ☕",
+   "body": "{name}, {price}. Keyboard pe chai mat girana.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning",
+    "evening"
+   ]
+  },
+  {
+   "id": "el002",
+   "category": "Electronics",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai peete peete ye deal dekh li 🔌",
+   "body": "{name} at {price}. Phone se tapri tak.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el003",
+   "category": "Electronics",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, ek upgrade to banta hai 📱",
+   "body": "{name} for {price}. Purane wale ne bhi bahut saath diya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el004",
+   "category": "Electronics",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Salary ka pehla din, gadget ka best din 💸",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el005",
+   "category": "Electronics",
+   "mood": "salary",
+   "tone": "self",
+   "title": "Salary aur charger — dono ki kami rehti hai 🔋",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el006",
+   "category": "Electronics",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end: phone ka battery aur wallet dono 5% pe 🪫",
+   "body": "{name}, {price}. Charge dono ko karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el007",
+   "category": "Electronics",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Dekhna free hai, cart mein daalna optional 🛒",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el008",
+   "category": "Electronics",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: specs padhne ka perfect din 📖",
+   "body": "{name}, {price}. Reviews bhi padh lena.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "el009",
+   "category": "Electronics",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj koi kaam nahi? Comparison table banao 📊",
+   "body": "{name} at {price}. Ek row ye bhi.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "el010",
+   "category": "Electronics",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday ko laptop ka charger chahiye, motivation nahi 💼",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "el011",
+   "category": "Electronics",
+   "mood": "monday",
+   "tone": "tease",
+   "title": "Alarm ke baad phone ka battery: 3% 🪫",
+   "body": "{name} for {price}. Ab to power bank le lo.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "el012",
+   "category": "Electronics",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH ki jaan: stable internet aur ek achha headset 🎧",
+   "body": "{name}, {price}. Mute button yaad rakhna.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "el013",
+   "category": "Electronics",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Meeting mein 'aapki awaaz nahi aa rahi' band karo 🎤",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "el014",
+   "category": "Electronics",
+   "mood": "wfh",
+   "tone": "tease",
+   "title": "Video call ka background bhi chahiye? 💻",
+   "body": "{name}, {discount}% off. Kam se kam light achhi rakho.",
+   "needs": [
+    "discount"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "el015",
+   "category": "Electronics",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "Laptop stand kharido, gardan ka pyaar milega 🙏",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "el016",
+   "category": "Electronics",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "PG mein extension board ke bina kya zindagi? 🔌",
+   "body": "{name}, {price}. Roommate ke charger ko chhodo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el017",
+   "category": "Electronics",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Roommate ka charger mat chalao, apna lo 🔋",
+   "body": "{name} at {price}. Dosti bani rahe.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el018",
+   "category": "Electronics",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Raat ko padhai ke liye ek desk lamp 💡",
+   "body": "{name}, {price}. Roommate soyega, tum padhoge.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "el019",
+   "category": "Electronics",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy: 'itna kya karta hai phone pe?' 📱",
+   "body": "{name} for {price}. Kaam kar raha hu, sach mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el020",
+   "category": "Electronics",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Ghar ka TV purana ho gaya hai? 📺",
+   "body": "{name}, {discount}% off. Sabke saath dekhne ka maza alag hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el021",
+   "category": "Electronics",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Papa ka remote: hamesha gayab 🔍",
+   "body": "{name} at {price}. Naya le lo, purana milega nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el022",
+   "category": "Electronics",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar pe ghar ko roshan karo 🪔",
+   "body": "{name}, {price}. Lights ke saath speaker bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el023",
+   "category": "Electronics",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Tyohaar ka gift: kuch aisa jo kaam aaye 🎁",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el024",
+   "category": "Electronics",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Kisi apne ko gadget gift karo 💜",
+   "body": "{name} at {price}. Roz kaam aayega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el025",
+   "category": "Electronics",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Match ke liye bada screen chahiye 📺",
+   "body": "{name}, {price}. Chhakka bhi bada dikhega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el026",
+   "category": "Electronics",
+   "mood": "match",
+   "tone": "tease",
+   "title": "Match ke break mein ek gadget deal 🏏",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el027",
+   "category": "Electronics",
+   "mood": "match",
+   "tone": "self",
+   "title": "Phone pe match, gardan tedhi, ab TV lo 📺",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el028",
+   "category": "Electronics",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Dost ko gift dena hai? 🎁",
+   "body": "{name} at {price}. Useful gadgets kabhi bekaar nahi jaate.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el029",
+   "category": "Electronics",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Jo gadget roz kaam aaye, wahi asli gift 🔌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el030",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "tease",
+   "title": "Phone ka screen crack hua? Time ho gaya 📱",
+   "body": "{name} for {price}. Ab to tempered glass bhi lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el031",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "self",
+   "title": "Phone ka storage full: 'space nahi hai' 😩",
+   "body": "{name}, {price}. Photos delete karne ka mann nahi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el032",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "dost",
+   "title": "Phone case: chhoti cheez, badi suraksha 🛡️",
+   "body": "{name} at {price}. Haath se girega to pata chalega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el033",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "tease",
+   "title": "Charger ke bina phone: 4 ghante ka dost 🔋",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el034",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "self",
+   "title": "Ek aur tempered glass? Pichla bhi kahan gaya 🤔",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el035",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "dost",
+   "title": "Phone ki battery bhi thak jaati hai 🪫",
+   "body": "{name}, {price}. Power bank le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el036",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "heart",
+   "title": "Selfie stick: yaadein bhi, group photo bhi 📸",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el037",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "tease",
+   "title": "Phone holder: gaadi mein GPS wala scene 🚗",
+   "body": "{name}, {price}. Sadak pe dhyan rakhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el038",
+   "category": "Electronics",
+   "mood": "phone",
+   "tone": "dost",
+   "title": "Cable: jo hamesha tootta hai, ab strong wala 🔌",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el039",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "dost",
+   "title": "Earphone: uljhe taar ka zamana khatam 🎧",
+   "body": "{name}, {price}. Taar ka gola ab nahi bandega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el040",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "tease",
+   "title": "Music sunne wale ke liye ek achha headphone 🎶",
+   "body": "{name} at {price}. Volume padosi ka khayal rakhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el041",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "self",
+   "title": "Tumhare earbuds ki battery kitni chalti hai? 🔋",
+   "body": "{name}, {discount}% off. Naye wale mein chalegi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el042",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "heart",
+   "title": "Gaana wahi, mazaa naya 🎵",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el043",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "dost",
+   "title": "Speaker: chhoti party, bade mood 🔊",
+   "body": "{name}, {price}. Padosi ko bhi bulao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el044",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "tease",
+   "title": "Noise cancellation: 'kya bola?' 'kuch nahi suna' 🙉",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el045",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "self",
+   "title": "Earphone kho gaye? Roz ka scene 😅",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el046",
+   "category": "Electronics",
+   "mood": "audio",
+   "tone": "dost",
+   "title": "Podcast sunne ka mood hai? 🎙️",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el047",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "self",
+   "title": "Laptop hang ho raha hai? Restart nahi, replace 😅",
+   "body": "{name}, {price}. Sach mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el048",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "dost",
+   "title": "Laptop ka fan awaaz kar raha hai? 💻",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el049",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "tease",
+   "title": "Mouse aur keyboard: jodi jo kaam aati hai ⌨️",
+   "body": "{name}, {discount}% off. Trackpad pe kaam karna chhodo.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el050",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "self",
+   "title": "Battery 2 ghante? Office ka charger ghar rehta hai 🔌",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el051",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "dost",
+   "title": "Pen drive: chhoti cheez, badi zaroorat 💾",
+   "body": "{name}, {price}. Kabhi kabhi hi milti hai jab chahiye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el052",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "heart",
+   "title": "Ek achha laptop bag bhi lo, gadget ka khayal rakho 🎒",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el053",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "tease",
+   "title": "Monitor bada, aankhein khush 🖥️",
+   "body": "{name}, {price}. Gardan bhi seedhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el054",
+   "category": "Electronics",
+   "mood": "laptop",
+   "tone": "dost",
+   "title": "Webcam: chehra dikhana bhi zaroori 📷",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el055",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "dost",
+   "title": "Ghar ke liye smart plug: bulb bhi ho gaya smart 💡",
+   "body": "{name}, {price}. Tum kab smart hoge?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el056",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "tease",
+   "title": "Iron: kapdon ki salvatein bhi rulati hain 👔",
+   "body": "{name} at {price}. Shirt ki shaan wapas.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el057",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "self",
+   "title": "Fan ki awaaz jaise helicopter 🚁",
+   "body": "{name}, {discount}% off. Naya wala sunta hi nahi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el058",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "dost",
+   "title": "Geyser: sardi ka pehla dost ♨️",
+   "body": "{name} for {price}. Bucket ka jugaad band.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el059",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "tease",
+   "title": "Room heater: sardiyon ka rishta 🔥",
+   "body": "{name}, {price}. Rajai ke andar se bhi dikhega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el060",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "heart",
+   "title": "Air purifier: saans lene ka pyaar 🌬️",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el061",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "dost",
+   "title": "Mixer: chatni aur juice ka partner 🍹",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el062",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "self",
+   "title": "Toaster: subah ke nashte ka hero 🍞",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el063",
+   "category": "Electronics",
+   "mood": "home",
+   "tone": "tease",
+   "title": "Vacuum cleaner: jhadu ko chhutti 🧹",
+   "body": "{name}, {discount}% off. Ab sirf button dabana hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el064",
+   "category": "Electronics",
+   "mood": "camera",
+   "tone": "dost",
+   "title": "Photo lene ka shauk? 📸",
+   "body": "{name}, {price}. Reels ka bharosa mat karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el065",
+   "category": "Electronics",
+   "mood": "camera",
+   "tone": "heart",
+   "title": "Yaadein kaid karo 📷",
+   "body": "{name} at {price}. Jo pal guzar jaate hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el066",
+   "category": "Electronics",
+   "mood": "camera",
+   "tone": "tease",
+   "title": "Tripod: haath hilna band 🎥",
+   "body": "{name}, {price}. Blur wale din gaye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el067",
+   "category": "Electronics",
+   "mood": "camera",
+   "tone": "self",
+   "title": "Memory card full? 💾",
+   "body": "{name} for {price}. Photos ko delete karna mushkil hota hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el068",
+   "category": "Electronics",
+   "mood": "smartwatch",
+   "tone": "dost",
+   "title": "Smartwatch: kadam gino, dil khush karo ⌚",
+   "body": "{name}, {price}. Aaj 10,000 steps?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el069",
+   "category": "Electronics",
+   "mood": "smartwatch",
+   "tone": "tease",
+   "title": "Watch: time bhi dekho, notification bhi ⌚",
+   "body": "{name} at {price}. Phone jeb mein hi rahega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el070",
+   "category": "Electronics",
+   "mood": "smartwatch",
+   "tone": "self",
+   "title": "Smartwatch kehta hai 'uth jao' 🪑",
+   "body": "{name}, {discount}% off. Aaj bhi nahi uthe.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el071",
+   "category": "Electronics",
+   "mood": "smartwatch",
+   "tone": "heart",
+   "title": "Sehat ka khayal rakho, roz thoda chalo 🚶",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el072",
+   "category": "Electronics",
+   "mood": "gaming",
+   "tone": "dost",
+   "title": "Gaming ke shauqeen? Ek naya controller 🎮",
+   "body": "{name}, {price}. Thumb ko bhi rest.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el073",
+   "category": "Electronics",
+   "mood": "gaming",
+   "tone": "tease",
+   "title": "Gaming mouse: 'lag' ka bahana khatam 🖱️",
+   "body": "{name} at {price}. Ping ka ilzaam phir bhi router pe.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el074",
+   "category": "Electronics",
+   "mood": "gaming",
+   "tone": "self",
+   "title": "Aaj sirf ek match... phir teen ghante 🕹️",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "el075",
+   "category": "Electronics",
+   "mood": "gaming",
+   "tone": "dost",
+   "title": "Gaming chair: kamar ko bhi jeetna hai 🪑",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "el076",
+   "category": "Electronics",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka gadget dekha? 👀",
+   "body": "{name}, {price}.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "el077",
+   "category": "Electronics",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand} ka naya model, tumhare radar pe? 📡",
+   "body": "{name}, {discount}% off. Spec sheet ready rakho.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "el078",
+   "category": "Electronics",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Gadget deal: {discount}% off 🔌",
+   "body": "{name}, {price}. Spec sheet padhne ke baad.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "el079",
+   "category": "Electronics",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Math simple hai, warranty dekh lena.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "el080",
+   "category": "Electronics",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat bhi ek gadget hai 💜",
+   "body": "{name} at {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

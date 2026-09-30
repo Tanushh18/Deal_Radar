@@ -1,0 +1,78 @@
+# category: Men Fashion
+# prefix: mf
+chai|tease|Chai peete peete ek shirt bhi dekh lo ☕|{name} — {price}. Shirt pe chai mat girana.
+chai|dost|Chai thandi hui, deal abhi garam hai ☕|{name} for {price}.
+chai|tease|Ek chai, ek scroll, ek naya look|{name} at {price}. Pakoda alag se.|t=morning,evening
+chai|self|Chai ka bill bhi yaad nahi, ye deal yaad rakhna|{name} — {price}.
+chai|dost|Tapri pe baithe ho? Ye dekh lo 👇|{name} for {price}. Bhaiya, ek aur chai.|t=evening
+salary|heart|Salary aayi, thoda apne liye bhi 💸|{name} — {price}. Tum deserve karte ho.
+salary|tease|Salary ka pehla din, wallet ka best din|{name} at {price}. Bas dekhna hai... na? 😏
+salary|dost|Pehli tareekh ka swag 😎|{name} — {discount}% off.
+salary|self|Salary aayi, EMI ne hello bola, deal ne bhi|{name} for {price}.
+salary|heart|Mehnat ki kamai, ek chhota sa treat 🎁|{name} at {price}.
+monthend|self|Month-end mein bhi style ka budget hota hai|{name} — {price}. Wallet-friendly.
+monthend|tease|Balance: 'rehne do'. Deal: 'dekh to lo'|{name} for {price}.
+monthend|dost|Aakhri hafte ki chill wali deal 🧊|{name} at {price}. Bas ek nazar.
+monthend|self|Paisa kam, taste high 😌|{name} — {price}.
+monthend|tease|Dekhna free hai, bhai 😄|{name} — {price}. Tap ka koi charge nahi.
+sunday|self|Sunday ko bhi kuch productive karna hai? Ye lo|{name} — {price}. Scroll karo, sochna baad mein.|w=0
+sunday|dost|Chhutti ka din, shirt ka scene 👔|{name} for {price}.|d=weekend
+sunday|tease|Sunday ki safai ke baad naya kuch chahiye 🧺|{name} — {discount}% off.|w=0
+sunday|dost|Pyjama mein baithe ho na? Koi baat nahi 😄|{name} at {price}. Bas dekh lo.|d=weekend
+sunday|self|Aaj gym skip, shopping on 🛋️|{name} — {price}.|w=0
+monday|tease|Monday ko bhi swag chahiye 💼|{name} — {price}. Office mein entry filmy.|w=1
+monday|dost|Alarm ne uthaya, deal ne hansaya ⏰|{name} at {price}. Monday sorted.|w=1
+monday|self|Monday blues ko blue shirt se hara do 💙|{name} — {price}.|w=1
+monday|tease|Boss ka mood kaisa bhi ho, tumhara look pakka|{name} for {price}.|d=weekday t=morning
+wfh|self|WFH mein upar shirt, neeche shorts 😂|{name} — {price}. Camera sirf upar tak dekhta hai.|d=weekday
+wfh|dost|Meeting se pehle do minute hain? ⏱️|{name} at {price}. Call pe bhi chalega.|d=weekday
+wfh|tease|Camera on karna hai ya off? Shirt to nayi rakho|{name} — {discount}% off.|d=weekday
+wfh|self|Laptop ke peeche bhi personality chahiye 💻|{name} for {price}.|d=weekday
+wfh|dost|Lunch break mein ek chhoti si shopping 🍱|{name} — {price}. Dal thandi hone se pehle.|t=afternoon
+hostel|self|Roommate ki shirt pehni? Ab apni le lo 😜|{name} — {price}. Udhaar band.
+hostel|dost|PG ki alamari mein ek hanger khali hai 🚪|{name} at {price}.
+hostel|tease|Raat ke 2 baje ki 'kal kya pehnu?' chat 🌙|Answer: {name}, {price}.|t=night
+hostel|dost|Bhai ki shirt bhai ko wapas karo, apni le lo 👕|{name} for {price}.
+ghar|self|Mummy poochhengi 'kitne ka?' 😎|Bolna: {price}. Aur confidence ke saath bolna. {name}
+ghar|self|Papa: 'ye kab liya?' Tum: 'deal thi' 😌|{name} — {price}, {discount}% off.
+ghar|self|Mummy ki line: 'itni shirts to hain!' 🙄|Par ye wali {name} nahi hai. {price}.
+ghar|heart|Ghar wale kehte hain 'apne liye bhi socho' 💜|{name} at {price}. Aaj sun li unki baat.
+ghar|dost|Didi bolegi 'achhi hai, kahan se li?' 😏|Answer: {name}, {price}.
+festival|tease|Cousin ki sangeet, tumhari entry 🕺|{name} — {price}. Naach baad mein, kurta pehle.
+festival|heart|Tyohaar aa raha hai, alamari taiyar? 🪔|{name} — {price}.
+festival|dost|Tyohaar koi bhi ho, look apna 🎉|{name} at {price}.
+festival|tease|Baraat mein sabse sharp kaun? Tum 😎|{name} — {discount}% off.
+festival|dost|Photo mein achhe dikhne ka koi zimmedar nahi, par shirt hai 📸|{name} at {price}.
+match|dost|Jersey nahi to shirt hi sahi 👕|{name} at {price}.
+heart|heart|Aaj tumne bahut kuch sambhala 🫶|Ek chhoti si khushi: {name}, {price}.
+heart|heart|Khud ke liye bhi kuch le lo, bhai|{name} — {price}. Tumhare liye.
+heart|heart|Sab ka khayal rakhte ho, apna bhi rakho 💜|{name} at {price}.
+heart|heart|Aaj kisi ne shabaash nahi bola? Hum bolte hain 👏|Reward: {name}, {price}.|t=evening,night
+dost|tease|{brand} ka fan hai koi? 😉|{name} — {price}.|p
+dost|dost|Tumhare taste ki cheez: {name} 🎯|{price}. Dekh lo.|p
+morning|tease|Good morning ☀️ aaj ka mood: nayi shirt|{name} at {price}.|t=morning
+morning|dost|Alarm ke baad ye dekh lo, phir uthna ⏰|{name} — {price}.|t=morning
+shirts|tease|Ye shirt iron karne ka bahana nahi dega 😄|{name} — {price}.
+shirts|dost|Formal ho ya casual, mood tumhara 🎭|{name} at {price}.
+shirts|tease|Interview wali shirt ka replacement 👔|{name} — {price}. Ab aur kaam aayegi.
+shirts|self|Purani shirt ne bhi bahut saath diya, ab retire 🎖️|{name} for {price}.
+shirts|tease|T-shirt collection mein ek aur entry? 👕|{name} at {price}.
+shirts|dost|Kurta pehnne ka bahana chahiye? Ye raha 🙌|{name} — {price}.
+shirts|self|Alamari mein jagah nahi, par deal to hai 🪑|{name}, {price}.
+shirts|tease|Ye jacket dekh ke mausam bhi jalega 🧥|{name} — {price}.
+shirts|dost|Sneakers ke saath ye combo pakka chalega 👟|{name} at {price}.
+shirts|tease|Date pe, dost ki shaadi pe, ya bas mood pe 😌|{name} — {price}.
+shirts|dost|Shirt ka size bhi dekh lena, mood ka size to perfect hai|{name} at {price}.
+shirts|heart|Ek achhi shirt, ek achha din 🌤️|{name} — {price}.
+shirts|tease|Compliment milega ya nahi, deal to sach mein live hai|{name} for {price}.
+shirts|dost|Colour choose karna mushkil? Hum ne pehle hi kar diya 🎨|{name} — {price}.
+shirts|tease|Ye hoodie sardi se pehle ka jugaad hai 🧣|{name} at {price}.
+shirts|dost|Jeans ka pocket bada ho to wallet bhi khush 😄|{name} — {price}.
+shirts|self|Aaj bhi wahi purani t-shirt? Aaj badlo 😅|{name} for {price}.
+shirts|dost|Belt, watch, wallet — sab set karna hai kya? ⌚|{name} — {price}.
+shirts|tease|Sharma ji ka beta bhi yahi dekh raha tha 😏|{name} at {price}. Tum pehle le lo.
+shirts|dost|Look aisa jaise pehle se plan tha 😎|{name} — {price}.
+shirts|tease|Mirror ne bola 'aaj kuch naya?' 🪞|{name} — {price}.
+shirts|dost|Ye shirt tumhare mood se match karti hai|{name} at {price}.
+shirts|tease|Aaj 'main character' energy 🎬|{name} — {price}.
+shirts|dost|Aaj ki deal: tumhare swag jitni sharp ✂️|{name} at {price}.

@@ -1,0 +1,873 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Beauty (beauty). Built from src/beauty.txt."
+ },
+ "templates": [
+  {
+   "id": "bt001",
+   "category": "Beauty",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai ke saath skincare ka time ☕",
+   "body": "Chehre ko bhi break chahiye. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning",
+    "evening"
+   ]
+  },
+  {
+   "id": "bt002",
+   "category": "Beauty",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai garam, skin glowy, deal live ✨",
+   "body": "{name} — {price}. Cup mein cream mat daalna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt003",
+   "category": "Beauty",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, thoda self-care bhi 🧴",
+   "body": "{name} for {price}. Kamaya hai to khud pe bhi lagao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt004",
+   "category": "Beauty",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Pehli tareekh ka glow-up 💫",
+   "body": "Bank balance ki chamak ke saath skin ki bhi. {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt005",
+   "category": "Beauty",
+   "mood": "salary",
+   "tone": "dost",
+   "title": "Salary ka ek hissa skincare ke naam 💜",
+   "body": "{name}, {discount}% off. Chehra ne kabhi EMI nahi maangi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bt006",
+   "category": "Beauty",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end mein bhi shelf mein jagah hai 🧴",
+   "body": "{name} at {price}. Cream ka budget alag hota hai, bhai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt007",
+   "category": "Beauty",
+   "mood": "monthend",
+   "tone": "dost",
+   "title": "Wallet halka, glow bhaari ✨",
+   "body": "{name}, {price}. Bas dekhna hai, khareedna optional.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt008",
+   "category": "Beauty",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday self-care day 🛁",
+   "body": "Mask lagao, scroll karo. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "bt009",
+   "category": "Beauty",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Face mask on, phone in hand 🧖",
+   "body": "{name} — {price}. Phone gira to mask ka kya hoga?",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "bt010",
+   "category": "Beauty",
+   "mood": "sunday",
+   "tone": "self",
+   "title": "Sunday ko skincare routine ka reset 🔄",
+   "body": "{name}, {discount}% off. Haan, pichle Sunday bhi yahi bola tha.",
+   "needs": [
+    "discount"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "bt011",
+   "category": "Beauty",
+   "mood": "monday",
+   "tone": "tease",
+   "title": "Monday ko bhi glow chahiye ✨",
+   "body": "{name} at {price}. Boss ko lagega weekend accha gaya.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "bt012",
+   "category": "Beauty",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Alarm ke baad pehla kaam: moisturiser 🧴",
+   "body": "{name} for {price}. Doosra kaam: chai.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "bt013",
+   "category": "Beauty",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "Camera on hai, glow bhi on hona chahiye 💻",
+   "body": "{name} — {price}. Sirf chehra hi to dikhta hai.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "bt014",
+   "category": "Beauty",
+   "mood": "wfh",
+   "tone": "tease",
+   "title": "Meeting mein sirf chehra dikhta hai 😏",
+   "body": "Isliye chehre par invest karo. {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "bt015",
+   "category": "Beauty",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "PG ke sink pe ek aur bottle ki jagah hai? 🚿",
+   "body": "{name}, {price}. Roommate ki cream wapas karo. 😜",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt016",
+   "category": "Beauty",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Raat ki skincare, subah ka glow 🌙",
+   "body": "{name} for {price}. Roommate poochegi 'kya lagaya?'",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "bt017",
+   "category": "Beauty",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy: 'itni creams?' Tum: 'ye nayi hai' 😎",
+   "body": "{name}, {price}. Nayi hai, sach mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt018",
+   "category": "Beauty",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Dadi ke nuskhe achhe hain 👵",
+   "body": "Par ye bhi ek baar try karo. {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt019",
+   "category": "Beauty",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Didi ki shelf se cream chori? Ab apni lo 😄",
+   "body": "{name} for {price}. Ilzaam wapas.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt020",
+   "category": "Beauty",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Shaadi mein glow chahiye? Taiyari abhi se ✨",
+   "body": "{name} at {price}. Photographer bhi khush.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt021",
+   "category": "Beauty",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Sangeet se pehle skin ready karo 💃",
+   "body": "{name}, {discount}% off. Naach baad mein, glow pehle.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bt022",
+   "category": "Beauty",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Tyohaar pe khud ko bhi sajao 🪔",
+   "body": "{name} for {price}. Ghar ki roshni tum ho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt023",
+   "category": "Beauty",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Match ke break mein ek quick deal 🏏",
+   "body": "Ad break lamba hota hai. {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt024",
+   "category": "Beauty",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Khud ka khayal rakhna bhi zaroori hai 🫶",
+   "body": "Aaj ka chhota sa gift: {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt025",
+   "category": "Beauty",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Aaj sabke liye kiya, thoda apne liye 🌷",
+   "body": "{name} at {price}. Tumhari baari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt026",
+   "category": "Beauty",
+   "mood": "lips",
+   "tone": "tease",
+   "title": "Lipstick ka shade nahi mila? Ab milega 💄",
+   "body": "{name} for {price}. Aaina tumhe dekh ke muskurayega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt027",
+   "category": "Beauty",
+   "mood": "lips",
+   "tone": "self",
+   "title": "Alamari mein 12 lipsticks, par ye 13th chahiye 😅",
+   "body": "{name}, {price}. Hisaab mat lagao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt028",
+   "category": "Beauty",
+   "mood": "lips",
+   "tone": "dost",
+   "title": "Mask ke peeche bhi lips ka mood 😄",
+   "body": "{name} at {price}. Kabhi to mask hategi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt029",
+   "category": "Beauty",
+   "mood": "lips",
+   "tone": "heart",
+   "title": "Muskurane ka ek aur bahana 💄",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt030",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "dost",
+   "title": "Sunscreen: roz lagao, roz jeeto ☀️",
+   "body": "{name}, {price}. Baadal mein bhi, bhai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt031",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "tease",
+   "title": "Skin ne chupke se request bheji hai 💌",
+   "body": "Subject: 'thoda pyaar?' {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt032",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "self",
+   "title": "Routine ke naam pe 3 steps? Ab 4 karo 😌",
+   "body": "{name} at {price}. Kal se pakka, aaj shuru karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt033",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "dost",
+   "title": "Moisturiser ka mausam aa gaya ❄️",
+   "body": "{name}, {discount}% off. Skin sukhi, dil geela.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bt034",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "tease",
+   "title": "Face wash ka size chhota, glow ka bada 🫧",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt035",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "self",
+   "title": "Purani cream khatam? Naye ka time 🧴",
+   "body": "{name} at {price}. Tube ko aakhri baar daba lo, phir badlo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt036",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "dost",
+   "title": "Serum: chhoti bottle, badi baatein 💧",
+   "body": "{name}, {price}. Dropper wali cheez, dhyan se.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt037",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "tease",
+   "title": "Pimple ko bye bolna hai? 👋",
+   "body": "{name} for {price}. Ungli mat lagana, ye request hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt038",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "dost",
+   "title": "Dark circles ko chhutti dena? 😴",
+   "body": "{name}, {price}. Neend bhi thodi jodo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt039",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "heart",
+   "title": "Roz thoda care, pura din confidence 💜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt040",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "tease",
+   "title": "Ye toner nahi, mood booster hai 🌸",
+   "body": "{name}, {price}. Face pe chhidko, mood pe asar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt041",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "dost",
+   "title": "Night cream ka time ho gaya 🌙",
+   "body": "{name} for {price}. Sone se pehle, sone ke saath.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening",
+    "night"
+   ]
+  },
+  {
+   "id": "bt042",
+   "category": "Beauty",
+   "mood": "skin",
+   "tone": "self",
+   "title": "Sheet mask wali raat 🧖",
+   "body": "{name}, {price}. 15 minute phone mat girana.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "bt043",
+   "category": "Beauty",
+   "mood": "hair",
+   "tone": "dost",
+   "title": "Hair care ka scene set karo 💇",
+   "body": "{name} for {price}. Kal se baalon ki baari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt044",
+   "category": "Beauty",
+   "mood": "hair",
+   "tone": "tease",
+   "title": "Baal bhi bolte hain 'thoda pyaar do' 🧴",
+   "body": "{name} at {price}. Dhoop, pasina, dhool — sab jhelte hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt045",
+   "category": "Beauty",
+   "mood": "hair",
+   "tone": "self",
+   "title": "Shampoo khatam? Ek aur cheez bhi lo 🚿",
+   "body": "{name}, {price}. Conditioner ko bhi to yaad karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt046",
+   "category": "Beauty",
+   "mood": "hair",
+   "tone": "tease",
+   "title": "Hair oil ka jugaad ab band 🌿",
+   "body": "{name}, {discount}% off. Asli care shuru.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bt047",
+   "category": "Beauty",
+   "mood": "hair",
+   "tone": "heart",
+   "title": "Baalon ki bhi ek kahani hoti hai 💜",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt048",
+   "category": "Beauty",
+   "mood": "hair",
+   "tone": "dost",
+   "title": "Bad hair day ko bye bolo 👋",
+   "body": "{name}, {price}. Bandana plan B rahega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt049",
+   "category": "Beauty",
+   "mood": "perfume",
+   "tone": "tease",
+   "title": "Khushboo se pehle entry 😎",
+   "body": "{name} at {price}. Shakal baad mein dikhegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt050",
+   "category": "Beauty",
+   "mood": "perfume",
+   "tone": "dost",
+   "title": "Ek spray, sau kahaniyan 🌸",
+   "body": "{name}, {price}. Log poochenge 'kaun sa hai?'",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt051",
+   "category": "Beauty",
+   "mood": "perfume",
+   "tone": "heart",
+   "title": "Jo yaad reh jaye, wo khushboo 💜",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt052",
+   "category": "Beauty",
+   "mood": "perfume",
+   "tone": "self",
+   "title": "Purana perfume khatam, naya wala aa gaya 🧴",
+   "body": "{name}, {discount}% off. Aakhri boond tak khenchi thi.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bt053",
+   "category": "Beauty",
+   "mood": "makeup",
+   "tone": "tease",
+   "title": "Foundation ka shade dhoondh liya? 🎨",
+   "body": "{name} at {price}. Haath pe test karna mat bhoolna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt054",
+   "category": "Beauty",
+   "mood": "makeup",
+   "tone": "dost",
+   "title": "Kajal ka mood, aankhon ka jadoo 👁️",
+   "body": "{name}, {price}. Smudge hua to style samajhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt055",
+   "category": "Beauty",
+   "mood": "makeup",
+   "tone": "self",
+   "title": "Makeup kit mein ek aur cheez ki jagah hai 🧳",
+   "body": "{name} for {price}. Kit ka zip abhi bhi band ho jata hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt056",
+   "category": "Beauty",
+   "mood": "makeup",
+   "tone": "tease",
+   "title": "Eyeliner wing perfect? Ye help karega 😌",
+   "body": "{name}, {price}. Haath thoda steady rakhna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt057",
+   "category": "Beauty",
+   "mood": "makeup",
+   "tone": "heart",
+   "title": "Taiyaar hona bhi ek mood hai ✨",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt058",
+   "category": "Beauty",
+   "mood": "makeup",
+   "tone": "tease",
+   "title": "Nail polish ka naya shade 💅",
+   "body": "{name}, {discount}% off. Sukhne ka intezaar bhi part of it.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bt059",
+   "category": "Beauty",
+   "mood": "makeup",
+   "tone": "dost",
+   "title": "Makeup remover bhi yaad rakhna 🧼",
+   "body": "{name} for {price}. Raat ko chehra bhi aaram maangta hai.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "bt060",
+   "category": "Beauty",
+   "mood": "grooming",
+   "tone": "dost",
+   "title": "Beard oil ka time aa gaya 🧔",
+   "body": "{name}, {price}. Daadhi ko bhi pyaar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt061",
+   "category": "Beauty",
+   "mood": "grooming",
+   "tone": "tease",
+   "title": "Shaving cream: clean look, clean mood 🪒",
+   "body": "{name} at {price}. Blade ka bhi khayal rakho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt062",
+   "category": "Beauty",
+   "mood": "grooming",
+   "tone": "self",
+   "title": "Trimmer ka blade purana ho gaya? ✂️",
+   "body": "{name}, {price}. Kaan ke paas dhyan se.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt063",
+   "category": "Beauty",
+   "mood": "grooming",
+   "tone": "dost",
+   "title": "Deodorant: bina bole impression 😎",
+   "body": "{name} for {price}. Lift mein sab dekhte hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt064",
+   "category": "Beauty",
+   "mood": "grooming",
+   "tone": "heart",
+   "title": "Khud ko saaf-suthra rakhna bhi self-love hai 💜",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bt065",
+   "category": "Beauty",
+   "mood": "grooming",
+   "tone": "tease",
+   "title": "Aftershave: sharp look ke liye 😏",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt066",
+   "category": "Beauty",
+   "mood": "gift",
+   "tone": "heart",
+   "title": "Kisi ke liye gift dhoondh rahe ho? 🎁",
+   "body": "{name}, {price}. Beauty gifts kam hi galat jaate hain.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt067",
+   "category": "Beauty",
+   "mood": "gift",
+   "tone": "dost",
+   "title": "Birthday aane wala hai? 🎂",
+   "body": "{name} for {price}. Yaad dilane ka shukriya baad mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt068",
+   "category": "Beauty",
+   "mood": "gift",
+   "tone": "tease",
+   "title": "Gift wrap bhi kara lena 🎀",
+   "body": "{name}, {price}. Impression pehle se pakka.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bt069",
+   "category": "Beauty",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ka shade dekha? 👀",
+   "body": "{name} at {price}.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "bt070",
+   "category": "Beauty",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand} fans, ek nazar idhar bhi 😄",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "bt071",
+   "category": "Beauty",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Beauty deal ka scene: {discount}% off 💄",
+   "body": "{name}, {price}. Kitne ka scene hai, ye tumhe pata hai.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "bt072",
+   "category": "Beauty",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Math simple hai.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "bt073",
+   "category": "Beauty",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ka glow bhi alag hota hai 💜",
+   "body": "{name}, {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

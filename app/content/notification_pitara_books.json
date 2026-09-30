@@ -1,0 +1,720 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Books & Stationery (books). Built from src/books.txt."
+ },
+ "templates": [
+  {
+   "id": "bk001",
+   "category": "Books & Stationery",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai ke saath ek kitaab ☕",
+   "body": "{name}, {price}. Sabse achha combination.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning",
+    "evening"
+   ]
+  },
+  {
+   "id": "bk002",
+   "category": "Books & Stationery",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai aur kitaab: sabse purani jodi 📖",
+   "body": "{name} at {price}. Pakoda bookmark ban jaayega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk003",
+   "category": "Books & Stationery",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi, dimaag ko bhi kuch khilao 📚",
+   "body": "{name}, {price}. Sabse achha nivesh.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk004",
+   "category": "Books & Stationery",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Salary ka ek hissa kitaabon ke naam 📖",
+   "body": "{name} for {price}. Shelf mein jagah hai?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk005",
+   "category": "Books & Stationery",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Month-end: kitaab khareedna hai, padhna baad mein 😅",
+   "body": "{name}, {price}. Shelf mein aur ek kitaab.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk006",
+   "category": "Books & Stationery",
+   "mood": "monthend",
+   "tone": "dost",
+   "title": "Padhne ka time nahi, par khareedne ka hai 📚",
+   "body": "{name} at {price}. Sabse honest bahana.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk007",
+   "category": "Books & Stationery",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Sunday: kitaab aur chai, aur kuch nahi 📖",
+   "body": "{name}, {price}. Phone silent rakhna.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "bk008",
+   "category": "Books & Stationery",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Aaj padhna hai, ya sirf sochna hai? 🤔",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "bk009",
+   "category": "Books & Stationery",
+   "mood": "monday",
+   "tone": "self",
+   "title": "Monday: kitaab dekh ke neend aa jaati hai 😴",
+   "body": "{name}, {price}. Fir bhi le lo.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "bk010",
+   "category": "Books & Stationery",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Monday ki subah, ek achhi kitaab ki tarah ☀️",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "bk011",
+   "category": "Books & Stationery",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein lunch break mein kitaab padhna 📖",
+   "body": "{name}, {price}. 10 pages roz.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "bk012",
+   "category": "Books & Stationery",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Screen se thodi chhutti, kitaab ke saath 📚",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "bk013",
+   "category": "Books & Stationery",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "Hostel ki alamari mein kitaabein kam, notes zyada 📝",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk014",
+   "category": "Books & Stationery",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Exam se pehle ek raat ki padhai 🌙",
+   "body": "{name} at {price}. Chai bhi taiyaar.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "bk015",
+   "category": "Books & Stationery",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Roommate ke notes mat churao, apne banao 😜",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bk016",
+   "category": "Books & Stationery",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Mummy ki purani kitaabein aur naye page 👵",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk017",
+   "category": "Books & Stationery",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Ghar mein ek kona sirf kitaabon ka 📚",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk018",
+   "category": "Books & Stationery",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Tyohaar pe kitaab gift karo 🎁",
+   "body": "{name} at {price}. Sabse alag gift.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk019",
+   "category": "Books & Stationery",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Diwali pe ek achhi kitaab aur ek diya 🪔",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk020",
+   "category": "Books & Stationery",
+   "mood": "match",
+   "tone": "dost",
+   "title": "Match ke break mein 5 pages 📖",
+   "body": "{name} for {price}. Ad break lamba hota hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk021",
+   "category": "Books & Stationery",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Kitaabein: sabse achhe dost 💜",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk022",
+   "category": "Books & Stationery",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Ek page, ek nayi duniya 🌍",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk023",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "dost",
+   "title": "Novel: raat ke 2 baje tak padhna hai 🌙",
+   "body": "{name}, {price}. Sirf ek chapter, phir 10 aur.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk024",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "tease",
+   "title": "Novel: kahani mein kho jao 📖",
+   "body": "{name} for {price}. Chai thandi ho jaayegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk025",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "self",
+   "title": "Kitaab shuru ki, bookmark wahin reh gaya 🔖",
+   "body": "{name}, {discount}% off. Is baar khatam karenge.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bk026",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "heart",
+   "title": "Ek achhi kahani, ek achha din 📚",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk027",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "dost",
+   "title": "Thriller: dil ki dhadkan badh jaayegi 😱",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk028",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "tease",
+   "title": "Romance: chai ke saath aur bhi achha ❤️",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk029",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "self",
+   "title": "TBR list: 50 kitaabein, padhi: 2 📚",
+   "body": "{name}, {price}. Ek aur add karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk030",
+   "category": "Books & Stationery",
+   "mood": "novel",
+   "tone": "dost",
+   "title": "Fantasy: dusri duniya ki sair 🐉",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk031",
+   "category": "Books & Stationery",
+   "mood": "selfhelp",
+   "tone": "dost",
+   "title": "Self-help: kal se badal jaayenge 💭",
+   "body": "{name}, {price}. Aaj shuru karo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk032",
+   "category": "Books & Stationery",
+   "mood": "selfhelp",
+   "tone": "tease",
+   "title": "Self-help kitaab: padh li, ab amal karna hai 😅",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk033",
+   "category": "Books & Stationery",
+   "mood": "selfhelp",
+   "tone": "heart",
+   "title": "Khud ko behtar banane ka ek chhota kadam 🌟",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bk034",
+   "category": "Books & Stationery",
+   "mood": "selfhelp",
+   "tone": "self",
+   "title": "Kitaab padhi, motivation aaya, phir so gaye 😴",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk035",
+   "category": "Books & Stationery",
+   "mood": "exam",
+   "tone": "dost",
+   "title": "Exam ki taiyari: notes, kitaab, aur chai 📝",
+   "body": "{name}, {price}. Best of luck.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk036",
+   "category": "Books & Stationery",
+   "mood": "exam",
+   "tone": "tease",
+   "title": "Syllabus dekh ke dimaag ghoom gaya? 😵",
+   "body": "{name} for {price}. Ek ek chapter.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk037",
+   "category": "Books & Stationery",
+   "mood": "exam",
+   "tone": "self",
+   "title": "Exam kal hai, aaj padhai shuru 😅",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bk038",
+   "category": "Books & Stationery",
+   "mood": "exam",
+   "tone": "heart",
+   "title": "Mehnat kabhi bekaar nahi jaati 💪",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk039",
+   "category": "Books & Stationery",
+   "mood": "exam",
+   "tone": "dost",
+   "title": "Previous year papers: sabse achha guide 📄",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk040",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "dost",
+   "title": "Pen: jo hamesha khatam ho jaata hai ✒️",
+   "body": "{name} for {price}. Ek dozen le lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk041",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "tease",
+   "title": "Notebook: khali pages ki khubsurti 📓",
+   "body": "{name}, {discount}% off. Likhne ka mann kare to.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bk042",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "self",
+   "title": "Sticky notes: reminders ka ambar 📌",
+   "body": "{name} at {price}. Kaunsa kya tha?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk043",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "heart",
+   "title": "Diary: aapki kahani, aapke shabd 📔",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk044",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "dost",
+   "title": "Highlighter: sab kuch important lagta hai 🖍️",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk045",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "tease",
+   "title": "Planner: plan banate hain, follow nahi 😅",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk046",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "self",
+   "title": "Pencil box: ghar mein 10, exam mein 0 ✏️",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk047",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "dost",
+   "title": "Desk organiser: chhoti si vyavastha 🗂️",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bk048",
+   "category": "Books & Stationery",
+   "mood": "stationery",
+   "tone": "tease",
+   "title": "Colour pencils: bachpan wapas 🎨",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk049",
+   "category": "Books & Stationery",
+   "mood": "kids",
+   "tone": "dost",
+   "title": "Bachche ki kahani ki kitaab 🧸",
+   "body": "{name}, {price}. Sone se pehle ek kahani.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "bk050",
+   "category": "Books & Stationery",
+   "mood": "kids",
+   "tone": "heart",
+   "title": "Bachche ko padhne ka shauk lagao 📚",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk051",
+   "category": "Books & Stationery",
+   "mood": "kids",
+   "tone": "tease",
+   "title": "Colouring book: deewar bachi rahe 🖍️",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk052",
+   "category": "Books & Stationery",
+   "mood": "kids",
+   "tone": "self",
+   "title": "Bachcha: 'ek aur kahani' 🌙",
+   "body": "{name}, {discount}% off. Aakhri wali, sach mein.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "bk053",
+   "category": "Books & Stationery",
+   "mood": "gift",
+   "tone": "heart",
+   "title": "Kitaab: sabse achha gift 🎁",
+   "body": "{name} for {price}. Jo hamesha yaad rahe.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk054",
+   "category": "Books & Stationery",
+   "mood": "gift",
+   "tone": "dost",
+   "title": "Birthday gift: ek achhi kitaab aur ek note 💌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk055",
+   "category": "Books & Stationery",
+   "mood": "gift",
+   "tone": "tease",
+   "title": "Kitaab gift karo, dimaag khush rahega 🎀",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "bk056",
+   "category": "Books & Stationery",
+   "mood": "brand",
+   "tone": "tease",
+   "title": "{brand} ki kitaab dekhi? 📚",
+   "body": "{name}, {discount}% off. Padhne layak.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "bk057",
+   "category": "Books & Stationery",
+   "mood": "brand",
+   "tone": "dost",
+   "title": "{brand}: kitaabon ka pasandeeda naam? 📖",
+   "body": "{name}, {price}.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "bk058",
+   "category": "Books & Stationery",
+   "mood": "deal",
+   "tone": "tease",
+   "title": "Kitaab deal: {discount}% off 📚",
+   "body": "{name}, {price}. Padhne ka bahana mil gaya.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "bk059",
+   "category": "Books & Stationery",
+   "mood": "deal",
+   "tone": "dost",
+   "title": "MRP {mrp}, ab {price} 🧮",
+   "body": "{name}. Kitaab sasti, gyaan anmol.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "bk060",
+   "category": "Books & Stationery",
+   "mood": "deal",
+   "tone": "heart",
+   "title": "Bachat ke saath ek nayi kahani 💜",
+   "body": "{name} at {price}. Save: {save}.",
+   "needs": [
+    "price",
+    "mrp"
+   ]
+  }
+ ]
+}

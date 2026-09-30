@@ -1,0 +1,466 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Men Fashion (men_fashion_2). Built from src/men_fashion_2.txt."
+ },
+ "templates": [
+  {
+   "id": "m2001",
+   "category": "Men Fashion",
+   "mood": "shirt",
+   "tone": "tease",
+   "title": "Formal shirt: interview ka pehla round yahin jeeto 💼",
+   "body": "{name} — {price}. Baaki sawaal tumhare upar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2002",
+   "category": "Men Fashion",
+   "mood": "shirt",
+   "tone": "dost",
+   "title": "Casual shirt: weekend ka asli hero 🕶️",
+   "body": "{name} at {price}. Jeans ke saath default.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2003",
+   "category": "Men Fashion",
+   "mood": "shirt",
+   "tone": "self",
+   "title": "Shirt ki sleeve fold karne ki kala seekh li? 😎",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2004",
+   "category": "Men Fashion",
+   "mood": "shirt",
+   "tone": "heart",
+   "title": "Ek achhi shirt: aatmavishwas ki pehli parat 💜",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2005",
+   "category": "Men Fashion",
+   "mood": "shirt",
+   "tone": "tease",
+   "title": "Checks ya solid? Dono khareed lo, jhagda khatam 😄",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2006",
+   "category": "Men Fashion",
+   "mood": "shirt",
+   "tone": "dost",
+   "title": "Linen shirt: garmi mein bhi crisp look 🌿",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2007",
+   "category": "Men Fashion",
+   "mood": "tshirt",
+   "tone": "dost",
+   "title": "Graphic tee: mood ko bhi tees pe likh do 👕",
+   "body": "{name} — {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2008",
+   "category": "Men Fashion",
+   "mood": "tshirt",
+   "tone": "tease",
+   "title": "Ek t-shirt: gym, ghar, aur date sab jagah 😌",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2009",
+   "category": "Men Fashion",
+   "mood": "tshirt",
+   "tone": "self",
+   "title": "Purani t-shirt ki kahani: 'ye to comfortable hai' 😅",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2010",
+   "category": "Men Fashion",
+   "mood": "tshirt",
+   "tone": "heart",
+   "title": "T-shirt wo jo har din pehen sako 🧡",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2011",
+   "category": "Men Fashion",
+   "mood": "jeans",
+   "tone": "dost",
+   "title": "Jeans jo har mausam kaam aaye 👖",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2012",
+   "category": "Men Fashion",
+   "mood": "jeans",
+   "tone": "tease",
+   "title": "Slim fit ya relaxed? Mood pe depend hai 🎭",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2013",
+   "category": "Men Fashion",
+   "mood": "jeans",
+   "tone": "self",
+   "title": "Jeans ki jeb mein kabhi kabhi paisa nikal aata hai 😂",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2014",
+   "category": "Men Fashion",
+   "mood": "jeans",
+   "tone": "heart",
+   "title": "Ek fit jeans, ek fit din 💜",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2015",
+   "category": "Men Fashion",
+   "mood": "kurta",
+   "tone": "dost",
+   "title": "Kurta: tyohaar ka pehla dost 🪔",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2016",
+   "category": "Men Fashion",
+   "mood": "kurta",
+   "tone": "tease",
+   "title": "Kurta-pajama: comfort aur culture ek saath 🧡",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2017",
+   "category": "Men Fashion",
+   "mood": "kurta",
+   "tone": "self",
+   "title": "Kurta pehnna hai, par ironing ka dar 😅",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2018",
+   "category": "Men Fashion",
+   "mood": "kurta",
+   "tone": "heart",
+   "title": "Kurta wo jo dada ki yaad dilaye 👴",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2019",
+   "category": "Men Fashion",
+   "mood": "kurta",
+   "tone": "dost",
+   "title": "Shaadi ke liye kurta ka naya option 💍",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2020",
+   "category": "Men Fashion",
+   "mood": "jacket",
+   "tone": "dost",
+   "title": "Jacket: sardi mein sabse pehla pyaar 🧥",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2021",
+   "category": "Men Fashion",
+   "mood": "jacket",
+   "tone": "tease",
+   "title": "Leather look ya denim? Dono ka craze 🔥",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2022",
+   "category": "Men Fashion",
+   "mood": "jacket",
+   "tone": "self",
+   "title": "Jacket ki zip phansti hai, par dil nahi 🙃",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2023",
+   "category": "Men Fashion",
+   "mood": "jacket",
+   "tone": "heart",
+   "title": "Sardi ki subah, jacket ki garmi 🧣",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2024",
+   "category": "Men Fashion",
+   "mood": "hoodie",
+   "tone": "dost",
+   "title": "Hoodie: comfort ka doosra naam 🧘",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2025",
+   "category": "Men Fashion",
+   "mood": "hoodie",
+   "tone": "tease",
+   "title": "Hoodie pehen ke duniya se chhup jao 😶",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2026",
+   "category": "Men Fashion",
+   "mood": "hoodie",
+   "tone": "self",
+   "title": "Hoodie khareedi, ab gharmi mein kaun pehne? 😅",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2027",
+   "category": "Men Fashion",
+   "mood": "watch",
+   "tone": "dost",
+   "title": "Ghadi: time bhi, style bhi ⌚",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2028",
+   "category": "Men Fashion",
+   "mood": "watch",
+   "tone": "tease",
+   "title": "Watch jo har shirt ke saath match kare 😎",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2029",
+   "category": "Men Fashion",
+   "mood": "watch",
+   "tone": "heart",
+   "title": "Ek ghadi, jo yaadein bhi gine ⏳",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2030",
+   "category": "Men Fashion",
+   "mood": "belt",
+   "tone": "dost",
+   "title": "Belt: chhoti cheez, poore look ka anchor 🪢",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2031",
+   "category": "Men Fashion",
+   "mood": "belt",
+   "tone": "tease",
+   "title": "Belt aur joote ka match: sabse pehli nazar 👞",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2032",
+   "category": "Men Fashion",
+   "mood": "sunglasses",
+   "tone": "dost",
+   "title": "Chashma: dhoop bhi, style bhi 🕶️",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2033",
+   "category": "Men Fashion",
+   "mood": "sunglasses",
+   "tone": "tease",
+   "title": "Sunglasses laga ke 'main character' feel 🎬",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2034",
+   "category": "Men Fashion",
+   "mood": "ethnic",
+   "tone": "dost",
+   "title": "Sherwani: shaadi ka royal look 👑",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2035",
+   "category": "Men Fashion",
+   "mood": "ethnic",
+   "tone": "tease",
+   "title": "Baraat mein sabse pehle nazar tumpe 🕺",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2036",
+   "category": "Men Fashion",
+   "mood": "sports",
+   "tone": "dost",
+   "title": "Track pants: aaram ka doosra naam 🏃",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2037",
+   "category": "Men Fashion",
+   "mood": "sports",
+   "tone": "tease",
+   "title": "Shorts: garmi ka sabse achha dost 🩳",
+   "body": "{name}, {discount}% off.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "m2038",
+   "category": "Men Fashion",
+   "mood": "sports",
+   "tone": "self",
+   "title": "Gym ke kapde khareede, gym baad mein 😂",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2039",
+   "category": "Men Fashion",
+   "mood": "innerwear",
+   "tone": "dost",
+   "title": "Basics: sab kuch inhi pe tika hai 🧦",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "m2040",
+   "category": "Men Fashion",
+   "mood": "innerwear",
+   "tone": "tease",
+   "title": "Socks: jo hamesha ek gayab ho jaati hai 🧦",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price"
+   ]
+  }
+ ]
+}

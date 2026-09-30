@@ -1,0 +1,164 @@
+# category: Any
+# prefix: gn
+# kinds: hot_deal
+season|dost|Garmi mein AC ka bill aur deal ka scene ☀️|{name}, {price}. Bill ka kuch nahi kar sakte, deal to dekh lo.
+season|tease|Pasina aaya? Ye deal thandi hai 🧊|{name} at {price}.
+season|self|Dhoop mein bahar jaana: adventure. Deal dekhna: aaram ☀️|{name}, {discount}% off.
+season|heart|Garmi ki chhutti, ek chhoti si khushi 🍦|{name} for {price}.
+season|dost|Baarish aayi, chai bani, deal live hai 🌧️|{name}, {price}. Pakode alag se.
+season|tease|Baarish mein bahar nahi jaana? App khol lo ☔|{name} at {price}.
+season|self|Baarish ka mausam: chai, pakoda, aur scroll 🌧️|{name}, {discount}% off.
+season|heart|Baarish ki boondein aur ek achhi deal 💧|{name} for {price}.
+season|dost|Sardi aa gayi: rajai, chai, aur ek deal ❄️|{name}, {price}. Bahar mat nikalna, app khol lo.
+season|tease|Sardi mein uthna mushkil, deal dekhna aasan 🧣|{name} at {price}.
+season|self|Sardi: subah uthna aur bath karna, dono mushkil 🥶|{name}, {discount}% off.
+season|heart|Garam chai, garam deal 💜|{name} for {price}.
+season|dost|Spring ka mood hai, naya kuch chahiye 🌸|{name}, {price}.
+season|tease|Mausam badla, mood badla, wardrobe bhi badlo 🍃|{name} at {price}.
+season|self|Season change: purane kapde bhi retire 👋|{name}, {discount}% off.
+exam|dost|Exam season: padhai, chai, aur ek deal 📚|{name} for {price}. Break to banta hai.
+exam|tease|Syllabus khatam? Ye deal abhi shuru hui hai 😄|{name}, {price}.
+exam|self|Exam kal hai, aaj phone pe hu 😅|{name} at {price}. Ek minute, phir padhai.
+exam|heart|Mehnat karne walon ko ek chhota treat 🎁|{name}, {discount}% off.
+result|dost|Result aa gaya? Treat to banta hai 🎉|{name} for {price}. Mubarak ho ya jo bhi ho.
+result|heart|Result kuch bhi ho, tum ho khaas 💜|{name}, {price}.
+wedding|dost|Shaadi season: card, outfit, gift, sab kuch 💌|{name} at {price}.
+wedding|tease|Shaadi mein sabse achha kaun dikhega? Tum 😎|{name}, {discount}% off.
+wedding|self|Ek aur shaadi, ek aur outfit ka tension 😅|{name} for {price}.
+wedding|heart|Kisi ki shaadi, tumhari khushi ka bahana 💜|{name}, {price}.
+travel|dost|Trip ka plan banaya? Ye bhi le lo ✈️|{name} at {price}.
+travel|tease|Weekend getaway: bag pack, deal dekh 🌴|{name}, {discount}% off.
+travel|self|Trip ka plan banata hu, jaata nahi 😅|{name} for {price}. Is baar pakka.
+travel|heart|Safar mein saath rehne wali cheez 🧳|{name}, {price}.
+birthday|dost|Birthday aane wala hai? 🎂|{name} at {price}. Gift ka jugaad ho gaya.
+birthday|tease|Dost ka birthday: last minute ka gift 🎁|{name}, {discount}% off.
+birthday|self|Apna birthday bhi to hota hai 🎉|{name} for {price}. Khud ko gift do.
+birthday|heart|Ek chhoti si cheez, badi si khushi 💜|{name}, {price}.
+festival|dost|Tyohaar aaya, khushiyan laya 🪔|{name} at {price}. Ghar saja lo.
+festival|tease|Tyohaar ke liye kya khareedna hai? List banao 📝|{name}, {discount}% off.
+festival|self|Tyohaar ki safai: purana out, naya in 🧹|{name} for {price}.
+festival|heart|Tyohaar sirf roshni ka nahi, saath ka bhi hai 💜|{name}, {price}.
+weekend|dost|Weekend aa gaya, relax mode on 🛋️|{name} at {price}.|d=weekend
+weekend|tease|Weekend ka plan: kuch nahi. Deal: hai 😄|{name}, {discount}% off.|d=weekend
+weekend|self|Weekend: sone ka time, scroll karne ka bhi 😴|{name} for {price}.|d=weekend
+weekend|heart|Weekend ki subah, ek chhoti si khushi 🌤️|{name}, {price}.|d=weekend t=morning
+friday|tease|Friday: office ka mood off, weekend on 🎉|{name} at {price}.|w=5
+friday|dost|Friday shaam: bahar jaana hai? Outfit ready? 🌆|{name}, {price}.|w=5 t=evening
+friday|self|Friday ko kaam ka mann nahi, deal ka hai 😂|{name} for {price}.|w=5
+saturday|dost|Saturday: aaj kuch nahi karna hai 🛋️|{name}, {price}.|w=6
+saturday|tease|Saturday ka mood: relax, scroll, shop 🛍️|{name} at {price}.|w=6
+saturday|heart|Saturday ki dhoop aur ek achhi deal ☀️|{name}, {discount}% off.|w=6 t=morning
+tuesday|self|Tuesday: na Monday, na weekend, bas beech ka 😐|{name} for {price}. Ek deal to banti hai.|w=2
+wednesday|dost|Wednesday: hafte ka beech, thoda treat 🐪|{name}, {price}.|w=3
+thursday|tease|Thursday: weekend bas ek kadam door 🏃|{name} at {price}.|w=4
+midnight|dost|Raat ke 12 baje ka scroll 🌙|{name}, {price}. Kal ka plan ready.|t=night
+midnight|tease|Neend nahi aa rahi? Deal dekh lo 🌙|{name} for {price}. Phir so jana.|t=night
+midnight|self|Sone ka time hai, par phone haath mein hai 📱|{name}, {discount}% off.|t=night
+midnight|heart|Raat ki shaanti, ek chhoti si khushi 🌌|{name} at {price}.|t=night
+dawn|dost|Subah subah, chai ke saath 🌅|{name}, {price}.|t=morning
+dawn|tease|Subah ka pehla scroll: deal ka 📱|{name} for {price}. Alarm band karo, pehle ye dekho.|t=morning
+dawn|heart|Naya din, nayi shuruaat, nayi deal 🌞|{name}, {discount}% off.|t=morning
+noon|dost|Dopahar ki neend se pehle ek deal 😴|{name} at {price}.|t=afternoon
+noon|tease|Lunch ke baad ka sust mood: deal se theek karo 😌|{name}, {price}.|t=afternoon
+noon|self|Dopahar ki meeting: neend aur deal dono 😂|{name} for {price}.|t=afternoon
+dusk|dost|Shaam ki chai, shaam ki deal ☕|{name}, {price}.|t=evening
+dusk|tease|Shaam ka sunset aur ek achhi deal 🌇|{name} at {price}.|t=evening
+dusk|heart|Din ka aakhri hissa, ek chhoti si khushi 🌆|{name}, {discount}% off.|t=evening
+crowd|tease|Sab reel dekh rahe hain, tum deal dekho 😏|{name} for {price}.
+crowd|dost|Group chat mein bhejne layak deal 💬|{name}, {price}. Sabko batao ya mat batao.
+crowd|self|Doston ko batau? Ya khud rakhu? 🤔|{name} at {price}. Dil ka jawab: khud.
+crowd|tease|Ye deal group chat mein aayi to sab le lenge 😄|{name}, {discount}% off.
+crowd|dost|Bhai ko bhejna: 'ye dekh' 📲|{name} for {price}.
+crowd|heart|Achhi cheez baantne se badhti hai 💜|{name}, {price}.
+relate|self|Cart mein daal ke bhool jaana: roz ka kaam 🛒|{name} at {price}. Aaj yaad dila diya.
+relate|tease|Wishlist mein 40 cheezein, khareeda: 2 😂|{name}, {discount}% off.
+relate|self|Tabs khule hain, decision baaki hai 🤔|{name} for {price}.
+relate|dost|Screenshot lena bhi shopping hai 📸|{name}, {price}.
+relate|tease|Sochte sochte deal khatam ho jaati hai (kabhi kabhi) 🤷|{name} at {price}.
+relate|self|Ek minute, do minute, teen ghante: scroll 📱|{name}, {discount}% off.
+relate|dost|Reviews padhna: 2 minute. Reviews pe overthink: 2 ghante 📖|{name} for {price}.
+relate|tease|'Sirf dekh raha hu' ka matlab: cart mein daalna 🛒|{name}, {price}.
+relate|self|Free delivery ke liye aur ek cheez daalte hain 📦|{name} at {price}.
+relate|dost|Coupon code dhundhna: sabse bada time pass 🎟️|{name}, {discount}% off.
+relate|heart|Achhi cheez ka intezaar sabse khoobsurat hota hai 💜|{name} for {price}.
+relate|tease|Return policy: sabse pyaari policy 😄|{name}, {price}.
+relate|self|Sale ka mausam: dimaag chala, dil bhi 💜|{name} at {price}.
+wait|dost|Delivery ka wait: doorbell ka intezaar 🔔|{name}, {price}. Tracking page 10 baar refresh.
+wait|tease|Order kiya, ab bas intezaar 📦|{name} for {price}.
+wait|self|Parcel aane wala hai: aaj chhutti nahi leni 😅|{name}, {discount}% off.
+wait|heart|Ek parcel, ek muskaan 💜|{name} at {price}.
+gift|heart|Kisi apne ko pyaar dikhane ka ek chhota tareeka 💌|{name}, {price}.
+gift|dost|Gift dhoondh rahe ho? Ye dekh lo 🎁|{name} for {price}.
+gift|tease|Gift wrap: 50 rupaye, impression: pakka 🎀|{name}, {discount}% off.
+gift|self|Gift lene gaye the, apne liye le aaye 😅|{name} at {price}.
+selflove|heart|Khud ko treat dena bhi zaroori hai 💜|{name}, {price}. Tumhari mehnat ka hisaab.
+selflove|heart|Aaj kuch achha karne ka mann hai? Ye lo 🌷|{name} for {price}.
+selflove|heart|Tum bahut kuch sambhalte ho, ek chhota reward 🎁|{name}, {discount}% off.
+selflove|heart|Khud ke liye 5 minute, bas itna 🫶|{name} at {price}.
+selflove|heart|Aaj ka din mushkil tha? Ek chhoti si khushi 🌈|{name}, {price}.|t=evening,night
+selflove|heart|Koi bhi din chhota sa jashn ke laayak hai 🎉|{name} for {price}.
+selflove|heart|Tumhe bhi kuch achha milna chahiye 💜|{name}, {discount}% off.
+selflove|heart|Apne aap se pyaar karna seekho 🌸|{name} at {price}.
+selflove|heart|Din bhar ki bhaag daud ke baad ek muskaan 😊|{name}, {price}.|t=evening
+selflove|heart|Kabhi kabhi bina wajah ke bhi treat lete hain 🍫|{name} for {price}.
+maths|tease|{discount}% off: math ki class ka sabse achha sawaal 🧮|{name}, {price}.
+maths|dost|{mrp} minus {save} barabar {price} ➖|{name}. Math ka sawaal easy hai.
+maths|tease|{mrp} ka price {price} ho gaya. Kaun sa jaadu? 🎩|{name}.
+maths|self|Discount dekh ke dil khush, calculator dekh ke aur khush 🧮|{name}, {price}.
+maths|dost|Save: {save}. Ye paisa kaam aayega 💰|{name} at {price}.
+maths|tease|{save} bacha liye. Chai ki party? ☕|{name}, {price}.
+maths|heart|{save} ki bachat: chhoti si, par apni 💜|{name} for {price}.
+maths|self|Discount {discount}% aur dimaag 100% confused 😵|{name}, {price}.
+store|dost|{store} pe ye deal dikhi 🔎|{name} at {price}. Dekh lo, phir socho.
+store|tease|{store} pe kuch alag hi chal raha hai 👀|{name}, {discount}% off.
+store|self|{store} ka app khola, deal mili, dil khush 🎁|{name} for {price}.
+store|dost|{store}: aaj ki deal yahan hai 🛒|{name}, {price}.
+store|tease|{store} ne surprise diya aaj 😏|{name} at {price}.
+brand|tease|{brand} ki deal aayi hai 👀|{name}, {price}. Fans, sun rahe ho?|p
+brand|dost|{brand} pasand hai? Ye dekho 😄|{name} for {price}.|p
+brand|self|{brand} ko dekh ke wishlist ne haath uthaya 🙋|{name}, {discount}% off.|p
+brand|heart|{brand}: tumhara pasandeeda? 💜|{name} at {price}.|p
+cat|dost|{category} ka mann hai? Ye rahi deal 🎯|{name}, {price}.|p
+cat|tease|{category}: tumhari pasand yahi hai na? 😏|{name} for {price}.|p
+cat|self|{category} dekhte dekhte ghanta guzar gaya ⏳|{name}, {discount}% off.|p
+cat|heart|{category} ka naya jalwa 💜|{name} at {price}.|p
+saved|tease|Save kiya hua yaad hai? Ab ye deal aayi hai 😏|{name}, {price}.|p
+saved|dost|Wishlist wali cheez sasti hui 🎉|{name} for {price}.|p
+saved|self|Bhool gaye the na? Hum yaad dila dete hain 😄|{name} at {price}.|p
+saved|heart|Jo pasand aaya tha, ab waqt aaya 💜|{name}, {discount}% off.|p
+viewed|dost|Kal jo dekha tha, aaj sasta hai 👀|{name} for {price}.|p
+viewed|tease|Dekh ke chale gaye? Deal ne yaad kiya 😏|{name}, {price}.|p
+viewed|self|Ek nazar dekha tha, ab aur nazar 😅|{name} at {price}.|p
+viewed|heart|Jo aankhon ko pasand aaya tha 💜|{name}, {discount}% off.|p
+random|tease|Aaj ka luck: ye deal 🍀|{name} for {price}.
+random|dost|Kuch khaas hai is deal mein ✨|{name}, {discount}% off.
+random|tease|Ye deal thodi alag hai 😉|{name} at {price}.
+random|self|Aaj kuch khareedna nahi tha, par ye dekh liya 😅|{name}, {price}.
+random|dost|Ek nazar dalo, phir batao 👇|{name} for {price}.
+random|tease|Kuch cheezein bina soche hi achhi lagti hain 😌|{name}, {discount}% off.
+random|heart|Aaj ka din thoda special hai 🌟|{name} at {price}.
+random|dost|Deal ne bulaya hai 📞|{name}, {price}.
+random|tease|Isko ignore mat karna 😏|{name} for {price}. Bas ek nazar.
+random|self|Chalo, aaj ek treat ka din 🎉|{name}, {discount}% off.
+random|dost|Roz ki deals mein ek alag hi 🌟|{name} at {price}.
+random|tease|Deal ne hello bola 👋|{name}, {price}.
+random|heart|Chhoti khushiyon ka bhi apna jashn 💜|{name} for {price}.
+random|self|Fir wahi, deal dekh ke dil pighla 🫠|{name}, {discount}% off.
+random|dost|Aaj ka top pick: tumhare liye 🏆|{name} at {price}.
+random|tease|Ye wali dekh kar ruk gaye? 🛑|{name}, {price}.
+random|dost|Kuch alag, kuch achha 🎁|{name} for {price}.
+random|self|Scroll karte karte ye mil gayi 🔍|{name}, {discount}% off.
+random|tease|Aaj ka mood: thoda shopping 🛍️|{name} at {price}.
+random|heart|Ek chhoti si deal, ek badi si muskaan 😊|{name}, {price}.
+random|dost|Sasti nahi, sahi deal 🎯|{name} for {price}.
+random|tease|Discount ko kya kehna, dil se {discount}% khush 😄|{name}, {price}.
+random|self|Iske baad pakka koi shopping nahi (shayad) 🤞|{name} at {price}.
+random|dost|Bas ek nazar, phir kaam pe wapas 👀|{name}, {discount}% off.
+random|tease|Ye deal chhupa ke rakhi thi, ab dikha di 🎭|{name} for {price}.
+random|heart|Kuch cheezein sirf khushi ke liye hoti hain 💜|{name}, {price}.
+random|dost|Bhai, ye dekh 👇|{name} at {price}.
+random|tease|Hum kehte hain, tum decide karo 🤷|{name}, {discount}% off.
+random|self|Achha to ye bhi mil gaya 😌|{name} for {price}.
+random|dost|Ye lo, aaj ki fresh deal 🍃|{name}, {price}.
+random|tease|Thodi der ke liye phone side mein rakho, ye dekh lo 📵|{name} at {price}.
+random|heart|Chhoti cheez, bade mayne 💜|{name}, {discount}% off.

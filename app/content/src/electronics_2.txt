@@ -1,0 +1,35 @@
+# category: Electronics
+# prefix: e2
+phone|dost|Phone ka battery health: dheere dheere girti hai 🔋|{name}, {price}. Naya ya power bank, dono ka jawab.
+phone|tease|Phone gira, screen bachi, dil nahi 💔|{name} at {price}. Tempered glass ki jagah hai.
+phone|self|Phone ka storage full: 'photos kaun delete kare' 📸|{name}, {discount}% off. Memory card le lo.
+phone|heart|Phone mein sab kuch hai, ek achha case bhi hona chahiye 🛡️|{name} for {price}.
+phone|dost|Charger ke saath cable bhi lena, pichli wali toot gayi hogi 🔌|{name}, {price}.
+phone|tease|Wireless charger: taar ka jhanjhat khatam? 🔋|{name} at {price}. Table pe rakho, bas.
+audio|dost|Earbuds: bina taar ke, bina jhanjhat ke 🎧|{name}, {price}. Case ko bhi charge karna mat bhoolna.
+audio|tease|Headphones: duniya ko mute, gaane ko full 🔊|{name} for {price}.
+audio|self|Ek earbud gum, ek mil gaya, ab dono ka kya 😅|{name}, {discount}% off.
+audio|heart|Ek gaana, ek yaad, ek headphone 🎶|{name} at {price}.
+audio|dost|Neckband: gale mein latka ke jeene ka scene 🎧|{name}, {price}.
+audio|tease|Speaker: bathroom singer ki dua kabool 🚿|{name} for {price}. Padosi ko bhi suna do.
+laptop|dost|Laptop: kaam bhi, movie bhi, 3 baje raat ka scroll bhi 💻|{name}, {price}.
+laptop|tease|Laptop stand: gardan ki dua lagegi 🙏|{name} at {price}.
+laptop|self|Laptop ka charger office mein reh gaya 🤦|{name}, {discount}% off. Ek ghar ke liye alag lo.
+laptop|heart|Kaam ka saathi, ek achhi jodi 💜|{name} for {price}.
+laptop|dost|Mouse pad: chhoti si cheez, badi si aasani 🖱️|{name}, {price}.
+laptop|tease|Keyboard cover: chai ke daag se suraksha ☕|{name} at {price}.
+tv|dost|TV ka size bada, movie ka mazaa double 📺|{name}, {price}. Popcorn ready rakho.
+tv|tease|Match ke liye bada TV ya dost ka ghar? 🏏|{name} for {price}.
+tv|self|TV ka remote: hamesha gayab 🔍|{name}, {discount}% off. TV naya, remote wahin.
+tv|heart|Family movie night ka best bahana 🎬|{name} at {price}.
+smart|dost|Smart bulb: awaaz se roshni on 💡|{name}, {price}. 'Alexa' nahi, bas bolo aur ho gaya.
+smart|tease|Smart plug: ghar ko smart banao, tum wahi rehna 🏠|{name} for {price}.
+smart|self|Light band karna bhool gaye? Ab phone se ho jaayega 📱|{name}, {discount}% off.
+cam|dost|CCTV: ghar ki nigrani, mann ki shanti 👁️|{name} at {price}.
+cam|tease|Dash cam: sadak ka saboot 🚗|{name}, {price}.
+power|dost|Power bank: mobile ka sabse achha dost 🔋|{name} for {price}. Bag mein daal do.
+power|tease|Extension board: 5 plugs, 1 socket, infinite kaam 🔌|{name}, {discount}% off.
+power|self|Charger ke liye socket nahi milta? Ye lo 🔌|{name} at {price}.
+gadget|dost|Fitness band: kadam gino, dil khush karo ⌚|{name}, {price}.
+gadget|tease|Trimmer: chhoti cheez, badi zaroorat ✂️|{name} for {price}.
+gadget|self|Gadget ki shopping: 'sirf ek' phir 5 ❌|{name}, {discount}% off.

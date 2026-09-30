@@ -1,0 +1,59 @@
+# category: Women Fashion
+# prefix: w2
+kurti|tease|Ye kurti pehen ke chai bhi fashionable lagegi ☕|{name} — {price}. Chai ke daag pe mera koi zimmedari nahi.
+kurti|dost|Cotton kurti: garmi ki sabse achhi saheli 🌿|{name} at {price}. Pasina bhi dost ban jaata hai.
+kurti|self|Alamari mein 30 kurtiyan, 'kuch pehnne ko nahi hai' 😅|{name}, {price}. Ye 31st bilkul alag hai.
+kurti|heart|Ek kurti, jo tumhari muskaan ke saath match kare 🌸|{name} for {price}.
+kurti|tease|Kurti + jeans: combo jo kabhi purana nahi hota 👖|{name}, {discount}% off.
+kurti|dost|Office wali kurti ka naya option 💼|{name} at {price}. Meeting mein comfy, photo mein filmy.
+kurti|self|Purani kurti ka rang phika, tumhari smile nahi 🙂|{name}, {price}.
+kurti|tease|Anarkali: ghoomne ka bahana 💃|{name} for {price}. Spin karke dekho.
+kurti|dost|Ek kurti, teen dupatte, hazaar combinations 🧣|{name}, {price}.
+kurti|heart|Kurti wo jo maa ki purani saree yaad dilaye 👵|{name} at {price}.
+saree|heart|Saree: 6 gaz ki kahani 🥻|{name}, {price}. Har pleat ek yaad.
+saree|tease|Saree pehenna ek art hai, deal dhundhna doosra 🎨|{name} for {price}.
+saree|dost|Saree ke saath blouse bhi soch lena 🧵|{name}, {discount}% off. Darzi ka appointment baad mein.
+saree|self|Saree pin kahan gayi? Roz ki kahani 📌|{name} at {price}.
+saree|tease|Shaadi mein sabse alag dikhne ka mauka 💍|{name}, {price}.
+saree|heart|Tyohaar ki saree, ek nayi shuruat 🪔|{name} for {price}.
+dress|tease|Ye dress dekhte hi 'photo lo' bolne ka mann karega 📸|{name}, {price}.
+dress|dost|Ek dress: brunch, date, ya bas mood ke liye 🥂|{name} at {price}.
+dress|self|Dress khareedi, pehenne ka occasion dhundh rahe hain 😅|{name}, {discount}% off.
+dress|heart|Ek dress jo tumhe tumhari tarah dikhaye 🌷|{name} for {price}.
+dress|tease|Maxi dress: hawa mein udta hua confidence 🌬️|{name}, {price}.
+dress|dost|Party dress ki khoj khatam 🎉|{name} at {price}.
+dress|self|Aaj kuch bhi pehen lo, dress ka intezaar tha 😌|{name}, {price}.
+dress|tease|Little black dress: classic kabhi galat nahi jaata 🖤|{name} for {price}.
+jeans|dost|Jeans jo fit ho aur mood bhi 👖|{name}, {price}.
+jeans|tease|High waist, high confidence 💪|{name} at {price}.
+jeans|self|Jeans khareedne ka trial room ka safar: ek epic 😂|{name}, {discount}% off.
+jeans|heart|Comfy jeans: dil bhi khush, din bhi 💜|{name} for {price}.
+jeans|dost|Jeans aur top ka combo, weekend ready 🎒|{name}, {price}.
+top|tease|Ek top, sau tarah ki styling ✨|{name} at {price}.
+top|dost|Crop top ya oversized? Dono ke liye mood 🎭|{name}, {price}.
+top|self|Top khareeda, matching bottom nahi hai 😅|{name} for {price}. Alamari mein dhoondhte hain.
+top|heart|Ek soft si top, ek soft sa din 🌸|{name}, {discount}% off.
+top|tease|Top jo sab poochenge 'kahan se?' 😏|{name} at {price}.
+ethnic|dost|Lehenga: shaadi ki rani 👑|{name}, {price}. Twirl practice shuru karo.
+ethnic|tease|Sharara: chalna bhi ek performance hai 💃|{name} for {price}.
+ethnic|heart|Ethnic wear: apni jadon ki khushboo 🪔|{name}, {discount}% off.
+ethnic|self|Dupatta sambhalna: full time job 🧣|{name} at {price}.
+ethnic|dost|Palazzo: hawa jaisa comfy, style jaisa royal 🌬️|{name}, {price}.
+winter|dost|Sweater: sardi ka sabse pyaara hug 🧶|{name} for {price}.
+winter|tease|Jacket jo photo mein bhi kamaal lage 🧥|{name}, {discount}% off.
+winter|self|Sardi: kapde bhaari, mood halka 😂|{name} at {price}.
+winter|heart|Garam kapde, garam chai, garam yaadein ☕|{name}, {price}.
+accessory|tease|Ek scarf, aur poora look badal jaaye 🧣|{name} for {price}.
+accessory|dost|Jhumke: chhoti cheez, bada asar 💫|{name}, {price}.
+accessory|self|Earrings ka ek jodi gum, doosri mil gayi 🤦|{name} at {price}.
+accessory|heart|Ek chhota sa accessory, ek badi si muskaan 💜|{name}, {discount}% off.
+accessory|tease|Sunglasses: mood chhupane ka best tareeka 🕶️|{name} for {price}.
+accessory|dost|Bracelet: haath ki kahani 🌟|{name}, {price}.
+ghar|tease|Mummy: 'ye sab kab liya?' Tum: 'purana hai' 🙊|{name} at {price}. Bill dikhana mat.
+ghar|self|Ghar mein sab bolte hain 'tum ye pehen ke jao' 😄|{name}, {price}. Ye wali sab ko pasand aayegi.
+ghar|heart|Behen ke saath shopping ki yaad 👭|{name} for {price}.
+festival|dost|Tyohaar koi bhi ho, outfit sabke liye 🌙|{name}, {price}. Rang tumhare, mood tumhara.
+festival|tease|Party ki entry ka look yahan hai 🎊|{name} at {price}.
+festival|heart|Tyohaar ki subah, naye kapdon ka pyaar 🌅|{name}, {discount}% off.
+monsoon|dost|Baarish mein bhi style: quick dry kapde 🌧️|{name} for {price}.
+monsoon|tease|Baarish aur chai: kurti ki kahani ☔|{name}, {price}.
