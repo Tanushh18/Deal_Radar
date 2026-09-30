@@ -1,126 +1,1219 @@
 {
-  "meta": {
-    "version": 1,
-    "about": "Pitara of notification copy. Batch 1: Women Fashion. Not wired into the server yet.",
-    "placeholders": ["name", "price", "mrp", "save", "discount", "store", "brand", "category", "day"],
-    "tones": {"tease": "chhedna (deal ko, user ko nahi)", "dost": "dost ki tarah tang karna", "self": "self-roast / relatable", "heart": "dil ko chhune wali"},
-    "rules": "No fake urgency or scarcity. No price comparisons we cannot back with data. No body, religion, caste, region, politics, health or money-struggle jokes. No real brands, celebs or trademarks. personal=true lines are on-device only (phone has the signal)."
+ "meta": {
+  "version": 1,
+  "about": "Pitara of notification copy. Batch 1: Women Fashion. Not wired into the server yet.",
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day"
+  ],
+  "tones": {
+   "tease": "chhedna (deal ko, user ko nahi)",
+   "dost": "dost ki tarah tang karna",
+   "self": "self-roast / relatable",
+   "heart": "dil ko chhune wali"
   },
-  "templates": [
-    {"id": "wf001", "category": "Women Fashion", "mood": "chai", "tone": "tease", "title": "Chai ke saath ek kurta bhi? ☕", "body": "{name} — {price}. Pakoda baad mein.", "needs": ["price"]},
-    {"id": "wf002", "category": "Women Fashion", "mood": "chai", "tone": "tease", "title": "Chai thandi ho rahi hai, ye deal nahi ☕", "body": "{name} for {price}. Ek sip, ek scroll.", "needs": ["price"]},
-    {"id": "wf003", "category": "Women Fashion", "mood": "chai", "tone": "tease", "title": "Subah ki chai, shaam tak ka look ☕", "body": "{name} — {discount}% off. Aaj hi try karo.", "needs": ["discount"], "time": ["morning"]},
-    {"id": "wf004", "category": "Women Fashion", "mood": "chai", "tone": "dost", "title": "Chai break = shopping break 🫖", "body": "{name} is live right now. 5 minute hain na?", "needs": []},
-    {"id": "wf005", "category": "Women Fashion", "mood": "chai", "tone": "dost", "title": "Biscuit dubaate waqt ye dekh lo 🍪", "body": "{name} at {price}. Dhyan se, chai gir jayegi.", "needs": ["price"]},
-
-    {"id": "wf006", "category": "Women Fashion", "mood": "salary", "tone": "heart", "title": "Salary aayi? Ek treat to banta hai 💸", "body": "{name} — {price}. Apne liye bhi kuch.", "needs": ["price"]},
-    {"id": "wf007", "category": "Women Fashion", "mood": "salary", "tone": "tease", "title": "Salary ne dastak di 🚪", "body": "{name} — {price}. Apne liye bhi kuch.", "needs": ["price"]},
-    {"id": "wf008", "category": "Women Fashion", "mood": "salary", "tone": "dost", "title": "Wallet ko thoda pyaar, thoda kharcha 😌", "body": "{name}, {discount}% off. Smart kharcha bhi kharcha hai.", "needs": ["discount"]},
-    {"id": "wf009", "category": "Women Fashion", "mood": "salary", "tone": "tease", "title": "Pehli tareekh ka mood 🎉", "body": "{name} for {price}. Aaj tum boss ho.", "needs": ["price"]},
-    {"id": "wf010", "category": "Women Fashion", "mood": "salary", "tone": "heart", "title": "Salary ka ek hissa khud ke naam 💜", "body": "{name} — {price}. Tumne kamaya hai.", "needs": ["price"]},
-
-    {"id": "wf011", "category": "Women Fashion", "mood": "monthend", "tone": "tease", "title": "Month-end hai, par ye deal ne sun liya 👂", "body": "{name} for {price}. Dekhne mein kya jaata hai?", "needs": ["price"]},
-    {"id": "wf012", "category": "Women Fashion", "mood": "monthend", "tone": "self", "title": "Balance kam, taste zyada 😌", "body": "{name} — {price}. Wallet-friendly wala.", "needs": ["price"]},
-    {"id": "wf013", "category": "Women Fashion", "mood": "monthend", "tone": "dost", "title": "Aakhri hafte ki chill wali deal", "body": "{name}, sirf {price}. Bas ek nazar.", "needs": ["price"]},
-    {"id": "wf014", "category": "Women Fashion", "mood": "monthend", "tone": "tease", "title": "Month-end special: dekhne ka koi paisa nahi", "body": "{name} at {price}. Tap free hai. 😄", "needs": ["price"]},
-    {"id": "wf015", "category": "Women Fashion", "mood": "monthend", "tone": "self", "title": "Wallet bola: 'dekh lo, khareedne ka mat bolna'", "body": "{name} — {price}. Dekhna free hai.", "needs": ["price"]},
-
-    {"id": "wf016", "category": "Women Fashion", "mood": "sunday", "tone": "self", "title": "Sunday ka sabse productive kaam 🛋️", "body": "{name} scroll karna. Deal: {price}.", "needs": ["price"], "weekdays": [0]},
-    {"id": "wf017", "category": "Women Fashion", "mood": "sunday", "tone": "tease", "title": "Sunday, pyjama, aur ek achhi deal", "body": "{name} — {price}. Uthna nahi padega.", "needs": ["price"], "weekdays": [0]},
-    {"id": "wf018", "category": "Women Fashion", "mood": "sunday", "tone": "dost", "title": "Aaj kuch nahi karna? Ye to kar sakte ho 😌", "body": "{name} for {price}.", "needs": ["price"], "weekdays": [0]},
-    {"id": "wf019", "category": "Women Fashion", "mood": "sunday", "tone": "tease", "title": "Sunday ki laundry se pehle ye dekh lo 🧺", "body": "{name} — {discount}% off. Naya kurta, naya mood.", "needs": ["discount"], "weekdays": [0]},
-    {"id": "wf020", "category": "Women Fashion", "mood": "sunday", "tone": "dost", "title": "Chhutti hai, thodi si window shopping 🪟", "body": "{name} at {price}. Bas dekhna hai... na?", "needs": ["price"], "day": "weekend"},
-
-    {"id": "wf021", "category": "Women Fashion", "mood": "monday", "tone": "tease", "title": "Monday ko bhi style chahiye 💼", "body": "{name} — {price}. Office mein entry filmy.", "needs": ["price"], "weekdays": [1]},
-    {"id": "wf022", "category": "Women Fashion", "mood": "monday", "tone": "tease", "title": "Monday blues ko blue kurta se hara do 💙", "body": "{name} at {price}.", "needs": ["price"], "weekdays": [1]},
-    {"id": "wf023", "category": "Women Fashion", "mood": "monday", "tone": "dost", "title": "Alarm ne uthaya, ye deal ne hansaya ⏰", "body": "{name} — {price}. Monday sorted.", "needs": ["price"], "weekdays": [1]},
-    {"id": "wf024", "category": "Women Fashion", "mood": "wfh", "tone": "self", "title": "Meeting mein camera off, look on 😎", "body": "{name} for {price}. Camera on bhi chalega.", "needs": ["price"], "day": "weekday"},
-    {"id": "wf025", "category": "Women Fashion", "mood": "monday", "tone": "dost", "title": "Aaj ka OOTD ready hai? Nahi? Ye lo 👇", "body": "{name} — {price}.", "needs": ["price"], "day": "weekday", "time": ["morning"]},
-
-    {"id": "wf026", "category": "Women Fashion", "mood": "wfh", "tone": "self", "title": "WFH mein neeche pyjama, upar kurta 😂", "body": "{name} — {price}. Sirf upar ka hissa dikhta hai.", "needs": ["price"], "day": "weekday"},
-    {"id": "wf027", "category": "Women Fashion", "mood": "wfh", "tone": "dost", "title": "Video call se pehle 2 minute ⏱️", "body": "{name} at {price}. Call pe bhi lagegi.", "needs": ["price"], "day": "weekday"},
-    {"id": "wf028", "category": "Women Fashion", "mood": "wfh", "tone": "tease", "title": "Laptop ke peeche bhi style chalta hai 💻", "body": "{name} — {discount}% off.", "needs": ["discount"], "day": "weekday"},
-    {"id": "wf029", "category": "Women Fashion", "mood": "wfh", "tone": "dost", "title": "Ghar wale bhi dekhenge, tum bhi dekho 😄", "body": "{name} for {price}.", "needs": ["price"]},
-    {"id": "wf030", "category": "Women Fashion", "mood": "wfh", "tone": "dost", "title": "Lunch break mein ek chhoti si shopping 🍱", "body": "{name} — {price}. Roti thandi hone se pehle.", "needs": ["price"], "time": ["afternoon"]},
-
-    {"id": "wf031", "category": "Women Fashion", "mood": "hostel", "tone": "self", "title": "PG ki alamari mein jagah bachi hai? 🚪", "body": "{name} at {price}. Roommate ko mat batana. 🤫", "needs": ["price"]},
-    {"id": "wf032", "category": "Women Fashion", "mood": "hostel", "tone": "tease", "title": "Roommate ka top nahi, apna khareed lo 😜", "body": "{name} — {price}. Ab udhaar nahi chalega.", "needs": ["price"]},
-    {"id": "wf033", "category": "Women Fashion", "mood": "hostel", "tone": "dost", "title": "Hostel wali dosti: 'tera hai to mera bhi' 👯", "body": "{name} for {price}.", "needs": ["price"]},
-    {"id": "wf034", "category": "Women Fashion", "mood": "hostel", "tone": "self", "title": "Maggi ban rahi hai, deal bhi 🍜", "body": "{name} — {price}. Do minute mein dekh lo.", "needs": ["price"]},
-    {"id": "wf035", "category": "Women Fashion", "mood": "hostel", "tone": "dost", "title": "Raat ki PG chat: 'kya pehnu?' 🌙", "body": "Answer: {name}. {price}.", "needs": ["price"], "time": ["night"]},
-
-    {"id": "wf036", "category": "Women Fashion", "mood": "ghar", "tone": "self", "title": "Mummy poochhengi 'kitne ka?' 😎", "body": "Bolna: {price}. Aur proud hoke bolna. {name}", "needs": ["price"]},
-    {"id": "wf037", "category": "Women Fashion", "mood": "ghar", "tone": "self", "title": "Ghar wale bole 'phir naya?' Tum bolna 'deal thi' 😌", "body": "{name} — {price}, {discount}% off.", "needs": ["price", "discount"]},
-    {"id": "wf038", "category": "Women Fashion", "mood": "ghar", "tone": "self", "title": "Mummy ki line: 'itne kapde to hain!' 🙄", "body": "Par ye wala {name} nahi hai. {price}.", "needs": ["price"]},
-    {"id": "wf039", "category": "Women Fashion", "mood": "ghar", "tone": "heart", "title": "Dadi kehti thi: achhi cheez dhundh ke lo 👵", "body": "Humne dhundh li: {name}, {price}.", "needs": ["price"]},
-    {"id": "wf040", "category": "Women Fashion", "mood": "ghar", "tone": "dost", "title": "Papa ka sawal: 'ye kab liya?' 😅", "body": "Jawab: {name}. Aaj ki deal. {price}.", "needs": ["price"]},
-
-    {"id": "wf041", "category": "Women Fashion", "mood": "festival", "tone": "dost", "title": "Shaadi ka card aaya? Outfit kaun sa? 💌", "body": "{name} at {price}. Tension khatam.", "needs": ["price"]},
-    {"id": "wf042", "category": "Women Fashion", "mood": "festival", "tone": "tease", "title": "Cousin ki sangeet, tumhari entry 💃", "body": "{name} — {price}. Naach baad mein, outfit pehle.", "needs": ["price"]},
-    {"id": "wf043", "category": "Women Fashion", "mood": "festival", "tone": "heart", "title": "Tyohaar aa raha hai, alamari taiyar? 🪔", "body": "{name} — {price}. Roshni tumhari.", "needs": ["price"]},
-    {"id": "wf044", "category": "Women Fashion", "mood": "festival", "tone": "heart", "title": "Tyohaar koi bhi ho, outfit apna 🎉", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf045", "category": "Women Fashion", "mood": "festival", "tone": "dost", "title": "Wedding season mein 'kya pehnu?' ka jawab 👰", "body": "{name}, {discount}% off.", "needs": ["discount"]},
-    {"id": "wf046", "category": "Women Fashion", "mood": "festival", "tone": "tease", "title": "Mehendi wale din ki taiyari 🌿", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf047", "category": "Women Fashion", "mood": "festival", "tone": "dost", "title": "Photo ka zimmedar koi nahi, par outfit hai 📸", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf048", "category": "Women Fashion", "mood": "festival", "tone": "tease", "title": "Cousin ne pucha 'kahan se liya?' 😏", "body": "Answer ready: {name}, {price}.", "needs": ["price"]},
-
-    {"id": "wf049", "category": "Women Fashion", "mood": "cricket", "tone": "dost", "title": "Match ke break mein ek deal 🏏", "body": "{name} — {price}. Ad break lamba hota hai.", "needs": ["price"]},
-    {"id": "wf050", "category": "Women Fashion", "mood": "cricket", "tone": "tease", "title": "Six maara? Ab ek deal bhi maar lo 🏏", "body": "{name} for {price}.", "needs": ["price"]},
-    {"id": "wf051", "category": "Women Fashion", "mood": "cricket", "tone": "tease", "title": "Score kya hai? Ye deal: {discount}% off 🏏", "body": "{name}. Ye to sixer hai.", "needs": ["discount"]},
-
-    {"id": "wf053", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Aaj tum bahut kuch sambhal rahe ho 🫶", "body": "Ek chhoti si khushi: {name}, {price}.", "needs": ["price"]},
-    {"id": "wf054", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Tum khud ke liye bhi important ho 💜", "body": "{name} at {price}. Bas yahi kehna tha.", "needs": ["price"]},
-    {"id": "wf055", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Kabhi khud ke liye bhi kuch le lo", "body": "{name} — {price}. Tumhare liye.", "needs": ["price"]},
-    {"id": "wf056", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Bina wajah ke bhi khush hona theek hai 🌷", "body": "{name} for {price}.", "needs": ["price"]},
-    {"id": "wf057", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Thak gaye? Chhoti si khushi yahan hai", "body": "{name} — {price}. Tap karo, muskuraao.", "needs": ["price"], "time": ["evening", "night"]},
-    {"id": "wf058", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Aaj kisi ne kuch nahi bola? Hum bolte hain: shabaash 👏", "body": "Reward: {name}, {price}.", "needs": ["price"], "time": ["evening", "night"]},
-    {"id": "wf059", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Tumhari muskaan ke liye ek chhota sa bahana 😊", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf060", "category": "Women Fashion", "mood": "heart", "tone": "heart", "title": "Jo tumne kal kiya, uska treat aaj 🎁", "body": "{name} — {price}.", "needs": ["price"]},
-
-    {"id": "wf061", "category": "Women Fashion", "mood": "dost", "tone": "dost", "title": "Kal se dekh rahe ho na? 👀", "body": "{name} ab {price} mein.", "needs": ["price"], "personal": true},
-    {"id": "wf062", "category": "Women Fashion", "mood": "dost", "tone": "dost", "title": "Save kiya tha, bhool gaye? 😏", "body": "{name} is now {price}.", "needs": ["price"], "personal": true},
-    {"id": "wf063", "category": "Women Fashion", "mood": "dost", "tone": "tease", "title": "Wishlist ko tumhari yaad aa rahi hai 💌", "body": "{name} — {price}.", "needs": ["price"], "personal": true},
-    {"id": "wf064", "category": "Women Fashion", "mood": "dost", "tone": "dost", "title": "Ab bhi soch rahe ho? Hum yahin hain 😄", "body": "{name} at {price}.", "needs": ["price"], "personal": true},
-    {"id": "wf065", "category": "Women Fashion", "mood": "dost", "tone": "tease", "title": "{brand} tumhare taste ka hai 😉", "body": "{name} — {price}.", "needs": ["brand", "price"], "personal": true},
-    {"id": "wf066", "category": "Women Fashion", "mood": "dost", "tone": "dost", "title": "{category} ka scene? Ye dekho 👇", "body": "{name} at {price}.", "needs": ["price"], "personal": true},
-    {"id": "wf067", "category": "Women Fashion", "mood": "dost", "tone": "tease", "title": "{brand} fan ho? Ye deal sun lo", "body": "{name} — {discount}% off.", "needs": ["brand", "discount"], "personal": true},
-    {"id": "wf068", "category": "Women Fashion", "mood": "dost", "tone": "dost", "title": "Ye wala tumhare hi liye bana lagta hai 🎯", "body": "{name} — {price}.", "needs": ["price"], "personal": true},
-
-    {"id": "wf069", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Is deal ko koi nahi rok sakta, sirf tum 😌", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf070", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "{discount}% off? Aankhein mat malo, sach hai 👀", "body": "{name} — {price}.", "needs": ["discount", "price"]},
-    {"id": "wf071", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "Numbers dekhe, deal theek lagi ✅", "body": "{name} — {price}, {discount}% off.", "needs": ["price", "discount"]},
-    {"id": "wf072", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Price ne chhutti li, {discount}% neeche aa gaya 🏖️", "body": "{name} — {price}.", "needs": ["discount", "price"]},
-    {"id": "wf073", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "MRP ne rone ki koshish ki, deal ne hansa diya 😂", "body": "{name} — was {mrp}, now {price}.", "needs": ["mrp", "price"]},
-    {"id": "wf074", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "{mrp} se {price}: math simple hai 🧮", "body": "{name}. You save {save}.", "needs": ["mrp", "price"]},
-    {"id": "wf075", "category": "Women Fashion", "mood": "general", "tone": "heart", "title": "Kitna bacha? {save}. Kitna sukoon? Anmol.", "body": "{name} at {price}.", "needs": ["mrp", "price"]},
-    {"id": "wf076", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "{discount}% off aur koi drama nahi 😎", "body": "{name} — {price}.", "needs": ["discount", "price"]},
-    {"id": "wf077", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Aaj ka MRP: emotional. Aaj ka price: practical.", "body": "{name} — {mrp} → {price}.", "needs": ["mrp", "price"]},
-
-    {"id": "wf078", "category": "Women Fashion", "mood": "night", "tone": "dost", "title": "Neend nahi aa rahi? Ek deal dekh lo 🌙", "body": "{name} — {price}. Phir so jana.", "needs": ["price"], "time": ["night"]},
-    {"id": "wf079", "category": "Women Fashion", "mood": "night", "tone": "dost", "title": "Raat ke 11 baje ka 'kal kya pehnu?' 🌙", "body": "{name}. {price}. Kal ka outfit sorted.", "needs": ["price"], "time": ["night"]},
-    {"id": "wf080", "category": "Women Fashion", "mood": "morning", "tone": "dost", "title": "Subah ke alarm ke baad ye dekh lo ⏰", "body": "{name} — {price}.", "needs": ["price"], "time": ["morning"]},
-    {"id": "wf081", "category": "Women Fashion", "mood": "morning", "tone": "tease", "title": "Good morning ☀️ aaj ka mood: naya kurta", "body": "{name} at {price}.", "needs": ["price"], "time": ["morning"]},
-    {"id": "wf082", "category": "Women Fashion", "mood": "afternoon", "tone": "dost", "title": "Lunch ki line mein ho? Ye dekh lo 🍽️", "body": "{name} — {price}.", "needs": ["price"], "time": ["afternoon"]},
-    {"id": "wf083", "category": "Women Fashion", "mood": "evening", "tone": "tease", "title": "Shaam ki chai, shaam ki deal ☕", "body": "{name} for {price}.", "needs": ["price"], "time": ["evening"]},
-
-    {"id": "wf084", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Dupatta kahan gaya? Naya wala yahan hai 🧣", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf085", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Jhumke aur kurta ka reunion 💫", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf086", "category": "Women Fashion", "mood": "general", "tone": "heart", "title": "Saree ki pleats jitni saaf-suthri deal 🥻", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf087", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "Jeans wo jo fit aaye, deal wo jo dil ko bhaye 👖", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf088", "category": "Women Fashion", "mood": "general", "tone": "self", "title": "Alamari mein ek aur seat khali hai 🪑", "body": "{name}, {price}.", "needs": ["price"]},
-    {"id": "wf089", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "Ethnic ho ya western, mood tumhara 🎭", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf090", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Sandals se lehenga tak, sab mood par depend 💃", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf091", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Ye selfie mein bhi achha lagega 🤳", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf092", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "Colour blocking? Ye dekh ke decide karo 🎨", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf093", "category": "Women Fashion", "mood": "general", "tone": "heart", "title": "Ek dress kabhi poore din ka mood badal deti hai 👗", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf094", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Aaina bola: 'aaj kuch naya?' 🪞", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf095", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "Plan cancel? Outfit ready rakho, kya pata kal ban jaye 😄", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf096", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Aaj 'main character' day hai 🎬", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf097", "category": "Women Fashion", "mood": "general", "tone": "tease", "title": "Dost bola 'ye kahan se liya?' 😏", "body": "Answer: {name}, {price}.", "needs": ["price"]},
-    {"id": "wf098", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "Sale ke mausam mein dimaag lagao, dil bhi 💜", "body": "{name} — {discount}% off.", "needs": ["discount"]},
-    {"id": "wf099", "category": "Women Fashion", "mood": "general", "tone": "heart", "title": "Ek kurta, sau kahaniyan 📖", "body": "{name} at {price}.", "needs": ["price"]},
-    {"id": "wf100", "category": "Women Fashion", "mood": "general", "tone": "heart", "title": "Chhoti si deal, badi si muskaan 😄", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf101", "category": "Women Fashion", "mood": "general", "tone": "self", "title": "Kal kya pehnu? Aaj hi decide kar lo 📅", "body": "{name} — {price}.", "needs": ["price"]},
-    {"id": "wf102", "category": "Women Fashion", "mood": "general", "tone": "dost", "title": "Aaj ki deal: tumhare taste jitni pyaari 🌸", "body": "{name} at {price}.", "needs": ["price"]}
-  ]
+  "rules": "No fake urgency or scarcity. No price comparisons we cannot back with data. No body, religion, caste, region, politics, health or money-struggle jokes. No real brands, celebs or trademarks. personal=true lines are on-device only (phone has the signal)."
+ },
+ "templates": [
+  {
+   "id": "wf001",
+   "category": "Women Fashion",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai ke saath ek kurta bhi? ☕",
+   "body": "{name} — {price}. Pakoda baad mein.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf002",
+   "category": "Women Fashion",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Chai thandi ho rahi hai, ye deal nahi ☕",
+   "body": "{name} for {price}. Ek sip, ek scroll.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf003",
+   "category": "Women Fashion",
+   "mood": "chai",
+   "tone": "tease",
+   "title": "Subah ki chai, shaam tak ka look ☕",
+   "body": "{name} — {discount}% off. Aaj hi try karo.",
+   "needs": [
+    "discount"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "wf004",
+   "category": "Women Fashion",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Chai break = shopping break 🫖",
+   "body": "{name} is live right now. 5 minute hain na?",
+   "needs": []
+  },
+  {
+   "id": "wf005",
+   "category": "Women Fashion",
+   "mood": "chai",
+   "tone": "dost",
+   "title": "Biscuit dubaate waqt ye dekh lo 🍪",
+   "body": "{name} at {price}. Dhyan se, chai gir jayegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf006",
+   "category": "Women Fashion",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary aayi? Ek treat to banta hai 💸",
+   "body": "{name} — {price}. Apne liye bhi kuch.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf007",
+   "category": "Women Fashion",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Salary ne dastak di 🚪",
+   "body": "{name} — {price}. Apne liye bhi kuch.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf008",
+   "category": "Women Fashion",
+   "mood": "salary",
+   "tone": "dost",
+   "title": "Wallet ko thoda pyaar, thoda kharcha 😌",
+   "body": "{name}, {discount}% off. Smart kharcha bhi kharcha hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "wf009",
+   "category": "Women Fashion",
+   "mood": "salary",
+   "tone": "tease",
+   "title": "Pehli tareekh ka mood 🎉",
+   "body": "{name} for {price}. Aaj tum boss ho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf010",
+   "category": "Women Fashion",
+   "mood": "salary",
+   "tone": "heart",
+   "title": "Salary ka ek hissa khud ke naam 💜",
+   "body": "{name} — {price}. Tumne kamaya hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf011",
+   "category": "Women Fashion",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Month-end hai, par ye deal ne sun liya 👂",
+   "body": "{name} for {price}. Dekhne mein kya jaata hai?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf012",
+   "category": "Women Fashion",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Balance kam, taste zyada 😌",
+   "body": "{name} — {price}. Wallet-friendly wala.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf013",
+   "category": "Women Fashion",
+   "mood": "monthend",
+   "tone": "dost",
+   "title": "Aakhri hafte ki chill wali deal",
+   "body": "{name}, sirf {price}. Bas ek nazar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf014",
+   "category": "Women Fashion",
+   "mood": "monthend",
+   "tone": "tease",
+   "title": "Month-end special: dekhne ka koi paisa nahi",
+   "body": "{name} at {price}. Tap free hai. 😄",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf015",
+   "category": "Women Fashion",
+   "mood": "monthend",
+   "tone": "self",
+   "title": "Wallet bola: 'dekh lo, khareedne ka mat bolna'",
+   "body": "{name} — {price}. Dekhna free hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf016",
+   "category": "Women Fashion",
+   "mood": "sunday",
+   "tone": "self",
+   "title": "Sunday ka sabse productive kaam 🛋️",
+   "body": "{name} scroll karna. Deal: {price}.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "wf017",
+   "category": "Women Fashion",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Sunday, pyjama, aur ek achhi deal",
+   "body": "{name} — {price}. Uthna nahi padega.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "wf018",
+   "category": "Women Fashion",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Aaj kuch nahi karna? Ye to kar sakte ho 😌",
+   "body": "{name} for {price}. Kal ki tension kal ke liye chhod do.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "wf019",
+   "category": "Women Fashion",
+   "mood": "sunday",
+   "tone": "tease",
+   "title": "Sunday ki laundry se pehle ye dekh lo 🧺",
+   "body": "{name} — {discount}% off. Naya kurta, naya mood.",
+   "needs": [
+    "discount"
+   ],
+   "weekdays": [
+    0
+   ]
+  },
+  {
+   "id": "wf020",
+   "category": "Women Fashion",
+   "mood": "sunday",
+   "tone": "dost",
+   "title": "Chhutti hai, thodi si window shopping 🪟",
+   "body": "{name} at {price}. Bas dekhna hai... na?",
+   "needs": [
+    "price"
+   ],
+   "day": "weekend"
+  },
+  {
+   "id": "wf021",
+   "category": "Women Fashion",
+   "mood": "monday",
+   "tone": "tease",
+   "title": "Monday ko bhi style chahiye 💼",
+   "body": "{name} — {price}. Office mein entry filmy.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "wf022",
+   "category": "Women Fashion",
+   "mood": "monday",
+   "tone": "tease",
+   "title": "Monday blues ko blue kurta se hara do 💙",
+   "body": "{name} at {price}. Monday ka blue ab tumhare control mein.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "wf023",
+   "category": "Women Fashion",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Alarm ne uthaya, ye deal ne hansaya ⏰",
+   "body": "{name} — {price}. Monday sorted.",
+   "needs": [
+    "price"
+   ],
+   "weekdays": [
+    1
+   ]
+  },
+  {
+   "id": "wf024",
+   "category": "Women Fashion",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "Meeting mein camera off, look on 😎",
+   "body": "{name} for {price}. Camera on bhi chalega.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "wf025",
+   "category": "Women Fashion",
+   "mood": "monday",
+   "tone": "dost",
+   "title": "Aaj ka OOTD ready hai? Nahi? Ye lo 👇",
+   "body": "{name} — {price}. Aaina bolega: 'bhai, ye kahan se?'",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday",
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "wf026",
+   "category": "Women Fashion",
+   "mood": "wfh",
+   "tone": "self",
+   "title": "WFH mein neeche pyjama, upar kurta 😂",
+   "body": "{name} — {price}. Sirf upar ka hissa dikhta hai.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "wf027",
+   "category": "Women Fashion",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Video call se pehle 2 minute ⏱️",
+   "body": "{name} at {price}. Call pe bhi lagegi.",
+   "needs": [
+    "price"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "wf028",
+   "category": "Women Fashion",
+   "mood": "wfh",
+   "tone": "tease",
+   "title": "Laptop ke peeche bhi style chalta hai 💻",
+   "body": "{name} — {discount}% off. Aaj ka chhota sa jashn.",
+   "needs": [
+    "discount"
+   ],
+   "day": "weekday"
+  },
+  {
+   "id": "wf029",
+   "category": "Women Fashion",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Ghar wale bhi dekhenge, tum bhi dekho 😄",
+   "body": "{name} for {price}. Ghar wale bhi taarif karenge, hum guarantee nahi dete.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf030",
+   "category": "Women Fashion",
+   "mood": "wfh",
+   "tone": "dost",
+   "title": "Lunch break mein ek chhoti si shopping 🍱",
+   "body": "{name} — {price}. Roti thandi hone se pehle.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "afternoon"
+   ]
+  },
+  {
+   "id": "wf031",
+   "category": "Women Fashion",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "PG ki alamari mein jagah bachi hai? 🚪",
+   "body": "{name} at {price}. Roommate ko mat batana. 🤫",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf032",
+   "category": "Women Fashion",
+   "mood": "hostel",
+   "tone": "tease",
+   "title": "Roommate ka top nahi, apna khareed lo 😜",
+   "body": "{name} — {price}. Ab udhaar nahi chalega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf033",
+   "category": "Women Fashion",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Hostel wali dosti: 'tera hai to mera bhi' 👯",
+   "body": "{name} for {price}. Ek le lo, dost ka bhi kaam chal jayega.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf034",
+   "category": "Women Fashion",
+   "mood": "hostel",
+   "tone": "self",
+   "title": "Maggi ban rahi hai, deal bhi 🍜",
+   "body": "{name} — {price}. Do minute mein dekh lo.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf035",
+   "category": "Women Fashion",
+   "mood": "hostel",
+   "tone": "dost",
+   "title": "Raat ki PG chat: 'kya pehnu?' 🌙",
+   "body": "Answer: {name}. {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "wf036",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy poochhengi 'kitne ka?' 😎",
+   "body": "Bolna: {price}. Aur proud hoke bolna. {name}",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf037",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Ghar wale bole 'phir naya?' Tum bolna 'deal thi' 😌",
+   "body": "{name} — {price}, {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ]
+  },
+  {
+   "id": "wf038",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "self",
+   "title": "Mummy ki line: 'itne kapde to hain!' 🙄",
+   "body": "Par ye wala {name} nahi hai. {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf039",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "heart",
+   "title": "Dadi kehti thi: achhi cheez dhundh ke lo 👵",
+   "body": "Humne dhundh li: {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf040",
+   "category": "Women Fashion",
+   "mood": "ghar",
+   "tone": "dost",
+   "title": "Papa ka sawal: 'ye kab liya?' 😅",
+   "body": "Jawab: {name}. Aaj ki deal. {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf041",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Shaadi ka card aaya? Outfit kaun sa? 💌",
+   "body": "{name} at {price}. Tension khatam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf042",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Cousin ki sangeet, tumhari entry 💃",
+   "body": "{name} — {price}. Naach baad mein, outfit pehle.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf043",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Tyohaar aa raha hai, alamari taiyar? 🪔",
+   "body": "{name} — {price}. Roshni tumhari.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf044",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "heart",
+   "title": "Tyohaar koi bhi ho, outfit apna 🎉",
+   "body": "{name} at {price}. Jashn koi bhi ho, tum ready ho.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf045",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Wedding season mein 'kya pehnu?' ka jawab 👰",
+   "body": "{name}, {discount}% off. Kaam ka discount, kaam ki cheez.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "wf046",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Mehendi wale din ki taiyari 🌿",
+   "body": "{name} — {price}. Haath pe mehendi, badan pe ye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf047",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "dost",
+   "title": "Photo ka zimmedar koi nahi, par outfit hai 📸",
+   "body": "{name} at {price}. Camera ke aage sab theek lagta hai, is se aur bhi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf048",
+   "category": "Women Fashion",
+   "mood": "festival",
+   "tone": "tease",
+   "title": "Cousin ne pucha 'kahan se liya?' 😏",
+   "body": "Answer ready: {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf049",
+   "category": "Women Fashion",
+   "mood": "cricket",
+   "tone": "dost",
+   "title": "Match ke break mein ek deal 🏏",
+   "body": "{name} — {price}. Ad break lamba hota hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf050",
+   "category": "Women Fashion",
+   "mood": "cricket",
+   "tone": "tease",
+   "title": "Six maara? Ab ek deal bhi maar lo 🏏",
+   "body": "{name} for {price}. Boundary paar, budget ke andar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf051",
+   "category": "Women Fashion",
+   "mood": "cricket",
+   "tone": "tease",
+   "title": "Score kya hai? Ye deal: {discount}% off 🏏",
+   "body": "{name}. Ye to sixer hai.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "wf053",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Aaj tum bahut kuch sambhal rahe ho 🫶",
+   "body": "Ek chhoti si khushi: {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf054",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Tum khud ke liye bhi important ho 💜",
+   "body": "{name} at {price}. Bas yahi kehna tha.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf055",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Kabhi khud ke liye bhi kuch le lo",
+   "body": "{name} — {price}. Tumhare liye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf056",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Bina wajah ke bhi khush hona theek hai 🌷",
+   "body": "{name} for {price}. Khush hone ke liye wajah kaun dhoondhta hai?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf057",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Thak gaye? Chhoti si khushi yahan hai",
+   "body": "{name} — {price}. Tap karo, muskuraao.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening",
+    "night"
+   ]
+  },
+  {
+   "id": "wf058",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Aaj kisi ne kuch nahi bola? Hum bolte hain: shabaash 👏",
+   "body": "Reward: {name}, {price}.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening",
+    "night"
+   ]
+  },
+  {
+   "id": "wf059",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Tumhari muskaan ke liye ek chhota sa bahana 😊",
+   "body": "{name} at {price}. Muskaan ka koi charge nahi, deal ka hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf060",
+   "category": "Women Fashion",
+   "mood": "heart",
+   "tone": "heart",
+   "title": "Jo tumne kal kiya, uska treat aaj 🎁",
+   "body": "{name} — {price}. Kal ki mehnat, aaj ka inaam.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf061",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "dost",
+   "title": "Kal se dekh rahe ho na? 👀",
+   "body": "{name} ab {price} mein.",
+   "needs": [
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf062",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "dost",
+   "title": "Save kiya tha, bhool gaye? 😏",
+   "body": "{name} is now {price}.",
+   "needs": [
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf063",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "tease",
+   "title": "Wishlist ko tumhari yaad aa rahi hai 💌",
+   "body": "{name} — {price}. Kabse tumhara intezaar kar rahi thi.",
+   "needs": [
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf064",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "dost",
+   "title": "Ab bhi soch rahe ho? Hum yahin hain 😄",
+   "body": "{name} at {price}. Soch aaram se lo, deal filhal live hai.",
+   "needs": [
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf065",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "tease",
+   "title": "{brand} tumhare taste ka hai 😉",
+   "body": "{name} — {price}. Tumhari pasand hume pehle se pata thi.",
+   "needs": [
+    "brand",
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf066",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "dost",
+   "title": "{category} ka scene? Ye dekho 👇",
+   "body": "{name} at {price}. Ye tumhari list mein ho sakti hai.",
+   "needs": [
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf067",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "tease",
+   "title": "{brand} fan ho? Ye deal sun lo",
+   "body": "{name}, {discount}% off. Baat sirf percent ki nahi, mauke ki bhi hai.",
+   "needs": [
+    "brand",
+    "discount"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf068",
+   "category": "Women Fashion",
+   "mood": "dost",
+   "tone": "dost",
+   "title": "Ye wala tumhare hi liye bana lagta hai 🎯",
+   "body": "{name} — {price}. Kisi ne tumhara naam le ke banayi hogi.",
+   "needs": [
+    "price"
+   ],
+   "personal": true
+  },
+  {
+   "id": "wf069",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Is deal ko koi nahi rok sakta, sirf tum 😌",
+   "body": "{name} — {price}. Rokne wala bas tumhara 'baad mein'.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf070",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "{discount}% off? Aankhein mat malo, sach hai 👀",
+   "body": "{name} — {price}. Aankhein malna band, cart kholo.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "wf071",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "Numbers dekhe, deal theek lagi ✅",
+   "body": "{name} — {price}, {discount}% off.",
+   "needs": [
+    "price",
+    "discount"
+   ]
+  },
+  {
+   "id": "wf072",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Price ne chhutti li, {discount}% neeche aa gaya 🏖️",
+   "body": "{name} — {price}. Beach pe hai, tum yahin deal dekho.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "wf073",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "MRP ne rone ki koshish ki, deal ne hansa diya 😂",
+   "body": "{name} — was {mrp}, now {price}.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "wf074",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "{mrp} se {price}: math simple hai 🧮",
+   "body": "{name}. You save {save}.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "wf075",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "heart",
+   "title": "Kitna bacha? {save}. Kitna sukoon? Anmol.",
+   "body": "{name} at {price}. Sukoon ka koi bill nahi aata.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "wf076",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "{discount}% off aur koi drama nahi 😎",
+   "body": "{name} — {price}. Na drama, na hidden charge ka dhokha, bas discount.",
+   "needs": [
+    "discount",
+    "price"
+   ]
+  },
+  {
+   "id": "wf077",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Aaj ka MRP: emotional. Aaj ka price: practical.",
+   "body": "{name} — {mrp} → {price}.",
+   "needs": [
+    "mrp",
+    "price"
+   ]
+  },
+  {
+   "id": "wf078",
+   "category": "Women Fashion",
+   "mood": "night",
+   "tone": "dost",
+   "title": "Neend nahi aa rahi? Ek deal dekh lo 🌙",
+   "body": "{name} — {price}. Phir so jana.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "wf079",
+   "category": "Women Fashion",
+   "mood": "night",
+   "tone": "dost",
+   "title": "Raat ke 11 baje ka 'kal kya pehnu?' 🌙",
+   "body": "{name}. {price}. Kal ka outfit sorted.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "night"
+   ]
+  },
+  {
+   "id": "wf080",
+   "category": "Women Fashion",
+   "mood": "morning",
+   "tone": "dost",
+   "title": "Subah ke alarm ke baad ye dekh lo ⏰",
+   "body": "{name} — {price}. Snooze dabane se pehle ek nazar.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "wf081",
+   "category": "Women Fashion",
+   "mood": "morning",
+   "tone": "tease",
+   "title": "Good morning ☀️ aaj ka mood: naya kurta",
+   "body": "{name} at {price}. Aaj kuch naya pehen ke dekho.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "morning"
+   ]
+  },
+  {
+   "id": "wf082",
+   "category": "Women Fashion",
+   "mood": "afternoon",
+   "tone": "dost",
+   "title": "Lunch ki line mein ho? Ye dekh lo 🍽️",
+   "body": "{name} — {price}. Line badhne tak ek nazar.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "afternoon"
+   ]
+  },
+  {
+   "id": "wf083",
+   "category": "Women Fashion",
+   "mood": "evening",
+   "tone": "tease",
+   "title": "Shaam ki chai, shaam ki deal ☕",
+   "body": "{name} for {price}. Chai ke saath pakode, deal ke saath ye.",
+   "needs": [
+    "price"
+   ],
+   "time": [
+    "evening"
+   ]
+  },
+  {
+   "id": "wf084",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Dupatta kahan gaya? Naya wala yahan hai 🧣",
+   "body": "{name} — {price}. Purana wala doosri alamari mein hoga.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf085",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Jhumke aur kurta ka reunion 💫",
+   "body": "{name} at {price}. Dono ki jodi pakki.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf086",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "heart",
+   "title": "Saree ki pleats jitni saaf-suthri deal 🥻",
+   "body": "{name} — {price}. Dhundhne mein time kaun lagaye?",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf087",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "Jeans wo jo fit aaye, deal wo jo dil ko bhaye 👖",
+   "body": "{name} — {price}. Fit aaye to sone pe suhaaga.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf088",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "self",
+   "title": "Alamari mein ek aur seat khali hai 🪑",
+   "body": "{name}, {price}. Seat khali hai, aa jao.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf089",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "Ethnic ho ya western, mood tumhara 🎭",
+   "body": "{name} at {price}. Aaj jo mann kare, wahi pehno.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf090",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Sandals se lehenga tak, sab mood par depend 💃",
+   "body": "{name} — {price}. Aaj ka mood: chalna nahi, ghoomna.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf091",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Ye selfie mein bhi achha lagega 🤳",
+   "body": "{name} — {price}. Filter ki zaroorat kam padegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf092",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "Colour blocking? Ye dekh ke decide karo 🎨",
+   "body": "{name} — {price}. Rang ka jhagda hum sulta lenge.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf093",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "heart",
+   "title": "Ek dress kabhi poore din ka mood badal deti hai 👗",
+   "body": "{name} at {price}. Aaj ka mood ek dress door hai.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf094",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Aaina bola: 'aaj kuch naya?' 🪞",
+   "body": "{name} — {price}. Jawab: haan, aaj kuch naya.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf095",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "Plan cancel? Outfit ready rakho, kya pata kal ban jaye 😄",
+   "body": "{name} at {price}. Kal plan bane ya na bane, outfit taiyaar.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf096",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Aaj 'main character' day hai 🎬",
+   "body": "{name} — {price}. Script tumhari, costume ye.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf097",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "tease",
+   "title": "Dost bola 'ye kahan se liya?' 😏",
+   "body": "Answer: {name}, {price}.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf098",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "Sale ke mausam mein dimaag lagao, dil bhi 💜",
+   "body": "{name}, {discount}% off. Kaam ki deal, bina shor.",
+   "needs": [
+    "discount"
+   ]
+  },
+  {
+   "id": "wf099",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "heart",
+   "title": "Ek kurta, sau kahaniyan 📖",
+   "body": "{name} at {price}. Pehli kahani: tumne isse khareeda.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf100",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "heart",
+   "title": "Chhoti si deal, badi si muskaan 😄",
+   "body": "{name} — {price}. Muskaan ka size: XL.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf101",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "self",
+   "title": "Kal kya pehnu? Aaj hi decide kar lo 📅",
+   "body": "{name} — {price}. Kal subah ki jaldi bachegi.",
+   "needs": [
+    "price"
+   ]
+  },
+  {
+   "id": "wf102",
+   "category": "Women Fashion",
+   "mood": "general",
+   "tone": "dost",
+   "title": "Aaj ki deal: tumhare taste jitni pyaari 🌸",
+   "body": "{name} at {price}. Taste ke aage price bhi jhukti hai.",
+   "needs": [
+    "price"
+   ]
+  }
+ ]
 }

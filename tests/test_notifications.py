@@ -165,8 +165,10 @@ def main() -> int:
           sorted(m["to"] for b in push_calls for m in b) == sorted([TOKEN_A, TOKEN_B]), str(len(push_calls)))
     check("telegram unavailable -> 0 telegram alerts", result["alerts_sent"] == 0, str(result))
     newest = alice.get("/api/notifications", params={"limit": 1}).json()["notifications"][0]
-    check("alert title/url",
-          newest["title"].startswith('🔔 "headphone": ₹1,299') and newest["url"] == f"/?deal={deal['id']}",
+    alert_text = f"{newest['title']} {newest['body']}"
+    check("alert copy: filled in, names the search and the product, links to the deal",
+          "{" not in alert_text and "headphone" in alert_text and "boAt" in alert_text
+          and any(s in alert_text for s in ("₹1,299", "% off")) and newest["url"] == f"/?deal={deal['id']}",
           str(newest))
     check("DeviceNotRegistered token pruned", push.user_tokens(alice_id) == [TOKEN_A])
     push_calls.clear()

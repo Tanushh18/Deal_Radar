@@ -24,6 +24,7 @@ from .routers import channels as channels_router
 from .routers import deals as deals_router
 from .routers import health as health_router
 from .routers import notifications as notifications_router
+from .routers import pitara as pitara_router
 from .routers import devices as devices_router
 from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
@@ -173,6 +174,7 @@ app.include_router(channels_router.router)
 app.include_router(deals_router.router)
 app.include_router(watchlists_router.router)
 app.include_router(notifications_router.router)
+app.include_router(pitara_router.router)
 app.include_router(admin_router.router)
 app.include_router(price_alerts_router.router)
 app.include_router(sale_events_router.router)

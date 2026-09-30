@@ -65,7 +65,7 @@
    "mood": "salary",
    "tone": "tease",
    "title": "Salary ka pehla din, gadget ka best din 💸",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Naya sapna, purana budget.",
    "needs": [
     "discount"
    ]
@@ -76,7 +76,7 @@
    "mood": "salary",
    "tone": "self",
    "title": "Salary aur charger — dono ki kami rehti hai 🔋",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Salary jaayegi, charger ghar mein rahega.",
    "needs": [
     "price"
    ]
@@ -98,7 +98,7 @@
    "mood": "monthend",
    "tone": "tease",
    "title": "Dekhna free hai, cart mein daalna optional 🛒",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Dekh lo, phir decide karo.",
    "needs": [
     "price"
    ]
@@ -137,7 +137,7 @@
    "mood": "monday",
    "tone": "self",
    "title": "Monday ko laptop ka charger chahiye, motivation nahi 💼",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Motivation baad mein, charger abhi.",
    "needs": [
     "price"
    ],
@@ -180,7 +180,7 @@
    "mood": "wfh",
    "tone": "dost",
    "title": "Meeting mein 'aapki awaaz nahi aa rahi' band karo 🎤",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Awaaz aayi ya nahi, ab confirm.",
    "needs": [
     "price"
    ],
@@ -204,7 +204,7 @@
    "mood": "wfh",
    "tone": "self",
    "title": "Laptop stand kharido, gardan ka pyaar milega 🙏",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Gardan bhi shukriya bolegi.",
    "needs": [
     "price"
    ],
@@ -296,7 +296,7 @@
    "mood": "festival",
    "tone": "tease",
    "title": "Tyohaar ka gift: kuch aisa jo kaam aaye 🎁",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Jo kabhi kaam aaye wahi gift.",
    "needs": [
     "price"
    ]
@@ -329,7 +329,7 @@
    "mood": "match",
    "tone": "tease",
    "title": "Match ke break mein ek gadget deal 🏏",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ad break mein aaram se.",
    "needs": [
     "price"
    ]
@@ -340,7 +340,7 @@
    "mood": "match",
    "tone": "self",
    "title": "Phone pe match, gardan tedhi, ab TV lo 📺",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Sochte reh jaoge to sochte hi reh jaoge.",
    "needs": [
     "discount"
    ]
@@ -362,7 +362,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Jo gadget roz kaam aaye, wahi asli gift 🔌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kaam ka gift, kaam ka pyaar.",
    "needs": [
     "price"
    ]
@@ -406,7 +406,7 @@
    "mood": "phone",
    "tone": "tease",
    "title": "Charger ke bina phone: 4 ghante ka dost 🔋",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kharcha bhi smart, khushi bhi smart.",
    "needs": [
     "discount"
    ]
@@ -417,7 +417,7 @@
    "mood": "phone",
    "tone": "self",
    "title": "Ek aur tempered glass? Pichla bhi kahan gaya 🤔",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Naya laga lo, purana khud dhoondh lega.",
    "needs": [
     "price"
    ]
@@ -439,7 +439,7 @@
    "mood": "phone",
    "tone": "heart",
    "title": "Selfie stick: yaadein bhi, group photo bhi 📸",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Group photo mein sab aa jayenge.",
    "needs": [
     "price"
    ]
@@ -461,7 +461,7 @@
    "mood": "phone",
    "tone": "dost",
    "title": "Cable: jo hamesha tootta hai, ab strong wala 🔌",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ab modne ki zaroorat kam.",
    "needs": [
     "price"
    ]
@@ -505,7 +505,7 @@
    "mood": "audio",
    "tone": "heart",
    "title": "Gaana wahi, mazaa naya 🎵",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Purane gaane, naye kaan.",
    "needs": [
     "price"
    ]
@@ -527,7 +527,7 @@
    "mood": "audio",
    "tone": "tease",
    "title": "Noise cancellation: 'kya bola?' 'kuch nahi suna' 🙉",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. 'Kya bola?' ke din gaye.",
    "needs": [
     "price"
    ]
@@ -538,7 +538,7 @@
    "mood": "audio",
    "tone": "self",
    "title": "Earphone kho gaye? Roz ka scene 😅",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kho gaye to naye, ye roz ki baat hai.",
    "needs": [
     "price"
    ]
@@ -549,7 +549,7 @@
    "mood": "audio",
    "tone": "dost",
    "title": "Podcast sunne ka mood hai? 🎙️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek episode, do episode, phir lamba scene.",
    "needs": [
     "price"
    ]
@@ -571,7 +571,7 @@
    "mood": "laptop",
    "tone": "dost",
    "title": "Laptop ka fan awaaz kar raha hai? 💻",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Awaaz kam, kaam zyada.",
    "needs": [
     "price"
    ]
@@ -593,7 +593,7 @@
    "mood": "laptop",
    "tone": "self",
    "title": "Battery 2 ghante? Office ka charger ghar rehta hai 🔌",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ghar ke liye alag charger rakh lo.",
    "needs": [
     "price"
    ]
@@ -615,7 +615,7 @@
    "mood": "laptop",
    "tone": "heart",
    "title": "Ek achha laptop bag bhi lo, gadget ka khayal rakho 🎒",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Laptop ki jaan bag mein.",
    "needs": [
     "price"
    ]
@@ -637,7 +637,7 @@
    "mood": "laptop",
    "tone": "dost",
    "title": "Webcam: chehra dikhana bhi zaroori 📷",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Video call mein chehra saaf dikhega.",
    "needs": [
     "price"
    ]
@@ -703,7 +703,7 @@
    "mood": "home",
    "tone": "heart",
    "title": "Air purifier: saans lene ka pyaar 🌬️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Har saans ka khayal.",
    "needs": [
     "price"
    ]
@@ -714,7 +714,7 @@
    "mood": "home",
    "tone": "dost",
    "title": "Mixer: chatni aur juice ka partner 🍹",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chatni, juice, sab ek jagah.",
    "needs": [
     "price"
    ]
@@ -725,7 +725,7 @@
    "mood": "home",
    "tone": "self",
    "title": "Toaster: subah ke nashte ka hero 🍞",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Subah ki jaldi mein help.",
    "needs": [
     "price"
    ]
@@ -824,7 +824,7 @@
    "mood": "smartwatch",
    "tone": "heart",
    "title": "Sehat ka khayal rakho, roz thoda chalo 🚶",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Har kadam ki ginti.",
    "needs": [
     "price"
    ]
@@ -857,7 +857,7 @@
    "mood": "gaming",
    "tone": "self",
    "title": "Aaj sirf ek match... phir teen ghante 🕹️",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aaj ka chhota sa jashn.",
    "needs": [
     "discount"
    ]
@@ -868,7 +868,7 @@
    "mood": "gaming",
    "tone": "dost",
    "title": "Gaming chair: kamar ko bhi jeetna hai 🪑",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ghanton baithne wale ke liye.",
    "needs": [
     "price"
    ]
@@ -879,7 +879,7 @@
    "mood": "brand",
    "tone": "tease",
    "title": "{brand} ka gadget dekha? 👀",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Naya model, purane sawaal.",
    "needs": [
     "brand",
     "price"

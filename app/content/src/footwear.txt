@@ -1,67 +1,67 @@
 # category: Footwear
 # prefix: fw
 chai|dost|Chai lene chalo, naye joote pehen ke ☕|{name}, {price}. Tapri tak ka fashion show.|t=evening
-chai|tease|Chai gir jaye to bhi joote na kharab hon 😄|{name} at {price}.
+chai|tease|Chai gir jaye to bhi joote na kharab hon 😄|{name} at {price}. Chai gir jaye to joota bacha rahe.
 salary|heart|Salary aayi, pairon ko bhi treat do 👟|{name} for {price}. Din bhar chalte hain, thoda pyaar banta hai.
-salary|tease|Salary ka pehla din, joote ka best din 💸|{name}, {discount}% off.
+salary|tease|Salary ka pehla din, joote ka best din 💸|{name}, {discount}% off. Aaj discount ne dil jeeta.
 salary|self|Salary: aayi, gayi, joota reh gaya 😅|{name} at {price}. Kam se kam ye to rahega.
-monthend|self|Month-end mein bhi paon ka budget hota hai 🦶|{name}, {price}.
+monthend|self|Month-end mein bhi paon ka budget hota hai 🦶|{name}, {price}. Paon ka bhi to budget hota hai.
 monthend|tease|Chappal tooti? Choti si deal ye hai 🩴|{name} for {price}. Pin lagana band karo.
 sunday|dost|Sunday: joote polish karne ka din 🧽|{name}, {price}. Ya naye le lo, jugaad kam.|w=0
-sunday|tease|Aaj kahin nahi jana, phir bhi joote dekh lo 👟|{name} at {price}.|w=0
-monday|self|Monday: office ke joote ki polish kahan hai? 💼|{name}, {price}.|w=1
+sunday|tease|Aaj kahin nahi jana, phir bhi joote dekh lo 👟|{name} at {price}. Ghar mein baithe bhi dekh sakte ho.|w=0
+monday|self|Monday: office ke joote ki polish kahan hai? 💼|{name}, {price}. Polish nahi hui to naya le lo.|w=1
 monday|tease|Alarm ke baad joote khojna band karo 🔍|{name} for {price}. Ek jagah rakhna seekho.|w=1 t=morning
 wfh|self|WFH mein neeche chappal, upar formal 🩴|{name}, {price}. Camera sirf upar tak dekhta hai.|d=weekday
 wfh|dost|Ghar ke andar bhi comfy chappal chahiye 🏠|{name} at {price}. Tiles thandi hoti hain.|d=weekday
 hostel|self|PG mein jootay bahar rakhne ka jhagda 🚪|{name}, {price}. Shoe rack bhi le lo.
 hostel|tease|Roommate ke jootay pehne? Ab apne lo 😜|{name} for {price}. Size alag hoga, dost.
-ghar|self|Mummy: 'joote kahan rakhe? Darwaze pe kyun?' 😅|{name}, {price}.
-ghar|heart|Dadi kehti thi: joote achhe ho to raste achhe 👵|{name} at {price}.
+ghar|self|Mummy: 'joote kahan rakhe? Darwaze pe kyun?' 😅|{name}, {price}. Darwaze ke paas hi sahi, par rack le lo.
+ghar|heart|Dadi kehti thi: joote achhe ho to raste achhe 👵|{name} at {price}. Achhe joote, achhi shuruaat.
 festival|dost|Shaadi mein joote bhi match karne hain 👞|{name}, {price}. Sherwani ke saath.
 festival|tease|Baraat mein naachte hue joote ka sahara 💃|{name} for {price}. Comfort pehle, fashion saath.
 festival|heart|Tyohaar ke liye naye joote 🪔|{name}, {discount}% off. Ghar mein nayi roshni.
-match|dost|Match ke liye jersey ke saath sneakers 👟|{name}, {price}.
-heart|heart|Jo pair tumhe roz le chalte hain, unka bhi khayal 🦶|{name} at {price}.
-heart|heart|Kadam kadam par ek nayi shuruaat 🚶|{name}, {price}.
+match|dost|Match ke liye jersey ke saath sneakers 👟|{name}, {price}. Jersey ke saath fit ho jayega.
+heart|heart|Jo pair tumhe roz le chalte hain, unka bhi khayal 🦶|{name} at {price}. Roz ke saathi ko naya ghar.
+heart|heart|Kadam kadam par ek nayi shuruaat 🚶|{name}, {price}. Pehla kadam naya, agla aur naya.
 sneakers|tease|Sneakers ka scene: fresh pair, fresh mood 👟|{name} for {price}. Pehle din hi mud mat lagao.
 sneakers|dost|Sneaker collection mein ek aur entry? 👟|{name}, {price}. Alamari ka side wala kona khali hai.
-sneakers|self|Sneaker ko cover kar ke rakhna hai, pehenna nahi 😅|{name} at {price}.
-sneakers|tease|Ye sneakers dekhe? Bahut naya hai 🔥|{name}, {discount}% off.
-sneakers|dost|Sneakers + jeans: classic combo 👖|{name} for {price}.
-sneakers|heart|Walk karte hue sochna acha lagta hai 🚶|{name}, {price}.
+sneakers|self|Sneaker ko cover kar ke rakhna hai, pehenna nahi 😅|{name} at {price}. Pehen lo, din bhi khush honge.
+sneakers|tease|Ye sneakers dekhe? Bahut naya hai 🔥|{name}, {discount}% off. Discount ka sach dekh ke lo.
+sneakers|dost|Sneakers + jeans: classic combo 👖|{name} for {price}. Ye jodi kabhi purani nahi hoti.
+sneakers|heart|Walk karte hue sochna acha lagta hai 🚶|{name}, {price}. Chalte chalte ideas aate hain.
 sneakers|tease|Daag pade to bhi cool lagenge 😎|{name} at {price}. Style ki kahani.
 sneakers|self|Purane sneakers ka sole ghis gaya 🥲|{name}, {price}. Dil bhaari, par naye aa gaye.
 formal|dost|Interview ke joote: pehla impression 👞|{name}, {price}. Polish zaroor karna.
 formal|tease|Formal joote: office ka silent hero 💼|{name} for {price}. Sabse pehle wahi dikhte hain.
 formal|self|Meeting mein joote ki awaaz: khat khat 😂|{name}, {discount}% off. Thodi soft sole wale lo.
-formal|heart|Naye kaam ka pehla din, naye joote ke saath 🌟|{name} at {price}.
-formal|dost|Formal ho ya party, ek achhi jodi chahiye 👞|{name}, {price}.
-formal|tease|Shaadi ka moka, joote ka jalwa 💍|{name} for {price}.
-formal|self|Joote ka size galat liya? Ye baar dhyan se 📏|{name}, {price}.
+formal|heart|Naye kaam ka pehla din, naye joote ke saath 🌟|{name} at {price}. Pehle din ka confidence kadmon se hi.
+formal|dost|Formal ho ya party, ek achhi jodi chahiye 👞|{name}, {price}. Ek jodi, do kaam.
+formal|tease|Shaadi ka moka, joote ka jalwa 💍|{name} for {price}. Naachne ka poora intezaam.
+formal|self|Joote ka size galat liya? Ye baar dhyan se 📏|{name}, {price}. Dhyan se naapo, phir order karo.
 sandal|dost|Chappal: garmi ka sabse achha dost 🩴|{name} at {price}. Paon ko hawa lagegi.
 sandal|tease|Flip flop: beach ho ya bathroom 🏖️|{name}, {price}. Dono mein chalega.
-sandal|self|Chappal ke strap ka jugaad ab nahi chalega 🪡|{name} for {price}.
-sandal|heart|Sunday ki sair, halki chappal ke saath 🌤️|{name}, {discount}% off.|w=0
-sandal|dost|Sandal: haath mein bhi, pair mein bhi 😄|{name} at {price}.
+sandal|self|Chappal ke strap ka jugaad ab nahi chalega 🪡|{name} for {price}. Naya strap, naya mood.
+sandal|heart|Sunday ki sair, halki chappal ke saath 🌤️|{name} — {discount}% off. Ek nazar, ek tap, ek muskaan.|w=0
+sandal|dost|Sandal: haath mein bhi, pair mein bhi 😄|{name} at {price}. Haath mein bhi jachti hai.
 heels|tease|Heels: ek inch ka confidence 👠|{name}, {price}. Kadam dhyan se rakhna.
 heels|dost|Party ke liye heels ready? 🎉|{name} for {price}. Aakhir mein hath mein hi lena padega.
 heels|self|Heels pehen ke chalna: art hai 🎭|{name}, {discount}% off. Practice pehle ghar mein.
-heels|heart|Chhoti si heel, badi si baat 👠|{name} at {price}.
-heels|tease|Flats aur heels: dono ka mood alag 👟|{name}, {price}.
+heels|heart|Chhoti si heel, badi si baat 👠|{name} at {price}. Ek inch aur confidence.
+heels|tease|Flats aur heels: dono ka mood alag 👟|{name}, {price}. Mood dekh ke chuno.
 kids|dost|Bachon ke joote: 3 mahine mein chhote ho jaate hain 👶|{name} for {price}. Badh rahe hain, achhi baat hai.
 kids|heart|School ke liye naye joote 🎒|{name}, {price}. Pehle din ki excitement.
-kids|tease|Bachcha kahega 'mujhe ye hi chahiye' 😄|{name} at {price}.
+kids|tease|Bachcha kahega 'mujhe ye hi chahiye' 😄|{name} at {price}. Bachche ki pasand ka fashion.
 kids|self|Joote ka ek pair bhi dhang se nahi rakhta koi 😅|{name}, {price}. Bachcha hi sahi.
-monsoon|dost|Baarish aa gayi? Gum boots ready hain? 🌧️|{name} for {price}.
+monsoon|dost|Baarish aa gayi? Gum boots ready hain? 🌧️|{name} for {price}. Paon bhi khush, baarish bhi khush.
 monsoon|tease|Chappal phisal jaye to gaya din 😅|{name}, {discount}% off. Grip wale lo.
-monsoon|self|Paon geele, mood geela 🥲|{name} at {price}.
+monsoon|self|Paon geele, mood geela 🥲|{name} at {price}. Geele mood ka ilaaj.
 monsoon|heart|Baarish mein chalne ka mazaa alag hai 🌧️|{name}, {price}. Bas paon dry rahen.
 sports|dost|Running shoes: kal se pakka daudenge 🏃|{name}, {price}. Aaj bhi shuru kar sakte ho.
-sports|tease|Running shoes: alamari mein sabse healthy cheez 😌|{name} for {price}.
+sports|tease|Running shoes: alamari mein sabse healthy cheez 😌|{name} for {price}. Shoe rack mein sabse mehnati.
 sports|self|Sports shoes khareede, gym nahi gaye 😅|{name}, {discount}% off. Is baar pakka.
-sports|heart|Har kadam ek nayi koshish 🌟|{name} at {price}.
-sports|dost|Trekking ke shoes: pahad bulate hain 🏔️|{name}, {price}.
-brand|tease|{brand} ka jodi dekhi? 👀|{name}, {price}.|p
+sports|heart|Har kadam ek nayi koshish 🌟|{name} at {price}. Har kadam ka ek naya saath.
+sports|dost|Trekking ke shoes: pahad bulate hain 🏔️|{name}, {price}. Pahad ke raaste ka saathi.
+brand|tease|{brand} ka jodi dekhi? 👀|{name}, {price}. Jodi nayi, saath purana.|p
 brand|dost|{brand} ki jodi, paon ko pasand aayegi 👟|{name}, {discount}% off. Size check kar lena.|p
 deal|tease|Joota deal: {discount}% off 👟|{name}, {price}. Size check karna mat bhoolna.
 deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Kadam aage badhao.

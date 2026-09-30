@@ -3,33 +3,33 @@
 phone|dost|Phone ka battery health: dheere dheere girti hai 🔋|{name}, {price}. Naya ya power bank, dono ka jawab.
 phone|tease|Phone gira, screen bachi, dil nahi 💔|{name} at {price}. Tempered glass ki jagah hai.
 phone|self|Phone ka storage full: 'photos kaun delete kare' 📸|{name}, {discount}% off. Memory card le lo.
-phone|heart|Phone mein sab kuch hai, ek achha case bhi hona chahiye 🛡️|{name} for {price}.
-phone|dost|Charger ke saath cable bhi lena, pichli wali toot gayi hogi 🔌|{name}, {price}.
+phone|heart|Phone mein sab kuch hai, ek achha case bhi hona chahiye 🛡️|{name} for {price}. Girega to case bachayega.
+phone|dost|Charger ke saath cable bhi lena, pichli wali toot gayi hogi 🔌|{name}, {price}. Pichli wali ki shraddhanjali.
 phone|tease|Wireless charger: taar ka jhanjhat khatam? 🔋|{name} at {price}. Table pe rakho, bas.
 audio|dost|Earbuds: bina taar ke, bina jhanjhat ke 🎧|{name}, {price}. Case ko bhi charge karna mat bhoolna.
-audio|tease|Headphones: duniya ko mute, gaane ko full 🔊|{name} for {price}.
-audio|self|Ek earbud gum, ek mil gaya, ab dono ka kya 😅|{name}, {discount}% off.
-audio|heart|Ek gaana, ek yaad, ek headphone 🎶|{name} at {price}.
-audio|dost|Neckband: gale mein latka ke jeene ka scene 🎧|{name}, {price}.
+audio|tease|Headphones: duniya ko mute, gaane ko full 🔊|{name} for {price}. Bahar ka shor, andar ka music.
+audio|self|Ek earbud gum, ek mil gaya, ab dono ka kya 😅|{name}, {discount}% off. Kaam ka discount, kaam ki cheez.
+audio|heart|Ek gaana, ek yaad, ek headphone 🎶|{name} at {price}. Gaana sirf tumhare liye.
+audio|dost|Neckband: gale mein latka ke jeene ka scene 🎧|{name}, {price}. Taar ka gola nahi bandega.
 audio|tease|Speaker: bathroom singer ki dua kabool 🚿|{name} for {price}. Padosi ko bhi suna do.
-laptop|dost|Laptop: kaam bhi, movie bhi, 3 baje raat ka scroll bhi 💻|{name}, {price}.
-laptop|tease|Laptop stand: gardan ki dua lagegi 🙏|{name} at {price}.
+laptop|dost|Laptop: kaam bhi, movie bhi, 3 baje raat ka scroll bhi 💻|{name}, {price}. Kaam pehle, movie baad mein (shayad).
+laptop|tease|Laptop stand: gardan ki dua lagegi 🙏|{name} at {price}. Gardan seedhi, kaam seedha.
 laptop|self|Laptop ka charger office mein reh gaya 🤦|{name}, {discount}% off. Ek ghar ke liye alag lo.
-laptop|heart|Kaam ka saathi, ek achhi jodi 💜|{name} for {price}.
-laptop|dost|Mouse pad: chhoti si cheez, badi si aasani 🖱️|{name}, {price}.
-laptop|tease|Keyboard cover: chai ke daag se suraksha ☕|{name} at {price}.
+laptop|heart|Kaam ka saathi, ek achhi jodi 💜|{name} for {price}. Kaam ka saathi, sukoon ka saathi.
+laptop|dost|Mouse pad: chhoti si cheez, badi si aasani 🖱️|{name}, {price}. Mouse ko bhi ghar chahiye.
+laptop|tease|Keyboard cover: chai ke daag se suraksha ☕|{name} at {price}. Chai gire to keyboard bache.
 tv|dost|TV ka size bada, movie ka mazaa double 📺|{name}, {price}. Popcorn ready rakho.
-tv|tease|Match ke liye bada TV ya dost ka ghar? 🏏|{name} for {price}.
+tv|tease|Match ke liye bada TV ya dost ka ghar? 🏏|{name} for {price}. Bada TV ho ya dost ka ghar, tum decide karo.
 tv|self|TV ka remote: hamesha gayab 🔍|{name}, {discount}% off. TV naya, remote wahin.
-tv|heart|Family movie night ka best bahana 🎬|{name} at {price}.
+tv|heart|Family movie night ka best bahana 🎬|{name} at {price}. Popcorn tum lana, film hum dhoondhenge.
 smart|dost|Smart bulb: awaaz se roshni on 💡|{name}, {price}. 'Alexa' nahi, bas bolo aur ho gaya.
-smart|tease|Smart plug: ghar ko smart banao, tum wahi rehna 🏠|{name} for {price}.
-smart|self|Light band karna bhool gaye? Ab phone se ho jaayega 📱|{name}, {discount}% off.
-cam|dost|CCTV: ghar ki nigrani, mann ki shanti 👁️|{name} at {price}.
-cam|tease|Dash cam: sadak ka saboot 🚗|{name}, {price}.
+smart|tease|Smart plug: ghar ko smart banao, tum wahi rehna 🏠|{name} for {price}. Tum aaram karo, ghar khud smart.
+smart|self|Light band karna bhool gaye? Ab phone se ho jaayega 📱|{name}, {discount}% off. Baat sirf percent ki nahi, mauke ki bhi hai.
+cam|dost|CCTV: ghar ki nigrani, mann ki shanti 👁️|{name} at {price}. Ghar ki khabar rakhna aasan.
+cam|tease|Dash cam: sadak ka saboot 🚗|{name}, {price}. Sadak pe kya hua, video hai.
 power|dost|Power bank: mobile ka sabse achha dost 🔋|{name} for {price}. Bag mein daal do.
-power|tease|Extension board: 5 plugs, 1 socket, infinite kaam 🔌|{name}, {discount}% off.
-power|self|Charger ke liye socket nahi milta? Ye lo 🔌|{name} at {price}.
-gadget|dost|Fitness band: kadam gino, dil khush karo ⌚|{name}, {price}.
-gadget|tease|Trimmer: chhoti cheez, badi zaroorat ✂️|{name} for {price}.
-gadget|self|Gadget ki shopping: 'sirf ek' phir 5 ❌|{name}, {discount}% off.
+power|tease|Extension board: 5 plugs, 1 socket, infinite kaam 🔌|{name}, {discount}% off. Kaam ki deal, bina shor.
+power|self|Charger ke liye socket nahi milta? Ye lo 🔌|{name} at {price}. Socket ki ladai khatam.
+gadget|dost|Fitness band: kadam gino, dil khush karo ⌚|{name}, {price}. Aaj ke kadam gin lo.
+gadget|tease|Trimmer: chhoti cheez, badi zaroorat ✂️|{name} for {price}. Chhoti cheez, roz ka kaam.
+gadget|self|Gadget ki shopping: 'sirf ek' phir 5 ❌|{name} — {discount}% off. Chhoti cheez, achhi deal.

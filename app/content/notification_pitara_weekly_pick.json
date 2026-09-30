@@ -72,7 +72,7 @@
    "mood": "weekly",
    "tone": "heart",
    "title": "Is hafte aapke liye ek khaas cheez 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Is hafte ki khaas cheez.",
    "needs": [
     "price"
    ],
@@ -100,7 +100,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Weekly pick: sirf aapke liye 🎯",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aankhon ko pasand, jeb ko bhi.",
    "needs": [
     "discount"
    ],
@@ -114,7 +114,7 @@
    "mood": "weekly",
    "tone": "self",
    "title": "Ek hafta, ek pick 📅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek hafta, ek pick.",
    "needs": [
     "price"
    ],
@@ -143,7 +143,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Aapke follows ka star 🌟",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aapke follows ka chamakta sitara.",
    "needs": [
     "price"
    ],
@@ -157,7 +157,7 @@
    "mood": "weekly",
    "tone": "heart",
    "title": "Hafte ki sabse achhi cheez aapke liye 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Percent bada, sochna chhota.",
    "needs": [
     "discount"
    ],
@@ -171,7 +171,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Aapke hafte ka best pick 📬",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Hafte bhar ki khoj, ek jagah.",
    "needs": [
     "price"
    ],
@@ -185,7 +185,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Ye hafte ki deal, aapke naam 📢",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Aapke naam ki weekly deal.",
    "needs": [
     "price"
    ],
@@ -214,7 +214,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Hafte ka sabse achha mauka 🎁",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Hafte ka sabse achha mauka.",
    "needs": [
     "price"
    ],
@@ -243,7 +243,7 @@
    "mood": "weekly",
    "tone": "heart",
    "title": "Aapke follows mein se ek chuni hui deal 🌷",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Follows mein se sabse achhi.",
    "needs": [
     "price"
    ],
@@ -257,7 +257,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Is hafte kya mila? Ye dekho 👇",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Hafte bhar ka nichod.",
    "needs": [
     "price"
    ],
@@ -286,7 +286,7 @@
    "mood": "weekly",
    "tone": "self",
    "title": "Ek hafta, ek khaas deal ✨",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek hafta, ek khaas deal.",
    "needs": [
     "price"
    ],
@@ -300,7 +300,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Aapke follows ka sabse best 🎯",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Follows ka sabse best.",
    "needs": [
     "price"
    ],
@@ -314,7 +314,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Hafte ke aakhir mein ek treat 🎉",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Ek deal, ek tasalli.",
    "needs": [
     "discount"
    ],
@@ -329,7 +329,7 @@
    "mood": "weekly",
    "tone": "heart",
    "title": "Weekend se pehle ek khushi 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Weekend se pehle ek chhoti khushi.",
    "needs": [
     "price"
    ],
@@ -346,7 +346,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Is hafte ki chuni hui cheez 📌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Is hafte ki chuni hui.",
    "needs": [
     "price"
    ],
@@ -360,7 +360,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Sirf aapke follows se, sirf aapke liye 🔒",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Sirf aapke follows, sirf aapke liye.",
    "needs": [
     "price"
    ],
@@ -374,7 +374,7 @@
    "mood": "weekly",
    "tone": "self",
    "title": "Weekly pick: chhota, seedha, kaam ka 🎯",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Kabhi kabhi price bhi meherbaan ho jaati hai.",
    "needs": [
     "discount"
    ],
@@ -388,7 +388,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Aapke liye is hafte ka special ⭐",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Is hafte ka special aapke liye.",
    "needs": [
     "price"
    ],
@@ -417,7 +417,7 @@
    "mood": "weekly",
    "tone": "heart",
    "title": "Aapki pasand ka weekly update 💌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Aapki pasand ka weekly update.",
    "needs": [
     "price"
    ],
@@ -431,7 +431,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Aaj ka weekly pick 📬",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Aaj ka weekly pick.",
    "needs": [
     "price"
    ],
@@ -445,7 +445,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Is hafte ki khoj yahan hai 🔍",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kam mein zyada wali baat.",
    "needs": [
     "discount"
    ],
@@ -459,7 +459,7 @@
    "mood": "weekly",
    "tone": "self",
    "title": "Ek pick, hafte bhar ka khayal 🧠",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Ek pick, poore hafte ka khayal.",
    "needs": [
     "price"
    ],
@@ -473,7 +473,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Aapke follows se nikla hua best 🌟",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Follows se chuna hua best.",
    "needs": [
     "price"
    ],
@@ -502,7 +502,7 @@
    "mood": "weekly",
    "tone": "heart",
    "title": "Hafte ki sabse pyaari cheez 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Hafte ki sabse pyaari deal.",
    "needs": [
     "price"
    ],
@@ -516,7 +516,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Is hafte kuch khaas 🎁",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Is hafte kuch khaas.",
    "needs": [
     "price"
    ],
@@ -530,7 +530,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Aapke naam ka weekly pick 📛",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Bachat ka mazaa alag hota hai.",
    "needs": [
     "discount"
    ],
@@ -544,7 +544,7 @@
    "mood": "weekly",
    "tone": "self",
    "title": "Ek hafta khatam, ek nayi cheez 🆕",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Hafta khatam, nayi cheez shuru.",
    "needs": [
     "price"
    ],
@@ -558,7 +558,7 @@
    "mood": "weekly",
    "tone": "dost",
    "title": "Is hafte ki top deal aapke follows se 🏆",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Follows ki top deal.",
    "needs": [
     "price"
    ],
@@ -572,7 +572,7 @@
    "mood": "weekly",
    "tone": "tease",
    "title": "Weekly pick: ek nazar kaafi hai 👀",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Ek nazar kaafi hai.",
    "needs": [
     "price"
    ],
@@ -586,7 +586,7 @@
    "mood": "weekly",
    "tone": "heart",
    "title": "Aapke liye chuna hai, dil se 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Ye wala bina soche nahi, soch ke lo.",
    "needs": [
     "discount"
    ],

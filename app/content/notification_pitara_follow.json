@@ -42,7 +42,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value} ki nayi deal, seedhe aapke liye 🎯",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Follow karne wale ko pehle pata chalta hai.",
    "needs": [
     "price"
    ],
@@ -84,7 +84,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "Aap {value} follow karte ho, hum khabar dete hain 📬",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Khabar dena hamara kaam.",
    "needs": [
     "price"
    ],
@@ -98,7 +98,7 @@
    "mood": "follow",
    "tone": "self",
    "title": "{value} ka naya kuch, aur aap sabse pehle 🥇",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pehla number, aapka.",
    "needs": [
     "price"
    ],
@@ -112,7 +112,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value} follow karna kaam aaya 😄",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kaam ki cheez, kaam ka rate.",
    "needs": [
     "discount"
    ],
@@ -155,7 +155,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value} ne naya kuch bheja 📨",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Naya kuch aaya, aap tak.",
    "needs": [
     "price"
    ],
@@ -183,7 +183,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value}: tazi deal, tazi khushi 🍃",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Tazi deal, tazi shuruat.",
    "needs": [
     "price"
    ],
@@ -197,7 +197,7 @@
    "mood": "follow",
    "tone": "self",
    "title": "Hum bhool nahi sakte the aapka {value} 😄",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Aapka follow humein yaad hai.",
    "needs": [
     "price"
    ],
@@ -211,7 +211,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "Naya {value} deal aaya. Aap decide karo 🤷",
-   "body": "{name} — {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj kuch sasta, kuch sahi.",
    "needs": [
     "discount"
    ],
@@ -225,7 +225,7 @@
    "mood": "follow",
    "tone": "heart",
    "title": "{value} mein ek chhoti si khushi 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhoti khushi, aapki list se.",
    "needs": [
     "price"
    ],
@@ -254,7 +254,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "Follow karne ka fayda: sabse pehle pata chalta hai 🏃",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Sabse pehle wahi jo follow karta hai.",
    "needs": [
     "price"
    ],
@@ -268,7 +268,7 @@
    "mood": "follow",
    "tone": "self",
    "title": "{value} ki notification, sirf aapke liye 🔔",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Sirf aapke liye, dobara.",
    "needs": [
     "price"
    ],
@@ -282,7 +282,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "Aapki {value} list mein kuch naya 📝",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Paisa vasool wali feeling.",
    "needs": [
     "discount"
    ],
@@ -296,7 +296,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value} ne wapas apna jalwa dikhaya ✨",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Wapas aaya, wahi jalwa.",
    "needs": [
     "price"
    ],
@@ -310,7 +310,7 @@
    "mood": "follow",
    "tone": "heart",
    "title": "{value} follow karna sahi decision tha 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Decision sahi nikla.",
    "needs": [
     "price"
    ],
@@ -324,7 +324,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value}: naye deals ka pehla notification 🔔",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Naye deals ka pehla dhamaka.",
    "needs": [
     "price"
    ],
@@ -338,7 +338,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "Aapka {value} aaj special hai 🌟",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Halki jeb, bhaari khushi.",
    "needs": [
     "discount"
    ],
@@ -352,7 +352,7 @@
    "mood": "follow",
    "tone": "self",
    "title": "{value} ka scene: ek aur deal 🎬",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek aur scene, ek aur deal.",
    "needs": [
     "price"
    ],
@@ -366,7 +366,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value} follow karo, deals aate rahenge 🌊",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Deals aate rahenge, hum bataate rahenge.",
    "needs": [
     "price"
    ],
@@ -380,7 +380,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "Aapko {value} pasand hai, hume pata hai 😉",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Pasand pata hai, isliye bheja.",
    "needs": [
     "price"
    ],
@@ -394,7 +394,7 @@
    "mood": "follow",
    "tone": "heart",
    "title": "{value} mein ek nayi shuruaat 🌱",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Nayi shuruaat, nayi deal.",
    "needs": [
     "price"
    ],
@@ -408,7 +408,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "Aapki pasand ka {value} phir se aaya 🔁",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. MRP ki ab koi nahi sunta.",
    "needs": [
     "discount"
    ],
@@ -422,7 +422,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value} ka fresh deal: garma garam 🔥",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Abhi ki abhi.",
    "needs": [
     "price"
    ],
@@ -436,7 +436,7 @@
    "mood": "follow",
    "tone": "self",
    "title": "Notification aayi, kyunki aapne {value} follow kiya 😄",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Wajah aapka follow hai.",
    "needs": [
     "price"
    ],
@@ -450,7 +450,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value} — naya deal, aapka naam 📣",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aapke naam ka deal.",
    "needs": [
     "price"
    ],
@@ -464,7 +464,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value} ke deals kabhi khatam nahi hote (lagbhag) 😏",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Price tag ne bhi haath jod liye.",
    "needs": [
     "discount"
    ],
@@ -478,7 +478,7 @@
    "mood": "follow",
    "tone": "heart",
    "title": "Aapke {value} ka ek pyaara sa update 💌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pyaara sa update, seedha aap tak.",
    "needs": [
     "price"
    ],
@@ -492,7 +492,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value}: chalo, dekhte hain 👀",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek nazar to banti hai.",
    "needs": [
     "price"
    ],
@@ -506,7 +506,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value} ki nayi baat 🗞️",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Nayi baat, nayi deal.",
    "needs": [
     "price"
    ],
@@ -535,7 +535,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value} ke liye aaj kuch naya 🆕",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aaj ka naya.",
    "needs": [
     "price"
    ],
@@ -549,7 +549,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "Follow list mein sabse upar: {value} 📌",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj price ne sharafat dikhayi.",
    "needs": [
     "discount"
    ],
@@ -563,7 +563,7 @@
    "mood": "follow",
    "tone": "heart",
    "title": "Aapki pasand: {value}. Hamara kaam: khabar dena 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Aap chuno, hum batayenge.",
    "needs": [
     "price"
    ],
@@ -577,7 +577,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "Ye {value} ki deal aap miss na karo (par decide aapka) 😄",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Decide aap karo, hum bas bata dete hain.",
    "needs": [
     "price"
    ],
@@ -591,7 +591,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value}: aaj ka surprise 🎉",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Aaj ka chhota sa surprise.",
    "needs": [
     "price"
    ],
@@ -605,7 +605,7 @@
    "mood": "follow",
    "tone": "self",
    "title": "{value} ne naya kuch nikaala 🚀",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Naya nikla, aap tak pahuncha.",
    "needs": [
     "price"
    ],
@@ -619,7 +619,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value} follow karne ka ek aur reason 🎯",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Follow ka ek aur fayda.",
    "needs": [
     "price"
    ],
@@ -633,7 +633,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "Aapke {value} ka naya step 👣",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Rate aaj tumhari taraf hai.",
    "needs": [
     "discount"
    ],
@@ -647,7 +647,7 @@
    "mood": "follow",
    "tone": "heart",
    "title": "{value} — fir ek nayi deal 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek aur nayi.",
    "needs": [
     "price"
    ],
@@ -661,7 +661,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "{value} ke fans ke liye 🙌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Fans ke liye ekdum sahi.",
    "needs": [
     "price"
    ],
@@ -675,7 +675,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value} ne kuch alag hi kar diya 😮",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Kuch alag hi hua hai.",
    "needs": [
     "price"
    ],
@@ -689,7 +689,7 @@
    "mood": "follow",
    "tone": "self",
    "title": "{value}: dekhne layak deal 🔍",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Wallet ko bhi tasalli.",
    "needs": [
     "discount"
    ],
@@ -703,7 +703,7 @@
    "mood": "follow",
    "tone": "dost",
    "title": "Aaj ka {value} update 📱",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aaj ka update.",
    "needs": [
     "price"
    ],
@@ -717,7 +717,7 @@
    "mood": "follow",
    "tone": "tease",
    "title": "{value} ka ek aur tohfa 🎁",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Tohfa samajh ke le lo.",
    "needs": [
     "price"
    ],

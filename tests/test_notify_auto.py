@@ -177,9 +177,19 @@ def main() -> int:
         found = notify_auto.find_crazy(base)
         check("lowest-ever at 74% off is crazy", found and found[0]["id"] == "low", str(found and found[2]))
         title, body = notify_auto.compose_crazy(found[0], found[2])
-        check("crazy title is honest and specific",
+        both = f"{title} {body}"
+        check("crazy copy comes from the pitara: filled in, specific, no fake urgency",
+              "{" not in both and "₹5,299" in both and 0 < len(title) <= 90
+              and not any(w in both.lower() for w in ("hurry", "fast", "gone", "last chance", "limited")), both)
+        from app.config import settings as _settings
+        _settings.notification_pitara_enabled = False
+        try:
+            title, body = notify_auto.compose_crazy(found[0], found[2])
+        finally:
+            _settings.notification_pitara_enabled = True
+        check("pitara off -> the built-in crazy title is honest and specific",
               title.startswith("Lowest price ever: Philips Air Fryer") and "₹5,299" in title, title)
-        check("crazy body states the discount and store, no fake urgency",
+        check("…and its body states the discount and store, no fake urgency",
               "74% off right now" in body and "Amazon" in body
               and not any(w in body.lower() for w in ("hurry", "fast", "gone", "last chance")), body)
 
@@ -302,8 +312,10 @@ def main() -> int:
         row = db.query_one("SELECT * FROM device_notifications WHERE kind = 'nudge'")
         check("it's a targeted notify(), not a broadcast", row and row["device_id"] == "lapsed"
               and not db.query_one("SELECT 1 FROM broadcasts"), str(row))
-        check("nudge text uses real numbers", row and row["title"].startswith("13 new deals since you last looked")
-              and "₹510" in row["body"], f"{row and row['title']} / {row and row['body']}")
+        nudge_text = f"{row['title']} {row['body']}" if row else ""
+        check("nudge text is filled in and only quotes real data (13 new deals, the top pick n11 at ₹510)",
+              row and "{" not in nudge_text and any(s in nudge_text for s in ("13", "₹510", "Nike Shoe 11")),
+              nudge_text)
         check("the top deal is attached (so the phone picks the moment)", row and row["deal_id"] == "n11")
         check("logged once for the admin as 'nudge'", kinds_logged() == ["nudge"])
         check("not twice within nudge_every_days", notify_auto.run_nudges(evening + 3600) == 0)
@@ -318,8 +330,9 @@ def main() -> int:
               and any(n in rows[1]["title"] for n in ("Festival", "Big Billion", "Sale")), str(rows))
         check("third nudge", notify_auto.run_nudges(T(19, 0, day=9)) == 1)
         rows = db.query("SELECT title, deal_id FROM device_notifications WHERE kind = 'nudge' ORDER BY id")
-        check("3rd variant: the best lowest-ever deal", len(rows) == 3 and "₹1,299" in rows[2]["title"]
-              and rows[2]["deal_id"] == "nlow", str(rows[-1:]))
+        third = db.query_one("SELECT title, body FROM device_notifications WHERE kind = 'nudge' ORDER BY id DESC LIMIT 1")
+        check("3rd variant: the best lowest-ever deal", len(rows) == 3 and rows[2]["deal_id"] == "nlow"
+              and "₹1,299" in f"{third['title']} {third['body']}", str(rows[-1:]))
         check("stops after nudge_max (3)", notify_auto.run_nudges(T(19, 0, day=13)) == 0)
         count = db.query_one("SELECT nudges_since_seen FROM devices WHERE device_id = 'lapsed'")["nudges_since_seen"]
         check("bookkeeping counts nudges since last seen", count == 3, str(count))

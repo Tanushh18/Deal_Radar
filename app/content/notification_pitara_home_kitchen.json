@@ -54,7 +54,7 @@
    "mood": "chai",
    "tone": "heart",
    "title": "Ghar ki chai, ghar ka sukoon 🏠",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Chhoti bachat bhi badi lagti hai.",
    "needs": [
     "discount"
    ]
@@ -148,7 +148,7 @@
    "mood": "sunday",
    "tone": "self",
    "title": "Sunday ko cooker ki seeti se neend khulti hai 🍲",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Dekh lo, phir apni marzi.",
    "needs": [
     "discount"
    ],
@@ -250,7 +250,7 @@
    "mood": "ghar",
    "tone": "self",
    "title": "Mummy: 'kitchen mein kuch nahi hai?' Tum: 'ab hai' 😎",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ab kitchen mein sach mein kuch hai.",
    "needs": [
     "price"
    ]
@@ -305,7 +305,7 @@
    "mood": "festival",
    "tone": "heart",
    "title": "Diwali ki safai ke baad naya kuch 🪔",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Tumhari pasand ka rate.",
    "needs": [
     "discount"
    ]
@@ -338,7 +338,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Chhoti cheezein ghar ko ghar banati hain 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhoti cheezein, ghar ki jaan.",
    "needs": [
     "price"
    ]
@@ -382,7 +382,7 @@
    "mood": "cookware",
    "tone": "dost",
    "title": "Tawa: roti ka best friend 🫓",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kabhi kabhi sab kuch theek baithta hai.",
    "needs": [
     "discount"
    ]
@@ -404,7 +404,7 @@
    "mood": "cookware",
    "tone": "heart",
    "title": "Ek achhi kadhai, pyaar ka tadka 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Tadke ki aawaz hi ghar ki pehchaan.",
    "needs": [
     "price"
    ]
@@ -415,7 +415,7 @@
    "mood": "cookware",
    "tone": "self",
    "title": "Purana pan? Ab replace ka time 🥲",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Purane ko aaram, naye ko kaam.",
    "needs": [
     "price"
    ]
@@ -448,7 +448,7 @@
    "mood": "storage",
    "tone": "self",
    "title": "Fridge ke andar ka scene: pyaz, ek bottle, aur khaali dabba 🥶",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Price ne kaha 'aao'.",
    "needs": [
     "discount"
    ]
@@ -470,7 +470,7 @@
    "mood": "storage",
    "tone": "heart",
    "title": "Ghar ki har cheez ki apni jagah hoti hai 🏠",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Sabki apni jagah, sabka apna kaam.",
    "needs": [
     "price"
    ]
@@ -514,7 +514,7 @@
    "mood": "cleaning",
    "tone": "self",
    "title": "Safai ka mann hai, par bahana bhi 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Chalo, ek nazar to banti hai.",
    "needs": [
     "discount"
    ]
@@ -525,7 +525,7 @@
    "mood": "cleaning",
    "tone": "heart",
    "title": "Saaf ghar, saaf mann 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Saaf ghar mein mann bhi halka.",
    "needs": [
     "price"
    ]
@@ -536,7 +536,7 @@
    "mood": "cleaning",
    "tone": "dost",
    "title": "Washing machine ka size: ghar ke hisaab se 🧺",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ghar ke hisaab se chuno.",
    "needs": [
     "price"
    ]
@@ -547,7 +547,7 @@
    "mood": "cleaning",
    "tone": "tease",
    "title": "Kapde dhone ka jhanjhat khatam 👕",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Kapde dhulne ka intezaar bhi aaram se.",
    "needs": [
     "price"
    ]
@@ -569,7 +569,7 @@
    "mood": "decor",
    "tone": "tease",
    "title": "Cushion covers: ek naya rang, ek naya mood 🛋️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Naya rang, naye mehmaan.",
    "needs": [
     "price"
    ]
@@ -580,7 +580,7 @@
    "mood": "decor",
    "tone": "heart",
    "title": "Ghar ko ghar banane wali chhoti cheezein 🌿",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Jeb halki, dil halka.",
    "needs": [
     "discount"
    ]
@@ -591,7 +591,7 @@
    "mood": "decor",
    "tone": "self",
    "title": "Deewar khali hai, par hum bharenge 😅",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Deewar bhi kuch kehna chahti hain.",
    "needs": [
     "price"
    ]
@@ -602,7 +602,7 @@
    "mood": "decor",
    "tone": "dost",
    "title": "Plant: hara-bhara ghar, hara-bhara mann 🌱",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Hara-bhara ghar, hara-bhara mann.",
    "needs": [
     "price"
    ]
@@ -624,7 +624,7 @@
    "mood": "decor",
    "tone": "heart",
    "title": "Ek kone mein ek chhoti si khushi 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek kona, ek nayi khushi.",
    "needs": [
     "price"
    ]
@@ -646,7 +646,7 @@
    "mood": "bed",
    "tone": "tease",
    "title": "Pillow: gardan bolti hai 'thank you' 🙏",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kaam ki cheez, kaam ka rate.",
    "needs": [
     "discount"
    ]
@@ -668,7 +668,7 @@
    "mood": "bed",
    "tone": "heart",
    "title": "Achhi neend, achha din 🌙",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Subah taazgi se uthoge.",
    "needs": [
     "price"
    ],
@@ -682,7 +682,7 @@
    "mood": "bed",
    "tone": "dost",
    "title": "Curtains: dhoop ko bhi rukna padega ☀️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Dhoop ko thodi der ka break.",
    "needs": [
     "price"
    ]
@@ -715,7 +715,7 @@
    "mood": "appliance",
    "tone": "tease",
    "title": "Toaster: brown bread ka best friend 🍞",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj kuch sasta, kuch sahi.",
    "needs": [
     "discount"
    ]
@@ -726,7 +726,7 @@
    "mood": "appliance",
    "tone": "self",
    "title": "Kettle: chai ka jugaad 🫖",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chai ki pehli boond ka intezaar.",
    "needs": [
     "price"
    ]
@@ -748,7 +748,7 @@
    "mood": "appliance",
    "tone": "dost",
    "title": "Rice cooker: chawal ka tension khatam 🍚",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Chawal ka tension khatam, chain shuru.",
    "needs": [
     "price"
    ]
@@ -759,7 +759,7 @@
    "mood": "appliance",
    "tone": "tease",
    "title": "Induction: ek plate, sau dishes 🍳",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek plate, sau swaad.",
    "needs": [
     "price"
    ]

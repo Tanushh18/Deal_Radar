@@ -1,64 +1,64 @@
 # category: Bags & Luggage
 # prefix: bg
 chai|dost|Chai ke saath safar ka plan ☕|{name}, {price}. Bag pehle, ticket baad mein.|t=morning,evening
-chai|tease|Chai gir gayi bag pe? Naya le lo 😅|{name} at {price}.
+chai|tease|Chai gir gayi bag pe? Naya le lo 😅|{name} at {price}. Chai dhabbe wali bag aur nahi chalegi.
 salary|heart|Salary aayi, ek trip ka plan banta hai ✈️|{name}, {price}. Bag pehle taiyaar.
-salary|tease|Pehli tareekh: bag ka naya scene 🎒|{name} for {price}.
-monthend|self|Month-end: bag ki zip bhi wallet ki tarah band hai 😅|{name}, {price}.
+salary|tease|Pehli tareekh: bag ka naya scene 🎒|{name} for {price}. Pehli tareekh, pehli khareedari.
+monthend|self|Month-end: bag ki zip bhi wallet ki tarah band hai 😅|{name}, {price}. Zip ko bhi aaram chahiye.
 monthend|dost|Trip nahi ho raha? Kam se kam bag to dekh lo 🎒|{name} at {price}. Sapne pehle.
 sunday|dost|Sunday: purani bag saaf karne ka din 🧺|{name}, {price}. Ya naya le lo.|w=0
-sunday|tease|Aaj koi plan nahi? Trip ka plan banao ✈️|{name} for {price}.|w=0
+sunday|tease|Aaj koi plan nahi? Trip ka plan banao ✈️|{name} for {price}. Plan ka pehla paanna: bag.|w=0
 monday|self|Monday: laptop bag ka zip kharab 💼|{name}, {price}. Office ka scene.|w=1
 monday|dost|Alarm ke baad bag mein sab kuch daalna 🎒|{name} at {price}. Charger mat bhoolna.|w=1 t=morning
 wfh|self|WFH mein bag sirf kabhi kabhi nikalta hai 😂|{name}, {price}. Office aane pe kaam aayega.|d=weekday
-wfh|dost|Workation ka plan? Laptop bag ready? 🏝️|{name} for {price}.|d=weekday
+wfh|dost|Workation ka plan? Laptop bag ready? 🏝️|{name} for {price}. Laptop bag ke saath saath sapne bhi pack.|d=weekday
 hostel|self|Hostel ka trunk aur bag: jagah ki kami 🧳|{name}, {price}. Bade wale mein sab aa jayega.
-hostel|tease|Ghar jaane ka mann? Bag pack karo 🏠|{name} at {price}.
+hostel|tease|Ghar jaane ka mann? Bag pack karo 🏠|{name} at {price}. Mummy ke liye kuch rakhna mat bhoolna.
 ghar|heart|Ghar wapas jaane ki khushi, bag mein sab kuch 🏠|{name}, {price}. Mummy ke liye kuch.
-ghar|dost|Mummy: 'bag mein zyada mat bharna' Tum: 'ye zaroori hai' 😅|{name} for {price}.
-festival|dost|Tyohaar pe ghar ja rahe ho? Trolley ready? 🧳|{name}, {price}.
-festival|tease|Shaadi ka safar: bag bhi shaandar chahiye 💍|{name} at {price}.
-festival|heart|Ghar wapas aane ka safar sabse pyaara 💜|{name}, {price}.
-match|dost|Stadium jaane wala bag: chhota aur handy 🏟️|{name} for {price}.
-heart|heart|Safar chhota ho ya lamba, bag apna hi bhala 🎒|{name}, {price}.
-heart|heart|Ek bag, hazaaron yaadein 💜|{name} at {price}.
+ghar|dost|Mummy: 'bag mein zyada mat bharna' Tum: 'ye zaroori hai' 😅|{name} for {price}. Zaroori cheezon ki list badi hoti hai.
+festival|dost|Tyohaar pe ghar ja rahe ho? Trolley ready? 🧳|{name}, {price}. Ghar ka rasta lamba, bag halka rakho.
+festival|tease|Shaadi ka safar: bag bhi shaandar chahiye 💍|{name} at {price}. Lehenga bhi aayega, jagah hai.
+festival|heart|Ghar wapas aane ka safar sabse pyaara 💜|{name}, {price}. Mummy ke haath ki mithai ke liye jagah bachi rakhna.
+match|dost|Stadium jaane wala bag: chhota aur handy 🏟️|{name} for {price}. Sirf zaroori cheezein, jagah ki tension nahi.
+heart|heart|Safar chhota ho ya lamba, bag apna hi bhala 🎒|{name}, {price}. Apna bag, apna raasta.
+heart|heart|Ek bag, hazaaron yaadein 💜|{name} at {price}. Har kone mein ek kahani.
 backpack|dost|Backpack: college se office tak 🎒|{name}, {price}. Sabka best friend.
 backpack|tease|Bag ke chain kharab hote hi wahi hota hai 😅|{name} for {price}. Naya le lo.
 backpack|self|Bag mein sab kuch hai, jo chahiye wo nahi 🤦|{name}, {discount}% off. Pockets kam pade.
-backpack|heart|Roz ka saathi, roz ka bharosa 💜|{name} at {price}.
-backpack|dost|Laptop compartment: chhoti si suraksha 💻|{name}, {price}.
-backpack|tease|Bag ka size: 'itna kaafi hai?' Haan, kaafi hai 😄|{name} for {price}.
-backpack|self|Purani bag ka kandha pukaar raha hai 🥲|{name}, {discount}% off.
+backpack|heart|Roz ka saathi, roz ka bharosa 💜|{name} at {price}. Subah se shaam tak, saath nibhata hai.
+backpack|dost|Laptop compartment: chhoti si suraksha 💻|{name}, {price}. Laptop ko gaddi ka aaram.
+backpack|tease|Bag ka size: 'itna kaafi hai?' Haan, kaafi hai 😄|{name} for {price}. Bag chhota lage to samajhna, cheezein zyada hain.
+backpack|self|Purani bag ka kandha pukaar raha hai 🥲|{name} — {discount}% off. Discount dekho, decision tumhara.
 travel|dost|Trolley: airport pe jalwa 🧳|{name} at {price}. Pahiya chalne chahiye.
-travel|tease|Trip ka plan banta hai, trolley ka scene 🧳|{name}, {price}.
+travel|tease|Trip ka plan banta hai, trolley ka scene 🧳|{name}, {price}. Passport pehle, packing baad mein.
 travel|self|Bag mein 4 kapde, wapas aate hue 10 kilo extra 😂|{name} for {price}. Bade wala lo.
-travel|heart|Naye shehar, nayi kahaniyan 🌍|{name}, {discount}% off.
-travel|dost|Duffel bag: weekend trip ka saathi 🏕️|{name} at {price}.
-travel|tease|Travel organiser: sab kuch apni jagah 🧳|{name}, {price}.
+travel|heart|Naye shehar, nayi kahaniyan 🌍|{name} — {discount}% off. Aaj ka rate yaad rakhna.
+travel|dost|Duffel bag: weekend trip ka saathi 🏕️|{name} at {price}. Do din ka trip, ek hi bag.
+travel|tease|Travel organiser: sab kuch apni jagah 🧳|{name}, {price}. Chaabi ab bag ke ek hi kone mein.
 travel|self|Passport aur charger: dono bag mein hain? 📘|{name} for {price}. Dhyan se check karna.
-travel|heart|Har safar ek nayi shuruat hai 🛫|{name}, {price}.
-handbag|dost|Handbag: chhoti si, par sab kuch andar 👜|{name} at {price}.
-handbag|tease|Handbag: 'ismein kya hai?' 'Sab kuch' 😅|{name}, {discount}% off.
-handbag|self|Purse mein sikke, chabiyan, aur ek lipstick 💄|{name} for {price}.
-handbag|heart|Ek pyaari si bag, ek pyaara sa mood 💜|{name}, {price}.
-handbag|dost|Sling bag: haath khali, style bhari 🎒|{name} at {price}.
-handbag|tease|Clutch: shaadi mein entry 💃|{name}, {price}.
+travel|heart|Har safar ek nayi shuruat hai 🛫|{name}, {price}. Naye raaste, naya bag.
+handbag|dost|Handbag: chhoti si, par sab kuch andar 👜|{name} at {price}. Chhoti dikhti hai, sabka bharosa uthati hai.
+handbag|tease|Handbag: 'ismein kya hai?' 'Sab kuch' 😅|{name} — {discount}% off. Ye wali list mein upar aayi hai.
+handbag|self|Purse mein sikke, chabiyan, aur ek lipstick 💄|{name} for {price}. Ek lipstick nikaalo to sab kuch bahar aa jaata hai.
+handbag|heart|Ek pyaari si bag, ek pyaara sa mood 💜|{name}, {price}. Pyaari cheez ko pyaari jagah.
+handbag|dost|Sling bag: haath khali, style bhari 🎒|{name} at {price}. Haath khali, kaam bhari.
+handbag|tease|Clutch: shaadi mein entry 💃|{name}, {price}. Shaadi mein sabki nazar ispe.
 wallet|dost|Wallet: jo hamesha khali lagta hai 😅|{name} for {price}. Naya le lo, paisa apne aap aayega.
-wallet|tease|Wallet mein cards zyada, cash kam 💳|{name}, {discount}% off.
-wallet|self|Purana wallet: fata hua, par pyaara 🥲|{name} at {price}.
-wallet|heart|Ek achha wallet, ek achhi shuruaat 💜|{name}, {price}.
-wallet|dost|Card holder: chhota, slim, smart 💳|{name} for {price}.
+wallet|tease|Wallet mein cards zyada, cash kam 💳|{name}, {discount}% off. Kam kharch, zyada khushi.
+wallet|self|Purana wallet: fata hua, par pyaara 🥲|{name} at {price}. Naya wallet, purani yaadein alag rakho.
+wallet|heart|Ek achha wallet, ek achhi shuruaat 💜|{name}, {price}. Shuruaat achhi ho to sab achha.
+wallet|dost|Card holder: chhota, slim, smart 💳|{name} for {price}. Cards ki ab apni jagah.
 laptop|dost|Laptop bag: chhoti si safety 💻|{name}, {price}. Charger ka jagah bhi.
-laptop|tease|Laptop sleeve: jhatka-proof nahi, par better 🛡️|{name} at {price}.
-laptop|self|Laptop bag ka strap toot gaya 🥲|{name}, {discount}% off.
-laptop|heart|Office ke safar ka saathi 💼|{name} for {price}.
-school|dost|School bag: kitaabein bhi, khilone bhi 🎒|{name}, {price}.
+laptop|tease|Laptop sleeve: jhatka-proof nahi, par better 🛡️|{name} at {price}. Jhatka lage, laptop na hile.
+laptop|self|Laptop bag ka strap toot gaya 🥲|{name}, {discount}% off. Aaj ki list mein ye bhi.
+laptop|heart|Office ke safar ka saathi 💼|{name} for {price}. Office ke raaste mein saath.
+school|dost|School bag: kitaabein bhi, khilone bhi 🎒|{name}, {price}. Kitaab, khilona, tiffin — sab andar.
 school|tease|Bachche ka bag: 5 kilo ki kitaabein 📚|{name} at {price}. Kandhe ka khayal.
-school|heart|Padhai ka safar, ek achhe bag ke saath 📚|{name}, {price}.
-gym|dost|Gym bag: kal se pakka jaana hai 💪|{name} for {price}.
-gym|tease|Gym bag: andar joote, bahar bhi joote 😅|{name}, {discount}% off.
+school|heart|Padhai ka safar, ek achhe bag ke saath 📚|{name}, {price}. Bachche ki pehli class ki tayyari.
+gym|dost|Gym bag: kal se pakka jaana hai 💪|{name} for {price}. Gym kal se, bag aaj se.
+gym|tease|Gym bag: andar joote, bahar bhi joote 😅|{name}, {discount}% off. Percent kam nahi, mauka bhi kam nahi.
 brand|tease|{brand} ka bag dekha? 👀|{name}, {discount}% off. Style bhi, jagah bhi.|p
-brand|dost|{brand}: bag ka pasandeeda brand? 🎒|{name}, {price}.|p
+brand|dost|{brand}: bag ka pasandeeda brand? 🎒|{name}, {price}. Bag aisa jo bahut kuch jhel jaye.|p
 deal|tease|Bag deal: {discount}% off 🎒|{name}, {price}. Safar ka mazaa.
 deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Math simple hai, bag bhari.
 deal|heart|Bachat ke saath chalte raho 💜|{name} at {price}. Save: {save}. Aage ka rasta aasan.

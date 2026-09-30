@@ -170,11 +170,13 @@ def _short(title: str, room: int) -> str:
     return title if len(title) <= room else title[: room - 1].rstrip(" ,-|:") + "…"
 
 
+# Fallback closers (used only when the pitara has nothing eligible). Nothing
+# here claims scarcity or a deadline we can't back with data.
 _CLOSERS = [
-    "Tap before it's gone ⏳",
-    "Selling fast — grab yours 🛒",
-    "Limited stock, don't sleep on it 👀",
-    "Price like this won't last ⚡",
+    "Take a look 👀",
+    "Worth a quick look 🛍️",
+    "Picked by DealRadar 💜",
+    "Have a look, decide later 😌",
     "Found it first on DealRadar 💜",
 ]
 
@@ -183,7 +185,13 @@ def compose(deal: Dict[str, Any], women: bool) -> Tuple[str, str]:
     """An attractive, varied title + body: a random pick among the strongest
     two or three openers that fit this deal (lowest-ever, big discount,
     women's fashion/beauty), so a stream of pushes never reads like one
-    repeated line."""
+    repeated line. The pitara (services/pitara.py) writes it when it has a
+    line that fits; the text below is the fallback."""
+    from . import pitara
+
+    picked = pitara.pick("hot_deal", deal)
+    if picked:
+        return picked.title, picked.body
     disc = int(deal.get("discount_pct") or 0)
     category = deal.get("category") or ""
     title_room = 44

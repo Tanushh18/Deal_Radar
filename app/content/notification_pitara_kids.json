@@ -42,7 +42,7 @@
    "mood": "chai",
    "tone": "heart",
    "title": "Chai ka ek ghoont, bachche ki ek muskaan 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chai garam, bachcha khush.",
    "needs": [
     "price"
    ]
@@ -86,7 +86,7 @@
    "mood": "monthend",
    "tone": "dost",
    "title": "Bachche ki zaroorat pehle, baaki baad mein 🍼",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Baaki kharche thoda ruk sakte hain.",
    "needs": [
     "price"
    ]
@@ -139,7 +139,7 @@
    "mood": "monday",
    "tone": "dost",
    "title": "School ka pehla din: bachcha nervous, tum bhi 🎒",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Pehla din yaadgar hoga.",
    "needs": [
     "price"
    ],
@@ -177,7 +177,7 @@
    "mood": "ghar",
    "tone": "heart",
    "title": "Dadi-nani ki kahaniyan aur naye khilone 👵",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kahaniyon ke saath ye bhi.",
    "needs": [
     "price"
    ]
@@ -199,7 +199,7 @@
    "mood": "ghar",
    "tone": "self",
    "title": "Bachcha: 'mujhe ye chahiye'. Tum: 'dekhte hain' 😄",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Paisa vasool wali feeling.",
    "needs": [
     "discount"
    ]
@@ -221,7 +221,7 @@
    "mood": "festival",
    "tone": "heart",
    "title": "Diwali pe bachcha ki muskaan sabse badi roshni 🪔",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Diyon se badi roshni uski hansi.",
    "needs": [
     "price"
    ]
@@ -243,7 +243,7 @@
    "mood": "match",
    "tone": "dost",
    "title": "Bachcha bhi match dekhna chahta hai, jersey ke saath 🏏",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhote fan ka bada jazba.",
    "needs": [
     "price"
    ]
@@ -265,7 +265,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Bachche ki muskaan: duniya ki sabse achhi deal 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Uski hansi ka koi MRP nahi.",
    "needs": [
     "price"
    ]
@@ -298,7 +298,7 @@
    "mood": "toys",
    "tone": "self",
    "title": "Ghar mein khilone ki jagah kam, chaah zyada 😅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Jagah kam padi to dil bada kar lo.",
    "needs": [
     "price"
    ]
@@ -309,7 +309,7 @@
    "mood": "toys",
    "tone": "heart",
    "title": "Jo khilona bachpan ki yaad bane 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Halki jeb, bhaari khushi.",
    "needs": [
     "discount"
    ]
@@ -320,7 +320,7 @@
    "mood": "toys",
    "tone": "dost",
    "title": "Building blocks: bachche ka pehla architect 🏗️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Kal ka architect aaj ka builder.",
    "needs": [
     "price"
    ]
@@ -331,7 +331,7 @@
    "mood": "toys",
    "tone": "tease",
    "title": "Soft toy: neend ka sabse achha saathi 🧸",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Neend ke liye ek naram saathi.",
    "needs": [
     "price"
    ]
@@ -364,7 +364,7 @@
    "mood": "toys",
    "tone": "heart",
    "title": "Bachcha soch raha hai ki ye kya bana? 🎭",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Kalpana ko kholne ka mauka.",
    "needs": [
     "price"
    ]
@@ -397,7 +397,7 @@
    "mood": "diapers",
    "tone": "tease",
    "title": "Baby wipes: sab jagah ke nishan hatane ke liye 🧻",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. MRP ki ab koi nahi sunta.",
    "needs": [
     "discount"
    ]
@@ -408,7 +408,7 @@
    "mood": "diapers",
    "tone": "heart",
    "title": "Nanha mehmaan, badi zimmedariyan 👶",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Naye mehmaan ki poori taiyari.",
    "needs": [
     "price"
    ]
@@ -419,7 +419,7 @@
    "mood": "diapers",
    "tone": "dost",
    "title": "Bachcha bada ho raha hai, size bhi badlega 📏",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Badhta bachcha, badhti zaroorat.",
    "needs": [
     "price"
    ]
@@ -430,7 +430,7 @@
    "mood": "feeding",
    "tone": "dost",
    "title": "Baby bottle: raat ke doodh ka saathi 🍼",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Raat ke doodh ka bharosemand saathi.",
    "needs": [
     "price"
    ]
@@ -441,7 +441,7 @@
    "mood": "feeding",
    "tone": "heart",
    "title": "Mummy-papa ka pyaar, doodh ke saath 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pyaar ke saath poshan.",
    "needs": [
     "price"
    ]
@@ -463,7 +463,7 @@
    "mood": "feeding",
    "tone": "self",
    "title": "Bachcha kuch nahi khata, par plate mein sab hai 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Price tag ne bhi haath jod liye.",
    "needs": [
     "discount"
    ]
@@ -474,7 +474,7 @@
    "mood": "feeding",
    "tone": "dost",
    "title": "High chair: khana bhi sath, chaos bhi sath 🪑",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Khana saath mein, chaos bhi saath mein.",
    "needs": [
     "price"
    ]
@@ -496,7 +496,7 @@
    "mood": "clothes",
    "tone": "heart",
    "title": "Ek chhoti si frock, badi si muskaan 👗",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chhoti si frock, badi si muskaan.",
    "needs": [
     "price"
    ]
@@ -518,7 +518,7 @@
    "mood": "clothes",
    "tone": "self",
    "title": "Bachche ka wardrobe: mera wardrobe se bada 😂",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bachche ka wardrobe hamesha jeetega.",
    "needs": [
     "price"
    ]
@@ -540,7 +540,7 @@
    "mood": "clothes",
    "tone": "heart",
    "title": "School uniform: naya saal, naya jazba 🎒",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Naya saal, naya jazba.",
    "needs": [
     "price"
    ]
@@ -551,7 +551,7 @@
    "mood": "clothes",
    "tone": "tease",
    "title": "Sneakers bachche ke liye: dauden ya girein, style mein 👟",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Girne ka dar nahi, dauden ka mazaa.",
    "needs": [
     "price"
    ]
@@ -595,7 +595,7 @@
    "mood": "school",
    "tone": "heart",
    "title": "Padhai ki shuruaat, ek chhota sa gift 📚",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Padhai ki shuruaat mein ek chhota gift.",
    "needs": [
     "price"
    ]
@@ -606,7 +606,7 @@
    "mood": "school",
    "tone": "dost",
    "title": "Lunch box: bachcha khaye ya na khaye, ready hai 🍱",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Khaye ya na khaye, dabba ready.",
    "needs": [
     "price"
    ]
@@ -628,7 +628,7 @@
    "mood": "gift",
    "tone": "heart",
    "title": "Birthday gift: bachche ki aankhon ki chamak 🎁",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aankhon ki chamak ka koi price nahi.",
    "needs": [
     "price"
    ]
@@ -639,7 +639,7 @@
    "mood": "gift",
    "tone": "dost",
    "title": "Baby shower ka gift dhoondh rahe ho? 🎀",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj price ne sharafat dikhayi.",
    "needs": [
     "discount"
    ]
@@ -650,7 +650,7 @@
    "mood": "gift",
    "tone": "tease",
    "title": "Return gift: 20 bachche, ek budget 😅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Budget ke andar, sabki muskaan.",
    "needs": [
     "price"
    ]
@@ -661,7 +661,7 @@
    "mood": "gift",
    "tone": "heart",
    "title": "Chhoti si cheez, badi yaadein 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhoti cheez, lambi yaad.",
    "needs": [
     "price"
    ]
@@ -685,7 +685,7 @@
    "mood": "brand",
    "tone": "dost",
    "title": "{brand}: bachche ki pasand ka brand? 👶",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bachche ka pasandeeda naam.",
    "needs": [
     "brand",
     "price"

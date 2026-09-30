@@ -75,7 +75,7 @@
    "mood": "monthend",
    "tone": "self",
    "title": "Month-end: gym ki fee yaad aayi, gym nahi 🏋️",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Fee gayi, ab gear bhi le lo.",
    "needs": [
     "price"
    ]
@@ -111,7 +111,7 @@
    "mood": "sunday",
    "tone": "self",
    "title": "Sunday ko fitness ka plan, Monday ko bhool 😅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Plan Sunday ka, amal roz ka.",
    "needs": [
     "price"
    ],
@@ -125,7 +125,7 @@
    "mood": "sunday",
    "tone": "tease",
    "title": "Aaj gym nahi gaye? Ghar pe hi ek round 🧘",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Tumhari pasand ka rate.",
    "needs": [
     "discount"
    ],
@@ -139,7 +139,7 @@
    "mood": "monday",
    "tone": "self",
    "title": "Monday se diet? Ya agle Monday se? 😂",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Agle Monday ka wada, is Monday ka gear.",
    "needs": [
     "price"
    ],
@@ -182,7 +182,7 @@
    "mood": "wfh",
    "tone": "dost",
    "title": "Laptop ke saamne 9 ghante? Ek stretch to banta hai 🧘",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek stretch, ek deal.",
    "needs": [
     "price"
    ],
@@ -194,7 +194,7 @@
    "mood": "wfh",
    "tone": "tease",
    "title": "Meeting ke beech mein squat? Camera off karo 😂",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Camera off, mat pe on.",
    "needs": [
     "price"
    ],
@@ -206,7 +206,7 @@
    "mood": "hostel",
    "tone": "self",
    "title": "PG mein jagah nahi, par yoga mat bichaya jaa sakta hai 🧘",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhoti jagah mein bhi kasrat ho sakti hai.",
    "needs": [
     "price"
    ]
@@ -239,7 +239,7 @@
    "mood": "ghar",
    "tone": "heart",
    "title": "Ghar ke sab log saath mein sehatmand raho 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Sab saath chalenge to sab fit rahenge.",
    "needs": [
     "price"
    ]
@@ -261,7 +261,7 @@
    "mood": "festival",
    "tone": "dost",
    "title": "Wedding season se pehle thoda fit ho jao 💃",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Shaadi se pehle thoda sa kasrat ka plan.",
    "needs": [
     "price"
    ]
@@ -283,7 +283,7 @@
    "mood": "match",
    "tone": "tease",
    "title": "Cricket khelne ka mann? Bat, ball, aur ek naya gear 🏏",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Weekend ka simple plan.",
    "needs": [
     "price"
    ]
@@ -305,7 +305,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Sehat sabse badi daulat 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Sehat pehle, baaki baad mein.",
    "needs": [
     "price"
    ]
@@ -316,7 +316,7 @@
    "mood": "gym",
    "tone": "dost",
    "title": "Gym bag: kal se pakka jaana hai 🎒",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kal se pakka, aaj se bag.",
    "needs": [
     "price"
    ]
@@ -349,7 +349,7 @@
    "mood": "gym",
    "tone": "heart",
    "title": "Khud ko behtar banana: roz ek chhota kadam 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek kadam roz, ek saal mein safar.",
    "needs": [
     "price"
    ]
@@ -360,7 +360,7 @@
    "mood": "gym",
    "tone": "dost",
    "title": "Protein shaker: gym ka sabse chhota hero 🥤",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhota shaker, bada kaam.",
    "needs": [
     "price"
    ]
@@ -382,7 +382,7 @@
    "mood": "gym",
    "tone": "self",
    "title": "Gym gloves: haath ki pakad ke liye 🧤",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kabhi kabhi sab kuch theek baithta hai.",
    "needs": [
     "discount"
    ]
@@ -393,7 +393,7 @@
    "mood": "gym",
    "tone": "dost",
    "title": "Skipping rope: sabse sasti cardio 🪢",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Sabse sasti cardio ka saathi.",
    "needs": [
     "price"
    ]
@@ -404,7 +404,7 @@
    "mood": "yoga",
    "tone": "dost",
    "title": "Yoga mat: shanti ka pehla kadam 🧘",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Saans andar, shanti bahar.",
    "needs": [
     "price"
    ]
@@ -426,7 +426,7 @@
    "mood": "yoga",
    "tone": "heart",
    "title": "Saans, dhyaan, aur ek mat 🌿",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Price ne kaha 'aao'.",
    "needs": [
     "discount"
    ]
@@ -437,7 +437,7 @@
    "mood": "yoga",
    "tone": "self",
    "title": "Yoga karna hai, par mat ke bina kaise? 🧘",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Mat ke bina bhi, mat le lo.",
    "needs": [
     "price"
    ]
@@ -448,7 +448,7 @@
    "mood": "yoga",
    "tone": "dost",
    "title": "Meditation: 5 minute ka aaram 🕉️",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Paanch minute, poora aaram.",
    "needs": [
     "price"
    ]
@@ -470,7 +470,7 @@
    "mood": "running",
    "tone": "tease",
    "title": "Daudne ka mann ho to shoes ready rakhna 👟",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Shoes ready, ab mood ready.",
    "needs": [
     "price"
    ]
@@ -481,7 +481,7 @@
    "mood": "running",
    "tone": "self",
    "title": "Marathon nahi, bas society ke gate tak 😅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Society ke gate se aage ki soch.",
    "needs": [
     "price"
    ]
@@ -492,7 +492,7 @@
    "mood": "running",
    "tone": "heart",
    "title": "Har dauda hua kilometre ek jeet hai 🏅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Chalo, ek nazar to banti hai.",
    "needs": [
     "discount"
    ]
@@ -503,7 +503,7 @@
    "mood": "running",
    "tone": "dost",
    "title": "Track pants: comfort bhi, style bhi 👖",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aaram bhi, style bhi.",
    "needs": [
     "price"
    ]
@@ -547,7 +547,7 @@
    "mood": "cycling",
    "tone": "heart",
    "title": "Hawa mein udne ka ehsaas 🌬️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Hawa mein baat karne ka mazaa.",
    "needs": [
     "price"
    ]
@@ -558,7 +558,7 @@
    "mood": "cycling",
    "tone": "self",
    "title": "Cycle ke tyre mein hawa kam, mood mein zyada 😅",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Hawa bharwa lo, mood pehle se full hai.",
    "needs": [
     "price"
    ]
@@ -569,7 +569,7 @@
    "mood": "outdoor",
    "tone": "dost",
    "title": "Trekking ka plan? Bag aur shoes ready? 🥾",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Pahad ka bulawa aa gaya.",
    "needs": [
     "price"
    ]
@@ -591,7 +591,7 @@
    "mood": "outdoor",
    "tone": "heart",
    "title": "Pahad bulate hain, thoda safar karo 🏔️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Thoda safar, bahut sukoon.",
    "needs": [
     "price"
    ]
@@ -613,7 +613,7 @@
    "mood": "swim",
    "tone": "dost",
    "title": "Swimming: garmi ka sabse achha bahana 🏊",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Paani mein hi mazaa.",
    "needs": [
     "price"
    ]
@@ -624,7 +624,7 @@
    "mood": "swim",
    "tone": "tease",
    "title": "Swimming goggles: paani ka nazara 🥽",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Neeche ka nazara saaf dikhega.",
    "needs": [
     "price"
    ]
@@ -657,7 +657,7 @@
    "mood": "football",
    "tone": "dost",
    "title": "Football: weekend ka simple plan ⚽",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Jeb halki, dil halka.",
    "needs": [
     "discount"
    ]
@@ -668,7 +668,7 @@
    "mood": "football",
    "tone": "tease",
    "title": "Ball, goal post, aur ek bahut lamba ground 🥅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek goal, ek smile.",
    "needs": [
     "price"
    ]
@@ -692,7 +692,7 @@
    "mood": "brand",
    "tone": "dost",
    "title": "{brand}: workout ka naya saathi? 💪",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Naya saathi, purani himmat.",
    "needs": [
     "brand",
     "price"

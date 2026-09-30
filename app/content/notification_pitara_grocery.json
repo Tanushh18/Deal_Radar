@@ -42,7 +42,7 @@
    "mood": "chai",
    "tone": "tease",
    "title": "Chai ke saath biscuit bhi 🍪",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chai ke saath ye bhi aa jaye to mazaa.",
    "needs": [
     "price"
    ]
@@ -53,7 +53,7 @@
    "mood": "chai",
    "tone": "heart",
    "title": "Ghar ki chai, ghar ki mehak 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Dekhne mein harj nahi.",
    "needs": [
     "discount"
    ]
@@ -75,7 +75,7 @@
    "mood": "salary",
    "tone": "tease",
    "title": "Pehli tareekh ka monthly rashan 🛍️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Pehli tareekh, pehla rashan.",
    "needs": [
     "price"
    ]
@@ -122,7 +122,7 @@
    "mood": "sunday",
    "tone": "tease",
    "title": "Aaj biryani ka mann hai 🍚",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Handi ready, mann ready.",
    "needs": [
     "price"
    ],
@@ -136,7 +136,7 @@
    "mood": "monday",
    "tone": "self",
    "title": "Monday: tiffin mein kya banaun? 🍱",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Sawaal purana, jawab nayi cheez.",
    "needs": [
     "price"
    ],
@@ -150,7 +150,7 @@
    "mood": "monday",
    "tone": "dost",
    "title": "Subah ka nashta: oats ya paratha? 🥣",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Subah ki jaldi mein aasani.",
    "needs": [
     "price"
    ],
@@ -179,7 +179,7 @@
    "mood": "wfh",
    "tone": "dost",
    "title": "Lunch break mein kuch achha khana hai? 🍽️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Break mein kuch achha ho jaye.",
    "needs": [
     "price"
    ],
@@ -238,7 +238,7 @@
    "mood": "ghar",
    "tone": "dost",
    "title": "Ghar ka rashan: list bhi lambi, budget bhi 😅",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. List lambi ho to bhi budget mein.",
    "needs": [
     "price"
    ]
@@ -249,7 +249,7 @@
    "mood": "festival",
    "tone": "dost",
    "title": "Tyohaar ki taiyari: mithai, dry fruits, sab kuch 🪔",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Mehmaano ka swagat taiyari se.",
    "needs": [
     "price"
    ]
@@ -260,7 +260,7 @@
    "mood": "festival",
    "tone": "heart",
    "title": "Meetha khao, khushiyan baanto 🍬",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Meetha baant lo, dil chhota mat karo.",
    "needs": [
     "price"
    ]
@@ -271,7 +271,7 @@
    "mood": "festival",
    "tone": "tease",
    "title": "Mehmaan aane wale hain, fridge bharo 🍽️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Mehmaan aane wale hain, fridge ready.",
    "needs": [
     "price"
    ]
@@ -293,7 +293,7 @@
    "mood": "match",
    "tone": "tease",
    "title": "Chakka maara? Namkeen khaao 🏏",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Boundary ke baad snack time.",
    "needs": [
     "price"
    ]
@@ -304,7 +304,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Ghar ka har kona khushi se bhara ho 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bhare ghar ki baat hi alag.",
    "needs": [
     "price"
    ]
@@ -315,7 +315,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Khana sirf bhookh nahi, pyaar bhi hai 🍲",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bhookh se badi baat hai pyaar.",
    "needs": [
     "price"
    ]
@@ -326,7 +326,7 @@
    "mood": "snacks",
    "tone": "dost",
    "title": "Chips: raat ke 12 baje ka saathi 🥔",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Raat ke 12 baje ka sachcha saathi.",
    "needs": [
     "price"
    ]
@@ -337,7 +337,7 @@
    "mood": "snacks",
    "tone": "tease",
    "title": "Namkeen: chai ka best friend 🍪",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chai ke saath sabse purani jodi.",
    "needs": [
     "price"
    ]
@@ -348,7 +348,7 @@
    "mood": "snacks",
    "tone": "self",
    "title": "Snacks khatam? Kal hi to khareede the 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj ka discount aaj hi dikh raha hai.",
    "needs": [
     "discount"
    ]
@@ -359,7 +359,7 @@
    "mood": "snacks",
    "tone": "heart",
    "title": "Chhoti chhoti khushiyan snacks mein 🍿",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Chhoti khushiyan, badi bhookh.",
    "needs": [
     "price"
    ]
@@ -370,7 +370,7 @@
    "mood": "snacks",
    "tone": "dost",
    "title": "Chocolate: mood theek karne ki dawa 🍫",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Mood theek karne ka meetha jugaad.",
    "needs": [
     "price"
    ]
@@ -381,7 +381,7 @@
    "mood": "snacks",
    "tone": "tease",
    "title": "Biscuit: chai mein dubaane ke liye 🍪",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Dubaao, khao, phir dubaao.",
    "needs": [
     "price"
    ]
@@ -392,7 +392,7 @@
    "mood": "snacks",
    "tone": "self",
    "title": "Diet kal se, chips aaj se 🥔",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kal se diet, aaj se chips.",
    "needs": [
     "price"
    ]
@@ -403,7 +403,7 @@
    "mood": "snacks",
    "tone": "dost",
    "title": "Popcorn: movie night ka hero 🍿",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Movie night ka asli hero.",
    "needs": [
     "price"
    ]
@@ -414,7 +414,7 @@
    "mood": "breakfast",
    "tone": "dost",
    "title": "Nashta: din ka sabse zaroori khana 🥣",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Din ki shuruaat pet se hoti hai.",
    "needs": [
     "price"
    ]
@@ -425,7 +425,7 @@
    "mood": "breakfast",
    "tone": "tease",
    "title": "Cornflakes ya paratha? Dono? 🥣",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Dono chalega, koi nahi rokega.",
    "needs": [
     "price"
    ]
@@ -436,7 +436,7 @@
    "mood": "breakfast",
    "tone": "self",
    "title": "Nashta chhod diya? Kal se pakka 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Calculator nikaalne ki zaroorat nahi.",
    "needs": [
     "discount"
    ]
@@ -447,7 +447,7 @@
    "mood": "breakfast",
    "tone": "heart",
    "title": "Achha nashta, achha din 🌞",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Achhi shuruaat, achha din.",
    "needs": [
     "price"
    ],
@@ -461,7 +461,7 @@
    "mood": "breakfast",
    "tone": "dost",
    "title": "Oats: dost ke jaise, halka aur healthy 🥣",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Halka bhi, dost bhi.",
    "needs": [
     "price"
    ]
@@ -472,7 +472,7 @@
    "mood": "breakfast",
    "tone": "tease",
    "title": "Peanut butter: bread ka naya dost 🥜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bread ko naya saathi mila.",
    "needs": [
     "price"
    ]
@@ -483,7 +483,7 @@
    "mood": "staples",
    "tone": "dost",
    "title": "Atta, chawal, daal: ghar ki neev 🌾",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Rasoi ki neev inhi pe tiki hai.",
    "needs": [
     "price"
    ]
@@ -494,7 +494,7 @@
    "mood": "staples",
    "tone": "tease",
    "title": "Rashan ka scene: list bhi lambi, budget bhi chhota 📝",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. List lambi, budget ki baat alag.",
    "needs": [
     "price"
    ]
@@ -505,7 +505,7 @@
    "mood": "staples",
    "tone": "self",
    "title": "Daal khatam, chawal bhi? 🍚",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Ek tap ki doori par.",
    "needs": [
     "discount"
    ]
@@ -516,7 +516,7 @@
    "mood": "staples",
    "tone": "heart",
    "title": "Ghar ki rasoi: pyaar ka ghar 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ghar ki rasoi, ghar ka pyaar.",
    "needs": [
     "price"
    ]
@@ -527,7 +527,7 @@
    "mood": "staples",
    "tone": "dost",
    "title": "Tel, namak, masale: sab kuch ek jagah 🧂",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Sab ek jagah, sab aasan.",
    "needs": [
     "price"
    ]
@@ -538,7 +538,7 @@
    "mood": "staples",
    "tone": "tease",
    "title": "Cooking oil: tadka ke liye zaroori 🫗",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Tadke ke bina kaun si sabzi?",
    "needs": [
     "price"
    ]
@@ -549,7 +549,7 @@
    "mood": "staples",
    "tone": "self",
    "title": "Masale ka dabba ek baar khaali hone pe hi yaad aata hai 🧂",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Khaali hone se pehle ek nazar.",
    "needs": [
     "price"
    ]
@@ -560,7 +560,7 @@
    "mood": "beverages",
    "tone": "dost",
    "title": "Cold drink: garmi ka saathi 🥤",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Garmi mein thandak ka saathi.",
    "needs": [
     "price"
    ]
@@ -571,7 +571,7 @@
    "mood": "beverages",
    "tone": "tease",
    "title": "Juice: fruits ka aasan tareeka 🧃",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kam price ka kya kehna.",
    "needs": [
     "discount"
    ]
@@ -593,7 +593,7 @@
    "mood": "beverages",
    "tone": "heart",
    "title": "Ek chhota sa break, ek chhoti si khushi 🥤",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhota sa break, poori tazgi.",
    "needs": [
     "price"
    ]
@@ -604,7 +604,7 @@
    "mood": "beverages",
    "tone": "dost",
    "title": "Green tea: sehat ke liye ek chhota kadam 🍵",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek chhota kadam sehat ki taraf.",
    "needs": [
     "price"
    ]
@@ -615,7 +615,7 @@
    "mood": "beverages",
    "tone": "tease",
    "title": "Energy drink: raat ke kaam ke liye ⚡",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Raat ke kaam ka saathi.",
    "needs": [
     "price"
    ]
@@ -626,7 +626,7 @@
    "mood": "sweets",
    "tone": "dost",
    "title": "Mithai: tyohaar ka pyaar 🍬",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Tyohaar ka meetha rang.",
    "needs": [
     "price"
    ]
@@ -637,7 +637,7 @@
    "mood": "sweets",
    "tone": "tease",
    "title": "Chocolate: 'ek aur' kehke khatam 🍫",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Rate dekh ke muskaan aa gayi.",
    "needs": [
     "discount"
    ]
@@ -648,7 +648,7 @@
    "mood": "sweets",
    "tone": "heart",
    "title": "Meetha khao, meethi baat karo 🍭",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Meethi baat karne ke liye meetha khao.",
    "needs": [
     "price"
    ]
@@ -670,7 +670,7 @@
    "mood": "dryfruit",
    "tone": "dost",
    "title": "Dry fruits: din bhar ka energy 🥜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Din bhar ki tazgi ek muthhi mein.",
    "needs": [
     "price"
    ]
@@ -681,7 +681,7 @@
    "mood": "dryfruit",
    "tone": "tease",
    "title": "Kaju, badam, kishmish: sab kuch ek dabbe mein 🌰",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek dabba, ek pura mausam.",
    "needs": [
     "price"
    ]
@@ -692,7 +692,7 @@
    "mood": "dryfruit",
    "tone": "heart",
    "title": "Ghar ka har member khush ho 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Sab khush to ghar khush.",
    "needs": [
     "price"
    ]
@@ -703,7 +703,7 @@
    "mood": "fresh",
    "tone": "dost",
    "title": "Sabzi, phal: ghar ki sehat 🥕",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ghar ki sehat ka khayal.",
    "needs": [
     "price"
    ]
@@ -714,7 +714,7 @@
    "mood": "fresh",
    "tone": "tease",
    "title": "Fruit basket: gift ka sabse healthy tareeka 🍎",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Gift jo sabko pasand aaye.",
    "needs": [
     "price"
    ]
@@ -725,7 +725,7 @@
    "mood": "pantry",
    "tone": "dost",
    "title": "Pasta, sauce, aur ek chhoti si party 🍝",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Rate ne sabko chaunka diya.",
    "needs": [
     "discount"
    ]
@@ -736,7 +736,7 @@
    "mood": "pantry",
    "tone": "tease",
    "title": "Noodles: bhookh ka sabse jaldi ka jawab 🍜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bhookh ka jawab do minute mein.",
    "needs": [
     "price"
    ]
@@ -747,7 +747,7 @@
    "mood": "pantry",
    "tone": "self",
    "title": "Instant food: ghar ka emergency plan 🥫",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Emergency ho to yahi kaam aayega.",
    "needs": [
     "price"
    ]
@@ -758,7 +758,7 @@
    "mood": "pantry",
    "tone": "heart",
    "title": "Ghar ki rasoi hamesha bhari rahe 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Rasoi bhari ho to mann bhi.",
    "needs": [
     "price"
    ]
@@ -782,7 +782,7 @@
    "mood": "brand",
    "tone": "dost",
    "title": "{brand}: ghar ka bharosemand brand? 🛒",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bharosemand naam, achhe swaad.",
    "needs": [
     "brand",
     "price"

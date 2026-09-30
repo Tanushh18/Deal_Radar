@@ -363,7 +363,7 @@
    "mood": "lips",
    "tone": "heart",
    "title": "Muskurane ka ek aur bahana 💄",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Aaina bhi muskuraayega.",
    "needs": [
     "price"
    ]
@@ -418,7 +418,7 @@
    "mood": "skin",
    "tone": "tease",
    "title": "Face wash ka size chhota, glow ka bada 🫧",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bottle chhoti, kaam bada.",
    "needs": [
     "price"
    ]
@@ -473,7 +473,7 @@
    "mood": "skin",
    "tone": "heart",
    "title": "Roz thoda care, pura din confidence 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chhoti aadat, badi baat.",
    "needs": [
     "price"
    ]
@@ -568,7 +568,7 @@
    "mood": "hair",
    "tone": "heart",
    "title": "Baalon ki bhi ek kahani hoti hai 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Har din ka ek naya chapter.",
    "needs": [
     "price"
    ]
@@ -612,7 +612,7 @@
    "mood": "perfume",
    "tone": "heart",
    "title": "Jo yaad reh jaye, wo khushboo 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Room mein aate hi log poochenge.",
    "needs": [
     "price"
    ]
@@ -678,7 +678,7 @@
    "mood": "makeup",
    "tone": "heart",
    "title": "Taiyaar hona bhi ek mood hai ✨",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Taiyaar ho jao, dunia intezaar karti hai.",
    "needs": [
     "price"
    ]
@@ -758,7 +758,7 @@
    "mood": "grooming",
    "tone": "heart",
    "title": "Khud ko saaf-suthra rakhna bhi self-love hai 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Percent dekho, phir dil ki suno.",
    "needs": [
     "discount"
    ]
@@ -769,7 +769,7 @@
    "mood": "grooming",
    "tone": "tease",
    "title": "Aftershave: sharp look ke liye 😏",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Shaadi ho ya meeting, look pakka.",
    "needs": [
     "price"
    ]
@@ -813,7 +813,7 @@
    "mood": "brand",
    "tone": "tease",
    "title": "{brand} ka shade dekha? 👀",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Shade ka naam pata chal gaya.",
    "needs": [
     "brand",
     "price"
@@ -826,7 +826,7 @@
    "mood": "brand",
    "tone": "dost",
    "title": "{brand} fans, ek nazar idhar bhi 😄",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aankhon ko pasand, jeb ko bhi.",
    "needs": [
     "brand",
     "discount"

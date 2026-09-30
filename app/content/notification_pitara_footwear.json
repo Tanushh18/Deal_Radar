@@ -42,7 +42,7 @@
    "mood": "chai",
    "tone": "tease",
    "title": "Chai gir jaye to bhi joote na kharab hon 😄",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chai gir jaye to joota bacha rahe.",
    "needs": [
     "price"
    ]
@@ -64,7 +64,7 @@
    "mood": "salary",
    "tone": "tease",
    "title": "Salary ka pehla din, joote ka best din 💸",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj discount ne dil jeeta.",
    "needs": [
     "discount"
    ]
@@ -86,7 +86,7 @@
    "mood": "monthend",
    "tone": "self",
    "title": "Month-end mein bhi paon ka budget hota hai 🦶",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Paon ka bhi to budget hota hai.",
    "needs": [
     "price"
    ]
@@ -122,7 +122,7 @@
    "mood": "sunday",
    "tone": "tease",
    "title": "Aaj kahin nahi jana, phir bhi joote dekh lo 👟",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Ghar mein baithe bhi dekh sakte ho.",
    "needs": [
     "price"
    ],
@@ -136,7 +136,7 @@
    "mood": "monday",
    "tone": "self",
    "title": "Monday: office ke joote ki polish kahan hai? 💼",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Polish nahi hui to naya le lo.",
    "needs": [
     "price"
    ],
@@ -213,7 +213,7 @@
    "mood": "ghar",
    "tone": "self",
    "title": "Mummy: 'joote kahan rakhe? Darwaze pe kyun?' 😅",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Darwaze ke paas hi sahi, par rack le lo.",
    "needs": [
     "price"
    ]
@@ -224,7 +224,7 @@
    "mood": "ghar",
    "tone": "heart",
    "title": "Dadi kehti thi: joote achhe ho to raste achhe 👵",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Achhe joote, achhi shuruaat.",
    "needs": [
     "price"
    ]
@@ -268,7 +268,7 @@
    "mood": "match",
    "tone": "dost",
    "title": "Match ke liye jersey ke saath sneakers 👟",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Jersey ke saath fit ho jayega.",
    "needs": [
     "price"
    ]
@@ -279,7 +279,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Jo pair tumhe roz le chalte hain, unka bhi khayal 🦶",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Roz ke saathi ko naya ghar.",
    "needs": [
     "price"
    ]
@@ -290,7 +290,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Kadam kadam par ek nayi shuruaat 🚶",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pehla kadam naya, agla aur naya.",
    "needs": [
     "price"
    ]
@@ -323,7 +323,7 @@
    "mood": "sneakers",
    "tone": "self",
    "title": "Sneaker ko cover kar ke rakhna hai, pehenna nahi 😅",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Pehen lo, din bhi khush honge.",
    "needs": [
     "price"
    ]
@@ -334,7 +334,7 @@
    "mood": "sneakers",
    "tone": "tease",
    "title": "Ye sneakers dekhe? Bahut naya hai 🔥",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Discount ka sach dekh ke lo.",
    "needs": [
     "discount"
    ]
@@ -345,7 +345,7 @@
    "mood": "sneakers",
    "tone": "dost",
    "title": "Sneakers + jeans: classic combo 👖",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ye jodi kabhi purani nahi hoti.",
    "needs": [
     "price"
    ]
@@ -356,7 +356,7 @@
    "mood": "sneakers",
    "tone": "heart",
    "title": "Walk karte hue sochna acha lagta hai 🚶",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chalte chalte ideas aate hain.",
    "needs": [
     "price"
    ]
@@ -422,7 +422,7 @@
    "mood": "formal",
    "tone": "heart",
    "title": "Naye kaam ka pehla din, naye joote ke saath 🌟",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Pehle din ka confidence kadmon se hi.",
    "needs": [
     "price"
    ]
@@ -433,7 +433,7 @@
    "mood": "formal",
    "tone": "dost",
    "title": "Formal ho ya party, ek achhi jodi chahiye 👞",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek jodi, do kaam.",
    "needs": [
     "price"
    ]
@@ -444,7 +444,7 @@
    "mood": "formal",
    "tone": "tease",
    "title": "Shaadi ka moka, joote ka jalwa 💍",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Naachne ka poora intezaam.",
    "needs": [
     "price"
    ]
@@ -455,7 +455,7 @@
    "mood": "formal",
    "tone": "self",
    "title": "Joote ka size galat liya? Ye baar dhyan se 📏",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Dhyan se naapo, phir order karo.",
    "needs": [
     "price"
    ]
@@ -488,7 +488,7 @@
    "mood": "sandal",
    "tone": "self",
    "title": "Chappal ke strap ka jugaad ab nahi chalega 🪡",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Naya strap, naya mood.",
    "needs": [
     "price"
    ]
@@ -499,7 +499,7 @@
    "mood": "sandal",
    "tone": "heart",
    "title": "Sunday ki sair, halki chappal ke saath 🌤️",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Ek nazar, ek tap, ek muskaan.",
    "needs": [
     "discount"
    ],
@@ -513,7 +513,7 @@
    "mood": "sandal",
    "tone": "dost",
    "title": "Sandal: haath mein bhi, pair mein bhi 😄",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Haath mein bhi jachti hai.",
    "needs": [
     "price"
    ]
@@ -557,7 +557,7 @@
    "mood": "heels",
    "tone": "heart",
    "title": "Chhoti si heel, badi si baat 👠",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Ek inch aur confidence.",
    "needs": [
     "price"
    ]
@@ -568,7 +568,7 @@
    "mood": "heels",
    "tone": "tease",
    "title": "Flats aur heels: dono ka mood alag 👟",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Mood dekh ke chuno.",
    "needs": [
     "price"
    ]
@@ -601,7 +601,7 @@
    "mood": "kids",
    "tone": "tease",
    "title": "Bachcha kahega 'mujhe ye hi chahiye' 😄",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bachche ki pasand ka fashion.",
    "needs": [
     "price"
    ]
@@ -623,7 +623,7 @@
    "mood": "monsoon",
    "tone": "dost",
    "title": "Baarish aa gayi? Gum boots ready hain? 🌧️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Paon bhi khush, baarish bhi khush.",
    "needs": [
     "price"
    ]
@@ -645,7 +645,7 @@
    "mood": "monsoon",
    "tone": "self",
    "title": "Paon geele, mood geela 🥲",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Geele mood ka ilaaj.",
    "needs": [
     "price"
    ]
@@ -678,7 +678,7 @@
    "mood": "sports",
    "tone": "tease",
    "title": "Running shoes: alamari mein sabse healthy cheez 😌",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Shoe rack mein sabse mehnati.",
    "needs": [
     "price"
    ]
@@ -700,7 +700,7 @@
    "mood": "sports",
    "tone": "heart",
    "title": "Har kadam ek nayi koshish 🌟",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Har kadam ka ek naya saath.",
    "needs": [
     "price"
    ]
@@ -711,7 +711,7 @@
    "mood": "sports",
    "tone": "dost",
    "title": "Trekking ke shoes: pahad bulate hain 🏔️",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pahad ke raaste ka saathi.",
    "needs": [
     "price"
    ]
@@ -722,7 +722,7 @@
    "mood": "brand",
    "tone": "tease",
    "title": "{brand} ka jodi dekhi? 👀",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Jodi nayi, saath purana.",
    "needs": [
     "brand",
     "price"

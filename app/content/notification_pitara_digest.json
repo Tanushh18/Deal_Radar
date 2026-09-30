@@ -84,7 +84,7 @@
    "mood": "daily",
    "tone": "tease",
    "title": "Aaj ke {count} naye deals mein se ek 🎯",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. {count} mein se ye pehle number par.",
    "needs": [
     "price"
    ],
@@ -126,7 +126,7 @@
    "mood": "daily",
    "tone": "tease",
    "title": "Aaj ke {count} deals mein sabse alag 🌟",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Baaki {count} bhi dekh lena.",
    "needs": [
     "price"
    ],
@@ -252,7 +252,7 @@
    "mood": "daily",
    "tone": "tease",
    "title": "Aaj sirf {count} deals, par ye khaas 🎯",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kam hain, par khaas hain.",
    "needs": [
     "price"
    ],
@@ -396,7 +396,7 @@
    "mood": "daily",
    "tone": "tease",
    "title": "{count} deals aaj, par ek ne dil jeeta 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. {count} mein se ye dil ko chhu gayi.",
    "needs": [
     "price"
    ],
@@ -438,7 +438,7 @@
    "mood": "daily",
    "tone": "tease",
    "title": "Aaj ka digest: ek nazar, ek muskaan 😊",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek nazar, ek muskaan, ek tap.",
    "needs": [
     "price"
    ],
@@ -480,7 +480,7 @@
    "mood": "daily",
    "tone": "tease",
    "title": "Aaj ke top deals mein se ek 🏅",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aaj ke top deals ki list se.",
    "needs": [
     "price"
    ],
@@ -553,7 +553,7 @@
    "mood": "daily",
    "tone": "dost",
    "title": "Aaj ki sabse achhi deal, humare hisaab se 🎯",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Humne dekha, humein pasand aayi.",
    "needs": [
     "price"
    ],
@@ -567,7 +567,7 @@
    "mood": "daily",
    "tone": "tease",
    "title": "Aaj ka {count} mein se best 🏆",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. {count} mein se ye jeeti.",
    "needs": [
     "price"
    ],

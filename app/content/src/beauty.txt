@@ -28,17 +28,17 @@ heart|heart|Aaj sabke liye kiya, thoda apne liye 🌷|{name} at {price}. Tumhari
 lips|tease|Lipstick ka shade nahi mila? Ab milega 💄|{name} for {price}. Aaina tumhe dekh ke muskurayega.
 lips|self|Alamari mein 12 lipsticks, par ye 13th chahiye 😅|{name}, {price}. Hisaab mat lagao.
 lips|dost|Mask ke peeche bhi lips ka mood 😄|{name} at {price}. Kabhi to mask hategi.
-lips|heart|Muskurane ka ek aur bahana 💄|{name} for {price}.
+lips|heart|Muskurane ka ek aur bahana 💄|{name} for {price}. Aaina bhi muskuraayega.
 skin|dost|Sunscreen: roz lagao, roz jeeto ☀️|{name}, {price}. Baadal mein bhi, bhai.
 skin|tease|Skin ne chupke se request bheji hai 💌|Subject: 'thoda pyaar?' {name}, {price}.
 skin|self|Routine ke naam pe 3 steps? Ab 4 karo 😌|{name} at {price}. Kal se pakka, aaj shuru karo.
 skin|dost|Moisturiser ka mausam aa gaya ❄️|{name}, {discount}% off. Skin sukhi, dil geela.
-skin|tease|Face wash ka size chhota, glow ka bada 🫧|{name} for {price}.
+skin|tease|Face wash ka size chhota, glow ka bada 🫧|{name} for {price}. Bottle chhoti, kaam bada.
 skin|self|Purani cream khatam? Naye ka time 🧴|{name} at {price}. Tube ko aakhri baar daba lo, phir badlo.
 skin|dost|Serum: chhoti bottle, badi baatein 💧|{name}, {price}. Dropper wali cheez, dhyan se.
 skin|tease|Pimple ko bye bolna hai? 👋|{name} for {price}. Ungli mat lagana, ye request hai.
 skin|dost|Dark circles ko chhutti dena? 😴|{name}, {price}. Neend bhi thodi jodo.
-skin|heart|Roz thoda care, pura din confidence 💜|{name} at {price}.
+skin|heart|Roz thoda care, pura din confidence 💜|{name} at {price}. Chhoti aadat, badi baat.
 skin|tease|Ye toner nahi, mood booster hai 🌸|{name}, {price}. Face pe chhidko, mood pe asar.
 skin|dost|Night cream ka time ho gaya 🌙|{name} for {price}. Sone se pehle, sone ke saath.|t=evening,night
 skin|self|Sheet mask wali raat 🧖|{name}, {price}. 15 minute phone mat girana.|t=night
@@ -46,30 +46,30 @@ hair|dost|Hair care ka scene set karo 💇|{name} for {price}. Kal se baalon ki 
 hair|tease|Baal bhi bolte hain 'thoda pyaar do' 🧴|{name} at {price}. Dhoop, pasina, dhool — sab jhelte hain.
 hair|self|Shampoo khatam? Ek aur cheez bhi lo 🚿|{name}, {price}. Conditioner ko bhi to yaad karo.
 hair|tease|Hair oil ka jugaad ab band 🌿|{name}, {discount}% off. Asli care shuru.
-hair|heart|Baalon ki bhi ek kahani hoti hai 💜|{name} for {price}.
+hair|heart|Baalon ki bhi ek kahani hoti hai 💜|{name} for {price}. Har din ka ek naya chapter.
 hair|dost|Bad hair day ko bye bolo 👋|{name}, {price}. Bandana plan B rahega.
 perfume|tease|Khushboo se pehle entry 😎|{name} at {price}. Shakal baad mein dikhegi.
 perfume|dost|Ek spray, sau kahaniyan 🌸|{name}, {price}. Log poochenge 'kaun sa hai?'
-perfume|heart|Jo yaad reh jaye, wo khushboo 💜|{name} for {price}.
+perfume|heart|Jo yaad reh jaye, wo khushboo 💜|{name} for {price}. Room mein aate hi log poochenge.
 perfume|self|Purana perfume khatam, naya wala aa gaya 🧴|{name}, {discount}% off. Aakhri boond tak khenchi thi.
 makeup|tease|Foundation ka shade dhoondh liya? 🎨|{name} at {price}. Haath pe test karna mat bhoolna.
 makeup|dost|Kajal ka mood, aankhon ka jadoo 👁️|{name}, {price}. Smudge hua to style samajhna.
 makeup|self|Makeup kit mein ek aur cheez ki jagah hai 🧳|{name} for {price}. Kit ka zip abhi bhi band ho jata hai.
 makeup|tease|Eyeliner wing perfect? Ye help karega 😌|{name}, {price}. Haath thoda steady rakhna.
-makeup|heart|Taiyaar hona bhi ek mood hai ✨|{name} at {price}.
+makeup|heart|Taiyaar hona bhi ek mood hai ✨|{name} at {price}. Taiyaar ho jao, dunia intezaar karti hai.
 makeup|tease|Nail polish ka naya shade 💅|{name}, {discount}% off. Sukhne ka intezaar bhi part of it.
 makeup|dost|Makeup remover bhi yaad rakhna 🧼|{name} for {price}. Raat ko chehra bhi aaram maangta hai.|t=night
 grooming|dost|Beard oil ka time aa gaya 🧔|{name}, {price}. Daadhi ko bhi pyaar.
 grooming|tease|Shaving cream: clean look, clean mood 🪒|{name} at {price}. Blade ka bhi khayal rakho.
 grooming|self|Trimmer ka blade purana ho gaya? ✂️|{name}, {price}. Kaan ke paas dhyan se.
 grooming|dost|Deodorant: bina bole impression 😎|{name} for {price}. Lift mein sab dekhte hain.
-grooming|heart|Khud ko saaf-suthra rakhna bhi self-love hai 💜|{name}, {discount}% off.
-grooming|tease|Aftershave: sharp look ke liye 😏|{name} at {price}.
+grooming|heart|Khud ko saaf-suthra rakhna bhi self-love hai 💜|{name} — {discount}% off. Percent dekho, phir dil ki suno.
+grooming|tease|Aftershave: sharp look ke liye 😏|{name} at {price}. Shaadi ho ya meeting, look pakka.
 gift|heart|Kisi ke liye gift dhoondh rahe ho? 🎁|{name}, {price}. Beauty gifts kam hi galat jaate hain.
 gift|dost|Birthday aane wala hai? 🎂|{name} for {price}. Yaad dilane ka shukriya baad mein.
 gift|tease|Gift wrap bhi kara lena 🎀|{name}, {price}. Impression pehle se pakka.
-brand|tease|{brand} ka shade dekha? 👀|{name} at {price}.|p
-brand|dost|{brand} fans, ek nazar idhar bhi 😄|{name}, {discount}% off.|p
+brand|tease|{brand} ka shade dekha? 👀|{name} at {price}. Shade ka naam pata chal gaya.|p
+brand|dost|{brand} fans, ek nazar idhar bhi 😄|{name} — {discount}% off. Aankhon ko pasand, jeb ko bhi.|p
 deal|tease|Beauty deal ka scene: {discount}% off 💄|{name}, {price}. Kitne ka scene hai, ye tumhe pata hai.
 deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Math simple hai.
 deal|heart|Bachat ka glow bhi alag hota hai 💜|{name}, {price}. Save: {save}.

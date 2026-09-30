@@ -39,7 +39,7 @@
    "mood": "chai",
    "tone": "dost",
    "title": "Chai thandi hui, deal abhi garam hai ☕",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Deal garam, chai thandi.",
    "needs": [
     "price"
    ]
@@ -65,7 +65,7 @@
    "mood": "chai",
    "tone": "self",
    "title": "Chai ka bill bhi yaad nahi, ye deal yaad rakhna",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Bill bhool jao, deal yaad rakho.",
    "needs": [
     "price"
    ]
@@ -112,7 +112,7 @@
    "mood": "salary",
    "tone": "dost",
    "title": "Pehli tareekh ka swag 😎",
-   "body": "{name} — {discount}% off.",
+   "body": "{name}, {discount}% off. Discount sach mein hai, mazaak nahi.",
    "needs": [
     "discount"
    ]
@@ -123,7 +123,7 @@
    "mood": "salary",
    "tone": "self",
    "title": "Salary aayi, EMI ne hello bola, deal ne bhi",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Salary, EMI, aur ek chhota treat.",
    "needs": [
     "price"
    ]
@@ -134,7 +134,7 @@
    "mood": "salary",
    "tone": "heart",
    "title": "Mehnat ki kamai, ek chhota sa treat 🎁",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Mehnat ka phal, apni pasand ka.",
    "needs": [
     "price"
    ]
@@ -156,7 +156,7 @@
    "mood": "monthend",
    "tone": "tease",
    "title": "Balance: 'rehne do'. Deal: 'dekh to lo'",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Balance kuch bhi bole, dekh lene mein harj nahi.",
    "needs": [
     "price"
    ]
@@ -178,7 +178,7 @@
    "mood": "monthend",
    "tone": "self",
    "title": "Paisa kam, taste high 😌",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Paisa kam, taste unchi.",
    "needs": [
     "price"
    ]
@@ -214,7 +214,7 @@
    "mood": "sunday",
    "tone": "dost",
    "title": "Chhutti ka din, shirt ka scene 👔",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Chhutti ka din, style ka scene.",
    "needs": [
     "price"
    ],
@@ -226,7 +226,7 @@
    "mood": "sunday",
    "tone": "tease",
    "title": "Sunday ki safai ke baad naya kuch chahiye 🧺",
-   "body": "{name} — {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj ka special, aaj ke liye.",
    "needs": [
     "discount"
    ],
@@ -252,7 +252,7 @@
    "mood": "sunday",
    "tone": "self",
    "title": "Aaj gym skip, shopping on 🛋️",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Gym kal, shopping aaj.",
    "needs": [
     "price"
    ],
@@ -294,7 +294,7 @@
    "mood": "monday",
    "tone": "self",
    "title": "Monday blues ko blue shirt se hara do 💙",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Blue shirt, blue mood, blue jeans.",
    "needs": [
     "price"
    ],
@@ -308,7 +308,7 @@
    "mood": "monday",
    "tone": "tease",
    "title": "Boss ka mood kaisa bhi ho, tumhara look pakka",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Boss ka mood alag, tumhara look alag.",
    "needs": [
     "price"
    ],
@@ -347,7 +347,7 @@
    "mood": "wfh",
    "tone": "tease",
    "title": "Camera on karna hai ya off? Shirt to nayi rakho",
-   "body": "{name} — {discount}% off.",
+   "body": "{name}, {discount}% off. Score: discount 1, MRP 0.",
    "needs": [
     "discount"
    ],
@@ -359,7 +359,7 @@
    "mood": "wfh",
    "tone": "self",
    "title": "Laptop ke peeche bhi personality chahiye 💻",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Screen ke peeche bhi personality chalti hai.",
    "needs": [
     "price"
    ],
@@ -396,7 +396,7 @@
    "mood": "hostel",
    "tone": "dost",
    "title": "PG ki alamari mein ek hanger khali hai 🚪",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Hanger khali, shirt bhi taiyar.",
    "needs": [
     "price"
    ]
@@ -421,7 +421,7 @@
    "mood": "hostel",
    "tone": "dost",
    "title": "Bhai ki shirt bhai ko wapas karo, apni le lo 👕",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bhai ki shirt bhai ko, apni shirt apne ko.",
    "needs": [
     "price"
    ]
@@ -499,7 +499,7 @@
    "mood": "festival",
    "tone": "heart",
    "title": "Tyohaar aa raha hai, alamari taiyar? 🪔",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Tyohaar ke liye alamari ready.",
    "needs": [
     "price"
    ]
@@ -510,7 +510,7 @@
    "mood": "festival",
    "tone": "dost",
    "title": "Tyohaar koi bhi ho, look apna 🎉",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Look apna, rang apna.",
    "needs": [
     "price"
    ]
@@ -521,7 +521,7 @@
    "mood": "festival",
    "tone": "tease",
    "title": "Baraat mein sabse sharp kaun? Tum 😎",
-   "body": "{name} — {discount}% off.",
+   "body": "{name}, {discount}% off. Price ne aaj mood achha rakha hai.",
    "needs": [
     "discount"
    ]
@@ -532,7 +532,7 @@
    "mood": "festival",
    "tone": "dost",
    "title": "Photo mein achhe dikhne ka koi zimmedar nahi, par shirt hai 📸",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Camera ready, shirt ready.",
    "needs": [
     "price"
    ]
@@ -543,7 +543,7 @@
    "mood": "match",
    "tone": "dost",
    "title": "Jersey nahi to shirt hi sahi 👕",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Jersey na sahi, shirt to hai.",
    "needs": [
     "price"
    ]
@@ -576,7 +576,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Sab ka khayal rakhte ho, apna bhi rakho 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Dusron ke baad apni baari.",
    "needs": [
     "price"
    ]
@@ -602,7 +602,7 @@
    "mood": "dost",
    "tone": "tease",
    "title": "{brand} ka fan hai koi? 😉",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Fan ho to ye deal pasand aayegi.",
    "needs": [
     "brand",
     "price"
@@ -627,7 +627,7 @@
    "mood": "morning",
    "tone": "tease",
    "title": "Good morning ☀️ aaj ka mood: nayi shirt",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Nayi shirt, naya din.",
    "needs": [
     "price"
    ],
@@ -641,7 +641,7 @@
    "mood": "morning",
    "tone": "dost",
    "title": "Alarm ke baad ye dekh lo, phir uthna ⏰",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Alarm baad mein, deal pehle.",
    "needs": [
     "price"
    ],
@@ -655,7 +655,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "Ye shirt iron karne ka bahana nahi dega 😄",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Iron karne ka bahana khatam.",
    "needs": [
     "price"
    ]
@@ -666,7 +666,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Formal ho ya casual, mood tumhara 🎭",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Formal, casual — jo mood.",
    "needs": [
     "price"
    ]
@@ -688,7 +688,7 @@
    "mood": "shirts",
    "tone": "self",
    "title": "Purani shirt ne bhi bahut saath diya, ab retire 🎖️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Puraani shirt ko salaam, naye ko swagat.",
    "needs": [
     "price"
    ]
@@ -699,7 +699,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "T-shirt collection mein ek aur entry? 👕",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Collection mein ek aur naam.",
    "needs": [
     "price"
    ]
@@ -710,7 +710,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Kurta pehnne ka bahana chahiye? Ye raha 🙌",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Kurta pehnne ka naya bahana.",
    "needs": [
     "price"
    ]
@@ -721,7 +721,7 @@
    "mood": "shirts",
    "tone": "self",
    "title": "Alamari mein jagah nahi, par deal to hai 🪑",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Jagah nahi hai to bhi deal hai.",
    "needs": [
     "price"
    ]
@@ -732,7 +732,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "Ye jacket dekh ke mausam bhi jalega 🧥",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Mausam bhi jalega, tum chill.",
    "needs": [
     "price"
    ]
@@ -743,7 +743,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Sneakers ke saath ye combo pakka chalega 👟",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Sneakers ke saath fit hoga.",
    "needs": [
     "price"
    ]
@@ -754,7 +754,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "Date pe, dost ki shaadi pe, ya bas mood pe 😌",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Har mauke ke liye ek mood.",
    "needs": [
     "price"
    ]
@@ -765,7 +765,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Shirt ka size bhi dekh lena, mood ka size to perfect hai",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Size dekh lena, mood sahi hai.",
    "needs": [
     "price"
    ]
@@ -776,7 +776,7 @@
    "mood": "shirts",
    "tone": "heart",
    "title": "Ek achhi shirt, ek achha din 🌤️",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Achha din, achhi shirt.",
    "needs": [
     "price"
    ]
@@ -787,7 +787,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "Compliment milega ya nahi, deal to sach mein live hai",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Deal live hai, compliment tumhare upar.",
    "needs": [
     "price"
    ]
@@ -798,7 +798,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Colour choose karna mushkil? Hum ne pehle hi kar diya 🎨",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Rang ka jhagda hum sulta lenge.",
    "needs": [
     "price"
    ]
@@ -809,7 +809,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "Ye hoodie sardi se pehle ka jugaad hai 🧣",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Sardi aane se pehle taiyari.",
    "needs": [
     "price"
    ]
@@ -820,7 +820,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Jeans ka pocket bada ho to wallet bhi khush 😄",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Wallet ko bhi jeb chahiye.",
    "needs": [
     "price"
    ]
@@ -831,7 +831,7 @@
    "mood": "shirts",
    "tone": "self",
    "title": "Aaj bhi wahi purani t-shirt? Aaj badlo 😅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Purani t-shirt ko chhutti do.",
    "needs": [
     "price"
    ]
@@ -842,7 +842,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Belt, watch, wallet — sab set karna hai kya? ⌚",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Poora set, poora look.",
    "needs": [
     "price"
    ]
@@ -864,7 +864,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Look aisa jaise pehle se plan tha 😎",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Aisa dikhna jaise plan tha.",
    "needs": [
     "price"
    ]
@@ -875,7 +875,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "Mirror ne bola 'aaj kuch naya?' 🪞",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Jawab: haan, aaj kuch naya.",
    "needs": [
     "price"
    ]
@@ -886,7 +886,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Ye shirt tumhare mood se match karti hai",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Mood ke saath match karti hai.",
    "needs": [
     "price"
    ]
@@ -897,7 +897,7 @@
    "mood": "shirts",
    "tone": "tease",
    "title": "Aaj 'main character' energy 🎬",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Aaj ki script mein tum hero.",
    "needs": [
     "price"
    ]
@@ -908,7 +908,7 @@
    "mood": "shirts",
    "tone": "dost",
    "title": "Aaj ki deal: tumhare swag jitni sharp ✂️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Swag sharp, look bhi sharp.",
    "needs": [
     "price"
    ]

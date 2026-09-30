@@ -2,7 +2,7 @@
 # prefix: hk
 chai|dost|Chai banane ka naya tareeka 🫖|{name}, {price}. Doodh ubalne se bachna.|t=morning,evening
 chai|tease|Chai ka pateela purana ho gaya? ☕|{name} at {price}. Adrak wali chai ko bhi izzat chahiye.
-chai|heart|Ghar ki chai, ghar ka sukoon 🏠|{name}, {discount}% off.
+chai|heart|Ghar ki chai, ghar ka sukoon 🏠|{name} — {discount}% off. Chhoti bachat bhi badi lagti hai.
 salary|heart|Salary aayi, ghar ke liye kuch achha 🏠|{name} for {price}. Ghar bhi apna, cheez bhi apni.
 salary|tease|Pehli tareekh ka kitchen upgrade 🍳|{name}, {price}. Maggi ab bhi banegi.
 salary|self|Salary ka aadha ghar ke saaman mein jaata hai 🧺|{name} at {price}. Ye wala kaam ka hai.
@@ -10,7 +10,7 @@ monthend|self|Month-end: kitchen mein sirf namak aur pyaz 🧅|{name}, {price}. 
 monthend|tease|Steel ke dabbe: kitchen ki rongak 🥘|{name} for {price}. Kabhi na kabhi zaroor kaam aayenge.
 sunday|dost|Sunday: safai ka din, ya sirf shopping ka? 🧹|{name}, {price}. Dono chalega.|w=0
 sunday|tease|Aaj biryani banane ka mann hai? 🍚|{name} at {price}. Handi ready rakho.|w=0
-sunday|self|Sunday ko cooker ki seeti se neend khulti hai 🍲|{name}, {discount}% off.|w=0
+sunday|self|Sunday ko cooker ki seeti se neend khulti hai 🍲|{name}, {discount}% off. Dekh lo, phir apni marzi.|w=0
 monday|self|Monday: lunch box mein wahi purani sabzi 🍱|{name}, {price}. Naya dabba, naya mood.|w=1
 monday|dost|Subah ke nashte ka scene 🍳|{name} for {price}. Alarm ke baad jaldi ho jayega.|w=1 t=morning
 wfh|dost|WFH: kitchen aur office ke beech ek desk 🍽️|{name}, {price}. Lunch break mein seedha chulha.|d=weekday
@@ -18,53 +18,53 @@ wfh|self|Ghar se kaam: bartan dhone ka time nahi 🍽️|{name} at {price}. Dish
 hostel|self|PG ka kitchen: ek gas, sau jhagde 🔥|{name}, {price}. Apna induction lo.
 hostel|tease|Maggi ke liye ek kettle 🍜|{name} for {price}. Electric kettle ka jalwa.
 hostel|dost|Roommate ka bartan mat jhoota karo 😜|{name}, {price}. Apni plate alag rakho.
-ghar|self|Mummy: 'kitchen mein kuch nahi hai?' Tum: 'ab hai' 😎|{name}, {price}.
+ghar|self|Mummy: 'kitchen mein kuch nahi hai?' Tum: 'ab hai' 😎|{name}, {price}. Ab kitchen mein sach mein kuch hai.
 ghar|heart|Mummy ke haath ka khana, sabse alag 💜|{name} at {price}. Unki madad karne wali cheez.
 ghar|dost|Papa: 'ye kya naya aaya?' 🤨|{name}, {discount}% off. Kaam ki cheez hai, papa.
 festival|dost|Tyohaar aa raha hai, ghar saja lo 🪔|{name}, {price}. Rangoli ke saath diyas.
 festival|tease|Mehmaan aa rahe hain? Kitchen ready? 🍽️|{name} for {price}. Plate aur glasses bhi.
-festival|heart|Diwali ki safai ke baad naya kuch 🪔|{name}, {discount}% off.
+festival|heart|Diwali ki safai ke baad naya kuch 🪔|{name} — {discount}% off. Tumhari pasand ka rate.
 match|dost|Match ke liye snacks ready 🍿|{name}, {price}. Bowl bhi chahiye.
 heart|heart|Ghar wo jagah jahan tum aaraam karte ho 🏡|{name} at {price}. Use aur sundar banao.
-heart|heart|Chhoti cheezein ghar ko ghar banati hain 💜|{name}, {price}.
+heart|heart|Chhoti cheezein ghar ko ghar banati hain 💜|{name}, {price}. Chhoti cheezein, ghar ki jaan.
 cookware|dost|Kadhai: har ghar ki jaan 🍳|{name} for {price}. Tadka pakka lagega.
 cookware|tease|Non-stick pan: sabzi ki pehli pasand 🍳|{name}, {price}. Tadka lagane ko taiyaar.
 cookware|self|Cooker ka gasket dhila ho gaya? 🍲|{name} at {price}. Seeti ab aur zor se.
-cookware|dost|Tawa: roti ka best friend 🫓|{name}, {discount}% off.
+cookware|dost|Tawa: roti ka best friend 🫓|{name}, {discount}% off. Kabhi kabhi sab kuch theek baithta hai.
 cookware|tease|Pressure cooker: 3 seeti ka scene 🔔|{name} for {price}. Dal ready, kaam done.
-cookware|heart|Ek achhi kadhai, pyaar ka tadka 💜|{name}, {price}.
-cookware|self|Purana pan? Ab replace ka time 🥲|{name} at {price}.
+cookware|heart|Ek achhi kadhai, pyaar ka tadka 💜|{name}, {price}. Tadke ki aawaz hi ghar ki pehchaan.
+cookware|self|Purana pan? Ab replace ka time 🥲|{name} at {price}. Purane ko aaram, naye ko kaam.
 storage|dost|Dabbe: sab kuch alag, ghar saaf 🧺|{name}, {price}. Masale ek jagah.
 storage|tease|Container: jo hamesha kam padta hai 😅|{name} for {price}. Ek aur kharido.
-storage|self|Fridge ke andar ka scene: pyaz, ek bottle, aur khaali dabba 🥶|{name}, {discount}% off.
+storage|self|Fridge ke andar ka scene: pyaz, ek bottle, aur khaali dabba 🥶|{name} — {discount}% off. Price ne kaha 'aao'.
 storage|dost|Lunch box: subah ki bhaag daud mein 🍱|{name} at {price}. Bag mein daalne se pehle dhakkan check karna.
-storage|heart|Ghar ki har cheez ki apni jagah hoti hai 🏠|{name}, {price}.
+storage|heart|Ghar ki har cheez ki apni jagah hoti hai 🏠|{name}, {price}. Sabki apni jagah, sabka apna kaam.
 storage|tease|Bottle: paani peena bhoolna band 💧|{name} for {price}. Har ghante ek glass.
 cleaning|dost|Jhadu ko chhutti dene ka time 🧹|{name}, {price}. Ghar ki safai ab aasan.
 cleaning|tease|Mop: farsh ko bhi chamak chahiye ✨|{name} at {price}. Peeche hate ke chalna.
-cleaning|self|Safai ka mann hai, par bahana bhi 😅|{name}, {discount}% off.
-cleaning|heart|Saaf ghar, saaf mann 💜|{name} for {price}.
-cleaning|dost|Washing machine ka size: ghar ke hisaab se 🧺|{name}, {price}.
-cleaning|tease|Kapde dhone ka jhanjhat khatam 👕|{name} at {price}.
+cleaning|self|Safai ka mann hai, par bahana bhi 😅|{name}, {discount}% off. Chalo, ek nazar to banti hai.
+cleaning|heart|Saaf ghar, saaf mann 💜|{name} for {price}. Saaf ghar mein mann bhi halka.
+cleaning|dost|Washing machine ka size: ghar ke hisaab se 🧺|{name}, {price}. Ghar ke hisaab se chuno.
+cleaning|tease|Kapde dhone ka jhanjhat khatam 👕|{name} at {price}. Kapde dhulne ka intezaar bhi aaram se.
 decor|dost|Ghar ki deewarein bhi kuch kehna chahti hain 🖼️|{name}, {price}. Ek frame lagao.
-decor|tease|Cushion covers: ek naya rang, ek naya mood 🛋️|{name} for {price}.
-decor|heart|Ghar ko ghar banane wali chhoti cheezein 🌿|{name}, {discount}% off.
-decor|self|Deewar khali hai, par hum bharenge 😅|{name} at {price}.
-decor|dost|Plant: hara-bhara ghar, hara-bhara mann 🌱|{name}, {price}.
+decor|tease|Cushion covers: ek naya rang, ek naya mood 🛋️|{name} for {price}. Naya rang, naye mehmaan.
+decor|heart|Ghar ko ghar banane wali chhoti cheezein 🌿|{name}, {discount}% off. Jeb halki, dil halka.
+decor|self|Deewar khali hai, par hum bharenge 😅|{name} at {price}. Deewar bhi kuch kehna chahti hain.
+decor|dost|Plant: hara-bhara ghar, hara-bhara mann 🌱|{name}, {price}. Hara-bhara ghar, hara-bhara mann.
 decor|tease|Lights: ghar bhi party mood mein 💡|{name} for {price}. Tyohaar ke baad bhi chalega.
-decor|heart|Ek kone mein ek chhoti si khushi 💜|{name}, {price}.
+decor|heart|Ek kone mein ek chhoti si khushi 💜|{name}, {price}. Ek kona, ek nayi khushi.
 bed|dost|Bedsheet: neend ka sabse achha dost 🛏️|{name} at {price}. Dhoop mein sukhana mat bhoolna.
-bed|tease|Pillow: gardan bolti hai 'thank you' 🙏|{name}, {discount}% off.
+bed|tease|Pillow: gardan bolti hai 'thank you' 🙏|{name}, {discount}% off. Kaam ki cheez, kaam ka rate.
 bed|self|Blanket: sardi ka pehla pyaar ❄️|{name} for {price}. Subah uthna mushkil hi rahega.
-bed|heart|Achhi neend, achha din 🌙|{name}, {price}.|t=night
-bed|dost|Curtains: dhoop ko bhi rukna padega ☀️|{name} at {price}.
+bed|heart|Achhi neend, achha din 🌙|{name}, {price}. Subah taazgi se uthoge.|t=night
+bed|dost|Curtains: dhoop ko bhi rukna padega ☀️|{name} at {price}. Dhoop ko thodi der ka break.
 bed|tease|Mattress: peeth ko bhi aaram chahiye 🛌|{name}, {price}. Bhaari mann se le lo.
 appliance|dost|Mixer grinder: chatni ka shahenshah 🌶️|{name} for {price}. Aawaz thodi zyada hogi.
-appliance|tease|Toaster: brown bread ka best friend 🍞|{name}, {discount}% off.
-appliance|self|Kettle: chai ka jugaad 🫖|{name} at {price}.
+appliance|tease|Toaster: brown bread ka best friend 🍞|{name}, {discount}% off. Aaj kuch sasta, kuch sahi.
+appliance|self|Kettle: chai ka jugaad 🫖|{name} at {price}. Chai ki pehli boond ka intezaar.
 appliance|heart|Air fryer: samose ka naya ghar 🍟|{name}, {price}. Chai bhi ready rakho.
-appliance|dost|Rice cooker: chawal ka tension khatam 🍚|{name} for {price}.
-appliance|tease|Induction: ek plate, sau dishes 🍳|{name}, {price}.
+appliance|dost|Rice cooker: chawal ka tension khatam 🍚|{name} for {price}. Chawal ka tension khatam, chain shuru.
+appliance|tease|Induction: ek plate, sau dishes 🍳|{name}, {price}. Ek plate, sau swaad.
 appliance|self|Iron: kapdon ki salvatein bhi rulati hain 👔|{name} at {price}. Naya le lo.
 brand|tease|{brand} ka kitchen saaman dekha? 🍳|{name}, {discount}% off. Kaam ka hai.|p
 brand|dost|{brand}: ghar ke liye ek achhi cheez 🏠|{name}, {price}. Ye wali ghar pe achhi lagegi.|p

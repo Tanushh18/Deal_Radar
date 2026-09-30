@@ -289,7 +289,17 @@ def find_crazy(now: Optional[float] = None) -> Optional[Tuple[Dict[str, Any], bo
 
 
 def compose_crazy(deal: Dict[str, Any], why: str) -> Tuple[str, str]:
-    """Plain and specific — the deal is the hook, no countdowns or "hurry"."""
+    """Plain and specific — the deal is the hook, no countdowns or "hurry".
+
+    The pitara writes it when it has an honest line for this case (its
+    "lowest" lines are only eligible for a genuine lowest price, its "big
+    discount" lines only above their own floor); the text below is the fallback."""
+    from . import pitara
+
+    lowest = bool(deal.get("is_lowest")) and int(deal.get("discount_pct") or 0) >= CRAZY_LOWEST_DISCOUNT
+    picked = pitara.pick("crazy_deal", deal, mood=("rare",) if lowest else ("best",))
+    if picked:
+        return picked.title, picked.body
     price = hot_push._money(deal.get("price"))
     name = hot_push._short(deal.get("title") or "This deal", 40)
     disc = int(deal.get("discount_pct") or 0)
@@ -494,12 +504,22 @@ def compose_nudge(device: Dict[str, Any], now: float, ctx: Dict[str, Any]
     nothing true to say. None if there's nothing at all worth sending."""
     top, lowest, sale = ctx.get("top"), ctx.get("lowest"), ctx.get("sale")
 
+    def written(mood: Any, deal: Optional[Dict[str, Any]], **context: Any) -> Optional[Tuple[str, str]]:
+        """The pitara's line for this variant, or None (the variant's own text is used)."""
+        from . import pitara
+
+        picked = pitara.pick("nudge", deal or {}, ctx=context, mood=mood, now=now)
+        return (picked.title, picked.body) if picked else None
+
     def new_since() -> Optional[Tuple[str, str, Optional[Dict[str, Any]]]]:
         row = db.query_one("SELECT COUNT(*) AS c FROM deals WHERE status = 'live' AND expires_at > ? "
                            "AND first_seen_at > ?", (now, float(device.get("last_seen_at") or 0)))
         count = int((row or {}).get("c") or 0)
         if count < 5 or not top:
             return None
+        line = written(("away", "evening"), top, count=f"{count:,}")
+        if line:
+            return (*line, top)
         return (f"{count:,} new deals since you last looked", f"Top pick: {_deal_line(top)}", top)
 
     def sale_soon() -> Optional[Tuple[str, str, Optional[Dict[str, Any]]]]:
@@ -512,12 +532,18 @@ def compose_nudge(device: Dict[str, Any], now: float, ctx: Dict[str, Any]
         approx = " (dates approximate)" if sale.get("approximate") else ""
         # No deal attached: a sale isn't a deal, and without one the phone
         # shows our text as-is (we're already inside the evening window).
+        line = written("sale", None, sale=sale.get("name") or "", when=f"{when}{approx}")
+        if line:
+            return (*line, None)
         return (f"{sale.get('name')} {when}{approx}",
                 "We're tracking prices so you can tell the real deals from the hype.", None)
 
     def lowest_ever() -> Optional[Tuple[str, str, Optional[Dict[str, Any]]]]:
         if not lowest:
             return None
+        line = written("lowest", lowest)
+        if line:
+            return (*line, lowest)
         return (f"Lowest price we've seen: {hot_push._money(lowest.get('price'))}".strip(),
                 _deal_line(lowest), lowest)
 

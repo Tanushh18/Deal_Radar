@@ -1,72 +1,72 @@
 # category: Grocery
 # prefix: gr
 chai|dost|Chai patti khatam ho rahi hai? ☕|{name}, {price}. Subah ki chai ka tension khatam.|t=morning
-chai|tease|Chai ke saath biscuit bhi 🍪|{name} at {price}.
-chai|heart|Ghar ki chai, ghar ki mehak 💜|{name}, {discount}% off.
+chai|tease|Chai ke saath biscuit bhi 🍪|{name} at {price}. Chai ke saath ye bhi aa jaye to mazaa.
+chai|heart|Ghar ki chai, ghar ki mehak 💜|{name} — {discount}% off. Dekhne mein harj nahi.
 salary|heart|Salary aayi, ghar ka rashan bharo 🛒|{name}, {price}. Sabse zaroori kharcha.
-salary|tease|Pehli tareekh ka monthly rashan 🛍️|{name} for {price}.
+salary|tease|Pehli tareekh ka monthly rashan 🛍️|{name} for {price}. Pehli tareekh, pehla rashan.
 monthend|self|Month-end: daal chawal aur bas 🍚|{name}, {price}. Sabse achha khana.
 monthend|dost|Fridge khaali, wallet bhi? 😅|{name} at {price}. Kam mein kaam chalao.
 sunday|dost|Sunday: special khana banane ka din 🍛|{name}, {price}. Sabki pasand.|w=0
-sunday|tease|Aaj biryani ka mann hai 🍚|{name} for {price}.|w=0
-monday|self|Monday: tiffin mein kya banaun? 🍱|{name}, {price}.|w=1
-monday|dost|Subah ka nashta: oats ya paratha? 🥣|{name} at {price}.|w=1 t=morning
+sunday|tease|Aaj biryani ka mann hai 🍚|{name} for {price}. Handi ready, mann ready.|w=0
+monday|self|Monday: tiffin mein kya banaun? 🍱|{name}, {price}. Sawaal purana, jawab nayi cheez.|w=1
+monday|dost|Subah ka nashta: oats ya paratha? 🥣|{name} at {price}. Subah ki jaldi mein aasani.|w=1 t=morning
 wfh|self|WFH mein fridge ke chakkar roz 😂|{name}, {price}. Snacks stock kar lo.|d=weekday
-wfh|dost|Lunch break mein kuch achha khana hai? 🍽️|{name} for {price}.|d=weekday
+wfh|dost|Lunch break mein kuch achha khana hai? 🍽️|{name} for {price}. Break mein kuch achha ho jaye.|d=weekday
 hostel|self|Hostel: maggi, poha, aur upma 🍜|{name}, {price}. Kabhi kuch alag bhi karo.
 hostel|tease|Roommate ne phir se meri maggi kha li 😤|{name} at {price}. Apna stock, apna raj.
 hostel|dost|Raat ko bhookh lagi? 🌙|{name}, {discount}% off. Snacks ready.|t=night
 ghar|heart|Mummy ke haath ka khana: koi jawab nahi 💜|{name} for {price}. Unki madad ke liye.
-ghar|dost|Ghar ka rashan: list bhi lambi, budget bhi 😅|{name}, {price}.
-festival|dost|Tyohaar ki taiyari: mithai, dry fruits, sab kuch 🪔|{name} at {price}.
-festival|heart|Meetha khao, khushiyan baanto 🍬|{name}, {price}.
-festival|tease|Mehmaan aane wale hain, fridge bharo 🍽️|{name} for {price}.
+ghar|dost|Ghar ka rashan: list bhi lambi, budget bhi 😅|{name}, {price}. List lambi ho to bhi budget mein.
+festival|dost|Tyohaar ki taiyari: mithai, dry fruits, sab kuch 🪔|{name} at {price}. Mehmaano ka swagat taiyari se.
+festival|heart|Meetha khao, khushiyan baanto 🍬|{name}, {price}. Meetha baant lo, dil chhota mat karo.
+festival|tease|Mehmaan aane wale hain, fridge bharo 🍽️|{name} for {price}. Mehmaan aane wale hain, fridge ready.
 match|dost|Match ke liye snacks ready? 🍿|{name}, {price}. Chips aur cold drink.
-match|tease|Chakka maara? Namkeen khaao 🏏|{name} at {price}.
-heart|heart|Ghar ka har kona khushi se bhara ho 💜|{name}, {price}.
-heart|heart|Khana sirf bhookh nahi, pyaar bhi hai 🍲|{name} for {price}.
-snacks|dost|Chips: raat ke 12 baje ka saathi 🥔|{name}, {price}.
-snacks|tease|Namkeen: chai ka best friend 🍪|{name} at {price}.
-snacks|self|Snacks khatam? Kal hi to khareede the 😅|{name}, {discount}% off.
-snacks|heart|Chhoti chhoti khushiyan snacks mein 🍿|{name} for {price}.
-snacks|dost|Chocolate: mood theek karne ki dawa 🍫|{name}, {price}.
-snacks|tease|Biscuit: chai mein dubaane ke liye 🍪|{name} at {price}.
-snacks|self|Diet kal se, chips aaj se 🥔|{name}, {price}.
-snacks|dost|Popcorn: movie night ka hero 🍿|{name} for {price}.
-breakfast|dost|Nashta: din ka sabse zaroori khana 🥣|{name}, {price}.
-breakfast|tease|Cornflakes ya paratha? Dono? 🥣|{name} at {price}.
-breakfast|self|Nashta chhod diya? Kal se pakka 😅|{name}, {discount}% off.
-breakfast|heart|Achha nashta, achha din 🌞|{name} for {price}.|t=morning
-breakfast|dost|Oats: dost ke jaise, halka aur healthy 🥣|{name}, {price}.
-breakfast|tease|Peanut butter: bread ka naya dost 🥜|{name} at {price}.
-staples|dost|Atta, chawal, daal: ghar ki neev 🌾|{name}, {price}.
-staples|tease|Rashan ka scene: list bhi lambi, budget bhi chhota 📝|{name} at {price}.
-staples|self|Daal khatam, chawal bhi? 🍚|{name}, {discount}% off.
-staples|heart|Ghar ki rasoi: pyaar ka ghar 💜|{name} for {price}.
-staples|dost|Tel, namak, masale: sab kuch ek jagah 🧂|{name}, {price}.
-staples|tease|Cooking oil: tadka ke liye zaroori 🫗|{name} at {price}.
-staples|self|Masale ka dabba ek baar khaali hone pe hi yaad aata hai 🧂|{name}, {price}.
-beverages|dost|Cold drink: garmi ka saathi 🥤|{name} for {price}.
-beverages|tease|Juice: fruits ka aasan tareeka 🧃|{name}, {discount}% off.
+match|tease|Chakka maara? Namkeen khaao 🏏|{name} at {price}. Boundary ke baad snack time.
+heart|heart|Ghar ka har kona khushi se bhara ho 💜|{name}, {price}. Bhare ghar ki baat hi alag.
+heart|heart|Khana sirf bhookh nahi, pyaar bhi hai 🍲|{name} for {price}. Bhookh se badi baat hai pyaar.
+snacks|dost|Chips: raat ke 12 baje ka saathi 🥔|{name}, {price}. Raat ke 12 baje ka sachcha saathi.
+snacks|tease|Namkeen: chai ka best friend 🍪|{name} at {price}. Chai ke saath sabse purani jodi.
+snacks|self|Snacks khatam? Kal hi to khareede the 😅|{name}, {discount}% off. Aaj ka discount aaj hi dikh raha hai.
+snacks|heart|Chhoti chhoti khushiyan snacks mein 🍿|{name} for {price}. Chhoti khushiyan, badi bhookh.
+snacks|dost|Chocolate: mood theek karne ki dawa 🍫|{name}, {price}. Mood theek karne ka meetha jugaad.
+snacks|tease|Biscuit: chai mein dubaane ke liye 🍪|{name} at {price}. Dubaao, khao, phir dubaao.
+snacks|self|Diet kal se, chips aaj se 🥔|{name}, {price}. Kal se diet, aaj se chips.
+snacks|dost|Popcorn: movie night ka hero 🍿|{name} for {price}. Movie night ka asli hero.
+breakfast|dost|Nashta: din ka sabse zaroori khana 🥣|{name}, {price}. Din ki shuruaat pet se hoti hai.
+breakfast|tease|Cornflakes ya paratha? Dono? 🥣|{name} at {price}. Dono chalega, koi nahi rokega.
+breakfast|self|Nashta chhod diya? Kal se pakka 😅|{name}, {discount}% off. Calculator nikaalne ki zaroorat nahi.
+breakfast|heart|Achha nashta, achha din 🌞|{name} for {price}. Achhi shuruaat, achha din.|t=morning
+breakfast|dost|Oats: dost ke jaise, halka aur healthy 🥣|{name}, {price}. Halka bhi, dost bhi.
+breakfast|tease|Peanut butter: bread ka naya dost 🥜|{name} at {price}. Bread ko naya saathi mila.
+staples|dost|Atta, chawal, daal: ghar ki neev 🌾|{name}, {price}. Rasoi ki neev inhi pe tiki hai.
+staples|tease|Rashan ka scene: list bhi lambi, budget bhi chhota 📝|{name} at {price}. List lambi, budget ki baat alag.
+staples|self|Daal khatam, chawal bhi? 🍚|{name}, {discount}% off. Ek tap ki doori par.
+staples|heart|Ghar ki rasoi: pyaar ka ghar 💜|{name} for {price}. Ghar ki rasoi, ghar ka pyaar.
+staples|dost|Tel, namak, masale: sab kuch ek jagah 🧂|{name}, {price}. Sab ek jagah, sab aasan.
+staples|tease|Cooking oil: tadka ke liye zaroori 🫗|{name} at {price}. Tadke ke bina kaun si sabzi?
+staples|self|Masale ka dabba ek baar khaali hone pe hi yaad aata hai 🧂|{name}, {price}. Khaali hone se pehle ek nazar.
+beverages|dost|Cold drink: garmi ka saathi 🥤|{name} for {price}. Garmi mein thandak ka saathi.
+beverages|tease|Juice: fruits ka aasan tareeka 🧃|{name}, {discount}% off. Kam price ka kya kehna.
 beverages|self|Coffee: subah ki jaan ☕|{name} at {price}. Bina coffee ke kuch nahi.
-beverages|heart|Ek chhota sa break, ek chhoti si khushi 🥤|{name}, {price}.
-beverages|dost|Green tea: sehat ke liye ek chhota kadam 🍵|{name} for {price}.
-beverages|tease|Energy drink: raat ke kaam ke liye ⚡|{name}, {price}.
-sweets|dost|Mithai: tyohaar ka pyaar 🍬|{name} at {price}.
-sweets|tease|Chocolate: 'ek aur' kehke khatam 🍫|{name}, {discount}% off.
-sweets|heart|Meetha khao, meethi baat karo 🍭|{name} for {price}.
+beverages|heart|Ek chhota sa break, ek chhoti si khushi 🥤|{name}, {price}. Chhota sa break, poori tazgi.
+beverages|dost|Green tea: sehat ke liye ek chhota kadam 🍵|{name} for {price}. Ek chhota kadam sehat ki taraf.
+beverages|tease|Energy drink: raat ke kaam ke liye ⚡|{name}, {price}. Raat ke kaam ka saathi.
+sweets|dost|Mithai: tyohaar ka pyaar 🍬|{name} at {price}. Tyohaar ka meetha rang.
+sweets|tease|Chocolate: 'ek aur' kehke khatam 🍫|{name} — {discount}% off. Rate dekh ke muskaan aa gayi.
+sweets|heart|Meetha khao, meethi baat karo 🍭|{name} for {price}. Meethi baat karne ke liye meetha khao.
 sweets|self|Meetha: diet ka sabse bada dushman 🍰|{name}, {price}. Aaj cheat day.
-dryfruit|dost|Dry fruits: din bhar ka energy 🥜|{name} at {price}.
-dryfruit|tease|Kaju, badam, kishmish: sab kuch ek dabbe mein 🌰|{name}, {price}.
-dryfruit|heart|Ghar ka har member khush ho 💜|{name} for {price}.
-fresh|dost|Sabzi, phal: ghar ki sehat 🥕|{name}, {price}.
-fresh|tease|Fruit basket: gift ka sabse healthy tareeka 🍎|{name} at {price}.
-pantry|dost|Pasta, sauce, aur ek chhoti si party 🍝|{name}, {discount}% off.
-pantry|tease|Noodles: bhookh ka sabse jaldi ka jawab 🍜|{name} for {price}.
-pantry|self|Instant food: ghar ka emergency plan 🥫|{name}, {price}.
-pantry|heart|Ghar ki rasoi hamesha bhari rahe 💜|{name} at {price}.
+dryfruit|dost|Dry fruits: din bhar ka energy 🥜|{name} at {price}. Din bhar ki tazgi ek muthhi mein.
+dryfruit|tease|Kaju, badam, kishmish: sab kuch ek dabbe mein 🌰|{name}, {price}. Ek dabba, ek pura mausam.
+dryfruit|heart|Ghar ka har member khush ho 💜|{name} for {price}. Sab khush to ghar khush.
+fresh|dost|Sabzi, phal: ghar ki sehat 🥕|{name}, {price}. Ghar ki sehat ka khayal.
+fresh|tease|Fruit basket: gift ka sabse healthy tareeka 🍎|{name} at {price}. Gift jo sabko pasand aaye.
+pantry|dost|Pasta, sauce, aur ek chhoti si party 🍝|{name} — {discount}% off. Rate ne sabko chaunka diya.
+pantry|tease|Noodles: bhookh ka sabse jaldi ka jawab 🍜|{name} for {price}. Bhookh ka jawab do minute mein.
+pantry|self|Instant food: ghar ka emergency plan 🥫|{name}, {price}. Emergency ho to yahi kaam aayega.
+pantry|heart|Ghar ki rasoi hamesha bhari rahe 💜|{name} at {price}. Rasoi bhari ho to mann bhi.
 brand|tease|{brand} ka swaad dekha? 😋|{name}, {discount}% off. Rashan mein ek naya naam.|p
-brand|dost|{brand}: ghar ka bharosemand brand? 🛒|{name}, {price}.|p
+brand|dost|{brand}: ghar ka bharosemand brand? 🛒|{name}, {price}. Bharosemand naam, achhe swaad.|p
 deal|tease|Rashan deal: {discount}% off 🛒|{name}, {price}. Fridge khush.
 deal|dost|MRP {mrp}, ab {price} 🧮|{name}. Rashan sasta, ghar khush.
 deal|heart|Bachat ke saath ghar bhara rahe 💜|{name} at {price}. Save: {save}.

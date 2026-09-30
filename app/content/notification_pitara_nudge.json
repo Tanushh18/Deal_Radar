@@ -106,7 +106,7 @@
    "mood": "away",
    "tone": "dost",
    "title": "{count} naye deals, aur wapas aane ka koi jhanjhat nahi 🙌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Jab bhi mann kare, ek nazar.",
    "needs": [
     "price"
    ],
@@ -146,7 +146,7 @@
    "mood": "away",
    "tone": "dost",
    "title": "Ek chhota sa update: {count} nayi deals 📬",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhota sa update, seedha aap tak.",
    "needs": [
     "price"
    ],
@@ -228,7 +228,7 @@
    "mood": "away",
    "tone": "dost",
    "title": "Sirf ek nazar: {count} nayi deals 👀",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bas ek nazar, phir aapki marzi.",
    "needs": [
     "price"
    ],
@@ -241,7 +241,7 @@
    "category": "Any",
    "mood": "away",
    "tone": "tease",
-   "title": "Hafte bhar mein kaafi kuch badla hai 🔄",
+   "title": "Kaafi kuch badla hai jab aap the nahi 🔄",
    "body": "{count} nayi deals. {name}, {price}.",
    "needs": [
     "price"
@@ -284,7 +284,7 @@
    "mood": "away",
    "tone": "tease",
    "title": "Ye deal dekh ke aap wapas aa jaoge 😏",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Wapas aane ka ek aur bahana.",
    "needs": [
     "price"
    ],
@@ -392,7 +392,7 @@
    "mood": "away",
    "tone": "dost",
    "title": "Kaafi din baad, ek achhi deal 🌤️",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kaafi din baad bhi wahi deal wali baat.",
    "needs": [
     "price"
    ],
@@ -406,7 +406,7 @@
    "mood": "away",
    "tone": "tease",
    "title": "Bina notice diye {count} deals aa gayi 📢",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bina bataye aa gayi, ab batate hain.",
    "needs": [
     "price"
    ],
@@ -432,7 +432,7 @@
    "mood": "lowest",
    "tone": "dost",
    "title": "Lowest price we've seen: {price} 📉",
-   "body": "{name}. Aap pichli baar jab aaye the, tab se badla hai.",
+   "body": "{name}. Hamare data ke hisaab se sabse kam.",
    "needs": [
     "price",
     "lowest"
@@ -507,7 +507,7 @@
    "mood": "lowest",
    "tone": "self",
    "title": "Kaafi din se dekh rahe the? Ye price ab sabse kam hai 😌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Hamare data mein iski sabse kam price.",
    "needs": [
     "price",
     "lowest"
@@ -522,7 +522,7 @@
    "mood": "lowest",
    "tone": "dost",
    "title": "Sabse kam price, humare data ke hisaab se 🔎",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Hamare records mein ab tak ki sabse kam.",
    "needs": [
     "price",
     "lowest"
@@ -552,7 +552,7 @@
    "mood": "lowest",
    "tone": "heart",
    "title": "Aaj ka special: ab tak ki sabse achhi price 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Hamare data mein sabse achhi price.",
    "needs": [
     "price",
     "lowest"
@@ -737,7 +737,7 @@
    "mood": "evening",
    "tone": "heart",
    "title": "Din ke baad ka aaram, ek deal ke saath 🌇",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Din ke baad thoda sa aaram.",
    "needs": [
     "price"
    ],
@@ -751,7 +751,7 @@
    "mood": "evening",
    "tone": "dost",
    "title": "Aaj ka din kaisa raha? Ek deal dekh lo 😊",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Din kaisa bhi ho, ye deal achhi hai.",
    "needs": [
     "price"
    ],

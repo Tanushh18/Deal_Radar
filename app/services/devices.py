@@ -259,8 +259,13 @@ def match_follows(deal: Dict[str, Any]) -> int:
             continue
         seen_devices.add(r["device_id"])
         off = f" · {deal['discount_pct']}% off" if deal.get("discount_pct") else ""
-        notify(r["device_id"], "follow", f"New {r['value']} deal {_money(deal.get('price'))}".strip(),
-               f"{(deal.get('title') or '')[:90]}{off}", deal)
+        title = f"New {r['value']} deal {_money(deal.get('price'))}".strip()
+        body = f"{(deal.get('title') or '')[:90]}{off}"
+        from . import pitara
+        picked = pitara.pick("follow", deal, ctx={"value": r["value"]})
+        if picked:
+            title, body = picked.title, picked.body
+        notify(r["device_id"], "follow", title, body, deal)
         db.execute("UPDATE devices SET last_follow_push_at = ? WHERE device_id = ?", (now, r["device_id"]))
         sent += 1
     return sent
@@ -282,9 +287,14 @@ def digest_tick() -> int:
     if not top:
         return 0
     top = dict(top)
+    from . import pitara
     for r in rows:
-        notify(r["device_id"], "digest", f"🔥 Today's best: {_money(top.get('price'))} {(top.get('title') or '')[:40]}",
-               f"{count} new deals today — tap to see the top picks", top)
+        title = f"🔥 Today's best: {_money(top.get('price'))} {(top.get('title') or '')[:40]}"
+        body = f"{count} new deals today — tap to see the top picks"
+        picked = pitara.pick("digest", top, ctx={"count": f"{count:,}"})
+        if picked:
+            title, body = picked.title, picked.body
+        notify(r["device_id"], "digest", title, body, top)
         db.execute("UPDATE devices SET last_digest_day = ? WHERE device_id = ?", (today, r["device_id"]))
     return len(rows)
 
@@ -329,8 +339,13 @@ def weekly_digest_tick() -> int:
         if not deal:
             continue
         off = f" · {deal['discount_pct']}% off" if deal.get("discount_pct") else ""
-        notify(r["device_id"], "weekly_pick", f"⭐ Picked for you: {_money(deal.get('price'))}",
-               f"{(deal.get('title') or '')[:90]}{off}", deal)
+        title = f"⭐ Picked for you: {_money(deal.get('price'))}"
+        body = f"{(deal.get('title') or '')[:90]}{off}"
+        from . import pitara
+        picked = pitara.pick("weekly_pick", deal)
+        if picked:
+            title, body = picked.title, picked.body
+        notify(r["device_id"], "weekly_pick", title, body, deal)
         sent += 1
     return sent
 

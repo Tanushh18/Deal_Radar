@@ -196,7 +196,7 @@
    "mood": "alert",
    "tone": "tease",
    "title": "Price ne gym join kar liya, ab neeche aa gayi 🏋️",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Price neeche, tum upar.",
    "needs": [
     "price"
    ],
@@ -350,7 +350,7 @@
    "mood": "alert",
    "tone": "tease",
    "title": "Aapki mehnat rang layi (alert lagana bhi mehnat hai) 😄",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Alert lagana bhi ek hunar hai.",
    "needs": [
     "price"
    ],
@@ -476,7 +476,7 @@
    "mood": "alert",
    "tone": "tease",
    "title": "Alert lagane wale hi jeette hain 🏆",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Alert lagane wale kabhi haarte nahi.",
    "needs": [
     "price"
    ],
@@ -532,7 +532,7 @@
    "mood": "alert",
    "tone": "dost",
    "title": "Price gir gayi, ab aapki baari 🔔",
-   "body": "{name} — {price}.",
+   "body": "{name} — {price}. Ab decision tumhara.",
    "needs": [
     "price"
    ],
@@ -588,7 +588,7 @@
    "mood": "alert",
    "tone": "dost",
    "title": "Price aapke target se {target} ke andar 📉",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Target ke andar, tumhare paas.",
    "needs": [
     "price"
    ],
@@ -672,7 +672,7 @@
    "mood": "alert",
    "tone": "heart",
    "title": "Aapki pasand, aapki price pe 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aapki pasand, aapke budget mein.",
    "needs": [
     "price"
    ],

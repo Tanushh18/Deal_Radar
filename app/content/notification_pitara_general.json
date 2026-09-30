@@ -42,7 +42,7 @@
    "mood": "season",
    "tone": "tease",
    "title": "Pasina aaya? Ye deal thandi hai 🧊",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Deal thandi hai, tum bhi chill.",
    "needs": [
     "price"
    ],
@@ -56,7 +56,7 @@
    "mood": "season",
    "tone": "self",
    "title": "Dhoop mein bahar jaana: adventure. Deal dekhna: aaram ☀️",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Price tag ne bhi lachak dikhayi.",
    "needs": [
     "discount"
    ],
@@ -70,7 +70,7 @@
    "mood": "season",
    "tone": "heart",
    "title": "Garmi ki chhutti, ek chhoti si khushi 🍦",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Garmi ki chhutti ka chhota sa treat.",
    "needs": [
     "price"
    ],
@@ -98,7 +98,7 @@
    "mood": "season",
    "tone": "tease",
    "title": "Baarish mein bahar nahi jaana? App khol lo ☔",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chhata nahi, sirf app chahiye.",
    "needs": [
     "price"
    ],
@@ -112,7 +112,7 @@
    "mood": "season",
    "tone": "self",
    "title": "Baarish ka mausam: chai, pakoda, aur scroll 🌧️",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Bas ek nazar, phir jo dil kahe.",
    "needs": [
     "discount"
    ],
@@ -126,7 +126,7 @@
    "mood": "season",
    "tone": "heart",
    "title": "Baarish ki boondein aur ek achhi deal 💧",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Boondein girti rahein, deal chalti rahe.",
    "needs": [
     "price"
    ],
@@ -154,7 +154,7 @@
    "mood": "season",
    "tone": "tease",
    "title": "Sardi mein uthna mushkil, deal dekhna aasan 🧣",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Rajai se bahar aane ki zaroorat nahi.",
    "needs": [
     "price"
    ],
@@ -168,7 +168,7 @@
    "mood": "season",
    "tone": "self",
    "title": "Sardi: subah uthna aur bath karna, dono mushkil 🥶",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Wallet ne dheere se 'theek hai' bola.",
    "needs": [
     "discount"
    ],
@@ -182,7 +182,7 @@
    "mood": "season",
    "tone": "heart",
    "title": "Garam chai, garam deal 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek cup, ek deal.",
    "needs": [
     "price"
    ],
@@ -196,7 +196,7 @@
    "mood": "season",
    "tone": "dost",
    "title": "Spring ka mood hai, naya kuch chahiye 🌸",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Naya mausam, naya mood.",
    "needs": [
     "price"
    ],
@@ -210,7 +210,7 @@
    "mood": "season",
    "tone": "tease",
    "title": "Mausam badla, mood badla, wardrobe bhi badlo 🍃",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Purana out, naya in.",
    "needs": [
     "price"
    ],
@@ -224,7 +224,7 @@
    "mood": "season",
    "tone": "self",
    "title": "Season change: purane kapde bhi retire 👋",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Discount sach mein hai, mazaak nahi.",
    "needs": [
     "discount"
    ],
@@ -252,7 +252,7 @@
    "mood": "exam",
    "tone": "tease",
    "title": "Syllabus khatam? Ye deal abhi shuru hui hai 😄",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Syllabus baad mein, ye abhi.",
    "needs": [
     "price"
    ],
@@ -280,7 +280,7 @@
    "mood": "exam",
    "tone": "heart",
    "title": "Mehnat karne walon ko ek chhota treat 🎁",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj ka special, aaj ke liye.",
    "needs": [
     "discount"
    ],
@@ -308,7 +308,7 @@
    "mood": "result",
    "tone": "heart",
    "title": "Result kuch bhi ho, tum ho khaas 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Result se badi baat: tum.",
    "needs": [
     "price"
    ],
@@ -322,7 +322,7 @@
    "mood": "wedding",
    "tone": "dost",
    "title": "Shaadi season: card, outfit, gift, sab kuch 💌",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Card aaya, ab outfit bhi.",
    "needs": [
     "price"
    ],
@@ -336,7 +336,7 @@
    "mood": "wedding",
    "tone": "tease",
    "title": "Shaadi mein sabse achha kaun dikhega? Tum 😎",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Score: discount 1, MRP 0.",
    "needs": [
     "discount"
    ],
@@ -350,7 +350,7 @@
    "mood": "wedding",
    "tone": "self",
    "title": "Ek aur shaadi, ek aur outfit ka tension 😅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Tension alag, deal alag.",
    "needs": [
     "price"
    ],
@@ -364,7 +364,7 @@
    "mood": "wedding",
    "tone": "heart",
    "title": "Kisi ki shaadi, tumhari khushi ka bahana 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Khushi doosron ki, outfit tumhara.",
    "needs": [
     "price"
    ],
@@ -378,7 +378,7 @@
    "mood": "travel",
    "tone": "dost",
    "title": "Trip ka plan banaya? Ye bhi le lo ✈️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bag pack, plan final.",
    "needs": [
     "price"
    ],
@@ -392,7 +392,7 @@
    "mood": "travel",
    "tone": "tease",
    "title": "Weekend getaway: bag pack, deal dekh 🌴",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Price ne aaj mood achha rakha hai.",
    "needs": [
     "discount"
    ],
@@ -420,7 +420,7 @@
    "mood": "travel",
    "tone": "heart",
    "title": "Safar mein saath rehne wali cheez 🧳",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Safar ka saathi banne aayi.",
    "needs": [
     "price"
    ],
@@ -448,7 +448,7 @@
    "mood": "birthday",
    "tone": "tease",
    "title": "Dost ka birthday: last minute ka gift 🎁",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Price gir gayi, tum utho.",
    "needs": [
     "discount"
    ],
@@ -476,7 +476,7 @@
    "mood": "birthday",
    "tone": "heart",
    "title": "Ek chhoti si cheez, badi si khushi 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chhoti si cheez, badi baat.",
    "needs": [
     "price"
    ],
@@ -504,7 +504,7 @@
    "mood": "festival",
    "tone": "tease",
    "title": "Tyohaar ke liye kya khareedna hai? List banao 📝",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Discount dekho, decision tumhara.",
    "needs": [
     "discount"
    ],
@@ -518,7 +518,7 @@
    "mood": "festival",
    "tone": "self",
    "title": "Tyohaar ki safai: purana out, naya in 🧹",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Naya ghar, naya mood.",
    "needs": [
     "price"
    ],
@@ -532,7 +532,7 @@
    "mood": "festival",
    "tone": "heart",
    "title": "Tyohaar sirf roshni ka nahi, saath ka bhi hai 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Saath rehna hi tyohaar hai.",
    "needs": [
     "price"
    ],
@@ -546,7 +546,7 @@
    "mood": "weekend",
    "tone": "dost",
    "title": "Weekend aa gaya, relax mode on 🛋️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aaraam se dekho, aaraam se socho.",
    "needs": [
     "price"
    ],
@@ -561,7 +561,7 @@
    "mood": "weekend",
    "tone": "tease",
    "title": "Weekend ka plan: kuch nahi. Deal: hai 😄",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aaj ka rate yaad rakhna.",
    "needs": [
     "discount"
    ],
@@ -576,7 +576,7 @@
    "mood": "weekend",
    "tone": "self",
    "title": "Weekend: sone ka time, scroll karne ka bhi 😴",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Neend aur deal, dono mumkin.",
    "needs": [
     "price"
    ],
@@ -591,7 +591,7 @@
    "mood": "weekend",
    "tone": "heart",
    "title": "Weekend ki subah, ek chhoti si khushi 🌤️",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Dhoop, chai, aur ek deal.",
    "needs": [
     "price"
    ],
@@ -609,7 +609,7 @@
    "mood": "friday",
    "tone": "tease",
    "title": "Friday: office ka mood off, weekend on 🎉",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Weekend ki taiyari yahan se.",
    "needs": [
     "price"
    ],
@@ -626,7 +626,7 @@
    "mood": "friday",
    "tone": "dost",
    "title": "Friday shaam: bahar jaana hai? Outfit ready? 🌆",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bahar jaane se pehle ek nazar.",
    "needs": [
     "price"
    ],
@@ -646,7 +646,7 @@
    "mood": "friday",
    "tone": "self",
    "title": "Friday ko kaam ka mann nahi, deal ka hai 😂",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Kaam ka mann nahi, ye theek hai.",
    "needs": [
     "price"
    ],
@@ -663,7 +663,7 @@
    "mood": "saturday",
    "tone": "dost",
    "title": "Saturday: aaj kuch nahi karna hai 🛋️",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kuch na karne ka bhi ek plan hota hai.",
    "needs": [
     "price"
    ],
@@ -680,7 +680,7 @@
    "mood": "saturday",
    "tone": "tease",
    "title": "Saturday ka mood: relax, scroll, shop 🛍️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Relax, scroll, shop.",
    "needs": [
     "price"
    ],
@@ -697,7 +697,7 @@
    "mood": "saturday",
    "tone": "heart",
    "title": "Saturday ki dhoop aur ek achhi deal ☀️",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Ye wali list mein upar aayi hai.",
    "needs": [
     "discount"
    ],
@@ -734,7 +734,7 @@
    "mood": "wednesday",
    "tone": "dost",
    "title": "Wednesday: hafte ka beech, thoda treat 🐪",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Beech ka din, beech ki deal.",
    "needs": [
     "price"
    ],
@@ -751,7 +751,7 @@
    "mood": "thursday",
    "tone": "tease",
    "title": "Thursday: weekend bas ek kadam door 🏃",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bas ek din aur.",
    "needs": [
     "price"
    ],
@@ -802,7 +802,7 @@
    "mood": "midnight",
    "tone": "self",
    "title": "Sone ka time hai, par phone haath mein hai 📱",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kam kharch, zyada khushi.",
    "needs": [
     "discount"
    ],
@@ -819,7 +819,7 @@
    "mood": "midnight",
    "tone": "heart",
    "title": "Raat ki shaanti, ek chhoti si khushi 🌌",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Raat ki shaanti mein deal ki awaaz.",
    "needs": [
     "price"
    ],
@@ -836,7 +836,7 @@
    "mood": "dawn",
    "tone": "dost",
    "title": "Subah subah, chai ke saath 🌅",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Sooraj ke saath ek deal.",
    "needs": [
     "price"
    ],
@@ -870,7 +870,7 @@
    "mood": "dawn",
    "tone": "heart",
    "title": "Naya din, nayi shuruaat, nayi deal 🌞",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj ki list mein ye bhi.",
    "needs": [
     "discount"
    ],
@@ -887,7 +887,7 @@
    "mood": "noon",
    "tone": "dost",
    "title": "Dopahar ki neend se pehle ek deal 😴",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Neend se pehle ek nazar.",
    "needs": [
     "price"
    ],
@@ -904,7 +904,7 @@
    "mood": "noon",
    "tone": "tease",
    "title": "Lunch ke baad ka sust mood: deal se theek karo 😌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Sust mood ka ilaaj.",
    "needs": [
     "price"
    ],
@@ -921,7 +921,7 @@
    "mood": "noon",
    "tone": "self",
    "title": "Dopahar ki meeting: neend aur deal dono 😂",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Meeting mein mat dekhna, break mein dekh lo.",
    "needs": [
     "price"
    ],
@@ -938,7 +938,7 @@
    "mood": "dusk",
    "tone": "dost",
    "title": "Shaam ki chai, shaam ki deal ☕",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek cup, ek nazar.",
    "needs": [
     "price"
    ],
@@ -955,7 +955,7 @@
    "mood": "dusk",
    "tone": "tease",
    "title": "Shaam ka sunset aur ek achhi deal 🌇",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Sunset ke saath ek deal.",
    "needs": [
     "price"
    ],
@@ -972,7 +972,7 @@
    "mood": "dusk",
    "tone": "heart",
    "title": "Din ka aakhri hissa, ek chhoti si khushi 🌆",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Percent kam nahi, mauka bhi kam nahi.",
    "needs": [
     "discount"
    ],
@@ -989,7 +989,7 @@
    "mood": "crowd",
    "tone": "tease",
    "title": "Sab reel dekh rahe hain, tum deal dekho 😏",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Reel baad mein, deal pehle.",
    "needs": [
     "price"
    ],
@@ -1031,7 +1031,7 @@
    "mood": "crowd",
    "tone": "tease",
    "title": "Ye deal group chat mein aayi to sab le lenge 😄",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Percent dekho, phir dil ki suno.",
    "needs": [
     "discount"
    ],
@@ -1045,7 +1045,7 @@
    "mood": "crowd",
    "tone": "dost",
    "title": "Bhai ko bhejna: 'ye dekh' 📲",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bhej do, ya khud le lo.",
    "needs": [
     "price"
    ],
@@ -1059,7 +1059,7 @@
    "mood": "crowd",
    "tone": "heart",
    "title": "Achhi cheez baantne se badhti hai 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Baant lo, phir bhi bachegi.",
    "needs": [
     "price"
    ],
@@ -1087,7 +1087,7 @@
    "mood": "relate",
    "tone": "tease",
    "title": "Wishlist mein 40 cheezein, khareeda: 2 😂",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aankhon ko pasand, jeb ko bhi.",
    "needs": [
     "discount"
    ],
@@ -1101,7 +1101,7 @@
    "mood": "relate",
    "tone": "self",
    "title": "Tabs khule hain, decision baaki hai 🤔",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek tab band karo, ye kholo.",
    "needs": [
     "price"
    ],
@@ -1115,7 +1115,7 @@
    "mood": "relate",
    "tone": "dost",
    "title": "Screenshot lena bhi shopping hai 📸",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Screenshot se aage ka kadam.",
    "needs": [
     "price"
    ],
@@ -1129,7 +1129,7 @@
    "mood": "relate",
    "tone": "tease",
    "title": "Sochte sochte deal khatam ho jaati hai (kabhi kabhi) 🤷",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Jaldi decide karne wale ko fayda.",
    "needs": [
     "price"
    ],
@@ -1143,7 +1143,7 @@
    "mood": "relate",
    "tone": "self",
    "title": "Ek minute, do minute, teen ghante: scroll 📱",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Percent bada, sochna chhota.",
    "needs": [
     "discount"
    ],
@@ -1157,7 +1157,7 @@
    "mood": "relate",
    "tone": "dost",
    "title": "Reviews padhna: 2 minute. Reviews pe overthink: 2 ghante 📖",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Reviews padh lo, par zyada mat socho.",
    "needs": [
     "price"
    ],
@@ -1171,7 +1171,7 @@
    "mood": "relate",
    "tone": "tease",
    "title": "'Sirf dekh raha hu' ka matlab: cart mein daalna 🛒",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Dekhna cart tak le jaata hai.",
    "needs": [
     "price"
    ],
@@ -1185,7 +1185,7 @@
    "mood": "relate",
    "tone": "self",
    "title": "Free delivery ke liye aur ek cheez daalte hain 📦",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Free delivery ka bahana, ek aur dabba.",
    "needs": [
     "price"
    ],
@@ -1199,7 +1199,7 @@
    "mood": "relate",
    "tone": "dost",
    "title": "Coupon code dhundhna: sabse bada time pass 🎟️",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Ek deal, ek tasalli.",
    "needs": [
     "discount"
    ],
@@ -1213,7 +1213,7 @@
    "mood": "relate",
    "tone": "heart",
    "title": "Achhi cheez ka intezaar sabse khoobsurat hota hai 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Intezaar ho gaya, ab deal dekh lo.",
    "needs": [
     "price"
    ],
@@ -1227,7 +1227,7 @@
    "mood": "relate",
    "tone": "tease",
    "title": "Return policy: sabse pyaari policy 😄",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Wapas karna aasan, isliye dil khol ke dekho.",
    "needs": [
     "price"
    ],
@@ -1241,7 +1241,7 @@
    "mood": "relate",
    "tone": "self",
    "title": "Sale ka mausam: dimaag chala, dil bhi 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Dimaag aur dil, dono ki baat suno.",
    "needs": [
     "price"
    ],
@@ -1269,7 +1269,7 @@
    "mood": "wait",
    "tone": "tease",
    "title": "Order kiya, ab bas intezaar 📦",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ab tracking page 10 baar refresh hoga.",
    "needs": [
     "price"
    ],
@@ -1283,7 +1283,7 @@
    "mood": "wait",
    "tone": "self",
    "title": "Parcel aane wala hai: aaj chhutti nahi leni 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Kabhi kabhi price bhi meherbaan ho jaati hai.",
    "needs": [
     "discount"
    ],
@@ -1297,7 +1297,7 @@
    "mood": "wait",
    "tone": "heart",
    "title": "Ek parcel, ek muskaan 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Doorbell baje to muskaan ready.",
    "needs": [
     "price"
    ],
@@ -1311,7 +1311,7 @@
    "mood": "gift",
    "tone": "heart",
    "title": "Kisi apne ko pyaar dikhane ka ek chhota tareeka 💌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pyaar batane ke liye shabd kam padte hain.",
    "needs": [
     "price"
    ],
@@ -1325,7 +1325,7 @@
    "mood": "gift",
    "tone": "dost",
    "title": "Gift dhoondh rahe ho? Ye dekh lo 🎁",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Gift ka sirdard yahin khatam.",
    "needs": [
     "price"
    ],
@@ -1339,7 +1339,7 @@
    "mood": "gift",
    "tone": "tease",
    "title": "Gift wrap: 50 rupaye, impression: pakka 🎀",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kam mein zyada wali baat.",
    "needs": [
     "discount"
    ],
@@ -1353,7 +1353,7 @@
    "mood": "gift",
    "tone": "self",
    "title": "Gift lene gaye the, apne liye le aaye 😅",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Gift bhi apna hi hota hai.",
    "needs": [
     "price"
    ],
@@ -1381,7 +1381,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Aaj kuch achha karne ka mann hai? Ye lo 🌷",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Aaj ka chhota sa achha kaam.",
    "needs": [
     "price"
    ],
@@ -1395,7 +1395,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Tum bahut kuch sambhalte ho, ek chhota reward 🎁",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Bachat ka mazaa alag hota hai.",
    "needs": [
     "discount"
    ],
@@ -1409,7 +1409,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Khud ke liye 5 minute, bas itna 🫶",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Paanch minute, sirf tumhare liye.",
    "needs": [
     "price"
    ],
@@ -1423,7 +1423,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Aaj ka din mushkil tha? Ek chhoti si khushi 🌈",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Mushkil din ke baad ek chhoti si roshni.",
    "needs": [
     "price"
    ],
@@ -1441,7 +1441,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Koi bhi din chhota sa jashn ke laayak hai 🎉",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Jashn ke liye kalendar ka intezaar kyun?",
    "needs": [
     "price"
    ],
@@ -1455,7 +1455,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Tumhe bhi kuch achha milna chahiye 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Ye wala bina soche nahi, soch ke lo.",
    "needs": [
     "discount"
    ],
@@ -1469,7 +1469,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Apne aap se pyaar karna seekho 🌸",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Khud ko bhi dost banao.",
    "needs": [
     "price"
    ],
@@ -1483,7 +1483,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Din bhar ki bhaag daud ke baad ek muskaan 😊",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bhaag daud ka chhota sa inaam.",
    "needs": [
     "price"
    ],
@@ -1500,7 +1500,7 @@
    "mood": "selflove",
    "tone": "heart",
    "title": "Kabhi kabhi bina wajah ke bhi treat lete hain 🍫",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bina wajah wali khushi sabse meethi.",
    "needs": [
     "price"
    ],
@@ -1514,7 +1514,7 @@
    "mood": "maths",
    "tone": "tease",
    "title": "{discount}% off: math ki class ka sabse achha sawaal 🧮",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Math ki class mein ye sawaal hota to sabko full marks.",
    "needs": [
     "discount",
     "price"
@@ -1559,7 +1559,7 @@
    "mood": "maths",
    "tone": "self",
    "title": "Discount dekh ke dil khush, calculator dekh ke aur khush 🧮",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Dono khush, bas wallet bhi khush ho.",
    "needs": [
     "price"
    ],
@@ -1573,7 +1573,7 @@
    "mood": "maths",
    "tone": "dost",
    "title": "Save: {save}. Ye paisa kaam aayega 💰",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bacha hua paisa kal kaam aayega.",
    "needs": [
     "mrp",
     "price"
@@ -1588,7 +1588,7 @@
    "mood": "maths",
    "tone": "tease",
    "title": "{save} bacha liye. Chai ki party? ☕",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chai ki party ka budget yahin se.",
    "needs": [
     "mrp",
     "price"
@@ -1603,7 +1603,7 @@
    "mood": "maths",
    "tone": "heart",
    "title": "{save} ki bachat: chhoti si, par apni 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Chhoti bachat bhi apni hoti hai.",
    "needs": [
     "mrp",
     "price"
@@ -1618,7 +1618,7 @@
    "mood": "maths",
    "tone": "self",
    "title": "Discount {discount}% aur dimaag 100% confused 😵",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Discount pakka, dimaag ka pata nahi.",
    "needs": [
     "discount",
     "price"
@@ -1648,7 +1648,7 @@
    "mood": "store",
    "tone": "tease",
    "title": "{store} pe kuch alag hi chal raha hai 👀",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Chalo, ek aur achha rate.",
    "needs": [
     "store",
     "discount"
@@ -1663,7 +1663,7 @@
    "mood": "store",
    "tone": "self",
    "title": "{store} ka app khola, deal mili, dil khush 🎁",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Deal mili, dil khush, ab bas cart.",
    "needs": [
     "store",
     "price"
@@ -1678,7 +1678,7 @@
    "mood": "store",
    "tone": "dost",
    "title": "{store}: aaj ki deal yahan hai 🛒",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ek hi jagah par sab kuch.",
    "needs": [
     "store",
     "price"
@@ -1693,7 +1693,7 @@
    "mood": "store",
    "tone": "tease",
    "title": "{store} ne surprise diya aaj 😏",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Surprise ka koi advance notice nahi hota.",
    "needs": [
     "store",
     "price"
@@ -1724,7 +1724,7 @@
    "mood": "brand",
    "tone": "dost",
    "title": "{brand} pasand hai? Ye dekho 😄",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Pasand ka naam, pasand ki deal.",
    "needs": [
     "brand",
     "price"
@@ -1740,7 +1740,7 @@
    "mood": "brand",
    "tone": "self",
    "title": "{brand} ko dekh ke wishlist ne haath uthaya 🙋",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aaj price ki taraf se salaam.",
    "needs": [
     "brand",
     "discount"
@@ -1756,7 +1756,7 @@
    "mood": "brand",
    "tone": "heart",
    "title": "{brand}: tumhara pasandeeda? 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Pasandeeda naam, naya price.",
    "needs": [
     "brand",
     "price"
@@ -1772,7 +1772,7 @@
    "mood": "cat",
    "tone": "dost",
    "title": "{category} ka mann hai? Ye rahi deal 🎯",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Aapki pasand ka rasta yahin se jaata hai.",
    "needs": [
     "price"
    ],
@@ -1787,7 +1787,7 @@
    "mood": "cat",
    "tone": "tease",
    "title": "{category}: tumhari pasand yahi hai na? 😏",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Hum sahi the na?",
    "needs": [
     "price"
    ],
@@ -1802,7 +1802,7 @@
    "mood": "cat",
    "tone": "self",
    "title": "{category} dekhte dekhte ghanta guzar gaya ⏳",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Cart ko bhi ek mauka do.",
    "needs": [
     "discount"
    ],
@@ -1817,7 +1817,7 @@
    "mood": "cat",
    "tone": "heart",
    "title": "{category} ka naya jalwa 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Naya jalwa, purana pyaar.",
    "needs": [
     "price"
    ],
@@ -1832,7 +1832,7 @@
    "mood": "saved",
    "tone": "tease",
    "title": "Save kiya hua yaad hai? Ab ye deal aayi hai 😏",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Yaad dilana hamara kaam.",
    "needs": [
     "price"
    ],
@@ -1847,7 +1847,7 @@
    "mood": "saved",
    "tone": "dost",
    "title": "Wishlist wali cheez sasti hui 🎉",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Aapki list ne deal ko pukaara.",
    "needs": [
     "price"
    ],
@@ -1862,7 +1862,7 @@
    "mood": "saved",
    "tone": "self",
    "title": "Bhool gaye the na? Hum yaad dila dete hain 😄",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bhool jaana insaani hai, yaad dilana hamara kaam.",
    "needs": [
     "price"
    ],
@@ -1877,7 +1877,7 @@
    "mood": "saved",
    "tone": "heart",
    "title": "Jo pasand aaya tha, ab waqt aaya 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Bachat ki ghanti baji hai.",
    "needs": [
     "discount"
    ],
@@ -1892,7 +1892,7 @@
    "mood": "viewed",
    "tone": "dost",
    "title": "Kal jo dekha tha, aaj sasta hai 👀",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Kal jo dekha tha, ab dobara dekhne layak.",
    "needs": [
     "price"
    ],
@@ -1907,7 +1907,7 @@
    "mood": "viewed",
    "tone": "tease",
    "title": "Dekh ke chale gaye? Deal ne yaad kiya 😏",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chale jaane ke baad bhi yaad rahe.",
    "needs": [
     "price"
    ],
@@ -1922,7 +1922,7 @@
    "mood": "viewed",
    "tone": "self",
    "title": "Ek nazar dekha tha, ab aur nazar 😅",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Ab dhyan se dekh lo.",
    "needs": [
     "price"
    ],
@@ -1937,7 +1937,7 @@
    "mood": "viewed",
    "tone": "heart",
    "title": "Jo aankhon ko pasand aaya tha 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Bachat wali khushi ka koi alternative nahi.",
    "needs": [
     "discount"
    ],
@@ -1952,7 +1952,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Aaj ka luck: ye deal 🍀",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Aaj ka luck yahin se shuru.",
    "needs": [
     "price"
    ],
@@ -1966,7 +1966,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Kuch khaas hai is deal mein ✨",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Naya sapna, purana budget.",
    "needs": [
     "discount"
    ],
@@ -1980,7 +1980,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Ye deal thodi alag hai 😉",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Alag isliye ki kuch alag hai.",
    "needs": [
     "price"
    ],
@@ -1994,7 +1994,7 @@
    "mood": "random",
    "tone": "self",
    "title": "Aaj kuch khareedna nahi tha, par ye dekh liya 😅",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Dekh liya, ab kya karna hai tum jaano.",
    "needs": [
     "price"
    ],
@@ -2008,7 +2008,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Ek nazar dalo, phir batao 👇",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek nazar, phir jawab.",
    "needs": [
     "price"
    ],
@@ -2022,7 +2022,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Kuch cheezein bina soche hi achhi lagti hain 😌",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Sochte reh jaoge to sochte hi reh jaoge.",
    "needs": [
     "discount"
    ],
@@ -2036,7 +2036,7 @@
    "mood": "random",
    "tone": "heart",
    "title": "Aaj ka din thoda special hai 🌟",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aaj khaas isliye ki tum yahan ho.",
    "needs": [
     "price"
    ],
@@ -2050,7 +2050,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Deal ne bulaya hai 📞",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Phone utha lo, deal ka call hai.",
    "needs": [
     "price"
    ],
@@ -2078,7 +2078,7 @@
    "mood": "random",
    "tone": "self",
    "title": "Chalo, aaj ek treat ka din 🎉",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kharcha bhi smart, khushi bhi smart.",
    "needs": [
     "discount"
    ],
@@ -2092,7 +2092,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Roz ki deals mein ek alag hi 🌟",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bheed mein alag dikhne wali.",
    "needs": [
     "price"
    ],
@@ -2106,7 +2106,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Deal ne hello bola 👋",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Wave karo, wapas hello bolegi.",
    "needs": [
     "price"
    ],
@@ -2120,7 +2120,7 @@
    "mood": "random",
    "tone": "heart",
    "title": "Chhoti khushiyon ka bhi apna jashn 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Chhoti khushi ka bada jashn.",
    "needs": [
     "price"
    ],
@@ -2134,7 +2134,7 @@
    "mood": "random",
    "tone": "self",
    "title": "Fir wahi, deal dekh ke dil pighla 🫠",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aaj ka chhota sa jashn.",
    "needs": [
     "discount"
    ],
@@ -2148,7 +2148,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Aaj ka top pick: tumhare liye 🏆",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Aaj tumhare liye chuna hai.",
    "needs": [
     "price"
    ],
@@ -2162,7 +2162,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Ye wali dekh kar ruk gaye? 🛑",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ruk gaye na? Hum jaante the.",
    "needs": [
     "price"
    ],
@@ -2176,7 +2176,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Kuch alag, kuch achha 🎁",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Alag bhi, achha bhi.",
    "needs": [
     "price"
    ],
@@ -2190,7 +2190,7 @@
    "mood": "random",
    "tone": "self",
    "title": "Scroll karte karte ye mil gayi 🔍",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kaam ka discount, kaam ki cheez.",
    "needs": [
     "discount"
    ],
@@ -2204,7 +2204,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Aaj ka mood: thoda shopping 🛍️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Bas thoda sa shopping mood.",
    "needs": [
     "price"
    ],
@@ -2218,7 +2218,7 @@
    "mood": "random",
    "tone": "heart",
    "title": "Ek chhoti si deal, ek badi si muskaan 😊",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Muskaan ka size: XXL.",
    "needs": [
     "price"
    ],
@@ -2232,7 +2232,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Sasti nahi, sahi deal 🎯",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Sasti se zyada sahi.",
    "needs": [
     "price"
    ],
@@ -2246,7 +2246,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Discount ko kya kehna, dil se {discount}% khush 😄",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Dil se khush, wallet se bhi khush.",
    "needs": [
     "discount",
     "price"
@@ -2261,7 +2261,7 @@
    "mood": "random",
    "tone": "self",
    "title": "Iske baad pakka koi shopping nahi (shayad) 🤞",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Shayad ka matlab: 'phir milte hain'.",
    "needs": [
     "price"
    ],
@@ -2275,7 +2275,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Bas ek nazar, phir kaam pe wapas 👀",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Baat sirf percent ki nahi, mauke ki bhi hai.",
    "needs": [
     "discount"
    ],
@@ -2289,7 +2289,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Ye deal chhupa ke rakhi thi, ab dikha di 🎭",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Chhupa ke rakhi thi, ab tumhari.",
    "needs": [
     "price"
    ],
@@ -2303,7 +2303,7 @@
    "mood": "random",
    "tone": "heart",
    "title": "Kuch cheezein sirf khushi ke liye hoti hain 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Khushi ke liye bahana kaun dhoondhta hai?",
    "needs": [
     "price"
    ],
@@ -2317,7 +2317,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Bhai, ye dekh 👇",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Seedhi baat: dekh lo.",
    "needs": [
     "price"
    ],
@@ -2331,7 +2331,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Hum kehte hain, tum decide karo 🤷",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kaam ki deal, bina shor.",
    "needs": [
     "discount"
    ],
@@ -2345,7 +2345,7 @@
    "mood": "random",
    "tone": "self",
    "title": "Achha to ye bhi mil gaya 😌",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Achha to ye bhi tha.",
    "needs": [
     "price"
    ],
@@ -2359,7 +2359,7 @@
    "mood": "random",
    "tone": "dost",
    "title": "Ye lo, aaj ki fresh deal 🍃",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Garma garam, abhi abhi.",
    "needs": [
     "price"
    ],
@@ -2373,7 +2373,7 @@
    "mood": "random",
    "tone": "tease",
    "title": "Thodi der ke liye phone side mein rakho, ye dekh lo 📵",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Phone side mein rakhne se pehle ek nazar.",
    "needs": [
     "price"
    ],
@@ -2387,7 +2387,7 @@
    "mood": "random",
    "tone": "heart",
    "title": "Chhoti cheez, bade mayne 💜",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Chhoti cheez, achhi deal.",
    "needs": [
     "discount"
    ],

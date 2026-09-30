@@ -43,7 +43,7 @@
    "mood": "chai",
    "tone": "tease",
    "title": "Chai gir gayi bag pe? Naya le lo 😅",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chai dhabbe wali bag aur nahi chalegi.",
    "needs": [
     "price"
    ]
@@ -65,7 +65,7 @@
    "mood": "salary",
    "tone": "tease",
    "title": "Pehli tareekh: bag ka naya scene 🎒",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Pehli tareekh, pehli khareedari.",
    "needs": [
     "price"
    ]
@@ -76,7 +76,7 @@
    "mood": "monthend",
    "tone": "self",
    "title": "Month-end: bag ki zip bhi wallet ki tarah band hai 😅",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Zip ko bhi aaram chahiye.",
    "needs": [
     "price"
    ]
@@ -112,7 +112,7 @@
    "mood": "sunday",
    "tone": "tease",
    "title": "Aaj koi plan nahi? Trip ka plan banao ✈️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Plan ka pehla paanna: bag.",
    "needs": [
     "price"
    ],
@@ -169,7 +169,7 @@
    "mood": "wfh",
    "tone": "dost",
    "title": "Workation ka plan? Laptop bag ready? 🏝️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Laptop bag ke saath saath sapne bhi pack.",
    "needs": [
     "price"
    ],
@@ -192,7 +192,7 @@
    "mood": "hostel",
    "tone": "tease",
    "title": "Ghar jaane ka mann? Bag pack karo 🏠",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Mummy ke liye kuch rakhna mat bhoolna.",
    "needs": [
     "price"
    ]
@@ -214,7 +214,7 @@
    "mood": "ghar",
    "tone": "dost",
    "title": "Mummy: 'bag mein zyada mat bharna' Tum: 'ye zaroori hai' 😅",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Zaroori cheezon ki list badi hoti hai.",
    "needs": [
     "price"
    ]
@@ -225,7 +225,7 @@
    "mood": "festival",
    "tone": "dost",
    "title": "Tyohaar pe ghar ja rahe ho? Trolley ready? 🧳",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Ghar ka rasta lamba, bag halka rakho.",
    "needs": [
     "price"
    ]
@@ -236,7 +236,7 @@
    "mood": "festival",
    "tone": "tease",
    "title": "Shaadi ka safar: bag bhi shaandar chahiye 💍",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Lehenga bhi aayega, jagah hai.",
    "needs": [
     "price"
    ]
@@ -247,7 +247,7 @@
    "mood": "festival",
    "tone": "heart",
    "title": "Ghar wapas aane ka safar sabse pyaara 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Mummy ke haath ki mithai ke liye jagah bachi rakhna.",
    "needs": [
     "price"
    ]
@@ -258,7 +258,7 @@
    "mood": "match",
    "tone": "dost",
    "title": "Stadium jaane wala bag: chhota aur handy 🏟️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Sirf zaroori cheezein, jagah ki tension nahi.",
    "needs": [
     "price"
    ]
@@ -269,7 +269,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Safar chhota ho ya lamba, bag apna hi bhala 🎒",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Apna bag, apna raasta.",
    "needs": [
     "price"
    ]
@@ -280,7 +280,7 @@
    "mood": "heart",
    "tone": "heart",
    "title": "Ek bag, hazaaron yaadein 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Har kone mein ek kahani.",
    "needs": [
     "price"
    ]
@@ -324,7 +324,7 @@
    "mood": "backpack",
    "tone": "heart",
    "title": "Roz ka saathi, roz ka bharosa 💜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Subah se shaam tak, saath nibhata hai.",
    "needs": [
     "price"
    ]
@@ -335,7 +335,7 @@
    "mood": "backpack",
    "tone": "dost",
    "title": "Laptop compartment: chhoti si suraksha 💻",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Laptop ko gaddi ka aaram.",
    "needs": [
     "price"
    ]
@@ -346,7 +346,7 @@
    "mood": "backpack",
    "tone": "tease",
    "title": "Bag ka size: 'itna kaafi hai?' Haan, kaafi hai 😄",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bag chhota lage to samajhna, cheezein zyada hain.",
    "needs": [
     "price"
    ]
@@ -357,7 +357,7 @@
    "mood": "backpack",
    "tone": "self",
    "title": "Purani bag ka kandha pukaar raha hai 🥲",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Discount dekho, decision tumhara.",
    "needs": [
     "discount"
    ]
@@ -379,7 +379,7 @@
    "mood": "travel",
    "tone": "tease",
    "title": "Trip ka plan banta hai, trolley ka scene 🧳",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Passport pehle, packing baad mein.",
    "needs": [
     "price"
    ]
@@ -401,7 +401,7 @@
    "mood": "travel",
    "tone": "heart",
    "title": "Naye shehar, nayi kahaniyan 🌍",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Aaj ka rate yaad rakhna.",
    "needs": [
     "discount"
    ]
@@ -412,7 +412,7 @@
    "mood": "travel",
    "tone": "dost",
    "title": "Duffel bag: weekend trip ka saathi 🏕️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Do din ka trip, ek hi bag.",
    "needs": [
     "price"
    ]
@@ -423,7 +423,7 @@
    "mood": "travel",
    "tone": "tease",
    "title": "Travel organiser: sab kuch apni jagah 🧳",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Chaabi ab bag ke ek hi kone mein.",
    "needs": [
     "price"
    ]
@@ -445,7 +445,7 @@
    "mood": "travel",
    "tone": "heart",
    "title": "Har safar ek nayi shuruat hai 🛫",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Naye raaste, naya bag.",
    "needs": [
     "price"
    ]
@@ -456,7 +456,7 @@
    "mood": "handbag",
    "tone": "dost",
    "title": "Handbag: chhoti si, par sab kuch andar 👜",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chhoti dikhti hai, sabka bharosa uthati hai.",
    "needs": [
     "price"
    ]
@@ -467,7 +467,7 @@
    "mood": "handbag",
    "tone": "tease",
    "title": "Handbag: 'ismein kya hai?' 'Sab kuch' 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Ye wali list mein upar aayi hai.",
    "needs": [
     "discount"
    ]
@@ -478,7 +478,7 @@
    "mood": "handbag",
    "tone": "self",
    "title": "Purse mein sikke, chabiyan, aur ek lipstick 💄",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Ek lipstick nikaalo to sab kuch bahar aa jaata hai.",
    "needs": [
     "price"
    ]
@@ -489,7 +489,7 @@
    "mood": "handbag",
    "tone": "heart",
    "title": "Ek pyaari si bag, ek pyaara sa mood 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pyaari cheez ko pyaari jagah.",
    "needs": [
     "price"
    ]
@@ -500,7 +500,7 @@
    "mood": "handbag",
    "tone": "dost",
    "title": "Sling bag: haath khali, style bhari 🎒",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Haath khali, kaam bhari.",
    "needs": [
     "price"
    ]
@@ -511,7 +511,7 @@
    "mood": "handbag",
    "tone": "tease",
    "title": "Clutch: shaadi mein entry 💃",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Shaadi mein sabki nazar ispe.",
    "needs": [
     "price"
    ]
@@ -533,7 +533,7 @@
    "mood": "wallet",
    "tone": "tease",
    "title": "Wallet mein cards zyada, cash kam 💳",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kam kharch, zyada khushi.",
    "needs": [
     "discount"
    ]
@@ -544,7 +544,7 @@
    "mood": "wallet",
    "tone": "self",
    "title": "Purana wallet: fata hua, par pyaara 🥲",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Naya wallet, purani yaadein alag rakho.",
    "needs": [
     "price"
    ]
@@ -555,7 +555,7 @@
    "mood": "wallet",
    "tone": "heart",
    "title": "Ek achha wallet, ek achhi shuruaat 💜",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Shuruaat achhi ho to sab achha.",
    "needs": [
     "price"
    ]
@@ -566,7 +566,7 @@
    "mood": "wallet",
    "tone": "dost",
    "title": "Card holder: chhota, slim, smart 💳",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Cards ki ab apni jagah.",
    "needs": [
     "price"
    ]
@@ -588,7 +588,7 @@
    "mood": "laptop",
    "tone": "tease",
    "title": "Laptop sleeve: jhatka-proof nahi, par better 🛡️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Jhatka lage, laptop na hile.",
    "needs": [
     "price"
    ]
@@ -599,7 +599,7 @@
    "mood": "laptop",
    "tone": "self",
    "title": "Laptop bag ka strap toot gaya 🥲",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Aaj ki list mein ye bhi.",
    "needs": [
     "discount"
    ]
@@ -610,7 +610,7 @@
    "mood": "laptop",
    "tone": "heart",
    "title": "Office ke safar ka saathi 💼",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Office ke raaste mein saath.",
    "needs": [
     "price"
    ]
@@ -621,7 +621,7 @@
    "mood": "school",
    "tone": "dost",
    "title": "School bag: kitaabein bhi, khilone bhi 🎒",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kitaab, khilona, tiffin — sab andar.",
    "needs": [
     "price"
    ]
@@ -643,7 +643,7 @@
    "mood": "school",
    "tone": "heart",
    "title": "Padhai ka safar, ek achhe bag ke saath 📚",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bachche ki pehli class ki tayyari.",
    "needs": [
     "price"
    ]
@@ -654,7 +654,7 @@
    "mood": "gym",
    "tone": "dost",
    "title": "Gym bag: kal se pakka jaana hai 💪",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Gym kal se, bag aaj se.",
    "needs": [
     "price"
    ]
@@ -665,7 +665,7 @@
    "mood": "gym",
    "tone": "tease",
    "title": "Gym bag: andar joote, bahar bhi joote 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Percent kam nahi, mauka bhi kam nahi.",
    "needs": [
     "discount"
    ]
@@ -689,7 +689,7 @@
    "mood": "brand",
    "tone": "dost",
    "title": "{brand}: bag ka pasandeeda brand? 🎒",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Bag aisa jo bahut kuch jhel jaye.",
    "needs": [
     "brand",
     "price"

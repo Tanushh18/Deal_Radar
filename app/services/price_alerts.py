@@ -82,12 +82,16 @@ def _trigger(alerts: List[Dict[str, Any]], price: float) -> None:
     now = time.time()
     db.execute_many("UPDATE price_alerts SET triggered_at = ?, triggered_price = ?, turso_dirty = 1 WHERE id = ?",
                     [(now, price, a["id"]) for a in alerts])
-    from . import devices
+    from . import devices, pitara
     for a in alerts:
         row = db.query_one("SELECT * FROM deals WHERE id = ?", (a["deal_id"],))
         deal = dict(row) if row else {"id": a["deal_id"]}
-        devices.notify(
-            a["device_id"], "price_drop", f"📉 Price drop: ₹{int(price):,}",
-            f"{(a.get('title') or 'Your deal')[:90]} — below your ₹{int(a['target_price']):,} alert",
-            deal, extra_token=a.get("push_token") or "",
-        )
+        title = f"📉 Price drop: ₹{int(price):,}"
+        body = f"{(a.get('title') or 'Your deal')[:90]} — below your ₹{int(a['target_price']):,} alert"
+        # The price that met the alert is the one to announce, whatever the deal row says right now.
+        picked = pitara.pick("price_drop", {**deal, "title": a.get("title") or deal.get("title") or "Your deal",
+                                            "price": price},
+                             ctx={"target": f"₹{int(a['target_price']):,}"})
+        if picked:
+            title, body = picked.title, picked.body
+        devices.notify(a["device_id"], "price_drop", title, body, deal, extra_token=a.get("push_token") or "")

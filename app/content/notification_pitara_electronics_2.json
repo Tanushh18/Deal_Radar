@@ -61,7 +61,7 @@
    "mood": "phone",
    "tone": "heart",
    "title": "Phone mein sab kuch hai, ek achha case bhi hona chahiye 🛡️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Girega to case bachayega.",
    "needs": [
     "price"
    ]
@@ -72,7 +72,7 @@
    "mood": "phone",
    "tone": "dost",
    "title": "Charger ke saath cable bhi lena, pichli wali toot gayi hogi 🔌",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Pichli wali ki shraddhanjali.",
    "needs": [
     "price"
    ]
@@ -105,7 +105,7 @@
    "mood": "audio",
    "tone": "tease",
    "title": "Headphones: duniya ko mute, gaane ko full 🔊",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bahar ka shor, andar ka music.",
    "needs": [
     "price"
    ]
@@ -116,7 +116,7 @@
    "mood": "audio",
    "tone": "self",
    "title": "Ek earbud gum, ek mil gaya, ab dono ka kya 😅",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kaam ka discount, kaam ki cheez.",
    "needs": [
     "discount"
    ]
@@ -127,7 +127,7 @@
    "mood": "audio",
    "tone": "heart",
    "title": "Ek gaana, ek yaad, ek headphone 🎶",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Gaana sirf tumhare liye.",
    "needs": [
     "price"
    ]
@@ -138,7 +138,7 @@
    "mood": "audio",
    "tone": "dost",
    "title": "Neckband: gale mein latka ke jeene ka scene 🎧",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Taar ka gola nahi bandega.",
    "needs": [
     "price"
    ]
@@ -160,7 +160,7 @@
    "mood": "laptop",
    "tone": "dost",
    "title": "Laptop: kaam bhi, movie bhi, 3 baje raat ka scroll bhi 💻",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Kaam pehle, movie baad mein (shayad).",
    "needs": [
     "price"
    ]
@@ -171,7 +171,7 @@
    "mood": "laptop",
    "tone": "tease",
    "title": "Laptop stand: gardan ki dua lagegi 🙏",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Gardan seedhi, kaam seedha.",
    "needs": [
     "price"
    ]
@@ -193,7 +193,7 @@
    "mood": "laptop",
    "tone": "heart",
    "title": "Kaam ka saathi, ek achhi jodi 💜",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Kaam ka saathi, sukoon ka saathi.",
    "needs": [
     "price"
    ]
@@ -204,7 +204,7 @@
    "mood": "laptop",
    "tone": "dost",
    "title": "Mouse pad: chhoti si cheez, badi si aasani 🖱️",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Mouse ko bhi ghar chahiye.",
    "needs": [
     "price"
    ]
@@ -215,7 +215,7 @@
    "mood": "laptop",
    "tone": "tease",
    "title": "Keyboard cover: chai ke daag se suraksha ☕",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Chai gire to keyboard bache.",
    "needs": [
     "price"
    ]
@@ -237,7 +237,7 @@
    "mood": "tv",
    "tone": "tease",
    "title": "Match ke liye bada TV ya dost ka ghar? 🏏",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Bada TV ho ya dost ka ghar, tum decide karo.",
    "needs": [
     "price"
    ]
@@ -259,7 +259,7 @@
    "mood": "tv",
    "tone": "heart",
    "title": "Family movie night ka best bahana 🎬",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Popcorn tum lana, film hum dhoondhenge.",
    "needs": [
     "price"
    ]
@@ -281,7 +281,7 @@
    "mood": "smart",
    "tone": "tease",
    "title": "Smart plug: ghar ko smart banao, tum wahi rehna 🏠",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Tum aaram karo, ghar khud smart.",
    "needs": [
     "price"
    ]
@@ -292,7 +292,7 @@
    "mood": "smart",
    "tone": "self",
    "title": "Light band karna bhool gaye? Ab phone se ho jaayega 📱",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Baat sirf percent ki nahi, mauke ki bhi hai.",
    "needs": [
     "discount"
    ]
@@ -303,7 +303,7 @@
    "mood": "cam",
    "tone": "dost",
    "title": "CCTV: ghar ki nigrani, mann ki shanti 👁️",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Ghar ki khabar rakhna aasan.",
    "needs": [
     "price"
    ]
@@ -314,7 +314,7 @@
    "mood": "cam",
    "tone": "tease",
    "title": "Dash cam: sadak ka saboot 🚗",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Sadak pe kya hua, video hai.",
    "needs": [
     "price"
    ]
@@ -336,7 +336,7 @@
    "mood": "power",
    "tone": "tease",
    "title": "Extension board: 5 plugs, 1 socket, infinite kaam 🔌",
-   "body": "{name}, {discount}% off.",
+   "body": "{name}, {discount}% off. Kaam ki deal, bina shor.",
    "needs": [
     "discount"
    ]
@@ -347,7 +347,7 @@
    "mood": "power",
    "tone": "self",
    "title": "Charger ke liye socket nahi milta? Ye lo 🔌",
-   "body": "{name} at {price}.",
+   "body": "{name} at {price}. Socket ki ladai khatam.",
    "needs": [
     "price"
    ]
@@ -358,7 +358,7 @@
    "mood": "gadget",
    "tone": "dost",
    "title": "Fitness band: kadam gino, dil khush karo ⌚",
-   "body": "{name}, {price}.",
+   "body": "{name}, {price}. Aaj ke kadam gin lo.",
    "needs": [
     "price"
    ]
@@ -369,7 +369,7 @@
    "mood": "gadget",
    "tone": "tease",
    "title": "Trimmer: chhoti cheez, badi zaroorat ✂️",
-   "body": "{name} for {price}.",
+   "body": "{name} for {price}. Chhoti cheez, roz ka kaam.",
    "needs": [
     "price"
    ]
@@ -380,7 +380,7 @@
    "mood": "gadget",
    "tone": "self",
    "title": "Gadget ki shopping: 'sirf ek' phir 5 ❌",
-   "body": "{name}, {discount}% off.",
+   "body": "{name} — {discount}% off. Chhoti cheez, achhi deal.",
    "needs": [
     "discount"
    ]

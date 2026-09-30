@@ -1,0 +1,327 @@
+{
+ "meta": {
+  "version": 1,
+  "placeholders": [
+   "name",
+   "price",
+   "mrp",
+   "save",
+   "discount",
+   "store",
+   "brand",
+   "category",
+   "day",
+   "target",
+   "value",
+   "count",
+   "query",
+   "coupon",
+   "sale",
+   "when"
+  ],
+  "about": "Pitara: Any (lowest_hot). Built from src/lowest_hot.txt."
+ },
+ "templates": [
+  {
+   "id": "lh001",
+   "category": "Any",
+   "mood": "low",
+   "tone": "dost",
+   "title": "📉 Lowest price ever: {name}",
+   "body": "Hamare data mein ab tak ki sabse kam price: {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh002",
+   "category": "Any",
+   "mood": "low",
+   "tone": "tease",
+   "title": "Price ne apna hi record tod diya 🏅",
+   "body": "{name} — {price}. Hamare records mein sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh003",
+   "category": "Any",
+   "mood": "low",
+   "tone": "heart",
+   "title": "Ye price kam hi dekhne ko milti hai 💜",
+   "body": "{name} at {price}. Ab tak ki sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh004",
+   "category": "Any",
+   "mood": "low",
+   "tone": "dost",
+   "title": "Sabse kam price abhi: {price} 🔎",
+   "body": "{name}. Humne ab tak itni kam nahi dekhi.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh005",
+   "category": "Any",
+   "mood": "low",
+   "tone": "self",
+   "title": "Kaafi dino se nazar thi? Ye sabse kam price hai 😌",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh006",
+   "category": "Any",
+   "mood": "low",
+   "tone": "tease",
+   "title": "Lowest price alert 🚨",
+   "body": "{name} at {price}. Hamare records ke hisaab se.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh007",
+   "category": "Any",
+   "mood": "low",
+   "tone": "dost",
+   "title": "Record low: {price} 📊",
+   "body": "{name}. Hamare price history mein sabse neeche.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh008",
+   "category": "Any",
+   "mood": "low",
+   "tone": "heart",
+   "title": "Ek achha mauka, hamare data ke mutabiq 💜",
+   "body": "{name} — {price}, ab tak ki lowest.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh009",
+   "category": "Any",
+   "mood": "low",
+   "tone": "tease",
+   "title": "Price history dekhi, ye sabse neeche hai 📉",
+   "body": "{name} at {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh010",
+   "category": "Any",
+   "mood": "low",
+   "tone": "dost",
+   "title": "Ab tak ki sabse kam price, {store} pe 🏷️",
+   "body": "{name} — {price}.",
+   "needs": [
+    "store",
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh011",
+   "category": "Any",
+   "mood": "low",
+   "tone": "tease",
+   "title": "Ye wali price hamare notebook mein record hui 📓",
+   "body": "{name}, {price}. Sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh012",
+   "category": "Any",
+   "mood": "low",
+   "tone": "self",
+   "title": "Sabse kam price wali deal aayi hai 🎯",
+   "body": "{name} for {price}. Data se check ki hai.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh013",
+   "category": "Any",
+   "mood": "low",
+   "tone": "dost",
+   "title": "📉 {price}: humne ab tak ki sabse kam dekhi",
+   "body": "{name}. Decision aapka.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh014",
+   "category": "Any",
+   "mood": "low",
+   "tone": "heart",
+   "title": "Kabhi kabhi price sach mein kam hoti hai 🌷",
+   "body": "{name} at {price}. Hamare data mein sabse kam.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh015",
+   "category": "Any",
+   "mood": "low",
+   "tone": "tease",
+   "title": "Ye price abhi tak ka sabse neeche hai 🔻",
+   "body": "{name} — {price}. Baaki aap dekh lo.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh016",
+   "category": "Any",
+   "mood": "low",
+   "tone": "dost",
+   "title": "Lowest yet: {price} 🏆",
+   "body": "{name}. Hamari price history ke hisaab se.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh017",
+   "category": "Any",
+   "mood": "low",
+   "tone": "self",
+   "title": "Price history ne bola: ye sabse achhi hai 📈",
+   "body": "{name}, {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh018",
+   "category": "Any",
+   "mood": "low",
+   "tone": "tease",
+   "title": "Sabse kam price. Hum bhi chaunke 😮",
+   "body": "{name} at {price}. Records mein ye sabse neeche.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh019",
+   "category": "Any",
+   "mood": "low",
+   "tone": "heart",
+   "title": "Ab tak ka sabse achha rate 💜",
+   "body": "{name} — {price}. Hamare data ke mutabiq.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  },
+  {
+   "id": "lh020",
+   "category": "Any",
+   "mood": "low",
+   "tone": "dost",
+   "title": "Ye deal hamare records mein sabse sasti hai 🧾",
+   "body": "{name} for {price}.",
+   "needs": [
+    "price",
+    "lowest"
+   ],
+   "kinds": [
+    "hot_deal"
+   ]
+  }
+ ]
+}
