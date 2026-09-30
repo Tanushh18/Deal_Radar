@@ -124,7 +124,9 @@ async function doRefresh(force: boolean): Promise<void> {
     const body = (await res.json()) as { version?: string; templates?: unknown };
     const templates = convert(body.templates);
     if (!isStr(body.version) || templates.length < MIN_REMOTE) return; // broken or partial: keep what we have
-    const next: Cache = { version: body.version, etag: res.headers.get('etag') ?? `"${body.version}"`, fetchedAt: Date.now(), templates };
+    // Built from the version, not read from the header: the server's gzip layer turns its ETag into a weak
+    // one (W/"…") that it wouldn't match on the way back, so an unchanged list would download every time.
+    const next: Cache = { version: body.version, etag: `"${body.version}"`, fetchedAt: Date.now(), templates };
     await AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
     active = templates; // used from the next notification it plans
   } finally {
