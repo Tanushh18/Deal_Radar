@@ -115,6 +115,12 @@ class Settings:
         # call site — an instant switch if a line ever needs pulling.
         self.notification_pitara_enabled: bool = _bool(os.getenv("NOTIFICATION_PITARA_ENABLED", "true"))
 
+        # --- Promotion: the Android app's Play Store page. /get sends Android visitors here
+        # with the source as the install referrer (services/growth.py). PLAY_STORE_URL
+        # overrides the page built from the package id. ---
+        self.play_store_package: str = os.getenv("PLAY_STORE_PACKAGE", "com.tanush.dealradar").strip()
+        self.play_store_url: str = os.getenv("PLAY_STORE_URL", "").strip()
+
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
         # Render sets RENDER_EXTERNAL_URL on every web service. Falling back to it
         # means notification images (which need an absolute URL) and the

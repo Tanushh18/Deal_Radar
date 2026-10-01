@@ -1123,15 +1123,28 @@
   }
 
   /* ---------------- 📤 share ---------------- */
+  /* Anonymous promotion counters (totals only — see services/growth.py). Fire and forget. */
+  function reportGrowth(event, src) {
+    try {
+      fetch('/api/growth/event', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ event, src }),
+      }).catch(() => {});
+    } catch { /* a counter is never worth an error */ }
+  }
+
   async function shareDeal(deal) {
-    const url = `${location.origin}/d/${encodeURIComponent(deal.id)}`;
-    const text = `${deal.title}${deal.price != null ? ` — ${money(deal.price)}` : ''}${deal.discount_pct >= 5 ? ` (${deal.discount_pct}% off)` : ''}`;
+    // ?src=share_web says where the open came from; the app link carries the same label to Play Console.
+    const url = `${location.origin}/d/${encodeURIComponent(deal.id)}?src=share_web`;
+    const appLink = `${location.origin}/get?src=share_web`;
+    const text = `${deal.title}${deal.price != null ? ` — ${money(deal.price)}` : ''}${deal.discount_pct >= 5 ? ` (${deal.discount_pct}% off)` : ''}\nvia DealRadar — price history checked`;
+    reportGrowth('share', 'web');
     if (navigator.share) {
       try { await navigator.share({ title: deal.title, text, url }); return; } catch (err) { if (err.name === 'AbortError') return; }
     }
     openModal(sheetShell('Share deal', `
       <div class="share-grid">
-        <a class="btn btn-soft" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text + '\n' + url)}">WhatsApp</a>
+        <a class="btn btn-soft" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text + '\n' + url + '\n\nDealRadar app: ' + appLink)}">WhatsApp</a>
         <a class="btn btn-soft" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}">Telegram</a>
         <button class="btn btn-soft" type="button" id="copy-share">Copy link</button>
       </div>`));
@@ -2935,6 +2948,32 @@
   }
   const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
+  /* ---------------- "Get the app" banner (Android browsers only) ---------------- */
+  const APP_BANNER_KEY = 'dr-app-banner';
+  const APP_BANNER_SNOOZE_MS = 7 * 24 * 3600 * 1000;
+
+  function initAppBanner() {
+    const ua = navigator.userAgent || '';
+    // Only a phone browser: not the app's own WebView, not an installed PWA, not iOS/desktop (no Play Store there).
+    if (!/android/i.test(ua) || /;\s*wv\)/i.test(ua) || isStandalone() || inNativeApp()) return;
+    try {
+      if (Date.now() - Number(localStorage.getItem(APP_BANNER_KEY) || 0) < APP_BANNER_SNOOZE_MS) return;
+    } catch { /* storage blocked: showing it is fine */ }
+    const bar = document.createElement('div');
+    bar.className = 'app-banner';
+    bar.setAttribute('role', 'region');
+    bar.setAttribute('aria-label', 'Get the DealRadar app');
+    bar.innerHTML = `<img src="/assets/icons/icon-192.png" alt="" width="40" height="40">
+      <div class="ab-text"><b>DealRadar app</b><span>Price alerts and history, on your phone</span></div>
+      <a class="btn btn-primary btn-sm" href="/get?src=web_banner">Get</a>
+      <button type="button" class="ab-close" aria-label="Dismiss">×</button>`;
+    bar.querySelector('.ab-close').addEventListener('click', () => {
+      bar.remove();
+      try { localStorage.setItem(APP_BANNER_KEY, String(Date.now())); } catch { /* fine */ }
+    });
+    document.body.appendChild(bar);
+  }
+
   function initInstall() {
     if (isStandalone() || inNativeApp()) return; // already an app — nothing to offer
     if (isIOS()) {
@@ -2986,6 +3025,7 @@
     applyTheme(document.documentElement.dataset.theme || 'dark');
     syncSortTabs();
     initInstall();
+    initAppBanner();
 
     // No visitor sign-in: the server reads the channels with its own account,
     // so everyone lands on the deals immediately.

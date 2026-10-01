@@ -17,15 +17,21 @@ import { Button } from './ui';
 export async function shareDeal(deal: Pick<Deal, 'id' | 'title' | 'price' | 'discount_pct'>): Promise<void> {
   haptic.light();
   let link = '';
+  let appLink = '';
   try {
-    link = `${(await resolveServerUrl()).replace(/\/+$/, '')}/d/${encodeURIComponent(deal.id)}`;
+    const site = (await resolveServerUrl()).replace(/\/+$/, '');
+    // src labels say where an open came from; the app link carries the same label to Play Console.
+    link = `${site}/d/${encodeURIComponent(deal.id)}?src=share_app`;
+    appLink = `${site}/get?src=share_app`;
   } catch {
     /* share the text alone */
   }
   const price = deal.price != null ? ` — ${money(deal.price)}` : '';
   const off = deal.discount_pct >= 5 ? ` (${deal.discount_pct}% off)` : '';
+  const tail = appLink ? `\n\nvia DealRadar — price history checked\nGet the app: ${appLink}` : '';
+  void api.growth.event('share', 'app');
   try {
-    await Share.share({ title: deal.title, message: `${deal.title}${price}${off}${link ? `\n${link}` : ''}` });
+    await Share.share({ title: deal.title, message: `${deal.title}${price}${off}${link ? `\n${link}` : ''}${tail}` });
   } catch {
     /* user dismissed */
   }
