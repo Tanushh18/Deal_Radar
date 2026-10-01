@@ -86,6 +86,20 @@ def load(force: bool = False) -> Tuple[List[Dict[str, Any]], str]:
             if _valid(t) and t["id"] not in seen:
                 seen.add(t["id"])
                 templates.append(t)
+    # Lines the model drafted and a person approved, and any line the admin switched off.
+    # (Imported here: pitara_writer imports this module.)
+    try:
+        from . import pitara_writer
+        off, extra, signature = pitara_writer.disabled_ids(), pitara_writer.approved_lines(), pitara_writer.signature()
+    except Exception as exc:  # noqa: BLE001 — the shipped lines alone are always enough
+        log.debug("Pitara drafts unavailable: %s", exc)
+        off, extra, signature = set(), [], ""
+    templates = [t for t in templates if t["id"] not in off]
+    for t in extra:
+        if _valid(t) and t["id"] not in seen and t["id"] not in off:
+            seen.add(t["id"])
+            templates.append(t)
+    digest.update(signature.encode())
     _cache = (templates, digest.hexdigest()[:16])
     log.info("Pitara loaded: %d lines (version %s)", len(templates), _cache[1])
     return _cache

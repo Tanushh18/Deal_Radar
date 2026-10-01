@@ -30,7 +30,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import activity, ingest, live, mongo_store, notify_auto, public_reader, quality, store, telegram, turso_backup
+from .services import activity, ingest, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -75,6 +75,9 @@ async def lifespan(app: FastAPI):
             await loop.run_in_executor(None, mongo_store.restore_settings)
         except Exception as exc:  # noqa: BLE001
             log.warning("Settings restore failed: %s", exc)
+        # Approved notification lines come back with the settings: forget anything read before them.
+        pitara_writer.reset_cache()
+        pitara.reset()
 
         meta = {"users": 0, "channels": 0, "user_channels": 0, "watchlists": 0}
         try:
@@ -130,6 +133,8 @@ async def lifespan(app: FastAPI):
     # Notification auto mode paces pushes on its own clock, not the ingest
     # cycle's (idle unless the admin switched it on).
     _tasks.append(asyncio.create_task(notify_auto.loop()))
+    # Once a night, if the admin switched it on: the model drafts new notification lines for review.
+    _tasks.append(asyncio.create_task(pitara_writer.loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 
     try:
