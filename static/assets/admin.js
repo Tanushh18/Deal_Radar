@@ -284,6 +284,7 @@
     if (active && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = active.offsetLeft - 16;
     if (remember) { try { localStorage.setItem(TAB_KEY, name); } catch { /* storage blocked */ } }
     if (name === 'fetching' && !$('#panel').classList.contains('hidden')) loadPollInterval().catch(() => {});
+    if (name === 'overview' && !$('#panel').classList.contains('hidden')) loadGrowth().catch(() => {});
     if (name === 'notifications' && !$('#panel').classList.contains('hidden')) { loadNotifyAuto().catch(() => {}); loadPitara().catch(() => {}); }
   }
   $('#admin-nav').addEventListener('click', (e) => {
@@ -378,6 +379,7 @@
       await loadPushStatus().catch(() => {});
       await loadNotifyAuto().catch((err) => show($('#na-msg'), err.message, 'err'));
       await loadPitara().catch(() => {});
+      await loadGrowth().catch(() => {});
       await loadSaleEvents().catch(() => {});
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
@@ -852,6 +854,42 @@
     loadNotifyAuto().catch(() => { /* transient */ });
   }, 60000);
 
+
+
+  /* ---------------- Promotion: anonymous link and share counts ---------------- */
+  const GR_LABEL = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+
+  function renderGrowth(g) {
+    const t = g.totals || {};
+    $('#gr-missing').classList.add('hidden');
+    $('#gr-origin').textContent = location.origin;
+    $('#gr-pill').textContent = `Last ${g.days || 30} days`;
+    const n = (v) => Number(v || 0).toLocaleString('en-IN');
+    $('#gr-totals').innerHTML = [
+      `Shared links opened <b>${n(t.deal_open)}</b>`, `Get-the-app clicks <b>${n(t.get_click)}</b>`,
+      `Shares <b>${n(t.share)}</b>`, `Invites <b>${n(t.invite)}</b>`,
+    ].map((x) => `<span class="stat-chip">${x}</span>`).join('');
+    $('#gr-sources').innerHTML = (g.sources || []).map((r) => `<tr><td><code>${esc(r.src)}</code></td>
+      <td class="num">${n(r.deal_open)}</td><td class="num">${n(r.get_click)}</td><td class="num">${n(r.share)}</td>
+      <td class="num">${n(r.invite)}</td></tr>`).join('')
+      || '<tr><td colspan="5" class="muted">Nothing counted yet — share a link or use /get?src=… and check back.</td></tr>';
+  }
+
+  async function loadGrowth() {
+    try {
+      renderGrowth(await api('/api/admin/reader/growth'));
+    } catch (err) {
+      if (err.status === 404) { $('#gr-missing').classList.remove('hidden'); $('#gr-pill').textContent = 'Not available'; return; }
+      throw err;
+    }
+  }
+
+  $('#gr-copy').addEventListener('click', async () => {
+    const label = GR_LABEL($('#gr-label').value) || 'direct';
+    const link = `${location.origin}/get?src=${label}`;
+    try { await navigator.clipboard.writeText(link); show($('#gr-msg'), `Copied: ${link}`, 'ok'); }
+    catch { show($('#gr-msg'), link, 'ok'); }
+  });
 
   /* ---------------- Notification copy: lines the model drafts, waiting for review ---------------- */
   let pw = null;

@@ -1382,6 +1382,22 @@ details.raw[open] summary::before { transform: rotate(45deg); }
 .toast span { min-width: 0; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
 
+/* "Get the app" banner: Android browsers only (initAppBanner in app.js). Sits above the bottom nav, under toasts. */
+.app-banner {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 150;
+  bottom: calc(var(--bottomnav-h) + var(--safe-bottom) + 10px);
+  display: flex; align-items: center; gap: 10px; width: calc(100% - 2 * var(--page-pad)); max-width: 460px;
+  padding: 10px 8px 10px 12px; border-radius: var(--r-sm);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-3);
+}
+.app-banner img { border-radius: 10px; flex: none; }
+.app-banner .ab-text { display: grid; gap: 1px; min-width: 0; flex: 1; font-size: .8rem; color: var(--text-2); }
+.app-banner .ab-text b { font-size: .88rem; color: var(--text); }
+.app-banner .ab-close {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; background: none; border: 0;
+  color: var(--text-2); font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+
 /* ============================================================
    SORT TABS + VIEW TOGGLE  (one bar, like DesiDime / Amazon)
    ============================================================ */

@@ -24,13 +24,14 @@ from .routers import channels as channels_router
 from .routers import deals as deals_router
 from .routers import health as health_router
 from .routers import notifications as notifications_router
+from .routers import growth as growth_router
 from .routers import pitara as pitara_router
 from .routers import devices as devices_router
 from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import activity, ingest, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, telegram, turso_backup
+from .services import activity, growth, ingest, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -78,6 +79,7 @@ async def lifespan(app: FastAPI):
         # Approved notification lines come back with the settings: forget anything read before them.
         pitara_writer.reset_cache()
         pitara.reset()
+        growth.reset_cache()
 
         meta = {"users": 0, "channels": 0, "user_channels": 0, "watchlists": 0}
         try:
@@ -135,6 +137,8 @@ async def lifespan(app: FastAPI):
     _tasks.append(asyncio.create_task(notify_auto.loop()))
     # Once a night, if the admin switched it on: the model drafts new notification lines for review.
     _tasks.append(asyncio.create_task(pitara_writer.loop()))
+    # Promotion counters (anonymous totals) are saved every few minutes.
+    _tasks.append(asyncio.create_task(growth.loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 
     try:
@@ -142,6 +146,7 @@ async def lifespan(app: FastAPI):
     finally:
         log.info("Shutting down…")
         turso_backup.stop()
+        growth.flush()
         for task in _tasks:
             task.cancel()
         await asyncio.gather(*_tasks, return_exceptions=True)
@@ -180,6 +185,7 @@ app.include_router(deals_router.router)
 app.include_router(watchlists_router.router)
 app.include_router(notifications_router.router)
 app.include_router(pitara_router.router)
+app.include_router(growth_router.router)
 app.include_router(admin_router.router)
 app.include_router(price_alerts_router.router)
 app.include_router(sale_events_router.router)
@@ -251,6 +257,8 @@ if os.path.isdir(STATIC_DIR):
         from html import escape
         from fastapi.responses import HTMLResponse
 
+        if not growth.is_bot(request.headers.get("user-agent", "")):  # link-preview fetchers aren't people
+            growth.record("deal_open", growth.clean_src(request.query_params.get("src"), default="link"))
         row = db.query_one("SELECT title, price, mrp, discount_pct, store, image_url FROM deals WHERE id = ?",
                            (deal_id,))
         target = f"/?deal={escape(deal_id)}"
@@ -274,6 +282,19 @@ if os.path.isdir(STATIC_DIR):
 <meta name="twitter:card" content="summary_large_image">
 <meta http-equiv="refresh" content="0;url={target}"></head>
 <body><a href="{target}">Open deal</a></body></html>""")
+
+    @app.get("/get", include_in_schema=False)
+    async def get_the_app(request: Request):
+        """One link to promote everywhere: Android phones go to the Play Store (the source label rides along
+        as the install referrer, so Play Console shows installs by source); everyone else gets the website."""
+        from fastapi.responses import RedirectResponse
+
+        ua = request.headers.get("user-agent", "")
+        src = growth.clean_src(request.query_params.get("src"), default="direct")
+        if not growth.is_bot(ua):
+            growth.record("get_click", src)
+        target = growth.play_url(src) if growth.is_android(ua) else "/"
+        return RedirectResponse(target, status_code=302, headers={"Cache-Control": "no-store"})
 
     @app.get("/admin", include_in_schema=False)
     async def admin_page():

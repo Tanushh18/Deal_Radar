@@ -1,10 +1,10 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, Switch, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, Share, Switch, View } from 'react-native';
 import { Text } from '../components/Text';
 
-import { api, errorMessage, isNotFound, type Follow, type FollowKind, type KeyCount, type User } from '../api';
+import { api, errorMessage, isNotFound, resolveServerUrl, type Follow, type FollowKind, type KeyCount, type User } from '../api';
 import {
   Button,
   Card,
@@ -30,6 +30,24 @@ import { useTheme, useThemePreference, type ThemePreference } from '../theme';
 import type { TabNav } from './types';
 
 type NotifState = 'granted' | 'denied' | 'blocked' | 'unknown';
+
+/** "Invite a friend": the app link, with a source label so installs from invites show up in Play Console. */
+async function inviteFriend(): Promise<void> {
+  let link = '';
+  try {
+    link = `${(await resolveServerUrl()).replace(/\/+$/, '')}/get?src=invite`;
+  } catch {
+    /* share the text alone */
+  }
+  void api.growth.event('invite', 'app');
+  try {
+    await Share.share({
+      message: `DealRadar — every deal's price history is checked, and you can set price alerts.${link ? `\nGet the app: ${link}` : ''}`,
+    });
+  } catch {
+    /* dismissed */
+  }
+}
 
 export function AccountScreen() {
   const t = useTheme();
@@ -205,6 +223,17 @@ export function AccountScreen() {
               ]}
             />
           </View>
+        </Group>
+
+        <Group title="Spread the word">
+          <Row
+            icon="share"
+            title="Invite a friend"
+            sub="Send them the DealRadar app link"
+            onPress={() => {
+              void inviteFriend();
+            }}
+          />
         </Group>
 
         <Group title="More">

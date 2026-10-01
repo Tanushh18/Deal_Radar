@@ -271,6 +271,14 @@ async def preview_notify_auto():
     return notify_auto.preview()
 
 
+@router.get("/growth")
+async def get_growth(days: int = 30):
+    """Promotion totals — shared links opened, get-the-app clicks, shares, invites — by source label.
+    Anonymous counts only; installs themselves are in Play Console, by the same labels."""
+    from ..services import growth
+    return growth.summary(max(1, min(days, 90)))
+
+
 # --- notification copy: lines the model drafts, waiting for a person ---------------
 
 @router.get("/pitara")

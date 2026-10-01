@@ -36,6 +36,12 @@ type Sig = { signal?: AbortSignal };
 
 const enc = encodeURIComponent;
 
+/** Anonymous promotion counters (totals only, no ids): which shares and invites happen. Never throws. */
+export const growth = {
+  event: (event: 'share' | 'invite', src: string) =>
+    request<{ ok: boolean }>('/api/growth/event', { method: 'POST', body: { event, src }, timeoutMs: 8_000 }).catch(() => undefined),
+};
+
 export const saleEvents = {
   list: (o: Sig = {}) => request<{ events: SaleEvent[] }>('/api/sale-events', o),
 };

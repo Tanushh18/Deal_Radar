@@ -238,6 +238,27 @@
           <span class="tile-label">Posting to Telegram</span><span class="tile-value" id="gl-tg">…</span>
           <span class="tile-help">Whether good deals are auto-posted to your own Telegram channel.</span></button>
       </div>
+      <section class="card" id="gr-card">
+        <div class="card-head">
+          <h2>Promotion — where visitors come from</h2>
+          <span class="status-pill" id="gr-pill">…</span>
+        </div>
+        <p class="muted help">Use <b><span id="gr-origin">your-site</span>/get?src=<i>label</i></b> as the link everywhere you promote
+          (Telegram channel, WhatsApp, Reels bio, creators). Android phones go to the Play Store, others to the website.
+          The label (for example <code>telegram</code>, <code>reels</code>, <code>whatsapp</code>) shows up here and in Play Console's
+          installs by source. Totals only: no IP, device or account is stored.</p>
+        <div class="alert alert-warn hidden" id="gr-missing" style="margin:0 0 12px">Needs the latest server update — this
+          card works once the new server is deployed.</div>
+        <div class="stat-row" id="gr-totals"></div>
+        <div style="overflow-x:auto;margin-top:10px"><table>
+          <thead><tr><th>Source</th><th class="num">Link opens</th><th class="num">Get-the-app clicks</th><th class="num">Shares</th><th class="num">Invites</th></tr></thead>
+          <tbody id="gr-sources"></tbody></table></div>
+        <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap;align-items:center">
+          <input class="input" id="gr-label" placeholder="Make a link: type a label, e.g. telegram" maxlength="24" style="max-width:280px" autocomplete="off" />
+          <button class="btn btn-soft btn-sm" id="gr-copy" type="button">Copy link</button>
+        </div>
+        <div class="msg hidden" id="gr-msg"></div>
+      </section>
     </section>
 
     <!-- ======================= DEAL FETCHING ======================= -->
