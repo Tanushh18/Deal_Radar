@@ -20,6 +20,8 @@ import { useShareIntentRouting } from './src/native/shareIntent';
 import { checkForUpdateOnLaunch, stopImmediateUpdates } from './src/native/updates';
 import { AppProviders } from './src/components/AppProviders';
 import { TelegramInvite } from './src/components/TelegramInvite';
+import { InterestsPicker } from './src/components/InterestsPicker';
+import { loadInterests } from './src/native/interests';
 import { loadAppFonts, useTheme } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -156,11 +158,20 @@ function Root() {
     return () => sub.remove();
   }, []);
 
+  // undefined = still reading the device; null = never asked → show the picker before any deals load.
+  const [interests, setInterests] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    loadInterests().then((v) => setInterests(v ?? null));
+  }, []);
+
   let body: React.ReactNode = null;
   // Nothing renders text until the fonts have loaded (or definitely failed), so no screen mixes typefaces.
   if (!fontsSettled) body = null;
   else if (phase.kind === 'connecting') body = <ConnectingView />;
   else if (phase.kind === 'offline') body = <OfflineView onRetry={boot} />;
+  else if (phase.kind === 'ready' && interests === undefined) body = null;
+  else if (phase.kind === 'ready' && interests === null)
+    body = <InterestsPicker onDone={() => setInterests('chosen')} />;
   else if (phase.kind === 'ready')
     body = (
       <NavigationContainer

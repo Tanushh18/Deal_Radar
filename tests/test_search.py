@@ -179,6 +179,25 @@ def main() -> int:
     body = client.get("/api/deals/suggest", params={"q": "headphones"}).json()
     check("everyone sees every channel's deals", len(body["deals"]) == 2, str(titles(body["deals"])))
 
+    print("\n=== 8. VISITOR INTERESTS ===")
+    r = client.get("/api/deals", params={"interests": "electronics", "sort": "best", "limit": 20}).json()
+    cats = [d["category"] for d in r["results"]]
+    check("picking electronics leads with electronics",
+          cats[0] == "Electronics" and cats[: cats.count("Electronics")] == ["Electronics"] * cats.count("Electronics"), str(cats))
+    r = client.get("/api/deals", params={"interests": "men", "sort": "best", "limit": 20}).json()
+    check("picking men leads with men's deals", r["results"][0]["category"] == "Men Fashion"
+          or r["results"][0]["category"] == "Footwear", str(titles(r["results"])))
+    r = client.get("/api/deals", params={"interests": "all", "sort": "best", "limit": 20}).json()
+    plain = client.get("/api/deals", params={"interests": "all", "sort": "best", "limit": 20}).json()
+    check("'all' keeps every deal, pure score order (no forced lead)", r["total"] == len(SAMPLES)
+          and titles(plain["results"]) == titles(r["results"])
+          and [d["score"] for d in r["results"]] == sorted((d["score"] for d in r["results"]), reverse=True),
+          str([(d["category"], d["score"]) for d in r["results"]]))
+    r = client.get("/api/deals", params={"interests": "bogus;drop", "sort": "best"})
+    check("junk interests are ignored safely", r.status_code == 200)
+    r = client.get("/api/deals/trending", params={"interests": "men"})
+    check("trending accepts interests", r.status_code == 200)
+
     print("\n" + "=" * 52)
     if failures:
         print(f"{FAIL} {len(failures)} check(s) FAILED:")

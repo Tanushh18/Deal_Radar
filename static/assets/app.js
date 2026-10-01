@@ -513,6 +513,9 @@
       showStatus();
     } else if (action === 'install') {
       promptInstall();
+    } else if (action === 'interests') {
+      try { localStorage.removeItem(INTERESTS_KEY); } catch { /* ignore */ }
+      askInterests().then(() => refreshDeals(true));
     }
   });
 
@@ -759,6 +762,8 @@
     // by itself when there's no query to rank against (see search.py).
     params.set('sort', f.sort);
     if (f.sort === 'for_you') params.set('device_id', deviceId());
+    const picks = interestsParam();
+    if (picks) params.set('interests', picks);
     params.set('limit', overrides.limit ?? state.limit);
     params.set('offset', overrides.offset ?? state.offset);
     return params.toString();
@@ -1918,7 +1923,7 @@
     const row = $('#trending-row');
     row.innerHTML = railSkeletons();
     try {
-      const res = await api('/api/deals/trending?limit=12');
+      const res = await api('/api/deals/trending?limit=12' + (interestsParam() ? '&interests=' + encodeURIComponent(interestsParam()) : ''));
       if (!res.results.length) {
         delete wrap.dataset.hasData;
         wrap.classList.add('hidden');
@@ -3030,6 +3035,7 @@
     // No visitor sign-in: the server reads the channels with its own account,
     // so everyone lands on the deals immediately.
     document.documentElement.classList.add('guest');
+    await askInterests();  // first open: popup before any deals are fetched
     await onSignedIn({ first_name: '', guest: true });
     updateSavedBadges();
     pollPriceAlerts();
@@ -3107,6 +3113,55 @@
       $('#grid-head').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
     }));
     rail.classList.remove('hidden');
+  }
+
+  /* ---------------- First-open interests popup ----------------
+     Stored on this device only and sent as ?interests= so the server leads the
+     feed with what they picked ("all" = neutral). Not asked again once answered. */
+  const INTERESTS_KEY = 'dr-interests';
+  const INTEREST_OPTIONS = [
+    ['women', 'Women'], ['men', 'Men'], ['electronics', 'Electronics'], ['home', 'Home & Kitchen'],
+    ['beauty', 'Beauty & Grooming'], ['kids', 'Baby & Kids'], ['fashion', 'Footwear & Bags'],
+  ];
+  const storedInterests = () => { try { return localStorage.getItem(INTERESTS_KEY); } catch { return null; } };
+  const interestsParam = () => storedInterests() || '';
+
+  function askInterests() {
+    if (storedInterests() !== null || inNativeApp()) return Promise.resolve();
+    return new Promise((resolve) => {
+      const picked = new Set();
+      const save = (value) => {
+        try { localStorage.setItem(INTERESTS_KEY, value); } catch { /* private mode: asked again next visit */ }
+        closeModal();
+        resolve();
+      };
+      openModal(`
+        <div class="tg-invite interests">
+          <h2>What are you shopping for?</h2>
+          <p class="muted">Pick one or more — we'll show those deals first. You can change this anytime.</p>
+          <div class="suggest-chips interest-chips" style="justify-content:center">
+            ${INTEREST_OPTIONS.map(([k, label]) => `<button type="button" class="chip" data-interest="${k}">${label}</button>`).join('')}
+          </div>
+          <button class="btn btn-primary tg-invite-join" type="button" id="interest-done" style="background:var(--accent);color:var(--accent-text)" disabled>Show my deals</button>
+          <button class="btn btn-soft tg-invite-later" type="button" id="interest-all">Show me everything</button>
+        </div>`);
+      $$('[data-interest]').forEach((b) => b.addEventListener('click', () => {
+        const k = b.dataset.interest;
+        if (picked.has(k)) picked.delete(k); else picked.add(k);
+        b.classList.toggle('active', picked.has(k));
+        $('#interest-done').disabled = !picked.size;
+      }));
+      $('#interest-done').addEventListener('click', () => save([...picked].join(',')));
+      $('#interest-all').addEventListener('click', () => save('all'));
+      // Closing with Esc/backdrop counts as "everything" so the page still loads.
+      const watch = new MutationObserver(() => {
+        if ($('#modal').classList.contains('hidden')) {
+          watch.disconnect();
+          if (storedInterests() === null) save('all');
+        }
+      });
+      watch.observe($('#modal'), { attributes: true, attributeFilter: ['class'] });
+    });
   }
 
   /* "Join our Telegram channel" — shown each visit until they tap Join.

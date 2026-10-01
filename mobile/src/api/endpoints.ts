@@ -1,4 +1,5 @@
 import { request } from './client';
+import { interestsParam } from '../native/interests';
 import type {
   Offer,
   AppNotification,
@@ -83,6 +84,7 @@ function dealParams(q: DealQuery) {
     all_channels: q.all_channels || undefined,
     sort: q.sort ?? 'newest',
     device_id: q.sort === 'for_you' ? q.device_id : undefined,
+    interests: interestsParam(),
     limit: q.limit ?? 30,
     offset: q.offset ?? 0,
   };
@@ -110,7 +112,7 @@ export const deals = {
   offers: (q: string, limit = 12, o: Sig = {}) =>
     request<{ results: Offer[] }>('/api/deals/offers', { query: { q, limit }, signal: o.signal, timeoutMs: 10_000 }),
   trending: (limit = 12, o: Sig = {}) =>
-    request<{ results: Deal[] }>('/api/deals/trending', { query: { limit }, signal: o.signal }),
+    request<{ results: Deal[] }>('/api/deals/trending', { query: { limit, interests: interestsParam() }, signal: o.signal }),
   get: (id: string, o: Sig = {}) => request<DealDetail>(`/api/deals/${enc(id)}`, o),
   history: (id: string, o: Sig = {}) => request<DealHistory>(`/api/deals/${enc(id)}/history`, o),
   similar: (id: string, limit = 8, o: Sig = {}) =>

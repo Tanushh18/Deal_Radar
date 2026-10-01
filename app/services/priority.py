@@ -54,6 +54,24 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "keywords": ["kitchen", "cookware", "bedsheet", "storage", "mixer", "kettle"],
         "stores": [],
     },
+    "kids": {
+        "label": "Baby & Kids",
+        "categories": ["Baby & Kids"],
+        "keywords": ["kids", "baby", "toddler", "infant", "diaper", "toy"],
+        "stores": [],
+    },
+    "beauty": {
+        "label": "Beauty & Grooming",
+        "categories": ["Beauty"],
+        "keywords": ["skincare", "shampoo", "serum", "perfume", "makeup", "trimmer"],
+        "stores": [],
+    },
+    "fashion": {
+        "label": "Footwear & Bags",
+        "categories": ["Footwear", "Bags & Luggage"],
+        "keywords": ["shoes", "sneakers", "sandals", "backpack", "wallet"],
+        "stores": [],
+    },
     "off": {"label": "Nothing (neutral)", "categories": [], "keywords": [], "stores": []},
 }
 
@@ -215,3 +233,32 @@ def is_women(deal: Dict[str, Any]) -> bool:
 
 def lead_categories() -> List[str]:
     return list(get()["categories"])
+
+
+# --- per-visitor interests ---------------------------------------------------
+# A visitor picks what they shop for on first open and the device sends it with
+# each browse request ("interests=women,electronics"). Those picks lead the feed
+# in place of the admin's rule; "all" (or nothing picked) means a neutral feed.
+# Only the presets above are accepted, so the value is never trusted as a rule.
+INTEREST_KEYS = tuple(k for k in PRESETS if k != "off")
+
+
+def parse_interests(raw: str) -> Optional[List[str]]:
+    """None = param absent (older clients: keep the admin's rule); [] = neutral."""
+    if raw is None or not str(raw).strip():
+        return None
+    picked = [w for w in dict.fromkeys(str(raw).lower().replace(" ", "").split(",")) if w in INTEREST_KEYS]
+    return picked[:len(INTEREST_KEYS)]
+
+
+def interest_rules(interests: Optional[List[str]]) -> Optional[List[Dict[str, Any]]]:
+    if interests is None:
+        return None
+    return [_clean({**PRESETS[k], "preset": k}) for k in interests]
+
+
+def matches_any(deal: Dict[str, Any], rules: Optional[List[Dict[str, Any]]]) -> bool:
+    """Admin rule when `rules` is None, otherwise any of the visitor's rules."""
+    if rules is None:
+        return matches(deal)
+    return any(matches(deal, r) for r in rules)

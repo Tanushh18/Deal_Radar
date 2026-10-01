@@ -55,11 +55,12 @@ def _priority_sql() -> str:
     return priority.sql()
 
 
-def _mark_priority(rows: List[Dict[str, Any]], lead: bool) -> List[Dict[str, Any]]:
-    """Tag rows matching the "show on top" rule; with `lead`, move them first (stable)."""
+def _mark_priority(rows: List[Dict[str, Any]], lead: bool, rules: Optional[list] = None) -> List[Dict[str, Any]]:
+    """Tag rows matching the "show on top" rule (or the visitor's own interest
+    `rules`); with `lead`, move them first (stable)."""
     from . import priority
     for row in rows:
-        row["priority"] = priority.matches(row)
+        row["priority"] = priority.matches_any(row, rules)
     if lead:
         rows.sort(key=lambda r: not r["priority"])
     return rows
@@ -270,6 +271,7 @@ def _candidates(
     has_coupon: bool = False,
     size: str = "",
     lead_priority: bool = False,
+    interest_rules: Optional[list] = None,
 ) -> List[Dict[str, Any]]:
     """Light rows for every deal passing the hard filters (not category — that's counted)."""
     where: List[str] = [_HAS_IMAGE]
@@ -318,7 +320,7 @@ def _candidates(
         f"SELECT {_LIGHT_COLUMNS} FROM deals WHERE {' AND '.join(where)} "
         f"ORDER BY {order} LIMIT {_CANDIDATE_CAP}"
     )
-    rows = _mark_priority([dict(r) for r in db.query(sql, params)], lead_priority)
+    rows = _mark_priority([dict(r) for r in db.query(sql, params)], lead_priority, interest_rules)
 
     unfiltered_browse = (
         not archive and not include_expired and not store and not brand
@@ -327,7 +329,7 @@ def _candidates(
     )
     if unfiltered_browse and len(rows) < _MIN_LIVE_FLOOR:
         rows.extend(_mark_priority(_stale_fallback(order, exclude_ids={r["id"] for r in rows},
-                                                   limit=_MIN_LIVE_FLOOR - len(rows)), lead_priority))
+                                                   limit=_MIN_LIVE_FLOOR - len(rows)), lead_priority, interest_rules))
     return rows
 
 
@@ -435,13 +437,17 @@ def search(
     has_coupon: bool = False,
     size: str = "",
     device_id: str = "",
+    interests: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
+    from . import priority
+    rules = priority.interest_rules(interests)
     rows = _candidates(
         store=store, brand=brand, min_price=min_price, max_price=max_price,
         min_discount=min_discount, channel_ids=channel_ids,
         include_expired=include_expired, only_lowest=only_lowest,
         order=SORTS.get(sort) or SORTS["best"],
         archive=archive, has_coupon=has_coupon, size=size,
+        interest_rules=rules,
         lead_priority=sort in (_PRIORITY_SORTS if not (q or "").strip() else _PRIORITY_SORTS_WITH_QUERY),
     )
 
@@ -585,7 +591,8 @@ def facets(channel_ids: Optional[List[int]] = None) -> Dict[str, Any]:
     }
 
 
-def trending(channel_ids: Optional[List[int]] = None, limit: int = 12) -> List[Dict[str, Any]]:
+def trending(channel_ids: Optional[List[int]] = None, limit: int = 12,
+             interests: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """Deals many channels reposted in the last day — the strongest signal we have."""
     now = time.time()
     where = ["status = 'live'", "expires_at > ?", "first_seen_at > ?", "repost_count > 1", _HAS_IMAGE]
@@ -598,4 +605,8 @@ def trending(channel_ids: Optional[List[int]] = None, limit: int = 12) -> List[D
         f"ORDER BY {_priority_sql()} DESC, repost_count DESC, score DESC LIMIT ?",
         params + [limit * 3],
     ))
+    if interests is not None:  # the visitor's own picks lead (stable), not the admin's
+        from . import priority
+        rules = priority.interest_rules(interests)
+        rows.sort(key=lambda d: not priority.matches_any(d, rules))
     return [shape(d) for d in rows[:limit]]

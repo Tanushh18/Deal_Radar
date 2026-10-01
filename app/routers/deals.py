@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from .. import auth, db
 
-from ..services import buyhatke, offers, price_store, ratelimit, search, store, taxonomy, telegram
+from ..services import buyhatke, offers, price_store, priority, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -46,6 +46,12 @@ def _scope(user: Optional[dict]) -> Optional[list]:
     return [int(r["tg_id"]) for r in rows] or None
 
 
+@router.get("/interests")
+async def interest_options():
+    """What the first-open picker offers, in display order."""
+    return {"interests": [{"key": k, "label": priority.PRESETS[k]["label"]} for k in priority.INTEREST_KEYS]}
+
+
 @router.get("/categories")
 async def categories():
     return {"categories": taxonomy.category_list()}
@@ -57,8 +63,12 @@ async def deal_facets(user=Depends(auth.optional_user)):
 
 
 @router.get("/trending")
-async def trending_deals(limit: int = Query(12, ge=1, le=50), user=Depends(auth.optional_user)):
-    return {"results": search.trending(_scope(user), limit)}
+async def trending_deals(
+    limit: int = Query(12, ge=1, le=50),
+    interests: str = Query("", max_length=120, description="Visitor's picks, e.g. women,electronics"),
+    user=Depends(auth.optional_user),
+):
+    return {"results": search.trending(_scope(user), limit, priority.parse_interests(interests))}
 
 
 @router.get("/suggest")
@@ -104,6 +114,9 @@ async def list_deals(
     has_coupon: bool = False,
     size: str = Query("", max_length=20),
     device_id: str = Query("", max_length=120, description="Required for sort=for_you"),
+    interests: str = Query("", max_length=120, description=(
+        "Visitor's picks from first-open onboarding, e.g. women,electronics; they lead the feed. "
+        "'all' = neutral; omitted = the admin's rule")),
     user=Depends(auth.optional_user),
     _rl=Depends(_limit_search),
 ):
@@ -129,6 +142,7 @@ async def list_deals(
         has_coupon=has_coupon,
         size=size,
         device_id=device_id,
+        interests=priority.parse_interests(interests),
     )
 
 

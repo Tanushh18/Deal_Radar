@@ -15,3 +15,4 @@ export * from './Rails';
 export * from './Saved';
 export * from './StoreLogo';
 export * from './OffersSection';
+export * from './InterestsPicker';
