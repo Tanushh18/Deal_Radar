@@ -271,6 +271,53 @@ async def preview_notify_auto():
     return notify_auto.preview()
 
 
+# --- notification copy: lines the model drafts, waiting for a person ---------------
+
+@router.get("/pitara")
+async def get_pitara():
+    """The writer's switches, how much of the shared Groq budget it has used,
+    and the drafts waiting for review."""
+    from ..services import pitara_writer
+    return pitara_writer.status()
+
+
+@router.post("/pitara/settings")
+async def set_pitara_settings(payload: Any = Body(None)):
+    """{"enabled": bool, "auto_approve": bool} — either or both. Both default off."""
+    from ..services import pitara_writer
+    payload = {} if payload is None else payload
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Send a JSON object.")
+    values = {k: payload.get(k) for k in ("enabled", "auto_approve") if payload.get(k) is not None}
+    if any(not isinstance(v, bool) for v in values.values()):
+        raise HTTPException(status_code=400, detail="enabled and auto_approve must be true or false.")
+    pitara_writer.configure(values.get("enabled"), values.get("auto_approve"))
+    return pitara_writer.status()
+
+
+@router.post("/pitara/run")
+async def run_pitara_writer():
+    """Draft a batch now (skips the on/off switch, never the shared budget)."""
+    from ..services import pitara_writer
+    report = await pitara_writer.run_once(force=True)
+    return {"report": report, **pitara_writer.status()}
+
+
+@router.post("/pitara/decide")
+async def decide_pitara(payload: Any = Body(None)):
+    """{"ids": [...], "action": "approve" | "reject" | "disable" | "enable"}.
+    disable/enable also work on lines that ship with the app, by id."""
+    from ..services import pitara_writer
+    if not isinstance(payload, dict) or not isinstance(payload.get("ids"), list) \
+            or not all(isinstance(i, str) for i in payload["ids"]):
+        raise HTTPException(status_code=400, detail='Send {"ids": ["…"], "action": "approve"}.')
+    try:
+        result = pitara_writer.decide(payload["ids"][:200], str(payload.get("action") or ""))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {**result, **pitara_writer.status()}
+
+
 async def _finish(result: dict) -> dict:
     if result.get("status") != "ok":
         return result

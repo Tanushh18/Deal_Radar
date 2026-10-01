@@ -188,7 +188,7 @@ with TestClient(app) as c:
     check("a stale version gets the full list", r3.status_code == 200 and r3.json()["count"] == body["count"])
     check("no server-only secrets in it", set(body["templates"][0]) <= {
         "id", "category", "mood", "tone", "title", "body", "needs", "time", "day", "weekdays", "personal", "kinds",
-        "min_discount", "weight"})
+        "min_discount", "weight", "source"})
 
 print()
 if failures:

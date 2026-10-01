@@ -157,6 +157,20 @@ class Settings:
         self.groq_max_tokens_per_day: int = int(os.getenv("GROQ_MAX_TOKENS_PER_DAY", "180000"))
         self.groq_max_requests_per_minute: int = int(os.getenv("GROQ_MAX_REQUESTS_PER_MINUTE", "25"))
         self.groq_max_calls_per_cycle: int = int(os.getenv("GROQ_MAX_CALLS_PER_CYCLE", "20"))
+        # Notification-copy writer (services/pitara_writer.py): the model drafts new
+        # lines for the pitara; nothing goes live without approval unless the admin
+        # turns auto-publish on. It shares the Groq key and daily budget above with
+        # deal enrichment, so it only ever takes a small slice and steps back first:
+        #  * its own ceiling per day,
+        #  * and it doesn't run at all once the shared budget is this % used up
+        #    (what's left is for enrichment and sale blurbs).
+        # On/off and auto-publish are admin switches (default off), not env vars.
+        self.pitara_writer_tokens_per_day: int = int(os.getenv("PITARA_WRITER_TOKENS_PER_DAY", "12000"))
+        self.pitara_writer_leave_free_pct: int = int(os.getenv("PITARA_WRITER_LEAVE_FREE_PCT", "35"))
+        self.pitara_writer_lines_per_call: int = int(os.getenv("PITARA_WRITER_LINES_PER_CALL", "10"))
+        self.pitara_writer_max_calls_per_run: int = int(os.getenv("PITARA_WRITER_MAX_CALLS_PER_RUN", "4"))
+        # Stop drafting while this many lines wait for review — don't bury the reviewer.
+        self.pitara_writer_max_pending: int = int(os.getenv("PITARA_WRITER_MAX_PENDING", "120"))
 
         # --- Misc ---
         self.allowed_origins: List[str] = _split(os.getenv("ALLOWED_ORIGINS", "*"))

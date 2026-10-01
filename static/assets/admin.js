@@ -284,7 +284,7 @@
     if (active && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = active.offsetLeft - 16;
     if (remember) { try { localStorage.setItem(TAB_KEY, name); } catch { /* storage blocked */ } }
     if (name === 'fetching' && !$('#panel').classList.contains('hidden')) loadPollInterval().catch(() => {});
-    if (name === 'notifications' && !$('#panel').classList.contains('hidden')) loadNotifyAuto().catch(() => {});
+    if (name === 'notifications' && !$('#panel').classList.contains('hidden')) { loadNotifyAuto().catch(() => {}); loadPitara().catch(() => {}); }
   }
   $('#admin-nav').addEventListener('click', (e) => {
     const b = e.target.closest('[data-tab]');
@@ -377,6 +377,7 @@
       await loadPollInterval().catch((err) => show($('#poll-msg'), err.message, 'err'));
       await loadPushStatus().catch(() => {});
       await loadNotifyAuto().catch((err) => show($('#na-msg'), err.message, 'err'));
+      await loadPitara().catch(() => {});
       await loadSaleEvents().catch(() => {});
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
@@ -850,6 +851,123 @@
     if (document.hidden || $('#panel').classList.contains('hidden') || $('#tab-notifications').classList.contains('hidden')) return;
     loadNotifyAuto().catch(() => { /* transient */ });
   }, 60000);
+
+
+  /* ---------------- Notification copy: lines the model drafts, waiting for review ---------------- */
+  let pw = null;
+
+  // A made-up deal, so a reviewer reads the line the way a phone would.
+  const PW_SAMPLE = { name: 'Libas Printed Kurta Set', price: '₹649', mrp: '₹2,199', save: '₹1,550', discount: '70',
+    brand: 'Libas', store: 'Myntra', category: 'Women Fashion', day: 'Friday' };
+  const pwFill = (text) => String(text).replace(/\{(\w+)\}/g, (m, k) => PW_SAMPLE[k] ?? m);
+
+  const pwLine = (x, buttons) => `<div class="pw-line" data-id="${esc(x.id)}">
+      <div class="pw-text"><b>${esc(pwFill(x.title))}</b><div>${esc(pwFill(x.body))}</div>
+        <div class="muted small">Template: ${esc(x.title)} | ${esc(x.body)}</div>
+        <div class="muted small">${esc(x.category)} · ${esc(x.mood)} · ${esc(x.tone)} · <code>${esc(x.id)}</code></div></div>
+      <div class="pw-btns">${buttons}</div></div>`;
+
+  function renderPitara(r) {
+    pw = r || {};
+    const b = pw.budget || {};
+    const c = pw.counts || {};
+    $('#pw-missing').classList.add('hidden');
+    $('#pw-nokey').classList.toggle('hidden', pw.groq_configured !== false);
+    $('#pw-card').querySelectorAll('button, input').forEach((el) => { el.disabled = false; });
+    $('#pw-enabled').checked = !!pw.enabled;
+    $('#pw-auto').checked = !!pw.auto_approve;
+    $('#pw-pill').textContent = pw.enabled ? (pw.auto_approve ? '● Writing + publishing' : '● Writing for review') : '○ Off';
+    $('#pw-pill').className = `status-pill ${pw.enabled ? 'ok' : ''}`;
+    const used = (n, cap) => (cap ? `${Number(n || 0).toLocaleString('en-IN')} / ${Number(cap).toLocaleString('en-IN')}` : '—');
+    const chips = [
+      `Waiting <b>${c.pending ?? 0}</b>`, `Approved <b>${c.approved ?? 0}</b>`, `Shipped lines <b>${c.shipped ?? 0}</b>`,
+      `Shared Groq today <b>${used(b.shared_tokens, b.shared_token_cap)}</b> tokens`,
+      `Writer's slice <b>${used(b.writer_tokens, b.writer_token_cap)}</b>`,
+    ];
+    if (c.switched_off) chips.push(`Switched off <b>${c.switched_off}</b>`);
+    $('#pw-stats').innerHTML = chips.map((x) => `<span class="stat-chip">${x}</span>`).join('')
+      + (b.why ? `<div class="muted small" style="margin-top:6px">Paused: ${esc(b.why)}.</div>` : '')
+      + (pw.last_run && pw.last_run.at ? `<div class="muted small" style="margin-top:4px">Last run ${when(pw.last_run.at)}: ${
+        pw.last_run.added || 0} added${pw.last_run.why ? ` — ${esc(pw.last_run.why)}` : ''}.</div>` : '');
+    $('#pw-list').innerHTML = (pw.pending || []).map((x) => pwLine(x,
+      '<button class="btn btn-primary btn-xs" data-act="approve">Approve</button> <button class="btn btn-soft btn-xs" data-act="reject">Reject</button>'))
+      .join('') || '<p class="muted small">Nothing waiting. Drafts appear here after the nightly run or "Write a batch now".</p>';
+    $('#pw-approved').innerHTML = (pw.recent_approved || []).map((x) => pwLine(x,
+      '<button class="btn btn-soft btn-xs" data-act="disable">Switch off</button>')).join('')
+      || '<p class="muted small">None yet.</p>';
+  }
+
+  async function loadPitara() {
+    try {
+      renderPitara(await api('/api/admin/reader/pitara'));
+    } catch (err) {
+      if (err.status === 404) {
+        $('#pw-missing').classList.remove('hidden');
+        $('#pw-card').querySelectorAll('button, input').forEach((el) => { el.disabled = true; });
+        $('#pw-pill').textContent = 'Not available';
+        return;
+      }
+      throw err;
+    }
+  }
+
+  async function pwDecide(ids, action) {
+    if (!ids.length) return;
+    try {
+      const r = await post('/api/admin/reader/pitara/decide', { ids, action });
+      renderPitara(r);
+      show($('#pw-msg'), `${r.changed} line${r.changed === 1 ? '' : 's'} ${action === 'approve' ? 'approved — live now' : action === 'reject' ? 'rejected' : action === 'disable' ? 'switched off' : 'switched back on'}.`, 'ok');
+    } catch (err) { show($('#pw-msg'), err.message, 'err'); }
+  }
+
+  $('#pw-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (btn) pwDecide([btn.closest('.pw-line').dataset.id], btn.dataset.act);
+  });
+  $('#pw-approved').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (btn) pwDecide([btn.closest('.pw-line').dataset.id], btn.dataset.act);
+  });
+  const pwShownIds = () => [...document.querySelectorAll('#pw-list .pw-line')].map((el) => el.dataset.id);
+  $('#pw-approve-all').addEventListener('click', () => {
+    const ids = pwShownIds();
+    if (ids.length && confirm(`Approve ${ids.length} line${ids.length === 1 ? '' : 's'}? They go live for everyone straight away.`)) pwDecide(ids, 'approve');
+  });
+  $('#pw-reject-all').addEventListener('click', () => pwDecide(pwShownIds(), 'reject'));
+
+  async function pwSettings(body) {
+    try { renderPitara(await post('/api/admin/reader/pitara/settings', body)); show($('#pw-msg'), 'Saved.', 'ok'); }
+    catch (err) { show($('#pw-msg'), err.message, 'err'); if (pw) renderPitara(pw); }
+  }
+  $('#pw-enabled').addEventListener('change', (e) => pwSettings({ enabled: e.target.checked }));
+  $('#pw-auto').addEventListener('change', (e) => {
+    if (e.target.checked && !confirm('Publish drafts without review? Only rule-checked lines go in, but nobody reads them first.')) {
+      e.target.checked = false;
+      return;
+    }
+    pwSettings({ auto_approve: e.target.checked });
+  });
+  $('#pw-run').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    show($('#pw-msg'), 'Writing… this can take a minute.', 'ok');
+    try {
+      const r = await post('/api/admin/reader/pitara/run');
+      renderPitara(r);
+      const rep = r.report || {};
+      show($('#pw-msg'), rep.added ? `${rep.added} new line${rep.added === 1 ? '' : 's'} drafted.`
+        : `Nothing added${rep.why ? ` — ${rep.why}` : ''}.`, rep.added ? 'ok' : 'err');
+    } catch (err) { show($('#pw-msg'), err.message, 'err'); } finally { btn.disabled = false; }
+  });
+  $('#pw-off-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = $('#pw-off-id').value.trim();
+    if (id) pwDecide([id], 'disable');
+  });
+  $('#pw-on').addEventListener('click', () => {
+    const id = $('#pw-off-id').value.trim();
+    if (id) pwDecide([id], 'enable');
+  });
 
   /* -------------------- Upcoming sales calendar -------------------- */
   function fmtDay(ts) {

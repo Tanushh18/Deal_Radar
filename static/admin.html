@@ -154,6 +154,12 @@
     .na-preview { margin-top: 10px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface-2);
       display: grid; gap: 8px; font-size: .86rem; }
     .na-preview .k { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 700; }
+    .pw-list { display: grid; gap: 6px; margin-top: 6px; }
+    .pw-line { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      padding: 8px 10px; border-radius: var(--r-xs); background: var(--surface-2); font-size: .88rem; }
+    .pw-line .pw-text { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+    .pw-line .pw-btns { display: flex; gap: 6px; flex-shrink: 0; }
+    .pw-line code { font-size: .78em; }
     .tag.warn { background: var(--warn-soft); color: var(--warn); }
     .tag.mute { background: var(--surface-3); color: var(--text-2); }
   </style>
@@ -479,6 +485,46 @@
           <div style="overflow-x:auto"><table><tbody id="na-recent"></tbody></table></div>
         </details>
         <div class="msg hidden" id="na-msg"></div>
+      </section>
+
+      <section class="card" id="pw-card">
+        <div class="card-head">
+          <h2>Notification copy (AI drafts)</h2>
+          <span class="status-pill" id="pw-pill">…</span>
+        </div>
+        <p class="muted help">The model drafts new notification lines overnight. Nothing goes out until you approve it
+          (unless you turn on auto-publish). It only takes a small slice of the shared Groq budget and steps back
+          first, so deal tagging and sale blurbs keep working.</p>
+        <div class="alert alert-warn hidden" id="pw-missing" style="margin:0 0 12px">Needs the latest server update — this
+          card works once the new server is deployed.</div>
+        <div class="alert alert-warn hidden" id="pw-nokey" style="margin:0 0 12px">No Groq key on the server (GROQ_API_KEY),
+          so nothing can be drafted. Lines already approved keep working.</div>
+        <div class="row" style="gap:16px;flex-wrap:wrap;align-items:center">
+          <label class="row" style="gap:6px;align-items:center"><input type="checkbox" id="pw-enabled" /> Write new lines every night</label>
+          <label class="row" style="gap:6px;align-items:center"><input type="checkbox" id="pw-auto" /> Publish without review <span class="muted small">(rule-checked; leave off at first)</span></label>
+          <button class="btn btn-soft btn-sm" id="pw-run" type="button">Write a batch now</button>
+        </div>
+        <div class="stat-row" id="pw-stats" style="margin-top:10px"></div>
+        <h3 style="margin:14px 0 6px;font-size:1rem">Waiting for review</h3>
+        <div class="row" style="gap:8px;margin-bottom:6px">
+          <button class="btn btn-primary btn-xs" id="pw-approve-all" type="button">Approve all shown</button>
+          <button class="btn btn-soft btn-xs" id="pw-reject-all" type="button">Reject all shown</button>
+        </div>
+        <div id="pw-list" class="pw-list"></div>
+        <details class="inline-adv">
+          <summary>Switch off a line by its id</summary>
+          <form id="pw-off-form" class="row" style="gap:8px;margin-top:8px">
+            <input class="input" id="pw-off-id" placeholder="e.g. wf014 or ai-1a2b3c4d5e" autocomplete="off" />
+            <button class="btn btn-soft btn-sm" type="submit" data-act="disable">Switch off</button>
+            <button class="btn btn-soft btn-sm" type="button" id="pw-on">Switch back on</button>
+          </form>
+          <p class="muted small" style="margin:6px 0 0">Works on any line, including the ones that ship with the app.</p>
+        </details>
+        <details class="inline-adv">
+          <summary>Recently approved</summary>
+          <div id="pw-approved" class="pw-list"></div>
+        </details>
+        <div class="msg hidden" id="pw-msg"></div>
       </section>
 
       <section class="card" id="push-card">
