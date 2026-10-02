@@ -10,7 +10,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConnectingView, OfflineView } from './src/navigation/BootScreens';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef, type RootStackParamList } from './src/navigation/types';
-import { COLORS, LIVE_HOST, getBaseUrl, saveBaseUrl } from './src/native/config';
+import { COLORS, FALLBACK_HOSTS, getBaseUrl, rememberWorkingHost } from './src/native/config';
+import { loadCachedHosts, refreshHosts } from './src/native/registry';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
 import { configureNotificationHandler, pollNotifications } from './src/native/notifications';
 import { recordOpen } from './src/native/smartNotify';
@@ -94,23 +95,50 @@ function Root() {
   const lastBack = useRef(0);
 
   const boot = useCallback(async () => {
-    // Real users never see a server address: the app always points at the
-    // one production DealRadar. Setup only reappears via the hidden gesture
-    // in Settings (dev/testing use), which pre-fills a *different* saved URL.
-    const server = (await getBaseUrl()) ?? (await saveBaseUrl(LIVE_HOST));
+    // Real users never see a server address: the app points at the DealRadar
+    // hosts listed in the Stashr server registry (cached on the device, with
+    // LIVE_HOST as the built-in fallback). Setup only reappears via the hidden
+    // gesture in Settings (dev/testing use), which saves a *different* URL.
+    const explicit = await getBaseUrl();
+    await loadCachedHosts();
     setPhase({ kind: 'connecting' });
-    try {
-      // Reachability check only: visitors never sign in — the server reads the
-      // channels with its own account, so the app opens straight to the deals.
-      await checkAuth(server);
+
+    // Reachability check only: visitors never sign in — the server reads the
+    // channels with its own account, so the app opens straight to the deals.
+    // Tries each host in turn; if none answer, refreshes the registry once
+    // (the backend may have moved) and tries any new hosts.
+    const tried = new Set<string>();
+    const connect = async (hosts: string[]): Promise<boolean> => {
+      for (const host of hosts) {
+        if (tried.has(host)) continue;
+        tried.add(host);
+        try {
+          await checkAuth(host);
+          if (!explicit) rememberWorkingHost(host);
+          return true;
+        } catch (e: any) {
+          // Logged for you, never rendered: a visitor has no use for a server
+          // address or a raw network error, only "it isn't working right now".
+          console.warn('[app] boot failed:', host, e?.message ?? e);
+        }
+      }
+      return false;
+    };
+
+    let connected = await connect(explicit ? [explicit] : [...FALLBACK_HOSTS]);
+    if (!connected && !explicit) {
+      const fresh = await refreshHosts();
+      if (fresh) connected = await connect(fresh);
+    } else if (connected && !explicit) {
+      refreshHosts().catch(() => {}); // pick up changes for next time, without waiting
+    }
+
+    if (connected) {
       setPublicMode(true);
       stopImmediateUpdates();
       setPhase({ kind: 'ready', initial: 'Main' });
       startVisitorSession().catch((e) => console.warn('[app] visitor session failed:', e?.message ?? e));
-    } catch (e: any) {
-      // Logged for you, never rendered: a visitor has no use for a server
-      // address or a raw network error, only "it isn't working right now".
-      console.warn('[app] boot failed:', server, e?.message ?? e);
+    } else {
       setPhase({ kind: 'offline' });
     }
     setNavKey((k) => k + 1);

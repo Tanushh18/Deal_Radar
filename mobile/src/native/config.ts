@@ -48,6 +48,13 @@ export async function getBaseUrl(): Promise<string | null> {
       await AsyncStorage.removeItem(KEYS.baseUrl).catch(() => {});
       return null;
     }
+    // Older builds saved the default host as if it were a manual choice, which
+    // would pin the app to it and ignore the server registry. A saved default
+    // is not a choice, so treat it as unset.
+    if (v.replace(/\/+$/, '') === LIVE_HOST) {
+      await AsyncStorage.removeItem(KEYS.baseUrl).catch(() => {});
+      return null;
+    }
     return v;
   } catch {
     return null;
@@ -71,7 +78,22 @@ export async function saveBaseUrl(url: string): Promise<string> {
  * the res.ok check in api/client.ts). Only list a host here once it's a real,
  * currently-serving backend.
  */
-export const FALLBACK_HOSTS: readonly string[] = [LIVE_HOST];
+export const FALLBACK_HOSTS: string[] = [LIVE_HOST];
+
+/**
+ * Replace the host list with the one from the Stashr server registry (see
+ * registry.ts). Edited in place so existing imports stay valid. LIVE_HOST
+ * stays at the end as a last resort so a bad registry entry can't strand the app.
+ */
+export function applyHostList(fresh: string[]): void {
+  const cleaned = fresh
+    .map((h) => h.trim().replace(/\/+$/, ''))
+    .filter((h) => /^https:\/\//i.test(h));
+  if (cleaned.length === 0) return;
+  const list = [...cleaned, LIVE_HOST].filter((h, i, all) => all.indexOf(h) === i);
+  FALLBACK_HOSTS.splice(0, FALLBACK_HOSTS.length, ...list);
+  if (sessionHost && !FALLBACK_HOSTS.includes(sessionHost)) sessionHost = null;
+}
 
 // Remembered only for this run of the app (never persisted): once a fallback
 // host is found to work, later requests try it first instead of eating the
@@ -86,7 +108,7 @@ let sessionHost: string | null = null;
  */
 export async function resolveHost(): Promise<string> {
   const explicit = await getBaseUrl();
-  return explicit ?? sessionHost ?? LIVE_HOST;
+  return explicit ?? sessionHost ?? FALLBACK_HOSTS[0];
 }
 
 /** True only when nothing was explicitly configured — i.e. the fallback chain may apply. */
@@ -96,8 +118,10 @@ export async function usingDefaultHost(): Promise<boolean> {
 
 /** The next candidate after `failed`, or null once every fallback has been tried. */
 export function nextFallbackHost(failed: string): string | null {
-  const i = FALLBACK_HOSTS.indexOf(failed.replace(/\/+$/, '') as (typeof FALLBACK_HOSTS)[number]);
-  return i >= 0 && i + 1 < FALLBACK_HOSTS.length ? FALLBACK_HOSTS[i + 1] : null;
+  const bare = failed.replace(/\/+$/, '');
+  const i = FALLBACK_HOSTS.indexOf(bare);
+  if (i < 0) return FALLBACK_HOSTS.find((h) => h !== bare) ?? null;
+  return i + 1 < FALLBACK_HOSTS.length ? FALLBACK_HOSTS[i + 1] : null;
 }
 
 /** Call once a fallback host answers, so the rest of this session prefers it. */
