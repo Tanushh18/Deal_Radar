@@ -510,6 +510,32 @@ def _push_devices(client: httpx.Client) -> int:
     return len(rows)
 
 
+PRUNE_INTERVAL_SECONDS = 3600
+_last_prune_at = 0.0
+
+
+def _prune_old_deals(client: httpx.Client) -> int:
+    """Delete deals from Turso not seen for TURSO_DEAL_RETENTION_DAYS (default 5).
+
+    Still-live deals are kept whatever their age, mirroring the local cache
+    purge. Runs at most hourly; 0 disables it (keep everything forever).
+    """
+    global _last_prune_at
+    days = settings.turso_deal_retention_days
+    now = time.time()
+    if days <= 0 or now - _last_prune_at < PRUNE_INTERVAL_SECONDS:
+        return 0
+    results = _pipeline(client, [{
+        "sql": "DELETE FROM deals WHERE last_seen_at < ? AND NOT (status = 'live' AND expires_at > ?)",
+        "args": [arg(now - days * 86400), arg(now)],
+    }])
+    _last_prune_at = now
+    try:
+        return int(results[0]["response"]["result"].get("affected_row_count") or 0)
+    except (KeyError, IndexError, TypeError, AttributeError):
+        return 0
+
+
 def _backup_round() -> None:
     # Each sub-step is independent — one failing must not skip the others;
     # whatever didn't go up is still flagged and goes next round.
@@ -538,6 +564,13 @@ def _backup_round() -> None:
             except Exception as exc:  # noqa: BLE001
                 errors[name] = _err(exc)
                 log.warning("Turso %s upload failed: %s", name, exc)
+        try:
+            pruned = _prune_old_deals(client)
+            if pruned:
+                log.info("Turso: pruned %d deals older than %s days", pruned, settings.turso_deal_retention_days)
+        except Exception as exc:  # noqa: BLE001
+            errors["prune"] = _err(exc)
+            log.warning("Turso deal prune failed: %s", exc)
         _state.update(last_upload_at=time.time(), last_upload=counts, upload_errors=errors)
         if any(counts.values()):
             log.info("Turso upload: %s", counts)

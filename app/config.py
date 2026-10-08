@@ -76,6 +76,8 @@ class Settings:
         self.deal_ttl_hours: int = int(os.getenv("DEAL_TTL_HOURS", "96"))  # 4 days
         # Local SQLite is a short-term cache; older data lives in Turso/Sheets.
         self.local_cache_days: float = float(os.getenv("LOCAL_CACHE_DAYS", "15"))
+        # Turso auto-deletes deals not seen for this many days (0 = keep forever).
+        self.turso_deal_retention_days: float = float(os.getenv("TURSO_DEAL_RETENTION_DAYS", "5"))
         self.backfill_limit: int = int(os.getenv("BACKFILL_LIMIT", "120"))
         self.incremental_limit: int = int(os.getenv("INCREMENTAL_LIMIT", "60"))
         self.max_channels_per_user: int = int(os.getenv("MAX_CHANNELS_PER_USER", "40"))

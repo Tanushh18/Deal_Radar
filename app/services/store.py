@@ -505,7 +505,12 @@ def purge_local_cache() -> Dict[str, int]:
         return uploaded  # local SQLite is the only copy — never delete
     deal_safe = "turso_dirty = 0"
     now = time.time()
-    cutoff = now - settings.local_cache_days * 86400
+    keep_days = settings.local_cache_days
+    if settings.turso_deal_retention_days > 0:
+        # Never cache deals longer than Turso keeps them, or a re-upload
+        # would resurrect a deal Turso already auto-deleted.
+        keep_days = min(keep_days, settings.turso_deal_retention_days)
+    cutoff = now - keep_days * 86400
     uploaded["deals"] = db.execute(
         f"DELETE FROM deals WHERE last_seen_at < ? AND {deal_safe} "
         "AND NOT (status = 'live' AND expires_at > ?)",

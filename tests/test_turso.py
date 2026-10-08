@@ -24,6 +24,7 @@ import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app import db  # noqa: E402
+from app.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services import parser, price_store, store, turso_backup  # noqa: E402
 
@@ -193,6 +194,19 @@ def main() -> int:
         turso_backup._backup_round()
         remaining = tq("SELECT target_price FROM price_alerts")
         check("deleted alert removed from Turso", remaining == [{"target_price": 800.0}], str(remaining))
+
+        print("\n=== TURSO AUTO-DELETE (5 DAYS) ===")
+        stale = time.time() - 6 * 86400
+        db.execute("UPDATE deals SET last_seen_at = ?, status = 'expired', dirty = 1", (stale,))
+        turso_backup._last_prune_at = 0.0
+        settings.turso_deal_retention_days = 5
+        turso_backup._backup_round()
+        check("deal unseen >5 days auto-deleted from Turso", tq("SELECT id FROM deals") == [], str(tq("SELECT id FROM deals")))
+        # Restore it for the cache section below, with retention switched off.
+        settings.turso_deal_retention_days = 0
+        db.execute("UPDATE deals SET dirty = 1")
+        turso_backup._backup_round()
+        check("retention 0 keeps deals forever", len(tq("SELECT id FROM deals")) >= 1)
 
         print("\n=== LOCAL 15-DAY CACHE ===")
         old = time.time() - 16 * 86400
