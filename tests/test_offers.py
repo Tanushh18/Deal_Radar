@@ -135,6 +135,14 @@ def main() -> int:
         check("shortener shows the resolved store page, tags removed",
               links.plain_url({"url": "https://ekaro.in/x", "resolved_url": "https://www.flipkart.com/p/itm1?pid=ABC&affid=zz&lid=1"})
               == "https://www.flipkart.com/p/itm1?pid=ABC")
+        check("unopenable Amazon/Flipkart shortener falls back to the product id",
+              links.plain_url({"url": "https://fkrt.to/abc", "product_key": "flipkart:ABC123"})
+              == "https://www.flipkart.com/product/p/itme?pid=ABC123"
+              and links.plain_url({"url": "https://amzn.to/x", "product_key": "amazon:B098KGQC7M"})
+              == "https://www.amazon.in/dp/B098KGQC7M")
+        check("…or the store's own search for the title",
+              links.plain_url({"url": "https://fkrt.to/abc", "product_key": "flipkart:t:1f", "title": "Boat Rockerz 255"})
+              == "https://www.flipkart.com/search?q=Boat+Rockerz+255")
         check("a link that never reached a store is left as it was",
               links.plain_url({"url": "https://bitli.in/x"}) == "https://bitli.in/x")
 

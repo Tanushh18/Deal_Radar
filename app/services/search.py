@@ -164,7 +164,9 @@ class _Plan:
             for word, _, _ in process.extract(
                 tok, vocab, scorer=OSA.distance, score_cutoff=max_edits, limit=8
             ):
-                self.fuzzy[tok].add(word)
+                # Typos rarely change the first letter; "iphone" is not a typo of "phone".
+                if word[0] == tok[0]:
+                    self.fuzzy[tok].add(word)
             is_last = i == len(self.tokens) - 1
             if self.typing and is_last:
                 # Mid-keystroke "headphn" should already reach "headphones".

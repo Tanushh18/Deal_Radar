@@ -20,11 +20,11 @@ import asyncio
 import re
 from collections import OrderedDict
 from typing import Any, Dict, Iterable, List, Optional
-from urllib.parse import parse_qs, unquote, urljoin, urlparse
+from urllib.parse import parse_qs, quote_plus, unquote, urljoin, urlparse
 
 import httpx
 
-from . import parser
+from . import parser, taxonomy
 
 MAX_HOPS = 6
 HOP_TIMEOUT = 6.0
@@ -95,7 +95,61 @@ def plain_url(deal: Dict[str, Any]) -> str:
     for candidate in (deal.get("resolved_url"), deal.get("url")):
         if candidate and is_store_site(candidate):
             return parser.clean_url(candidate)
-    return deal.get("url") or ""
+    url = deal.get("url") or ""
+    if _is_store_shortener(url):
+        # An Amazon / Flipkart shortener we couldn't open (fkrt.to blocks
+        # servers): it would carry someone's affiliate tag, so link the
+        # product itself by id, or the store's own search for its title.
+        key = str(deal.get("product_key") or "")
+        if key.startswith("amazon:") and ":t:" not in key and ":u:" not in key:
+            return f"https://www.amazon.in/dp/{key.split(':', 1)[1]}"
+        if key.startswith("flipkart:") and ":t:" not in key and ":u:" not in key:
+            return f"https://www.flipkart.com/product/p/itme?pid={key.split(':', 1)[1].upper()}"
+        title = quote_plus((deal.get("title") or "").strip()[:100])
+        if title:
+            if parser.detect_store(url) == "amazon":
+                return f"https://www.amazon.in/s?k={title}"
+            return f"https://www.flipkart.com/search?q={title}"
+    return url
+
+
+def _is_store_shortener(url: str) -> bool:
+    """A shortener of Amazon or Flipkart (taxonomy lists each store's own short domains)."""
+    host = _host(url)
+    if not host or is_store_site(url):
+        return False
+    return any(_on(host, taxonomy.STORE_DOMAINS.get(store, ())) for store in ("amazon", "flipkart"))
+
+
+async def resolve_stored(limit: int = 30) -> int:
+    """Retry short links that were never resolved (blocked, timed out, or posted
+    before resolution existed), saving the store page on the card."""
+    from .. import db  # local: keeps this module importable without the database
+
+    rows = db.query(
+        "SELECT id, url FROM deals WHERE status = 'live' AND COALESCE(resolved_url, '') = '' "
+        "AND url != '' ORDER BY last_seen_at DESC LIMIT ?", (limit * 6,))
+    todo = [dict(r) for r in rows if not is_store_site(r["url"]) and not is_social(r["url"])][:limit]
+    if not todo:
+        return 0
+    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+                             "(KHTML, like Gecko) Chrome/122.0 Safari/537.36"}
+    done = 0
+    sem = asyncio.Semaphore(CONCURRENCY)
+    async with httpx.AsyncClient(follow_redirects=False, timeout=HOP_TIMEOUT, headers=headers) as client:
+        async def one(deal: Dict[str, Any]) -> None:
+            nonlocal done
+            async with sem:
+                try:
+                    final = await asyncio.wait_for(resolve(deal["url"], client), timeout=HOP_TIMEOUT * 2)
+                except asyncio.TimeoutError:
+                    return
+            if final:
+                db.execute("UPDATE deals SET resolved_url = ?, clean_url = ? WHERE id = ?",
+                           (final, parser.clean_url(final), deal["id"]))
+                done += 1
+        await asyncio.gather(*(one(d) for d in todo), return_exceptions=True)
+    return done
 
 
 def is_social(url: str) -> bool:

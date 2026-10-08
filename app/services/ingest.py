@@ -785,6 +785,11 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             except Exception as exc:  # noqa: BLE001 — never break the cycle over a notification
                 log.warning("Hot-push scheduling failed: %s", exc)
 
+            try:
+                if await links.resolve_stored():
+                    log.info("Resolved previously unresolved short links")
+            except Exception as exc:  # noqa: BLE001 — never break the cycle over this
+                log.warning("Stored-link resolution failed: %s", exc)
             purged_ids = store.purge_ancient()
             offers.prune()
             store.purge_housekeeping()
