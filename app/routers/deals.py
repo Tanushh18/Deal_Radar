@@ -89,9 +89,12 @@ async def more_offers(
     limit: int = Query(12, ge=1, le=40),
     _rl=Depends(_limit_search),
 ):
-    """Search-only "More offers": recent channel posts that aren't full deal cards."""
+    """Search-only "More offers": recent channel posts that aren't full deal cards,
+    then Amazon and Flipkart search links for the same words."""
     q = q.strip()
-    return {"results": offers.search(q, limit) if len(q) >= 2 else []}
+    if len(q) < 2:
+        return {"results": []}
+    return {"results": offers.search(q, limit) + offers.marketplace_links(q)}
 
 
 @router.get("")

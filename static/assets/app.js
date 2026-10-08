@@ -998,7 +998,7 @@
     const logo = o.store
       ? `<img class="offer-logo" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(o.store === 'amazon' ? 'amazon.in' : o.store === 'shopsy' ? 'shopsy.in' : o.store + '.com')}&sz=64" alt="" loading="lazy" onerror="this.remove()" />`
       : '<span class="offer-logo"></span>';
-    const meta = [o.store ? o.store.toUpperCase() : '', timeAgo(o.posted_at).toUpperCase()].filter(Boolean).join(' · ');
+    const meta = [o.store ? o.store.toUpperCase() : '', o.marketplace ? 'SEARCH THERE' : timeAgo(o.posted_at).toUpperCase()].filter(Boolean).join(' · ');
     return `<a class="offer-row" href="${escapeHtml(o.url)}" target="_blank" rel="noopener nofollow">
       ${logo}
       <span class="offer-body"><span class="offer-title">${escapeHtml(o.title)}</span>

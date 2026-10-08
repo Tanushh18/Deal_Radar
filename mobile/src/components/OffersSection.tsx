@@ -52,7 +52,7 @@ function OfferRow({ offer }: { offer: Offer }) {
         <View style={s.metaRow}>
           {price ? <Text style={s.price}>{price}</Text> : null}
           <Text numberOfLines={1} style={s.meta}>
-            {[store, timeAgo(offer.posted_at).toUpperCase()].filter(Boolean).join(' · ')}
+            {[store, offer.marketplace ? 'SEARCH THERE' : timeAgo(offer.posted_at).toUpperCase()].filter(Boolean).join(' · ')}
           </Text>
         </View>
       </View>
