@@ -23,7 +23,7 @@ from . import links, quality, taxonomy
 
 log = logging.getLogger(__name__)
 
-OFFER_DAYS = 7
+OFFER_DAYS = 5
 _KNOWN_STORES: Set[str] = set(taxonomy.STORE_DOMAINS)
 _KEY_RE = re.compile(r"[^a-z0-9]+")
 # "starting 229", "Starts @ ₹1,049", "from Rs.192", "Under ₹399" — a round-up's floor price.

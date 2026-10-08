@@ -131,7 +131,7 @@ def main() -> int:
         print("\n=== CLEAN-UP ===")
         db.execute("UPDATE offers SET posted_at = ? WHERE title LIKE '%Kurta%'", (time.time() - 8 * 86400,))
         removed = offers.prune()
-        check("offers older than a week are pruned", removed == 2, str(removed))
+        check("offers older than 5 days are pruned", removed == 2, str(removed))
         check("a channel handle is never an offer title",
               not offers.keep({"title": "@Lootunboxing", "url": "https://bitli.in/x"}, "vague")
               and offers.clean_title("Kurta Set @lootdeals - starting 229 t.me/lootdeals") == "Kurta Set - starting 229"
