@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
     loop = asyncio.get_event_loop()
     turso = None
     try:
-        turso = await loop.run_in_executor(None, turso_backup.restore, settings.local_cache_days)
+        turso = await loop.run_in_executor(None, turso_backup.restore, settings.cache_days)
     except Exception as exc:  # noqa: BLE001
         log.warning("Turso restore failed: %s", exc)
     turso_backup.start()

@@ -19,6 +19,7 @@ from __future__ import annotations
 import asyncio
 import re
 from collections import OrderedDict
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import parse_qs, quote_plus, unquote, urljoin, urlparse
 
@@ -129,13 +130,19 @@ def _search_title(title: str) -> str:
     return re.sub(r"\s{2,}", " ", text).strip()[:100] or title.strip()[:100]
 
 
+@lru_cache(maxsize=4)
+def _clean_link_sql(column: str, resolved: str) -> "tuple[str, tuple]":
+    domains = list(STORE_SITES) + [d for store in ("amazon", "flipkart") for d in taxonomy.STORE_DOMAINS.get(store, ())]
+    clause = f"(COALESCE({resolved}, '') != '' OR " + " OR ".join(f"{column} LIKE ?" for _ in domains) + ")"
+    return clause, tuple(f"%{d}%" for d in domains)
+
+
 def clean_link_sql(column: str = "url", resolved: str = "resolved_url") -> "tuple[str, list]":
     """SQL for "this deal's link can be shown without anyone's affiliate tag":
     its destination was resolved, or it already is a store page, or it is an
     Amazon/Flipkart short link (plain_url rebuilds those from the product id)."""
-    domains = list(STORE_SITES) + [d for store in ("amazon", "flipkart") for d in taxonomy.STORE_DOMAINS.get(store, ())]
-    clause = f"(COALESCE({resolved}, '') != '' OR " + " OR ".join(f"{column} LIKE ?" for _ in domains) + ")"
-    return clause, [f"%{d}%" for d in domains]
+    clause, params = _clean_link_sql(column, resolved)
+    return clause, list(params)
 
 
 def _is_store_shortener(url: str) -> bool:

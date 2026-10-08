@@ -87,8 +87,11 @@ def main() -> int:
     with TestClient(app) as c:
         print("\n=== SEED CALENDAR ===")
         events = se.list_all()
-        check("admin view has every calendar sale exactly once", len(events) == len(se._CALENDAR)
-              and len({e["template"] for e in events}) == len(se._CALENDAR), str(len(events)))
+        # A sale can occur twice inside the year-ahead window (e.g. BBD still running
+        # plus next year's), so check coverage and one occurrence per template per year.
+        check("admin view has every calendar sale, once per year",
+              len({e["template"] for e in events}) == len(se._CALENDAR)
+              and len({(e["template"], e["id"]) for e in events}) == len(events), str(len(events)))
         check("every seeded event is genuinely upcoming",
               all((e["ends_at"] or e["starts_at"]) >= time.time() for e in events))
         check("seeded events are marked approximate", all(e["approximate"] for e in events))
@@ -122,7 +125,9 @@ def main() -> int:
         check("same-name add became that year's BBD edit, not a copy", event["id"].startswith("flipkart-bbd-"), event["id"])
         remaining = c.get("/api/admin/reader/sale-events", headers=ADMIN).json()["events"]
         bbd = [e for e in remaining if e.get("template") == "flipkart-bbd"]
-        check("BBD appears once in the admin view", len(bbd) == 1, str(len(bbd)))
+        edited_year = event["id"].rsplit("-", 1)[-1]
+        check("BBD appears once per year in the admin view",
+              len([e for e in bbd if e["id"].endswith(edited_year)]) == 1, str([e["id"] for e in bbd]))
         check("deleted calendar sale is hidden for that year", bbd and bbd[0].get("hidden") is True)
         public = c.get("/api/sale-events").json()["events"]
         check("hidden sale is not shown in the app", not any(e["id"] == event["id"] for e in public))

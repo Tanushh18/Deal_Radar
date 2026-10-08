@@ -209,6 +209,15 @@ class Settings:
         return bool(self.groq_api_key)
 
     @property
+    def cache_days(self) -> float:
+        """Days of deals kept locally and restored on boot: the local cache window,
+        capped by how long Turso keeps deals (restoring older ones is wasted work)."""
+        keep = self.local_cache_days
+        if self.turso_deal_retention_days > 0:
+            keep = min(keep, self.turso_deal_retention_days)
+        return keep
+
+    @property
     def turso_configured(self) -> bool:
         return bool(self.turso_url and self.turso_auth_token)
 
