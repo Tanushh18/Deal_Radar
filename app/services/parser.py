@@ -183,10 +183,14 @@ def clean_url(url: str) -> str:
         parts = urlparse(url)
     except ValueError:
         return url
+    host = parts.netloc.lower()
+    if host == "amazon.in" or host.endswith(".amazon.in") or host == "amazon.com" or host.endswith(".amazon.com"):
+        asin = ASIN_RE.search(parts.path)
+        if asin:  # /dp/<ASIN> is the whole product link; everything else is tracking
+            return f"{parts.scheme}://{parts.netloc.lower()}/dp/{asin.group(1).upper()}"
     kept = {}
     # Myntra product pages are identified by the path alone; every query
     # param on them is affiliate / app-deeplink tracking (admitad, appsflyer).
-    host = parts.netloc.lower()
     query_items = {} if host == "myntra.com" or host.endswith(".myntra.com") else parse_qs(parts.query, keep_blank_values=False)
     for key, values in query_items.items():
         if key.lower() in {p.lower() for p in TRACKING_PARAMS}:

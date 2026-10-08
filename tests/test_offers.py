@@ -143,6 +143,12 @@ def main() -> int:
         check("…or the store's own search for the title",
               links.plain_url({"url": "https://fkrt.to/abc", "product_key": "flipkart:t:1f", "title": "Boat Rockerz 255"})
               == "https://www.flipkart.com/search?q=Boat+Rockerz+255")
+        check("search title drops the '63% Off -' lead and 'At Rs.1,299' tail",
+              links._search_title("57% Off - Digitek 2 Microphone & 1 Receiver At Rs.1,299") == "Digitek 2 Microphone & 1 Receiver"
+              and links._search_title("Adidas cricket shoes 72% off @ 1380") == "Adidas cricket shoes 72% off")
+        check("Amazon product link reduced to /dp/ASIN",
+              links.plain_url({"url": "https://www.amazon.in/Parachute-Advansed/dp/B0DQ8K4WVK/ref=sr_1_484_sspa?aref=t&btn_ref=srctok-25d&dib=eyJ&m=A15&xpid=AL"})
+              == "https://www.amazon.in/dp/B0DQ8K4WVK")
         check("Myntra admitad/appsflyer params removed",
               links.plain_url({"url": "https://www.myntra.com/india/desire/c/36777280/buy?af_xp=custom&clickid=1&pid=admitad&utm_source=admitad"})
               == "https://www.myntra.com/india/desire/c/36777280/buy")

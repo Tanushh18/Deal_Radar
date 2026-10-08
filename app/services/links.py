@@ -105,12 +105,22 @@ def plain_url(deal: Dict[str, Any]) -> str:
             return f"https://www.amazon.in/dp/{key.split(':', 1)[1]}"
         if key.startswith("flipkart:") and ":t:" not in key and ":u:" not in key:
             return f"https://www.flipkart.com/product/p/itme?pid={key.split(':', 1)[1].upper()}"
-        title = quote_plus((deal.get("title") or "").strip()[:100])
+        title = quote_plus(_search_title(deal.get("title") or ""))
         if title:
             if parser.detect_store(url) == "amazon":
                 return f"https://www.amazon.in/s?k={title}"
             return f"https://www.flipkart.com/search?q={title}"
     return url
+
+
+_LEAD_OFF_RE = re.compile(r"^[\W_]*\d{1,2}\s*%\s*(?:off)?\s*[:\-–|]*\s*", re.IGNORECASE)
+_TRAIL_PRICE_RE = re.compile(r"\s*(?:@|\bat\b)\s*(?:rs\.?|₹)?\s*[\d,]+(?:\.\d+)?\s*\.?\s*$", re.IGNORECASE)
+
+
+def _search_title(title: str) -> str:
+    """A post title as a store search: without the "63% Off -" lead or "At Rs.1,299" tail."""
+    text = _TRAIL_PRICE_RE.sub("", _LEAD_OFF_RE.sub("", title.strip()))
+    return re.sub(r"\s{2,}", " ", text).strip()[:100] or title.strip()[:100]
 
 
 def _is_store_shortener(url: str) -> bool:

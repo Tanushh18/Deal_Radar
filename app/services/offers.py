@@ -164,6 +164,7 @@ def search(q: str, limit: int = 12, exclude_titles: Set[str] = frozenset()) -> L
         # Title and brand only: a row's category can be a misclassification, and
         # matching it made "iphone" find washing machines and bank-card offers.
         row["search_blob"] = " ".join(filter(None, (row.get("title"), row.get("brand"))))
+        row["category"] = row["subcategory"] = ""
     matched = deal_search._match(rows, plan)
     matched.sort(key=lambda r: (-r["_relevance"], -r["posted_at"]))
     out, seen = [], set(exclude_titles)
