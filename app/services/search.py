@@ -474,12 +474,15 @@ def search(
 
     total = len(rows)
     page = _load(rows[offset: offset + limit])
+    shaped = [shape(d) for d in page]
+    # Last line of defence: never return a card whose link is still someone's tracker.
+    shaped = [d for d in shaped if not links.is_tracker(d.get("url") or "")]
     return {
         "total": total,
-        "count": len(page),
+        "count": len(shaped),
         "offset": offset,
         "limit": limit,
-        "results": [shape(d) for d in page],
+        "results": shaped,
         "categories": categories,
     }
 
@@ -516,9 +519,9 @@ _BUYHATKE_HOSTS = ("amazon.", "amzn.to", "amzn.in", "flipkart.com", "fkrt.", "my
 
 
 def price_history_url(deal: Dict[str, Any]) -> str:
-    for candidate in (deal.get("resolved_url"), deal.get("clean_url"), deal.get("url")):
-        if candidate and any(host in candidate.lower() for host in _BUYHATKE_HOSTS):
-            return "https://buyhatke.com/" + candidate
+    candidate = links.plain_url(deal)   # never hand BuyHatke an affiliate-tagged link
+    if candidate and any(host in candidate.lower() for host in _BUYHATKE_HOSTS):
+        return "https://buyhatke.com/" + candidate
     return ""
 
 

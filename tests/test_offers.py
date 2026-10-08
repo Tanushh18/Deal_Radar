@@ -149,6 +149,10 @@ def main() -> int:
         check("Amazon product link reduced to /dp/ASIN",
               links.plain_url({"url": "https://www.amazon.in/Parachute-Advansed/dp/B0DQ8K4WVK/ref=sr_1_484_sspa?aref=t&btn_ref=srctok-25d&dib=eyJ&m=A15&xpid=AL"})
               == "https://www.amazon.in/dp/B0DQ8K4WVK")
+        check("tracker URL that carries the store page inside is unwrapped",
+              links.plain_url({"url": "https://bitli.in/OIb70VS", "resolved_url":
+                               "https://trackingv3.linkredirect.in/visitretailer/1?id=1&dl=https%3A%2F%2Fwww.shopsy.in%2Fsaree%2Fp%2Fitmd212"})
+              == "https://www.shopsy.in/saree/p/itmd212" and links.is_tracker("https://bitli.in/x"))
         check("Myntra admitad/appsflyer params removed",
               links.plain_url({"url": "https://www.myntra.com/india/desire/c/36777280/buy?af_xp=custom&clickid=1&pid=admitad&utm_source=admitad"})
               == "https://www.myntra.com/india/desire/c/36777280/buy")

@@ -93,8 +93,14 @@ def plain_url(deal: Dict[str, Any]) -> str:
     the original is returned untouched rather than guessing.
     """
     for candidate in (deal.get("resolved_url"), deal.get("url")):
-        if candidate and is_store_site(candidate):
+        if not candidate:
+            continue
+        if is_store_site(candidate):
             return parser.clean_url(candidate)
+        # A tracker URL that names the store page inside it (…?dl=https://shopsy.in/…).
+        inner = unwrap(candidate)
+        if inner and is_store_site(inner):
+            return parser.clean_url(inner)
     url = deal.get("url") or ""
     if _is_store_shortener(url):
         # An Amazon / Flipkart shortener we couldn't open (fkrt.to blocks
@@ -169,6 +175,17 @@ async def resolve_stored(limit: int = 150) -> int:
                 done += 1
         await asyncio.gather(*(one(d) for d in todo), return_exceptions=True)
     return done
+
+
+# Third-party shorteners / trackers that carry someone's affiliate tag.
+TRACKER_HOSTS = (
+    "bitli.in", "bilty.co", "cuttli.in", "pturl.in", "bitiy.in", "linkredirect.in", "wishlink.com",
+    "bigtricks.in", "ekaro.in", "earnkaro.com", "cuelinks.com", "fkrt.site", "amzlinks.in",
+)
+
+
+def is_tracker(url: str) -> bool:
+    return _on(_host(url), TRACKER_HOSTS)
 
 
 def is_social(url: str) -> bool:
