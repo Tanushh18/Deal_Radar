@@ -6,6 +6,7 @@ without doing real work on every hit.
 """
 from __future__ import annotations
 
+import os
 import platform
 import time
 
@@ -81,6 +82,7 @@ async def health():
         "status": "healthy" if healthy else "degraded",
         "uptime_seconds": int(time.time() - BOOT_TIME),
         "python": platform.python_version(),
+        "version": (os.getenv("RENDER_GIT_COMMIT") or "")[:7],  # which commit is deployed
         "checks": checks,
     }
 
