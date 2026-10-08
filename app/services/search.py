@@ -37,6 +37,7 @@ SORTS = {
 }
 
 _FOLLOW_KINDS = {"category", "brand", "store"}
+_BRAND_WORDS = {b.lower() for b in taxonomy.KNOWN_BRANDS}
 
 _CANDIDATE_CAP = 5000
 
@@ -135,6 +136,8 @@ class _Plan:
 
         def attach(trigger: str, group: Iterable[str]) -> None:
             for tok in trigger.split():
+                if tok in _BRAND_WORDS:
+                    continue   # a brand means that brand: "iphone" is not "realme" or "redmi"
                 if tok in self.synonyms:
                     self.synonyms[tok].update(g.strip() for g in group if g.strip() != tok)
 
