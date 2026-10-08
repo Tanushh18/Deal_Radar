@@ -128,6 +128,16 @@ def main() -> int:
                                        "raw_text": "Refer 6 Friends Get Voucher"}, "promo"))
             check("route doesn't clash with /api/deals/{id}", c.get("/api/deals/offers").status_code == 200)
 
+        print("\n=== AFFILIATE TAGS ARE STRIPPED ===")
+        check("EarnKaro tag removed from an Amazon link",
+              links.plain_url({"url": "https://www.amazon.in/dp/B098KGQC7M?ck=undefined&tag=earnkaro09e_77955-21&th=1"})
+              == "https://www.amazon.in/dp/B098KGQC7M")
+        check("shortener shows the resolved store page, tags removed",
+              links.plain_url({"url": "https://ekaro.in/x", "resolved_url": "https://www.flipkart.com/p/itm1?pid=ABC&affid=zz&lid=1"})
+              == "https://www.flipkart.com/p/itm1?pid=ABC")
+        check("a link that never reached a store is left as it was",
+              links.plain_url({"url": "https://bitli.in/x"}) == "https://bitli.in/x")
+
         print("\n=== CLEAN-UP ===")
         db.execute("UPDATE offers SET posted_at = ? WHERE title LIKE '%Kurta%'", (time.time() - 8 * 86400,))
         removed = offers.prune()

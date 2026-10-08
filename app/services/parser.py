@@ -112,6 +112,7 @@ TRACKING_PARAMS = {
     "keywords", "crid", "_encoding", "affid", "affExtParam1", "lid", "marketplace",
     "store", "srno", "otracker", "fm", "iid", "ppt", "ppn", "ssid", "cmpid",
     "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id",
+    "ck", "earnkaro", "ekid", "ek_id", "extra_param", "cuelinks", "cl_id", "affiliate", "affiliate_id",
     "gclid", "fbclid", "irgwc", "clickid", "subid", "sid", "aff_id", "offer_id",
 }
 

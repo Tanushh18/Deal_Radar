@@ -85,6 +85,19 @@ def is_store_site(url: str) -> bool:
     return _on(_host(url), STORE_SITES)
 
 
+def plain_url(deal: Dict[str, Any]) -> str:
+    """The product's own store link, without anyone's affiliate or tracking tags.
+
+    Uses the resolved destination (so an EarnKaro/Cuelinks/bitli shortener
+    becomes the real store page). If the link never reached a store we know,
+    the original is returned untouched rather than guessing.
+    """
+    for candidate in (deal.get("resolved_url"), deal.get("url")):
+        if candidate and is_store_site(candidate):
+            return parser.clean_url(candidate)
+    return deal.get("url") or ""
+
+
 def is_social(url: str) -> bool:
     return _on(_host(url), SOCIAL_HOSTS)
 

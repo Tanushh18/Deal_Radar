@@ -91,7 +91,7 @@ def _row(deal: Dict[str, Any]) -> Dict[str, Any]:
         "price": price,
         "price_from": 1 if floor else 0,
         "store": store if store in _KNOWN_STORES else "",
-        "url": deal.get("url") or "",
+        "url": links.plain_url(deal),
         "brand": deal.get("brand") or "",
         "category": deal.get("category") or "",
         "subcategory": deal.get("subcategory") or "",

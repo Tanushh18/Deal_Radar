@@ -23,7 +23,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import OSA
 
 from .. import db
-from . import taxonomy
+from . import links, taxonomy
 
 SORTS = {
     "relevance": None,
@@ -534,7 +534,7 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
         "discount_pct": deal.get("discount_pct") or 0,
         "currency": deal.get("currency") or "INR",
         "store": deal.get("store"),
-        "url": deal.get("url"),
+        "url": links.plain_url(deal),   # store link only — no affiliate tags
         "image_url": deal.get("image_url"),
         "coupon": deal.get("coupon"),
         "category": deal.get("category"),
