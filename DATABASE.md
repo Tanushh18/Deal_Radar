@@ -39,7 +39,7 @@ Code: local schema in [app/db.py](app/db.py), Turso in
 
 ## 1. Turso MAIN (`TURSO_DATABASE_URL`)
 
-The store of every deal (deals not seen for `TURSO_DEAL_RETENTION_DAYS`, default 5, are auto-deleted hourly unless still live; `0` keeps them forever). Written by a background thread every
+The store of every deal (deals older than `TURSO_DEAL_RETENTION_DAYS` (default 5, counted from first saved) are auto-deleted hourly; `0` keeps them forever). Written by a background thread every
 **180 s** (`BACKUP_INTERVAL_SECONDS`), up to 500 rows × 20 batches per round,
 over Turso's HTTP pipeline API. Schema version 4 (table `dr_schema`).
 

@@ -197,11 +197,11 @@ def main() -> int:
 
         print("\n=== TURSO AUTO-DELETE (5 DAYS) ===")
         stale = time.time() - 6 * 86400
-        db.execute("UPDATE deals SET last_seen_at = ?, status = 'expired', dirty = 1", (stale,))
+        db.execute("UPDATE deals SET first_seen_at = ?, last_seen_at = ?, status = 'live', dirty = 1", (stale, time.time()))
         turso_backup._last_prune_at = 0.0
         settings.turso_deal_retention_days = 5
         turso_backup._backup_round()
-        check("deal unseen >5 days auto-deleted from Turso", tq("SELECT id FROM deals") == [], str(tq("SELECT id FROM deals")))
+        check("deal saved >5 days ago auto-deleted (even if live) from Turso", tq("SELECT id FROM deals") == [], str(tq("SELECT id FROM deals")))
         # Restore it for the cache section below, with retention switched off.
         settings.turso_deal_retention_days = 0
         db.execute("UPDATE deals SET dirty = 1")

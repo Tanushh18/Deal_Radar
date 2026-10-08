@@ -510,6 +510,10 @@ def purge_local_cache() -> Dict[str, int]:
         # Never cache deals longer than Turso keeps them, or a re-upload
         # would resurrect a deal Turso already auto-deleted.
         keep_days = min(keep_days, settings.turso_deal_retention_days)
+        retention_cutoff = now - settings.turso_deal_retention_days * 86400
+        uploaded["deals"] += db.execute(
+            "DELETE FROM deals WHERE first_seen_at < ? AND turso_dirty = 0", (retention_cutoff,)
+        ).rowcount or 0
     cutoff = now - keep_days * 86400
     uploaded["deals"] = db.execute(
         f"DELETE FROM deals WHERE last_seen_at < ? AND {deal_safe} "

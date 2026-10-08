@@ -78,6 +78,7 @@ _SCHEMA_MAIN = [
     "CREATE INDEX IF NOT EXISTS idx_deals_pkey ON deals(product_key)",
     "CREATE INDEX IF NOT EXISTS idx_deals_last_seen ON deals(last_seen_at)",
     "CREATE INDEX IF NOT EXISTS idx_deals_expires ON deals(expires_at)",
+    "CREATE INDEX IF NOT EXISTS idx_deals_first_seen ON deals(first_seen_at)",
     """CREATE TABLE IF NOT EXISTS products (
         product_key TEXT PRIMARY KEY,
         title TEXT, store TEXT, url TEXT, image_url TEXT, category TEXT,
@@ -515,10 +516,10 @@ _last_prune_at = 0.0
 
 
 def _prune_old_deals(client: httpx.Client) -> int:
-    """Delete deals from Turso not seen for TURSO_DEAL_RETENTION_DAYS (default 5).
+    """Delete deals from Turso saved more than TURSO_DEAL_RETENTION_DAYS ago (default 5).
 
-    Still-live deals are kept whatever their age, mirroring the local cache
-    purge. Runs at most hourly; 0 disables it (keep everything forever).
+    Counted from first_seen_at (when the deal was first saved), a hard max
+    whatever its status. Runs at most hourly; 0 disables it (keep forever).
     """
     global _last_prune_at
     days = settings.turso_deal_retention_days
@@ -526,8 +527,8 @@ def _prune_old_deals(client: httpx.Client) -> int:
     if days <= 0 or now - _last_prune_at < PRUNE_INTERVAL_SECONDS:
         return 0
     results = _pipeline(client, [{
-        "sql": "DELETE FROM deals WHERE last_seen_at < ? AND NOT (status = 'live' AND expires_at > ?)",
-        "args": [arg(now - days * 86400), arg(now)],
+        "sql": "DELETE FROM deals WHERE first_seen_at < ?",
+        "args": [arg(now - days * 86400)],
     }])
     _last_prune_at = now
     try:
