@@ -161,8 +161,9 @@ def search(q: str, limit: int = 12, exclude_titles: Set[str] = frozenset()) -> L
         if len(_title_key(r["title"] or "")) >= 4
     ]
     for row in rows:
-        row["search_blob"] = " ".join(filter(None, (row.get("title"), row.get("brand"), row.get("store"),
-                                                    row.get("category"), row.get("subcategory"))))
+        # Title and brand only: a row's category can be a misclassification, and
+        # matching it made "iphone" find washing machines and bank-card offers.
+        row["search_blob"] = " ".join(filter(None, (row.get("title"), row.get("brand"))))
     matched = deal_search._match(rows, plan)
     matched.sort(key=lambda r: (-r["_relevance"], -r["posted_at"]))
     out, seen = [], set(exclude_titles)
@@ -176,7 +177,8 @@ def search(q: str, limit: int = 12, exclude_titles: Set[str] = frozenset()) -> L
             "price": row["price"],
             "price_from": bool(row.get("price_from")),
             "store": row["store"],
-            "url": row["url"],
+            # Rows saved before links were cleaned may still hold a tagged URL.
+            "url": links.plain_url({"url": row["url"], "title": row["title"], "store": row.get("store")}),
             "posted_at": row["posted_at"],
         })
         if len(out) >= limit:

@@ -143,6 +143,9 @@ def main() -> int:
         check("…or the store's own search for the title",
               links.plain_url({"url": "https://fkrt.to/abc", "product_key": "flipkart:t:1f", "title": "Boat Rockerz 255"})
               == "https://www.flipkart.com/search?q=Boat+Rockerz+255")
+        check("Myntra admitad/appsflyer params removed",
+              links.plain_url({"url": "https://www.myntra.com/india/desire/c/36777280/buy?af_xp=custom&clickid=1&pid=admitad&utm_source=admitad"})
+              == "https://www.myntra.com/india/desire/c/36777280/buy")
         check("a link that never reached a store is left as it was",
               links.plain_url({"url": "https://bitli.in/x"}) == "https://bitli.in/x")
 
