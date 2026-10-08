@@ -253,4 +253,6 @@ export interface Offer {
   store: string;
   url: string;
   posted_at: number;
+  /** true: a link to search Amazon / Flipkart for the same words, not a channel post. */
+  marketplace?: boolean;
 }

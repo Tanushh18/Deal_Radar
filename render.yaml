@@ -69,7 +69,9 @@ services:
       - key: DEAL_TTL_HOURS
         value: "96"
       - key: LOCAL_CACHE_DAYS
-        value: "15"             # local SQLite keeps this many days; Turso keeps everything
+        value: "15"             # local SQLite keeps this many days (capped by the Turso retention)
+      - key: TURSO_DEAL_RETENTION_DAYS
+        value: "5"              # Turso auto-deletes deals this many days after first saved; 0 = keep forever
       - key: BACKFILL_LIMIT
         value: "120"
       - key: INCREMENTAL_LIMIT

@@ -52,6 +52,11 @@ def _messages(first_id: int):
             for i, (text, photo) in enumerate(POSTS)]
 
 
+def found(c, q):
+    """Channel-post results only (the Amazon / Flipkart search links are always appended)."""
+    return [o for o in c.get("/api/deals/offers", params={"q": q}).json()["results"] if not o.get("marketplace")]
+
+
 def main() -> int:
     db.connect()
     db.execute("INSERT INTO channels (tg_id, title, username, active, last_message_id, source_user_id) "
@@ -92,30 +97,41 @@ def main() -> int:
 
         with TestClient(app) as c:
             print("\n=== SEARCH ===")
-            r = c.get("/api/deals/offers", params={"q": "levis"}).json()["results"]
+            r = found(c, "levis")
             check("search finds the Levi's round-up", any("Levi" in o["title"] for o in r), str(r))
             check("same offer from two channels shows once", len({o["title"] for o in r}) == len(r) and len(r) == 1, str(r))
             check("result has just title, price, store, link, time",
                   set(r[0]) == {"id", "title", "price", "price_from", "store", "url", "posted_at"}, str(r[0]))
-            r = c.get("/api/deals/offers", params={"q": "kurta"}).json()["results"]
+            r = found(c, "kurta")
             check("'kurta' finds 'Kurta starting 229' as from ₹229", r and r[0]["price"] == 229.0 and r[0]["price_from"], str(r))
             check("starting prices with commas and @ are read",
                   offers._from_price("Luggage Deals | Starting @ ₹1,349") == 1349.0
                   and offers._from_price("Sweatshirts Starting From Rs.192") == 192.0
                   and offers._from_price("Kids Wear | All Under ₹399") == 399.0
                   and offers._from_price("70-75% Off On Levi's") == 0.0)
-            r = c.get("/api/deals/offers", params={"q": "paint"}).json()["results"]
+            r = found(c, "paint")
             check("photo-less deal is findable", r and r[0]["store"] == "amazon", str(r))
-            r = c.get("/api/deals/offers", params={"q": "tshirt"}).json()["results"]
+            r = found(c, "tshirt")
             check("synonyms work ('tshirt' → T-shirts)", len(r) == 1, str(r))
-            check("unrelated words find nothing", c.get("/api/deals/offers", params={"q": "refrigerator"}).json()["results"] == [])
-            check("one-letter or empty query returns nothing", c.get("/api/deals/offers", params={"q": "l"}).json()["results"] == [])
+            check("unrelated words find nothing", found(c, "refrigerator") == [])
+            check("one-letter or empty query returns nothing", found(c, "l") == [])
+            mp = c.get("/api/deals/offers", params={"q": "running shoes"}).json()["results"][-2:]
+            check("Amazon and Flipkart search links always follow",
+                  [(o["store"], o["url"]) for o in mp] == [
+                      ("amazon", "https://www.amazon.in/s?k=running+shoes"),
+                      ("flipkart", "https://www.flipkart.com/search?q=running+shoes")]
+                  and all(o["marketplace"] for o in mp), str(mp))
+            check("promos/vouchers (non-spam) are kept for search",
+                  offers.keep({"title": "Swiggy Dineout 50% Offer", "url": "https://x.in/a"}, "promo")
+                  and offers.keep({"title": "Some Product Here", "url": "https://x.in/a"}, "no_price")
+                  and not offers.keep({"title": "Refer 6 Friends Get Voucher", "url": "https://x.in/a",
+                                       "raw_text": "Refer 6 Friends Get Voucher"}, "promo"))
             check("route doesn't clash with /api/deals/{id}", c.get("/api/deals/offers").status_code == 200)
 
         print("\n=== CLEAN-UP ===")
         db.execute("UPDATE offers SET posted_at = ? WHERE title LIKE '%Kurta%'", (time.time() - 8 * 86400,))
         removed = offers.prune()
-        check("offers older than a week are pruned", removed == 2, str(removed))
+        check("offers older than 5 days are pruned", removed == 2, str(removed))
         check("a channel handle is never an offer title",
               not offers.keep({"title": "@Lootunboxing", "url": "https://bitli.in/x"}, "vague")
               and offers.clean_title("Kurta Set @lootdeals - starting 229 t.me/lootdeals") == "Kurta Set - starting 229"

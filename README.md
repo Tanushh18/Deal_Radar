@@ -517,7 +517,8 @@ make clean-data  # Delete local SQLite cache
 | `BACKFILL_LIMIT` | `120` | Messages fetched on first channel poll |
 | `INCREMENTAL_LIMIT` | `60` | Messages fetched per poll thereafter |
 | `MAX_CHANNELS_PER_USER` | `40` | User can track at most this many channels |
-| `LOCAL_CACHE_DAYS` | `15` | Local SQLite keeps this many days; Turso keeps all |
+| `LOCAL_CACHE_DAYS` | `15` | Local SQLite keeps this many days (capped by the Turso retention below) |
+| `TURSO_DEAL_RETENTION_DAYS` | `5` | Turso auto-deletes deals this many days after first saved; `0` keeps forever |
 | `LIVENESS_CHECK` | `true` | Enable link probing (retire dead deals early) |
 | `LIVENESS_BATCH` | `40` | Links probed per cycle |
 | `QUALITY_FILTER` | `true` | Only posts with price + link + photo become deals |
@@ -951,7 +952,7 @@ Redirects followed manually with per-hop validation.
 ### Data Retention
 
 - **SQLite (local):** 15 days (configurable via `LOCAL_CACHE_DAYS`)
-- **Turso (permanent):** Forever (unless manually deleted)
+- **Turso:** deals are auto-deleted 5 days after first being saved (configurable via `TURSO_DEAL_RETENTION_DAYS`, `0` = keep forever); even live ones. Alerts and devices are unaffected. The local cache is capped to the same window.
 - **MongoDB (state):** Forever or until user deletes account
 
 Account deletion (`DELETE /api/auth/account`):

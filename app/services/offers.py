@@ -16,16 +16,14 @@ import logging
 import re
 import time
 from typing import Any, Dict, List, Set
+from urllib.parse import quote_plus
 
 from .. import db
-from . import links, taxonomy
+from . import links, quality, taxonomy
 
 log = logging.getLogger(__name__)
 
-OFFER_DAYS = 7
-# Never worth keeping, even for search: referral/loan/crypto spam and posts
-# with nothing to click.
-_SKIP_REASONS = {"promo", "no_link"}
+OFFER_DAYS = 5
 _KNOWN_STORES: Set[str] = set(taxonomy.STORE_DOMAINS)
 _KEY_RE = re.compile(r"[^a-z0-9]+")
 # "starting 229", "Starts @ ₹1,049", "from Rs.192", "Under ₹399" — a round-up's floor price.
@@ -50,8 +48,30 @@ def _title_key(title: str) -> str:
 
 
 def keep(deal: Dict[str, Any], reason: str) -> bool:
-    return bool(deal and reason not in _SKIP_REASONS and deal.get("url")
-                and len(_title_key(clean_title(deal.get("title") or ""))) >= 4)
+    """Keep every post the gate turned away so search can still find it.
+
+    Only referral/loan/betting/crypto spam and posts with nothing to click
+    are dropped; promos, vouchers, round-ups and text-only deals all stay.
+    """
+    if not (deal and deal.get("url")):
+        return False
+    if quality._PROMO_TEXT_RE.search(f"{deal.get('title') or ''} {deal.get('raw_text') or ''}"):
+        return False
+    return len(_title_key(clean_title(deal.get("title") or ""))) >= 4
+
+
+def marketplace_links(q: str) -> List[Dict[str, Any]]:
+    """Amazon and Flipkart search pages for `q`, shown as the last "offers" rows."""
+    term = quote_plus(" ".join((q or "").split()))
+    now = time.time()
+    return [
+        {"id": f"mp:{store}", "title": f"Search “{q.strip()}” on {name}", "price": None, "price_from": False,
+         "store": store, "url": url, "posted_at": now, "marketplace": True}
+        for store, name, url in (
+            ("amazon", "Amazon", f"https://www.amazon.in/s?k={term}"),
+            ("flipkart", "Flipkart", f"https://www.flipkart.com/search?q={term}"),
+        ) if term
+    ]
 
 
 def _from_price(title: str) -> float:
@@ -128,6 +148,18 @@ def search(q: str, limit: int = 12, exclude_titles: Set[str] = frozenset()) -> L
         "SELECT * FROM offers WHERE posted_at >= ? ORDER BY posted_at DESC LIMIT 5000",
         (time.time() - OFFER_DAYS * 86400,),
     ))
+    # Cards the quality sweep retired as low quality are still real Telegram posts.
+    rows += [
+        {"id": r["id"], "title": clean_title(r["title"] or ""), "price": r["price"], "price_from": 0,
+         "store": r["store"] if r["store"] in _KNOWN_STORES else "", "url": r["url"] or "",
+         "brand": r["brand"], "category": r["category"], "subcategory": r["subcategory"],
+         "title_key": _title_key(r["title"] or ""), "posted_at": float(r["posted_at"] or 0)}
+        for r in db.query(
+            "SELECT id, title, price, store, url, brand, category, subcategory, posted_at FROM deals "
+            "WHERE status = 'dead' AND flags LIKE '%low_quality%' AND posted_at >= ? AND url != '' "
+            "ORDER BY posted_at DESC LIMIT 2000", (time.time() - OFFER_DAYS * 86400,))
+        if len(_title_key(r["title"] or "")) >= 4
+    ]
     for row in rows:
         row["search_blob"] = " ".join(filter(None, (row.get("title"), row.get("brand"), row.get("store"),
                                                     row.get("category"), row.get("subcategory"))))
