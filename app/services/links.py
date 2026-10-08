@@ -123,6 +123,15 @@ def _search_title(title: str) -> str:
     return re.sub(r"\s{2,}", " ", text).strip()[:100] or title.strip()[:100]
 
 
+def clean_link_sql(column: str = "url", resolved: str = "resolved_url") -> "tuple[str, list]":
+    """SQL for "this deal's link can be shown without anyone's affiliate tag":
+    its destination was resolved, or it already is a store page, or it is an
+    Amazon/Flipkart short link (plain_url rebuilds those from the product id)."""
+    domains = list(STORE_SITES) + [d for store in ("amazon", "flipkart") for d in taxonomy.STORE_DOMAINS.get(store, ())]
+    clause = f"(COALESCE({resolved}, '') != '' OR " + " OR ".join(f"{column} LIKE ?" for _ in domains) + ")"
+    return clause, [f"%{d}%" for d in domains]
+
+
 def _is_store_shortener(url: str) -> bool:
     """A shortener of Amazon or Flipkart (taxonomy lists each store's own short domains)."""
     host = _host(url)
@@ -131,7 +140,7 @@ def _is_store_shortener(url: str) -> bool:
     return any(_on(host, taxonomy.STORE_DOMAINS.get(store, ())) for store in ("amazon", "flipkart"))
 
 
-async def resolve_stored(limit: int = 30) -> int:
+async def resolve_stored(limit: int = 150) -> int:
     """Retry short links that were never resolved (blocked, timed out, or posted
     before resolution existed), saving the store page on the card."""
     from .. import db  # local: keeps this module importable without the database

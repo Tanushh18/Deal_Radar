@@ -276,8 +276,9 @@ def _candidates(
     interest_rules: Optional[list] = None,
 ) -> List[Dict[str, Any]]:
     """Light rows for every deal passing the hard filters (not category — that's counted)."""
-    where: List[str] = [_HAS_IMAGE]
-    params: List[Any] = []
+    link_sql, link_params = links.clean_link_sql()
+    where: List[str] = [_HAS_IMAGE, link_sql]   # never list a card whose link is still someone's tracker
+    params: List[Any] = list(link_params)
     if archive:
         # Past deals only (ended / expired / out of stock) — the Sheet-backed
         # archive shown under live results. Retired non-product posts stay out.
@@ -342,12 +343,13 @@ def _stale_fallback(order: str, exclude_ids: Set[Any], limit: int) -> List[Dict[
     for archive search; we just widen the read when live supply runs dry.
     """
     now = time.time()
+    link_sql, link_params = links.clean_link_sql()
     sql = (
         f"SELECT {_LIGHT_COLUMNS} FROM deals "
-        f"WHERE status = 'expired' AND expires_at > ? AND {_HAS_IMAGE} ORDER BY {order} LIMIT ?"
+        f"WHERE status = 'expired' AND expires_at > ? AND {_HAS_IMAGE} AND {link_sql} ORDER BY {order} LIMIT ?"
     )
     rows = [
-        dict(r) for r in db.query(sql, (now - _STALE_FALLBACK_GRACE_DAYS * 86400, limit))
+        dict(r) for r in db.query(sql, (now - _STALE_FALLBACK_GRACE_DAYS * 86400, *link_params, limit))
         if r["id"] not in exclude_ids
     ]
     return rows
@@ -597,8 +599,9 @@ def trending(channel_ids: Optional[List[int]] = None, limit: int = 12,
              interests: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """Deals many channels reposted in the last day — the strongest signal we have."""
     now = time.time()
-    where = ["status = 'live'", "expires_at > ?", "first_seen_at > ?", "repost_count > 1", _HAS_IMAGE]
-    params: List[Any] = [now, now - 86400 * 2]
+    link_sql, link_params = links.clean_link_sql()
+    where = ["status = 'live'", "expires_at > ?", "first_seen_at > ?", "repost_count > 1", _HAS_IMAGE, link_sql]
+    params: List[Any] = [now, now - 86400 * 2, *link_params]
     if channel_ids:
         where.append(f"channel_id IN ({','.join('?' for _ in channel_ids)})")
         params.extend(channel_ids)

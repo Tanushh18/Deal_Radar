@@ -172,14 +172,16 @@ def search(q: str, limit: int = 12, exclude_titles: Set[str] = frozenset()) -> L
         if row["title_key"] in seen:
             continue
         seen.add(row["title_key"])
+        url = links.plain_url({"url": row["url"], "title": row["title"], "store": row.get("store")})
+        if not links.is_store_site(url):
+            continue   # a shortener we never resolved is someone's tracker — don't show it
         out.append({
             "id": row["id"],
             "title": row["title"],
             "price": row["price"],
             "price_from": bool(row.get("price_from")),
             "store": row["store"],
-            # Rows saved before links were cleaned may still hold a tagged URL.
-            "url": links.plain_url({"url": row["url"], "title": row["title"], "store": row.get("store")}),
+            "url": url,
             "posted_at": row["posted_at"],
         })
         if len(out) >= limit:
