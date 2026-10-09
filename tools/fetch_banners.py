@@ -184,6 +184,7 @@ def main() -> int:
             return 2
         gate = urllib.request.Request(f"{site}/api/admin/reader/live-banners/needed", headers={"x-admin-token": token, "User-Agent": UA, "Accept": "application/json"})
         info = json.load(urllib.request.urlopen(gate, timeout=30))
+        print(f"server gate: {json.dumps(info)[:400]}", file=sys.stderr)
         needed = args.force or info.get("needed")
         active_sales = info.get("sales") or [
             {"name": n, "store": next((k for k in STORES_HOME if k in n.lower()), "")} for n in info.get("active") or []]
@@ -198,6 +199,7 @@ def main() -> int:
     # image search for each sale that's live or starting soon.
     if not args.dry_run:
         have = {b["store"] for b in banners}
+        print(f"image fallback: active sales={active_sales} already have={sorted(have)}", file=sys.stderr)
         for sale in active_sales:
             if not sale["store"] or sale["store"] in have:
                 continue
