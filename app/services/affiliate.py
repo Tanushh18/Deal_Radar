@@ -22,14 +22,14 @@ from . import links
 
 log = logging.getLogger("dealradar.affiliate")
 
-API_URL = "https://www.cuelinks.com/api/v2/links.json"
+API_URL = "https://developers.cuelinks.com/pub_api/v3/links/convert"   # v3; v2 retires 31 Oct 2026
 TIMEOUT = 5.0
 HIT_TTL = 6 * 3600      # a converted link stays valid; reuse it
 MISS_TTL = 10 * 60      # a store with no approved campaign: don't ask again for a while
 _CACHE_MAX = 4000
 _cache: "OrderedDict[Tuple[str, str], Tuple[float, Optional[str]]]" = OrderedDict()
 _SUBID_RE = re.compile(r"[^A-Za-z0-9_-]")
-_URL_KEYS = ("affiliate_url", "affiliateUrl", "url", "link", "shortened_url", "short_url")
+_URL_KEYS = ("affiliate_url", "tracking_url", "short_url", "shortened_url", "link", "url")
 
 
 def enabled() -> bool:
@@ -74,17 +74,15 @@ async def convert(url: str, subid: str = "") -> Optional[str]:
     cached = _cache.get(key)
     if cached and cached[0] > time.time():
         return cached[1]
-    params = {"url": url}
+    body: Dict[str, Any] = {"url": url, "shorten": True}
     if subid:
-        params["subid"] = subid
-    key_value = settings.cuelinks_api_key
-    # Cuelinks documents a "token" header; its v2 examples use Authorization: Token token=…
-    headers = {"token": key_value, "Authorization": f"Token token={key_value}", "Accept": "application/json"}
+        body["subid"] = subid
+    headers = {"Authorization": f"Token {settings.cuelinks_api_key}", "Accept": "application/json"}
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            resp = await client.get(API_URL, params=params, headers=headers)
+            resp = await client.post(API_URL, json=body, headers=headers)
         if resp.status_code != 200:
-            log.warning("Cuelinks link API returned %s for %s", resp.status_code, url)
+            log.warning("Cuelinks convert API returned %s for %s: %s", resp.status_code, url, resp.text[:200])
             return _remember(key, None)
         return _remember(key, _find_link(resp.json()))
     except (httpx.HTTPError, ValueError) as exc:

@@ -30,15 +30,15 @@ def check(name, ok):
 
 
 class FakeClient:
-    reply = (200, {"affiliate_url": "https://linksredirect.com/?cid=1&source=linkkit&url=x"})
+    reply = (200, {"data": {"short_url": "https://clnk.in/abc"}})
     calls = []
 
     def __init__(self, *a, **k): pass
     async def __aenter__(self): return self
     async def __aexit__(self, *a): return False
 
-    async def get(self, url, params=None, headers=None):
-        FakeClient.calls.append((params, headers))
+    async def post(self, url, json=None, headers=None):
+        FakeClient.calls.append((json, headers))
         return httpx.Response(FakeClient.reply[0], json=FakeClient.reply[1])
 
 
@@ -47,9 +47,9 @@ async def main():
     deal = {"id": "d1", "url": "https://www.flipkart.com/x/p/itmabc?pid=ABC", "title": "X"}
 
     out = await affiliate.buy_url(deal, "web")
-    check("returns the Cuelinks link", out.startswith("https://linksredirect.com/"))
-    check("key sent as header, URL and subid as params",
-          FakeClient.calls[0][1]["token"] == "test-key" and FakeClient.calls[0][0]["subid"] == "web")
+    check("returns the Cuelinks link", out == "https://clnk.in/abc")
+    check("v3 request: Token auth header, url and subid in the JSON body",
+          FakeClient.calls[0][1]["Authorization"] == "Token test-key" and FakeClient.calls[0][0]["subid"] == "web")
     await affiliate.buy_url(deal, "web")
     check("repeat tap is served from cache", len(FakeClient.calls) == 1)
 
