@@ -31,7 +31,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import activity, growth, ingest, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, telegram, turso_backup
+from .services import activity, growth, ingest, leader, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -126,36 +126,55 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         log.warning("Quality sweep failed: %s", exc)
 
-    if settings.is_replica:
-        log.info("Running as a read replica of %s — ingest, Telegram and pushes stay on the primary", settings.primary_url)
-        _tasks.append(asyncio.create_task(replica.refresh_loop()))
-        _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
-    else:
+    # Work only one server may run (Telegram session, ingest, pushes). With
+    # ROLE=auto the servers elect a leader (services/leader.py); the others
+    # serve reads and forward writes to it.
+    _single: list = []
+
+    async def gain() -> None:
+        for t in _single:
+            t.cancel()
+        _single.clear()
         if settings.telegram_configured and settings.telegram_session:
-            _tasks.append(asyncio.create_task(public_reader.bootstrap()))
-        _tasks.append(asyncio.create_task(ingest.scheduler_loop()))
+            _single.append(asyncio.create_task(public_reader.bootstrap()))
+        _single.append(asyncio.create_task(ingest.scheduler_loop()))
         # Real-time: each new post from a followed channel is handled as it's
         # published (and hot ones go straight to your Telegram channel).
-        _tasks.append(asyncio.create_task(live.run()))
-        _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
+        _single.append(asyncio.create_task(live.run()))
         # Notification auto mode paces pushes on its own clock, not the ingest
         # cycle's (idle unless the admin switched it on).
-        _tasks.append(asyncio.create_task(notify_auto.loop()))
+        _single.append(asyncio.create_task(notify_auto.loop()))
         # Once a night, if the admin switched it on: the model drafts new notification lines for review.
-        _tasks.append(asyncio.create_task(pitara_writer.loop()))
+        _single.append(asyncio.create_task(pitara_writer.loop()))
         # Promotion counters (anonymous totals) are saved every few minutes.
-        _tasks.append(asyncio.create_task(growth.loop()))
+        _single.append(asyncio.create_task(growth.loop()))
+
+    async def lose() -> None:
+        for t in _single:
+            t.cancel()
+        await asyncio.gather(*_single, return_exceptions=True)
+        _single.clear()
+        await telegram.shutdown_all()   # let go of the Telegram session for the new leader
+
+    _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
+    if settings.is_replica:
+        log.info("Running as a read replica of %s — ingest, Telegram and pushes stay on the primary", settings.primary_url)
+    else:
+        _tasks.append(asyncio.create_task(leader.run(gain, lose)))
+    # Servers that aren't the leader keep their deal cache fresh from Turso (a no-op while leading).
+    _tasks.append(asyncio.create_task(replica.refresh_loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 
     try:
         yield
     finally:
         log.info("Shutting down…")
+        leader.release()
         turso_backup.stop()
         growth.flush()
-        for task in _tasks:
+        for task in _tasks + _single:
             task.cancel()
-        await asyncio.gather(*_tasks, return_exceptions=True)
+        await asyncio.gather(*_tasks, *_single, return_exceptions=True)
         await telegram.shutdown_all()
 
 
@@ -221,7 +240,7 @@ async def shell_cache_headers(request: Request, call_next):
 
 @app.middleware("http")
 async def replica_forward(request: Request, call_next):
-    if settings.is_replica and not replica.serves_locally(request):
+    if replica.forwards() and not replica.serves_locally(request):
         return await replica.forward(request)
     return await call_next(request)
 

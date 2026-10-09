@@ -15,7 +15,7 @@ import httpx
 from fastapi import Request, Response
 
 from ..config import settings
-from . import turso_backup
+from . import leader, turso_backup
 
 log = logging.getLogger("dealradar.replica")
 
@@ -23,6 +23,14 @@ _LOCAL_EXACT = {"/api/ping", "/api/health"}
 _HOP = {"connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgrade",
         "proxy-authenticate", "proxy-authorization", "host", "content-length", "content-encoding"}
 _client: httpx.AsyncClient | None = None
+
+
+def forwards() -> bool:
+    return settings.is_replica or (leader.enabled() and not leader.is_leader() and bool(leader.leader_url()))
+
+
+def upstream_url() -> str:
+    return settings.primary_url if settings.is_replica else leader.leader_url()
 
 
 def serves_locally(request: Request) -> bool:
@@ -40,7 +48,7 @@ async def forward(request: Request) -> Response:
     global _client
     if _client is None:
         _client = httpx.AsyncClient(timeout=30.0, follow_redirects=False)
-    url = settings.primary_url + request.url.path + (f"?{request.url.query}" if request.url.query else "")
+    url = upstream_url() + request.url.path + (f"?{request.url.query}" if request.url.query else "")
     headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP}
     headers["x-forwarded-for"] = (request.headers.get("x-forwarded-for") or
                                   (request.client.host if request.client else ""))
@@ -61,6 +69,8 @@ async def refresh_loop() -> None:
     loop = asyncio.get_event_loop()
     while True:
         await asyncio.sleep(settings.replica_refresh_seconds)
+        if not forwards():
+            continue  # the leader is the one writing deals — nothing to pull
         try:
             await loop.run_in_executor(None, turso_backup.restore, settings.cache_days)
         except asyncio.CancelledError:

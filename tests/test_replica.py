@@ -16,3 +16,11 @@ def test_reads_stay_local_everything_else_forwards():
     assert not replica.serves_locally(req("GET", "/api/deals/abc/go"))
     assert not replica.serves_locally(req("GET", "/api/channels"))
     assert not replica.serves_locally(req("POST", "/api/auth/login"))
+
+
+def test_election_needs_mongo_and_auto_role(monkeypatch):
+    from app.services import leader, mongo_store
+    monkeypatch.setattr(mongo_store, "is_enabled", lambda: True)
+    assert leader.enabled()  # default ROLE=auto
+    monkeypatch.setattr(mongo_store, "is_enabled", lambda: False)
+    assert not leader.enabled() and leader.is_leader()

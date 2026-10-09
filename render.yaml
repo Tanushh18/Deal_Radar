@@ -91,11 +91,11 @@ services:
       - key: LOG_LEVEL
         value: "INFO"
 
-      # --- load distribution: extra servers (copy this service, then set) ---
-      # On each EXTRA server only: ROLE=replica and PRIMARY_URL=<the main server>.
-      # Replicas skip ingest/Telegram/pushes and forward all writes to the primary.
-      # Every server must share the same SECRET_KEY, MONGODB_URI, TURSO_* values.
-      - key: ROLE
-        value: primary
-      - key: PRIMARY_URL
-        sync: false
+      # --- load distribution ---
+      # Run the same service on several Render instances with IDENTICAL env vars
+      # (same SECRET_KEY, MONGODB_URI, TURSO_*, TELEGRAM_*). ROLE defaults to
+      # "auto": the servers elect one leader through MongoDB that alone runs
+      # ingest/Telegram/pushes; the rest serve deal reads from their own cache
+      # and forward all other requests to the leader. Each needs its PUBLIC_URL
+      # (or Render's own RENDER_EXTERNAL_URL). Needs MONGODB_URI. Force a role
+      # with ROLE=primary, or ROLE=replica + PRIMARY_URL=<leader URL>.
