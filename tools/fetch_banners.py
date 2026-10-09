@@ -99,6 +99,31 @@ def google_banner(sale: dict, key: str, cx: str) -> dict | None:
     return None
 
 
+def ddg_banner(sale: dict) -> dict | None:
+    """Open-source, keyless fallback: DuckDuckGo image search via the `ddgs` package.
+    First wide, large https result; credits the site it came from."""
+    try:
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
+        results = DDGS().images(f"{sale['name']} {datetime.now().year} banner", region="in-en",
+                                safesearch="moderate", size="Large", layout="Wide", max_results=15) or []
+    except Exception as exc:  # noqa: BLE001
+        print(f"ddg image search failed for {sale['name']}: {exc}", file=sys.stderr)
+        return None
+    name_words = [w for w in re.findall(r"[a-z]+", sale["name"].lower()) if len(w) > 3]
+    for r in results:
+        img, w, h = r.get("image") or "", r.get("width") or 0, r.get("height") or 0
+        text = f"{r.get('title', '')} {r.get('url', '')}".lower()
+        if (img.startswith("https://") and w >= 600 and h and w / h >= 1.6
+                and sum(wd in text for wd in name_words) >= 2):   # must actually be about this sale
+            from urllib.parse import urlparse
+            return {"id": "", "name": sale["name"], "store": sale["store"], "image_url": img,
+                    "url": STORES_HOME.get(sale["store"], ""), "credit": urlparse(r.get("url") or img).netloc}
+    return None
+
+
 STORES_HOME = {"amazon": "https://www.amazon.in/", "flipkart": "https://www.flipkart.com/",
                "myntra": "https://www.myntra.com/", "ajio": "https://www.ajio.com/",
                "meesho": "https://www.meesho.com/", "nykaa": "https://www.nykaa.com/"}
@@ -171,14 +196,14 @@ def main() -> int:
             return 0
     banners, sales = scrape()
     # Stores whose own page gave no banner (blocked, JS-built hero…): fall back to
-    # Google image search for each sale that's live or starting soon.
+    # image search (Google if keyed, else DuckDuckGo) for each sale that's live or starting soon.
     gkey, gcx = os.getenv("GOOGLE_CSE_KEY", ""), os.getenv("GOOGLE_CSE_ID", "")
-    if gkey and gcx and not args.dry_run:
+    if not args.dry_run:
         have = {b["store"] for b in banners}
         for sale in active_sales:
             if sale["store"] in have:
                 continue
-            b = google_banner(sale, gkey, gcx)
+            b = (google_banner(sale, gkey, gcx) if gkey and gcx else None) or ddg_banner(sale)
             if b:
                 b["id"] = f"live-{b['store']}-g{len(banners)}"
                 banners.append(b)
