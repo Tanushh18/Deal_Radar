@@ -97,9 +97,12 @@ _JS_CANDIDATES = r"""() => {
     if (!img.complete || !img.naturalWidth) continue;
     push(img, img.currentSrc || img.src, img.alt);
   }
-  for (const el of document.querySelectorAll('[style*="background-image"]')) {
-    const m = /url\(["']?([^"')]+)/.exec(el.getAttribute('style') || '');
-    if (m) push(el, m[1], el.getAttribute('aria-label') || el.title);
+  for (const el of document.querySelectorAll('div, section, a, span, li, figure')) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 280 || r.height < 70) continue;          // cheap size check before computed style
+    const bg = getComputedStyle(el).backgroundImage || '';
+    const m = /url\(["']?([^"')]+)/.exec(bg);
+    if (m && !m[1].startsWith('data:')) push(el, m[1], el.getAttribute('aria-label') || el.title);
   }
   return out;
 }"""
@@ -167,7 +170,8 @@ def _hero(cands: list, store: str) -> dict | None:
     """The hero banner: largest wide candidate near the top, on the store's own servers."""
     domains = STORES[store]["domains"]
     good = [c for c in cands
-            if c["src"].startswith("https://") and _on_domain(c["src"], domains) and c["y"] < 1600 and c["w"] >= 300]
+            if c["src"].startswith("https://") and _on_domain(c["src"], domains) and c["y"] < 1600
+            and c["w"] >= 300 and 2.2 <= c["w"] / c["h"] <= 7]   # a strip, like the app's banner card
     if not good:
         return None
     # Big and high up wins; a full-width carousel slide beats a row of small tiles.
@@ -237,6 +241,8 @@ def scrape(sale_names: dict) -> tuple:
                 try:
                     sales += extract_sales(page.inner_text("body"), year)
                     cands = page.evaluate(_JS_CANDIDATES)
+                    slug = re.sub(r"[^a-z0-9]+", "-", urlparse(page.url).path.lower()).strip("-")[:40] or "home"
+                    page.screenshot(path=f"banner-debug/{store}-page-{slug}.jpg", type="jpeg", quality=55)
                     hero = _hero(cands, store)
                     print(f"   {page.url[:90]}: {len(cands)} wide images, hero="
                           f"{(hero or {}).get('src', '')[:80] or None}", file=sys.stderr)

@@ -178,7 +178,15 @@ def _materialize(stored: List[Dict[str, Any]], now: float, window_days: float) -
     for tpl in _CALENDAR:
         for year in (this_year - 1, this_year, this_year + 1):
             occ_id = _occurrence_id(tpl["key"], year)
-            e = edits.get(occ_id) or _occurrence(tpl, year)
+            e = edits.get(occ_id)
+            if e is None:
+                e = _occurrence(tpl, year)
+            elif e.get("approximate") and (tpl["key"], year) in _CONFIRMED:
+                # Stored only because the heads-up post / AI blurb saved the row
+                # with the old guessed dates: officially announced dates win until
+                # an admin sets real ones (approximate=False).
+                base = _occurrence(tpl, year)
+                e = {**e, "starts_at": base["starts_at"], "ends_at": base["ends_at"]}
             end = e["ends_at"] or e["starts_at"] or 0
             if end >= now and (e["starts_at"] or 0) <= horizon:
                 out.append(e)
