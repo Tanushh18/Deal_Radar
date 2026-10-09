@@ -23,6 +23,54 @@ UA = ("Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like 
       "Chrome/124.0 Mobile Safari/537.36")
 
 
+# Runs in the page: wide, reasonably large images near the top (hero banners),
+# with whatever text names them — alt, aria-label/title of the wrapping link, or its href.
+_JS_CANDIDATES = """() => {
+  const out = [];
+  const abs = (u) => { try { return new URL(u, location.href).href; } catch (e) { return ''; } };
+  for (const img of document.images) {
+    const r = img.getBoundingClientRect();
+    const w = Math.max(r.width, img.naturalWidth || 0), h = Math.max(r.height, img.naturalHeight || 0);
+    if (w < 280 || h < 60 || w / h < 1.6) continue;
+    const a = img.closest('a');
+    const src = img.currentSrc || img.src || img.getAttribute('data-src') || '';
+    out.push({src: abs(src), alt: img.alt || '', label: a ? (a.getAttribute('aria-label') || a.title || '') : '',
+              href: a ? abs(a.getAttribute('href') || '') : '', top: Math.round(r.top + scrollY), w: Math.round(w), h: Math.round(h)});
+  }
+  for (const el of document.querySelectorAll('[style*="background-image"]')) {
+    const m = /url\\(["']?([^"')]+)/.exec(el.getAttribute('style') || '');
+    const r = el.getBoundingClientRect();
+    if (!m || r.width < 280 || r.height < 60 || r.width / r.height < 1.6) continue;
+    const a = el.closest('a');
+    out.push({src: abs(m[1]), alt: el.getAttribute('aria-label') || el.title || '', label: a ? (a.getAttribute('aria-label') || a.title || '') : '',
+              href: a ? abs(a.getAttribute('href') || '') : '', top: Math.round(r.top + scrollY), w: Math.round(r.width), h: Math.round(r.height)});
+  }
+  return out;
+}"""
+
+
+def pick_banners(store: str, url: str, cands: list) -> list:
+    """Sale banners among the wide-image candidates: sale wording in the alt/label/link."""
+    from app.services.live_banners import MAX_PER_STORE, _SALE_WORDS
+
+    out, seen = [], set()
+    for c in sorted(cands, key=lambda c: c["top"]):
+        name = (c["alt"] or c["label"]).strip()
+        hay = f"{name} {c['href']}"
+        src = c["src"]
+        if not src.startswith("https://") or src in seen or c["top"] > 3000:
+            continue
+        if not _SALE_WORDS.search(hay.replace("-", " ").replace("/", " ")):
+            continue
+        seen.add(src)
+        out.append({"id": f"live-{store}-{len(out)}", "name": (name or f"{store.title()} sale")[:80], "store": store,
+                    "starts_at": None, "ends_at": None, "approximate": False, "hype": "",
+                    "image_url": src, "url": c["href"] if c["href"].startswith("https://") else url, "live": True})
+        if len(out) >= MAX_PER_STORE:
+            break
+    return out
+
+
 def scrape() -> tuple:
     from playwright.sync_api import sync_playwright
     from app.services.live_banners import STORES, extract_sales, parse_banners
@@ -38,8 +86,15 @@ def scrape() -> tuple:
                 page.goto(url, wait_until="networkidle", timeout=45000)
                 page.mouse.wheel(0, 1500)       # trigger lazy-loaded banners
                 page.wait_for_timeout(2500)
-                found = parse_banners(store, url, page.content())
-                print(f"{store}: {len(found)} banner(s)", file=sys.stderr)
+                cands = page.evaluate(_JS_CANDIDATES)
+                found = pick_banners(store, url, cands) or parse_banners(store, url, page.content())
+                print(f"{store}: title={page.title()!r} url={page.url} text={len(page.inner_text('body'))} "
+                      f"wide_images={len(cands)} -> {len(found)} banner(s)", file=sys.stderr)
+                for c in cands[:8]:   # what the page offered, so a miss can be diagnosed from the log
+                    print(f"   cand top={c['top']} {c['w']}x{c['h']} alt={c['alt'][:50]!r} label={c['label'][:40]!r} "
+                          f"href={c['href'][:70]} src={c['src'][:70]}", file=sys.stderr)
+                os.makedirs("banner-debug", exist_ok=True)
+                page.screenshot(path=f"banner-debug/{store}.png")
                 out += found
                 # Exact dates: the visible page text plus each banner's alt text.
                 text = page.inner_text("body") + "\n" + "\n".join(b["name"] for b in found)

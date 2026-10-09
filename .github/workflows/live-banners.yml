@@ -33,3 +33,10 @@ jobs:
         run: pip install -r requirements.txt "playwright>=1.50" && python -m playwright install --with-deps chromium
       - if: steps.gate.outputs.needed == 'true'
         run: python tools/fetch_banners.py --force
+      - if: always() && steps.gate.outputs.needed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: banner-debug
+          path: banner-debug
+          if-no-files-found: ignore
+          retention-days: 3
