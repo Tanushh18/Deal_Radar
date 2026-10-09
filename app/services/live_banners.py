@@ -205,23 +205,66 @@ def needs_refresh(now: float | None = None) -> Dict[str, Any]:
     return {"active": active, "sales": sales, "needed": bool(active) and age > 6 * 3600}
 
 
+IMG_KEY = "live_banner_img:"           # + banner id -> base64 JPEG captured by tools/fetch_banners.py
+MAX_IMG_BYTES = 800_000
+_ID_RE = re.compile(r"^[a-z0-9-]{1,60}$")
+
+
+def _clean_image(b64: str) -> bytes | None:
+    """A screenshot pushed from CI: must decode to a JPEG or PNG under MAX_IMG_BYTES."""
+    import base64
+    try:
+        raw = base64.b64decode(b64 or "", validate=True)
+    except (ValueError, TypeError):
+        return None
+    if not raw or len(raw) > MAX_IMG_BYTES:
+        return None
+    if not (raw[:3] == b"\xff\xd8\xff" or raw[:8] == b"\x89PNG\r\n\x1a\n"):
+        return None
+    return raw
+
+
+def banner_image(banner_id: str) -> tuple | None:
+    """(bytes, media type) of a captured banner, for /api/sale-events/banner/<id>."""
+    import base64
+    if not _ID_RE.match(banner_id or ""):
+        return None
+    raw = db.get_meta(IMG_KEY + banner_id)
+    if not raw:
+        return None
+    data = base64.b64decode(raw)
+    return data, ("image/png" if data[:4] == b"\x89PNG" else "image/jpeg")
+
+
 def set_pushed(banners: List[Dict[str, Any]], now: float | None = None) -> int:
-    """Store banners scraped elsewhere (a headless browser in CI) — the server
-    itself can't render the JavaScript-built home pages. Only https images."""
+    """Store banners captured elsewhere (a headless browser in CI) — the server
+    itself can't render the stores' JavaScript-built pages. A banner carries
+    either a screenshot of the store's own hero banner (image_b64, served by us)
+    or an https image URL on the store's own servers."""
+    now = now or time.time()
     clean = []
-    for b in banners[:30]:
-        img, store = str(b.get("image_url") or ""), str(b.get("store") or "").lower()[:30]
+    for b in banners[:12]:
+        store = re.sub(r"[^a-z0-9]", "", str(b.get("store") or "").lower())[:30]
         name = str(b.get("name") or "").strip()[:80]
-        if not (img.startswith("https://") and store and name):
+        if not (store and name):
+            continue
+        bid = f"live-{store}-{len(clean)}"
+        img = str(b.get("image_url") or "")
+        raw = _clean_image(b.get("image_b64") or "") if b.get("image_b64") else None
+        if raw:
+            import base64
+            db.set_meta(IMG_KEY + bid, base64.b64encode(raw).decode())
+            img = f"/api/sale-events/banner/{bid}?v={int(now)}"
+        elif not img.startswith("https://"):
             continue
         url = str(b.get("url") or "")
         clean.append({
-            "id": f"live-{store}-{len(clean)}", "name": name, "store": store,
+            "id": bid, "name": name, "store": store,
             "starts_at": None, "ends_at": None, "approximate": False, "hype": "",
             "image_url": img[:500], "url": url[:500] if url.startswith("https://") else STORES.get(store, ""),
             "live": True, "credit": str(b.get("credit") or "")[:80],
         })
-    db.set_meta(PUSHED_KEY, json.dumps({"at": now or time.time(), "banners": clean}))
+    db.set_meta(PUSHED_KEY, json.dumps({"at": now, "banners": clean}))
     return len(clean)
 
 

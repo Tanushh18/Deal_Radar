@@ -1,16 +1,31 @@
-"""Scrape the stores' live sale banners with a real browser and push them to the server.
+"""Capture the stores' live sale banners from their own sale pages and push them to the server.
 
-The stores build their home pages with JavaScript, so the server's plain HTTP
-fetch often sees no banners. This renders the pages in headless Chromium,
-extracts sale banners, and POSTs them to /api/admin/reader/live-banners.
-Run by .github/workflows/live-banners.yml every few hours, or by hand:
+How it finds a banner, per store:
+  1. Open the store's home page in headless Chromium (mobile first, desktop if
+     the mobile page is a bot wall). Note every link that points at a sale
+     ("big-billion-days-store", "/events/greatindianfestival", "...-sale"...).
+  2. Open the store's official sale/event pages: the known ones in STORES plus
+     the sale links found on the home page.
+  3. On each page, find the hero banner: the largest wide image (or
+     background-image block) near the top of the page.
+  4. Screenshot exactly that element (clip) as a JPEG. That screenshot is the
+     banner: the store's own artwork with this year's dates, hosted by our
+     server, so it never breaks when the store rotates its image URLs.
+  5. Read exact sale dates from the page text ("9th - 17th Oct").
+
+Everything is sent to /api/admin/reader/live-banners. Stores where nothing
+usable is found are simply left out; the app shows its own branded calendar
+card for them instead. Nothing comes from third-party sites or image search.
+
+Run by .github/workflows/live-banners.yml during sale windows, or by hand:
 
     SITE_URL=https://your-app.example ADMIN_TOKEN=... python tools/fetch_banners.py
-    python tools/fetch_banners.py --dry-run     # print, don't push
+    python tools/fetch_banners.py --dry-run     # capture into banner-debug/, print, don't push
 """
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import re
@@ -18,212 +33,294 @@ import sys
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urljoin, urlparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-UA = ("Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) "
-      "Chrome/124.0 Mobile Safari/537.36")
+MOBILE_UA = ("Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) "
+             "Chrome/124.0 Mobile Safari/537.36")
+DESKTOP_UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+              "Chrome/124.0 Safari/537.36")
+UA = DESKTOP_UA  # for our own server requests
+
+# Each store's home page, its own domains (links/images must stay on them), and
+# official sale pages worth trying even when the home page links nowhere useful.
+STORES = {
+    "amazon": {
+        "home": "https://www.amazon.in/",
+        "domains": ("amazon.in", "media-amazon.com"),
+        "events": ["https://www.amazon.in/events/greatindianfestival"],
+    },
+    "flipkart": {
+        "home": "https://www.flipkart.com/",
+        "domains": ("flipkart.com", "flixcart.com"),
+        "events": ["https://www.flipkart.com/big-billion-days-store"],
+    },
+    "myntra": {
+        "home": "https://www.myntra.com/",
+        "domains": ("myntra.com", "myntassets.com"),
+        "events": [],
+    },
+}
+
+SALE_LINK = re.compile(
+    r"big[-_ ]?billion|great[-_ ]?indian|festival|/events?/|[-_/]sale\b|sale[-_]|diwali|"
+    r"end[-_ ]of[-_ ]reason|prime[-_ ]day|bbd|gif\b", re.I)
+BOT_WALL = re.compile(r"robot|captcha|access denied|are you a human|site maintenance|something went wrong", re.I)
+MAX_EVENT_PAGES = 3
+MAX_PER_STORE = 2
+MIN_SHOT_BYTES = 12_000       # smaller than this is almost always a blank/placeholder block
+MAX_SHOT_BYTES = 450_000      # server limit is 800 KB; keeps the push small
 
 
-# Runs in the page: wide, reasonably large images near the top (hero banners),
-# with whatever text names them — alt, aria-label/title of the wrapping link, or its href.
-_JS_CANDIDATES = """() => {
+# Runs in the page. Every wide, visible image or background-image block, with
+# its position, size, the text naming it and the link around it.
+_JS_CANDIDATES = r"""() => {
   const out = [];
   const abs = (u) => { try { return new URL(u, location.href).href; } catch (e) { return ''; } };
+  const push = (el, src, alt) => {
+    const r = el.getBoundingClientRect();
+    if (r.width < 280 || r.height < 70) return;
+    const ratio = r.width / r.height;
+    if (ratio < 1.5 || ratio > 7) return;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) < 0.2) return;
+    const a = el.closest('a');
+    out.push({src: abs(src), alt: (alt || '').trim(),
+              label: a ? (a.getAttribute('aria-label') || a.title || '').trim() : '',
+              href: a ? abs(a.getAttribute('href') || '') : '',
+              x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height});
+  };
   for (const img of document.images) {
-    const r = img.getBoundingClientRect();
-    const w = Math.max(r.width, img.naturalWidth || 0), h = Math.max(r.height, img.naturalHeight || 0);
-    if (w < 280 || h < 60 || w / h < 1.6) continue;
-    const a = img.closest('a');
-    const src = img.currentSrc || img.src || img.getAttribute('data-src') || '';
-    out.push({src: abs(src), alt: img.alt || '', label: a ? (a.getAttribute('aria-label') || a.title || '') : '',
-              href: a ? abs(a.getAttribute('href') || '') : '', top: Math.round(r.top + scrollY), w: Math.round(w), h: Math.round(h)});
+    if (!img.complete || !img.naturalWidth) continue;
+    push(img, img.currentSrc || img.src, img.alt);
   }
   for (const el of document.querySelectorAll('[style*="background-image"]')) {
-    const m = /url\\(["']?([^"')]+)/.exec(el.getAttribute('style') || '');
-    const r = el.getBoundingClientRect();
-    if (!m || r.width < 280 || r.height < 60 || r.width / r.height < 1.6) continue;
-    const a = el.closest('a');
-    out.push({src: abs(m[1]), alt: el.getAttribute('aria-label') || el.title || '', label: a ? (a.getAttribute('aria-label') || a.title || '') : '',
-              href: a ? abs(a.getAttribute('href') || '') : '', top: Math.round(r.top + scrollY), w: Math.round(r.width), h: Math.round(r.height)});
+    const m = /url\(["']?([^"')]+)/.exec(el.getAttribute('style') || '');
+    if (m) push(el, m[1], el.getAttribute('aria-label') || el.title);
   }
   return out;
 }"""
 
+# Every link on the page, for finding the store's own sale pages.
+_JS_LINKS = r"""() => Array.from(document.querySelectorAll('a[href]')).map(a => ({
+  href: a.href, text: (a.innerText || a.getAttribute('aria-label') || '').trim().slice(0, 80)}))"""
 
-def pick_banners(store: str, url: str, cands: list) -> list:
-    """Sale banners among the wide-image candidates: sale wording in the alt/label/link."""
-    from app.services.live_banners import MAX_PER_STORE, _SALE_WORDS
 
-    out, seen = [], set()
-    for c in sorted(cands, key=lambda c: c["top"]):
-        name = (c["alt"] or c["label"]).strip()
-        if name.lower() in ("", "image", "banner", "img", "photo"):   # generic alt: name it from the link instead
-            slug = re.sub(r"\?.*", "", c["href"]).rstrip("/").rsplit("/", 1)[-1]
-            name = re.sub(r"[-_]+", " ", slug).strip().title()
-        hay = f"{name} {c['href']}"
-        src = c["src"]
-        if not src.startswith("https://") or src in seen or c["top"] > 3000:
+def _on_domain(url: str, domains: tuple) -> bool:
+    host = urlparse(url).netloc.lower()
+    return any(host == d or host.endswith("." + d) for d in domains)
+
+
+def _is_wall(page) -> bool:
+    try:
+        text = page.inner_text("body")
+    except Exception:  # noqa: BLE001
+        return True
+    return len(text) < 400 or bool(BOT_WALL.search(page.title() or "")) or bool(BOT_WALL.search(text[:300]))
+
+
+def _open(ctxs: list, url: str):
+    """Open url in the first context (mobile/desktop) that isn't served a bot wall."""
+    for ctx in ctxs:
+        page = ctx.new_page()
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            try:
+                page.wait_for_load_state("networkidle", timeout=15000)
+            except Exception:  # noqa: BLE001 — some pages never go idle (live tickers); that's fine
+                pass
+            page.mouse.wheel(0, 900)          # wake lazy-loaded hero images
+            page.wait_for_timeout(1500)
+            page.mouse.wheel(0, -900)
+            page.wait_for_timeout(1500)
+            if not _is_wall(page):
+                return page
+            print(f"   {url}: bot wall / empty page ({page.title()!r})", file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001
+            print(f"   {url}: failed to load ({exc.__class__.__name__}: {str(exc)[:120]})", file=sys.stderr)
+        page.close()
+    return None
+
+
+def _sale_links(page, store: str) -> list:
+    """Links on the home page that point at the store's own sale pages."""
+    cfg = STORES[store]
+    seen, out = set(), []
+    for link in page.evaluate(_JS_LINKS):
+        href = link["href"].split("#")[0]
+        if not href.startswith("https://") or not _on_domain(href, cfg["domains"]):
             continue
-        if not _SALE_WORDS.search(hay.replace("-", " ").replace("/", " ")):
+        if not SALE_LINK.search(f"{urlparse(href).path} {link['text']}"):
             continue
-        seen.add(src)
-        out.append({"id": f"live-{store}-{len(out)}", "name": (name or f"{store.title()} sale")[:80], "store": store,
-                    "starts_at": None, "ends_at": None, "approximate": False, "hype": "",
-                    "image_url": src, "url": c["href"] if c["href"].startswith("https://") else url, "live": True})
-        if len(out) >= MAX_PER_STORE:
-            break
+        key = urlparse(href)._replace(query="").geturl()
+        if key in seen or key.rstrip("/") == cfg["home"].rstrip("/"):
+            continue
+        seen.add(key)
+        out.append(href)
     return out
 
 
-_OFFICIAL = {   # a store's own image servers: always preferred over blog pictures
-    "amazon": ("amazon.in", "media-amazon.com", "aboutamazon"),
-    "flipkart": ("flipkart.com", "flixcart.com"),
-    "myntra": ("myntra.com", "myntassets.com"),
-    "ajio": ("ajio.com",), "meesho": ("meesho.com",), "nykaa": ("nykaa.com",),
-}
-_OLD_IMAGE = re.compile(r"(?:/|[-_])(?:20(?:1\d|2[0-5])|img(?:1\d|2[0-5]))(?:/|[-_.]|$)", re.I)
-
-
-def ddg_banner(sale: dict) -> dict | None:
-    """The single image fallback: DuckDuckGo image search via the open-source `ddgs`
-    package (no key). Wide, large https images that are really about this sale,
-    skipping old-year pictures; the store's own image servers rank first.
-    Credits the site the image came from."""
-    from urllib.parse import urlparse
-    try:
-        try:
-            from ddgs import DDGS
-        except ImportError:
-            from duckduckgo_search import DDGS
-        results = DDGS().images(f"{sale['name']} {datetime.now().year} banner", region="in-en",
-                                safesearch="moderate", size="Large", layout="Wide", max_results=20) or []
-    except Exception as exc:  # noqa: BLE001
-        print(f"{sale['store']}: image search failed: {exc}", file=sys.stderr)
+def _hero(cands: list, store: str) -> dict | None:
+    """The hero banner: largest wide candidate near the top, on the store's own servers."""
+    domains = STORES[store]["domains"]
+    good = [c for c in cands
+            if c["src"].startswith("https://") and _on_domain(c["src"], domains) and c["y"] < 1600 and c["w"] >= 300]
+    if not good:
         return None
-    words = [w for w in re.findall(r"[a-z]+", sale["name"].lower()) if len(w) > 3]
-    good = []
-    for r in results:
-        img = r.get("image") or ""
-        try:
-            w, h = int(r.get("width") or 0), int(r.get("height") or 0)
-        except ValueError:
-            continue
-        text = f"{r.get('title', '')} {r.get('url', '')}".lower()
-        if not (img.startswith("https://") and w >= 600 and h and w / h >= 1.6 and not _OLD_IMAGE.search(img)
-                and sum(wd in text for wd in words) >= 2):
-            continue
-        host = urlparse(img).netloc.lower() + " " + urlparse(r.get("url") or "").netloc.lower()
-        official = any(d in host for d in _OFFICIAL.get(sale["store"], ()))
-        good.append((not official, {"id": "", "name": sale["name"], "store": sale["store"], "image_url": img,
-                                    "url": STORES_HOME.get(sale["store"], ""),
-                                    "credit": urlparse(r.get("url") or img).netloc.removeprefix("www.")}))
-    print(f"{sale['store']}: image search -> {len(results)} results, {len(good)} usable", file=sys.stderr)
-    return sorted(good, key=lambda g: g[0])[0][1] if good else None
+    # Big and high up wins; a full-width carousel slide beats a row of small tiles.
+    return max(good, key=lambda c: c["w"] * c["h"] / (1 + c["y"] / 900))
 
 
-STORES_HOME = {"amazon": "https://www.amazon.in/", "flipkart": "https://www.flipkart.com/",
-               "myntra": "https://www.myntra.com/", "ajio": "https://www.ajio.com/",
-               "meesho": "https://www.meesho.com/", "nykaa": "https://www.nykaa.com/"}
+def _name_for(page, store: str, hero: dict, sale_names: dict) -> str:
+    """Prefer the sale's calendar name; else the hero's alt text; else the page title."""
+    if sale_names.get(store):
+        return sale_names[store]
+    alt = (hero.get("alt") or hero.get("label") or "").strip()
+    if len(alt) > 5 and alt.lower() not in ("image", "banner"):
+        return alt[:80]
+    title = re.split(r"\s[|:\-–]\s", page.title() or "")[0].strip()
+    return (title or f"{store.title()} sale")[:80]
 
 
-def scrape() -> tuple:
+def _capture(page, hero: dict) -> bytes | None:
+    """JPEG screenshot of exactly the hero element's box."""
+    page.evaluate("y => window.scrollTo(0, Math.max(0, y - 80))", hero["y"])
+    page.wait_for_timeout(800)
+    box = page.evaluate("() => ({x: scrollX, y: scrollY})")
+    clip = {"x": max(0, hero["x"] - box["x"]), "y": max(0, hero["y"] - box["y"]),
+            "width": min(hero["w"], 1600), "height": min(hero["h"], 700)}
+    for quality in (82, 70, 55):
+        shot = page.screenshot(type="jpeg", quality=quality, clip=clip)
+        if len(shot) <= MAX_SHOT_BYTES:
+            return shot if len(shot) >= MIN_SHOT_BYTES else None
+    return None
+
+
+def scrape(sale_names: dict) -> tuple:
     from playwright.sync_api import sync_playwright
-    from app.services.live_banners import STORES, extract_sales, parse_banners
+    from app.services.live_banners import extract_sales
 
-    out, sales = [], []
+    banners, sales = [], []
     year = datetime.now(timezone(timedelta(hours=5, minutes=30))).year
+    os.makedirs("banner-debug", exist_ok=True)
     with sync_playwright() as p:
-        browser = p.chromium.launch()
-        ctx = browser.new_context(user_agent=UA, locale="en-IN", viewport={"width": 412, "height": 900})
-        desktop = browser.new_context(locale="en-IN", viewport={"width": 1366, "height": 900},
-                                      user_agent=UA.replace("Linux; Android 13; Pixel 7", "X11; Linux x86_64").replace(" Mobile", ""))
-        for store, url in STORES.items():
-            page = ctx.new_page()
-            try:
-                page.goto(url, wait_until="networkidle", timeout=45000)
-                page.mouse.wheel(0, 1500)       # trigger lazy-loaded banners
-                page.wait_for_timeout(2500)
-                if len(page.inner_text("body")) < 500:   # bot-check / stub page: retry once as desktop Chrome
+        browser = p.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
+        common = {"locale": "en-IN", "timezone_id": "Asia/Kolkata", "extra_http_headers": {"Accept-Language": "en-IN,en;q=0.9"}}
+        mobile = browser.new_context(user_agent=MOBILE_UA, viewport={"width": 412, "height": 915},
+                                     device_scale_factor=2, is_mobile=True, has_touch=True, **common)
+        desktop = browser.new_context(user_agent=DESKTOP_UA, viewport={"width": 1366, "height": 900}, **common)
+
+        for store, cfg in STORES.items():
+            print(f"== {store}", file=sys.stderr)
+            found = []
+            # 1. Home page: sale links to follow (and its text, for dates).
+            home = _open([mobile, desktop], cfg["home"])
+            links = []
+            if home:
+                links = _sale_links(home, store)
+                sales += extract_sales(home.inner_text("body"), year)
+                print(f"   home ok ({home.title()[:60]!r}); sale links: {links[:MAX_EVENT_PAGES]}", file=sys.stderr)
+                home.close()
+            # 2-4. Official sale pages: hero banner, screenshot it.
+            pages = list(dict.fromkeys(cfg["events"] + links))[:MAX_EVENT_PAGES + len(cfg["events"])]
+            for url in pages:
+                if len(found) >= MAX_PER_STORE:
+                    break
+                page = _open([desktop, mobile], url)
+                if not page:
+                    continue
+                try:
+                    sales += extract_sales(page.inner_text("body"), year)
+                    cands = page.evaluate(_JS_CANDIDATES)
+                    hero = _hero(cands, store)
+                    print(f"   {page.url[:90]}: {len(cands)} wide images, hero="
+                          f"{(hero or {}).get('src', '')[:80] or None}", file=sys.stderr)
+                    if not hero or any(b["source_image"] == hero["src"] for b in found):
+                        continue
+                    shot = _capture(page, hero)
+                    if not shot:
+                        print("   hero screenshot unusable (blank or too large)", file=sys.stderr)
+                        continue
+                    n = len(found)
+                    with open(f"banner-debug/{store}-{n}.jpg", "wb") as fh:
+                        fh.write(shot)
+                    found.append({
+                        "store": store, "name": _name_for(page, store, hero, sale_names),
+                        "image_b64": base64.b64encode(shot).decode(),
+                        "url": page.url if _on_domain(page.url, cfg["domains"]) else cfg["home"],
+                        "source_image": hero["src"],
+                    })
+                    print(f"   captured {len(shot) // 1024} KB banner -> banner-debug/{store}-{n}.jpg", file=sys.stderr)
+                finally:
                     page.close()
-                    page = desktop.new_page()
-                    page.goto(url, wait_until="networkidle", timeout=45000)
-                    page.wait_for_timeout(2500)
-                cands = page.evaluate(_JS_CANDIDATES)
-                found = pick_banners(store, url, cands) or parse_banners(store, url, page.content())
-                print(f"{store}: title={page.title()!r} url={page.url} text={len(page.inner_text('body'))} "
-                      f"wide_images={len(cands)} -> {len(found)} banner(s)", file=sys.stderr)
-                for c in cands[:8]:   # what the page offered, so a miss can be diagnosed from the log
-                    print(f"   cand top={c['top']} {c['w']}x{c['h']} alt={c['alt'][:50]!r} label={c['label'][:40]!r} "
-                          f"href={c['href'][:70]} src={c['src'][:70]}", file=sys.stderr)
-                os.makedirs("banner-debug", exist_ok=True)
-                page.screenshot(path=f"banner-debug/{store}.png")
-                out += found
-                # Exact dates: the visible page text plus each banner's alt text.
-                text = page.inner_text("body") + "\n" + "\n".join(b["name"] for b in found)
-                sales += extract_sales(text, year)
-            except Exception as exc:  # noqa: BLE001
-                print(f"{store}: failed ({exc})", file=sys.stderr)
-            finally:
-                page.close()
+            if not found:
+                print(f"   no banner for {store}; the app will show its calendar card", file=sys.stderr)
+            banners += found
         browser.close()
-    return out, sales
+    # One date per sale (first found wins).
+    seen, uniq = set(), []
+    for s in sales:
+        if s["key"] not in seen:
+            seen.add(s["key"])
+            uniq.append(s)
+    return banners, uniq
+
+
+def _request(url: str, token: str, body: dict | None = None):
+    headers = {"x-admin-token": token, "User-Agent": UA, "Accept": "application/json"}
+    data = None
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(body).encode()
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST" if body is not None else "GET")
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return json.loads(resp.read().decode() or "{}")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--check", action="store_true", help="only print whether a scrape is needed")
-    ap.add_argument("--force", action="store_true", help="skip the is-a-sale-active check")
+    ap.add_argument("--dry-run", action="store_true", help="capture and print; don't contact the server")
+    ap.add_argument("--check", action="store_true", help="only print whether a capture is needed")
+    ap.add_argument("--force", action="store_true", help="capture even if no sale is live or starting soon")
     args = ap.parse_args()
-    active_sales = []
+
     site, token = os.getenv("SITE_URL", "").rstrip("/"), os.getenv("ADMIN_TOKEN", "")
-    if args.check or not args.dry_run:
+    sale_names: dict = {}
+    if not args.dry_run:
         if not (site and token):
             print("SITE_URL and ADMIN_TOKEN are required (or use --dry-run).", file=sys.stderr)
             return 2
-        gate = urllib.request.Request(f"{site}/api/admin/reader/live-banners/needed", headers={"x-admin-token": token, "User-Agent": UA, "Accept": "application/json"})
-        info = json.load(urllib.request.urlopen(gate, timeout=30))
-        print(f"server gate: {json.dumps(info)[:400]}", file=sys.stderr)
-        needed = args.force or info.get("needed")
-        active_sales = info.get("sales") or [
-            {"name": n, "store": next((k for k in STORES_HOME if k in n.lower()), "")} for n in info.get("active") or []]
+        try:
+            info = _request(f"{site}/api/admin/reader/live-banners/needed", token)
+        except urllib.error.HTTPError as exc:
+            print(f"Server check failed: HTTP {exc.code}", file=sys.stderr)
+            info = {}
+        print(f"server says: {json.dumps(info)[:300]}", file=sys.stderr)
+        needed = args.force or bool(info.get("needed"))
+        for s in info.get("sales") or []:
+            sale_names.setdefault(s.get("store"), s.get("name"))
         if args.check:   # stdlib-only gate for CI: prints true/false, nothing installed yet
             print("true" if needed else "false")
             return 0
         if not needed:
             print("No sale live or starting soon (or banners are fresh); skipping.", file=sys.stderr)
             return 0
-    banners, sales = scrape()
-    # Stores whose own page gave no banner (blocked, JS-built hero…): fall back to
-    # image search for each sale that's live or starting soon.
-    if not args.dry_run:
-        have = {b["store"] for b in banners}
-        print(f"image fallback: active sales={active_sales} already have={sorted(have)}", file=sys.stderr)
-        for sale in active_sales:
-            if not sale["store"] or sale["store"] in have:
-                continue
-            b = ddg_banner(sale)
-            if b:
-                b["id"] = f"live-{b['store']}-g{len(banners)}"
-                banners.append(b)
-                have.add(b["store"])
-                print(f"{sale['store']}: google image fallback -> {b['image_url'][:80]}", file=sys.stderr)
+
+    banners, sales = scrape(sale_names)
+    summary = [{k: v for k, v in b.items() if k != "image_b64"} for b in banners]
+    print(json.dumps({"banners": summary, "sales": sales}, indent=2))
     if args.dry_run:
-        print(json.dumps({"banners": banners, "sales": sales}, indent=2))
         return 0
     if not banners and not sales:
-        print("No banners or dates found; leaving the server's current ones untouched.", file=sys.stderr)
+        print("Nothing captured; leaving the server's current banners untouched.", file=sys.stderr)
         return 0
-    req = urllib.request.Request(
-        f"{site}/api/admin/reader/live-banners", data=json.dumps({"banners": banners, "sales": sales}).encode(),
-        headers={"Content-Type": "application/json", "x-admin-token": token, "User-Agent": UA, "Accept": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            print(resp.read().decode())
+        print(_request(f"{site}/api/admin/reader/live-banners", token, {"banners": banners, "sales": sales}))
     except urllib.error.HTTPError as exc:
-        hint = {403: "ADMIN_TOKEN does not match the server's ADMIN_TOKEN env var (or it is unset there)",
-                404: "the server has not deployed the live-banners endpoint yet"}.get(exc.code, "")
+        hint = {403: "ADMIN_TOKEN mismatch, or a firewall in front of the server",
+                404: "the server hasn't deployed the live-banners endpoint yet",
+                413: "request too large for the server/proxy"}.get(exc.code, "")
         print(f"Push failed: HTTP {exc.code} {exc.read().decode()[:200]} {hint}", file=sys.stderr)
         return 1
     return 0
