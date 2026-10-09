@@ -78,6 +78,7 @@ MAX_SHOT_BYTES = 450_000      # server limit is 800 KB; keeps the push small
 _JS_CANDIDATES = r"""() => {
   const out = [];
   const abs = (u) => { try { return new URL(u, location.href).href; } catch (e) { return ''; } };
+  let idx = 0;
   const push = (el, src, alt) => {
     const r = el.getBoundingClientRect();
     if (r.width < 280 || r.height < 70) return;
@@ -86,7 +87,8 @@ _JS_CANDIDATES = r"""() => {
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) < 0.2) return;
     const a = el.closest('a');
-    out.push({src: abs(src), alt: (alt || '').trim(),
+    el.setAttribute('data-bn', String(idx));
+    out.push({idx: idx++, src: abs(src), alt: (alt || '').trim(),
               label: a ? (a.getAttribute('aria-label') || a.title || '').trim() : '',
               href: a ? abs(a.getAttribute('href') || '') : '',
               x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height});
@@ -184,16 +186,18 @@ def _name_for(page, store: str, hero: dict, sale_names: dict) -> str:
 
 
 def _capture(page, hero: dict) -> bytes | None:
-    """JPEG screenshot of exactly the hero element's box."""
-    page.evaluate("y => window.scrollTo(0, Math.max(0, y - 80))", hero["y"])
-    page.wait_for_timeout(800)
-    box = page.evaluate("() => ({x: scrollX, y: scrollY})")
-    clip = {"x": max(0, hero["x"] - box["x"]), "y": max(0, hero["y"] - box["y"]),
-            "width": min(hero["w"], 1600), "height": min(hero["h"], 700)}
-    for quality in (82, 70, 55):
-        shot = page.screenshot(type="jpeg", quality=quality, clip=clip)
-        if len(shot) <= MAX_SHOT_BYTES:
-            return shot if len(shot) >= MIN_SHOT_BYTES else None
+    """JPEG screenshot of the hero element itself (Playwright scrolls it into view
+    and crops to its box, so a banner wider than the window is still captured whole)."""
+    loc = page.locator(f'[data-bn="{hero["idx"]}"]').first
+    try:
+        loc.scroll_into_view_if_needed(timeout=5000)
+        page.wait_for_timeout(600)
+        for quality in (82, 70, 55):
+            shot = loc.screenshot(type="jpeg", quality=quality, timeout=15000)
+            if len(shot) <= MAX_SHOT_BYTES:
+                return shot if len(shot) >= MIN_SHOT_BYTES else None
+    except Exception as exc:  # noqa: BLE001 — one bad element must not lose the other stores
+        print(f"   element screenshot failed: {exc.__class__.__name__}: {str(exc)[:140]}", file=sys.stderr)
     return None
 
 
@@ -252,6 +256,8 @@ def scrape(sale_names: dict) -> tuple:
                         "source_image": hero["src"],
                     })
                     print(f"   captured {len(shot) // 1024} KB banner -> banner-debug/{store}-{n}.jpg", file=sys.stderr)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"   {url}: capture error {exc.__class__.__name__}: {str(exc)[:140]}", file=sys.stderr)
                 finally:
                     page.close()
             if not found:
