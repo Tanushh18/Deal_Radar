@@ -76,6 +76,34 @@ def pick_banners(store: str, url: str, cands: list) -> list:
     return out
 
 
+def google_banner(sale: dict, key: str, cx: str) -> dict | None:
+    """A wide banner image for a sale from Google Programmable Search (image search).
+    Needs GOOGLE_CSE_KEY + GOOGLE_CSE_ID. Picks the first wide https result and
+    credits the site it came from."""
+    import urllib.parse
+    q = urllib.parse.urlencode({"key": key, "cx": cx, "searchType": "image", "num": 10, "imgSize": "xlarge",
+                                "safe": "active", "q": f"{sale['name']} {datetime.now().year} banner"})
+    try:
+        req = urllib.request.Request(f"https://www.googleapis.com/customsearch/v1?{q}", headers={"User-Agent": UA})
+        items = json.load(urllib.request.urlopen(req, timeout=30)).get("items") or []
+    except Exception as exc:  # noqa: BLE001
+        print(f"google image search failed for {sale['name']}: {exc}", file=sys.stderr)
+        return None
+    for it in items:
+        img, meta = it.get("link") or "", it.get("image") or {}
+        w, h = meta.get("width") or 0, meta.get("height") or 0
+        if img.startswith("https://") and w >= 600 and h and w / h >= 1.6:
+            return {"id": "", "name": sale["name"], "store": sale["store"], "image_url": img,
+                    "url": STORES_HOME.get(sale["store"], it.get("image", {}).get("contextLink") or ""),
+                    "credit": it.get("displayLink") or ""}
+    return None
+
+
+STORES_HOME = {"amazon": "https://www.amazon.in/", "flipkart": "https://www.flipkart.com/",
+               "myntra": "https://www.myntra.com/", "ajio": "https://www.ajio.com/",
+               "meesho": "https://www.meesho.com/", "nykaa": "https://www.nykaa.com/"}
+
+
 def scrape() -> tuple:
     from playwright.sync_api import sync_playwright
     from app.services.live_banners import STORES, extract_sales, parse_banners
@@ -125,13 +153,16 @@ def main() -> int:
     ap.add_argument("--check", action="store_true", help="only print whether a scrape is needed")
     ap.add_argument("--force", action="store_true", help="skip the is-a-sale-active check")
     args = ap.parse_args()
+    active_sales = []
     site, token = os.getenv("SITE_URL", "").rstrip("/"), os.getenv("ADMIN_TOKEN", "")
     if args.check or not args.dry_run:
         if not (site and token):
             print("SITE_URL and ADMIN_TOKEN are required (or use --dry-run).", file=sys.stderr)
             return 2
         gate = urllib.request.Request(f"{site}/api/admin/reader/live-banners/needed", headers={"x-admin-token": token, "User-Agent": UA, "Accept": "application/json"})
-        needed = args.force or json.load(urllib.request.urlopen(gate, timeout=30)).get("needed")
+        info = json.load(urllib.request.urlopen(gate, timeout=30))
+        needed = args.force or info.get("needed")
+        active_sales = info.get("sales") or []
         if args.check:   # stdlib-only gate for CI: prints true/false, nothing installed yet
             print("true" if needed else "false")
             return 0
@@ -139,6 +170,20 @@ def main() -> int:
             print("No sale live or starting soon (or banners are fresh); skipping.", file=sys.stderr)
             return 0
     banners, sales = scrape()
+    # Stores whose own page gave no banner (blocked, JS-built hero…): fall back to
+    # Google image search for each sale that's live or starting soon.
+    gkey, gcx = os.getenv("GOOGLE_CSE_KEY", ""), os.getenv("GOOGLE_CSE_ID", "")
+    if gkey and gcx and not args.dry_run:
+        have = {b["store"] for b in banners}
+        for sale in active_sales:
+            if sale["store"] in have:
+                continue
+            b = google_banner(sale, gkey, gcx)
+            if b:
+                b["id"] = f"live-{b['store']}-g{len(banners)}"
+                banners.append(b)
+                have.add(b["store"])
+                print(f"{sale['store']}: google image fallback -> {b['image_url'][:80]}", file=sys.stderr)
     if args.dry_run:
         print(json.dumps({"banners": banners, "sales": sales}, indent=2))
         return 0

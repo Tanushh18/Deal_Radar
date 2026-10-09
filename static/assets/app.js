@@ -3129,7 +3129,7 @@
       if (e.image_url) {  // a store's own live banner: show its artwork as-is
         const label = escapeHtml(e.name);
         return `<a class="salecard salecard-live" href="${escapeHtml(e.url || '#')}" target="_blank" rel="noopener nofollow" aria-label="${label}">
-          <img alt="${label}" loading="lazy" src="${escapeHtml(e.image_url)}" /></a>`;
+          <img alt="${label}" loading="lazy" src="${escapeHtml(e.image_url)}" />${e.credit ? `<span class="salecard-credit">Image: ${escapeHtml(e.credit)}</span>` : ''}</a>`;
       }
       const key = String(e.store || '').trim().toLowerCase();
       const theme = SALE_THEME[key];

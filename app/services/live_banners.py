@@ -200,7 +200,9 @@ def needs_refresh(now: float | None = None) -> Dict[str, Any]:
     age = now - float(data.get("at") or 0)
     active = [e["name"] for e in se.list_all(upcoming_only=True, now=now)
               if e["starts_at"] and e["starts_at"] - 2 * 86400 <= now <= (e["ends_at"] or e["starts_at"])]
-    return {"active": active, "needed": bool(active) and age > 6 * 3600}
+    sales = [{"name": e["name"], "store": e["store"]} for e in se.list_all(upcoming_only=True, now=now)
+             if e["name"] in active]
+    return {"active": active, "sales": sales, "needed": bool(active) and age > 6 * 3600}
 
 
 def set_pushed(banners: List[Dict[str, Any]], now: float | None = None) -> int:
@@ -217,7 +219,7 @@ def set_pushed(banners: List[Dict[str, Any]], now: float | None = None) -> int:
             "id": f"live-{store}-{len(clean)}", "name": name, "store": store,
             "starts_at": None, "ends_at": None, "approximate": False, "hype": "",
             "image_url": img[:500], "url": url[:500] if url.startswith("https://") else STORES.get(store, ""),
-            "live": True,
+            "live": True, "credit": str(b.get("credit") or "")[:80],
         })
     db.set_meta(PUSHED_KEY, json.dumps({"at": now or time.time(), "banners": clean}))
     return len(clean)
