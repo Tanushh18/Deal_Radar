@@ -1,23 +1,35 @@
 name: Live sale banners
 
-# Renders amazon.in / flipkart.com / myntra.com in headless Chromium, grabs the
-# running sale banners and pushes them to the server. Needs repo secrets
-# SITE_URL (e.g. https://your-app.onrender.com) and ADMIN_TOKEN.
+# Cheap gate first: asks the server whether a sale is live or starts within
+# 2 days (and banners are >6h old). Only then installs Chromium, scrapes the
+# banners + exact sale dates and pushes them. Outside sale windows each run
+# is a few seconds of stdlib Python. Needs secrets SITE_URL and ADMIN_TOKEN.
 on:
   schedule:
-    - cron: "17 */3 * * *"
+    - cron: "17 */6 * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Scrape even if no sale is active"
+        type: boolean
+        default: false
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    env:
+      SITE_URL: ${{ secrets.SITE_URL }}
+      ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt && python -m playwright install --with-deps chromium
-      - run: python tools/fetch_banners.py
-        env:
-          SITE_URL: ${{ secrets.SITE_URL }}
-          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      - id: gate
+        run: |
+          flag=""; [ "${{ inputs.force }}" = "true" ] && flag="--force"
+          echo "needed=$(python tools/fetch_banners.py --check $flag)" >> "$GITHUB_OUTPUT"
+      - if: steps.gate.outputs.needed == 'true'
+        run: pip install -r requirements.txt && python -m playwright install --with-deps chromium
+      - if: steps.gate.outputs.needed == 'true'
+        run: python tools/fetch_banners.py --force

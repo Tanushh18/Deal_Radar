@@ -552,4 +552,14 @@ async def post_sale_event_now(event_id: str):
 async def push_live_banners(payload: dict = Body(...)):
     """Receives the stores' live sale banners scraped by tools/fetch_banners.py."""
     from ..services import live_banners
-    return {"stored": live_banners.set_pushed(payload.get("banners") or [])}
+    return {
+        "stored": live_banners.set_pushed(payload.get("banners") or []),
+        "dates_updated": live_banners.apply_sales(payload.get("sales") or []),
+    }
+
+
+@router.get("/live-banners/needed")
+async def live_banners_needed():
+    """CI gate: scrape only while a sale is live or about to start."""
+    from ..services import live_banners
+    return live_banners.needs_refresh()
