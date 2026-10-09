@@ -248,6 +248,15 @@ def scrape(sale_names: dict) -> tuple:
                 try:
                     sales += extract_sales(page.inner_text("body"), year)
                     cands = page.evaluate(_JS_CANDIDATES)
+                    if not _hero(cands, store):   # lazy images often arrive late: scroll, wait, look again
+                        for _ in range(2):
+                            page.mouse.wheel(0, 600)
+                            page.wait_for_timeout(2500)
+                            page.mouse.wheel(0, -2000)
+                            page.wait_for_timeout(1500)
+                            cands = page.evaluate(_JS_CANDIDATES)
+                            if _hero(cands, store):
+                                break
                     slug = re.sub(r"[^a-z0-9]+", "-", urlparse(page.url).path.lower()).strip("-")[:40] or "home"
                     page.screenshot(path=f"banner-debug/{store}-page-{slug}.jpg", type="jpeg", quality=55)
                     hero = _hero(cands, store)

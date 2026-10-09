@@ -25,7 +25,7 @@ from .. import db
 log = logging.getLogger("dealradar.live_banners")
 
 PUSHED_KEY = "live_banners_pushed"
-PUSHED_TTL = 12 * 3600     # banners pushed by tools/fetch_banners.py stay valid this long
+PUSHED_TTL = 24 * 3600     # a captured banner stays valid this long unless its store pushes a newer one
 
 CACHE_TTL = 30 * 60
 STALE_TTL = 6 * 3600       # keep serving the last good fetch this long if a refresh fails
@@ -262,20 +262,24 @@ def set_pushed(banners: List[Dict[str, Any]], now: float | None = None) -> int:
             "id": bid, "name": name, "store": store,
             "starts_at": None, "ends_at": None, "approximate": False, "hype": "",
             "image_url": img[:500], "url": url[:500] if url.startswith("https://") else STORES.get(store, ""),
-            "live": True, "credit": str(b.get("credit") or "")[:80],
+            "live": True, "credit": str(b.get("credit") or "")[:80], "at": now,
         })
-    db.set_meta(PUSHED_KEY, json.dumps({"at": now, "banners": clean}))
+    # A store this run found nothing for keeps its previous banner (up to PUSHED_TTL),
+    # so one flaky page load never wipes a good banner. Stores found now replace theirs.
+    fresh = {b["store"] for b in clean}
+    kept = [b for b in _pushed(now) if b["store"] not in fresh]
+    db.set_meta(PUSHED_KEY, json.dumps({"at": now, "banners": clean + kept}))
     return len(clean)
 
 
 def _pushed(now: float) -> List[Dict[str, Any]]:
+    """Captured banners still within PUSHED_TTL (each carries its own capture time)."""
     try:
         data = json.loads(db.get_meta(PUSHED_KEY) or "{}")
     except ValueError:
         return []
-    if now - float(data.get("at") or 0) > PUSHED_TTL:
-        return []
-    return data.get("banners") or []
+    return [b for b in data.get("banners") or []
+            if now - float(b.get("at") or data.get("at") or 0) <= PUSHED_TTL]
 
 
 async def get_live(now: float | None = None) -> List[Dict[str, Any]]:
