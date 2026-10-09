@@ -282,7 +282,33 @@ def _pushed(now: float) -> List[Dict[str, Any]]:
             if now - float(b.get("at") or data.get("at") or 0) <= PUSHED_TTL]
 
 
+# Banner images saved in the repo (static/banners/<store>.jpg), taken from each
+# store's own sale page. They are what the cards show; replace a file to update it.
+LOCAL_BANNERS = [
+    ("amazon", "Amazon Great Indian Festival", "https://www.amazon.in/events/greatindianfestival"),
+    ("flipkart", "Flipkart Big Billion Days", "https://www.flipkart.com/big-billion-days-store"),
+    ("myntra", "Myntra Big Fashion Festival", "https://www.myntra.com/"),
+]
+
+
+def local_banners() -> List[Dict[str, Any]]:
+    import os
+    root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                        "static", "banners")
+    return [{"id": f"live-{store}-0", "name": name, "store": store, "starts_at": None, "ends_at": None,
+             "approximate": False, "hype": "", "image_url": f"/banners/{store}.jpg", "url": url, "live": True}
+            for store, name, url in LOCAL_BANNERS if os.path.isfile(os.path.join(root, f"{store}.jpg"))]
+
+
 async def get_live(now: float | None = None) -> List[Dict[str, Any]]:
+    """The saved banner images if there are any; otherwise the pushed/fetched ones."""
+    local = local_banners()
+    if local:
+        return local
+    return await _get_remote(now)
+
+
+async def _get_remote(now: float | None = None) -> List[Dict[str, Any]]:
     """Cached live banners; refreshes at most every CACHE_TTL."""
     now = now or time.time()
     pushed = _pushed(now)
