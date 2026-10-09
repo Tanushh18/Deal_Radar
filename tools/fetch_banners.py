@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -56,6 +58,9 @@ def pick_banners(store: str, url: str, cands: list) -> list:
     out, seen = [], set()
     for c in sorted(cands, key=lambda c: c["top"]):
         name = (c["alt"] or c["label"]).strip()
+        if name.lower() in ("", "image", "banner", "img", "photo"):   # generic alt: name it from the link instead
+            slug = re.sub(r"\?.*", "", c["href"]).rstrip("/").rsplit("/", 1)[-1]
+            name = re.sub(r"[-_]+", " ", slug).strip().title()
         hay = f"{name} {c['href']}"
         src = c["src"]
         if not src.startswith("https://") or src in seen or c["top"] > 3000:
@@ -80,12 +85,19 @@ def scrape() -> tuple:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         ctx = browser.new_context(user_agent=UA, locale="en-IN", viewport={"width": 412, "height": 900})
+        desktop = browser.new_context(locale="en-IN", viewport={"width": 1366, "height": 900},
+                                      user_agent=UA.replace("Linux; Android 13; Pixel 7", "X11; Linux x86_64").replace(" Mobile", ""))
         for store, url in STORES.items():
             page = ctx.new_page()
             try:
                 page.goto(url, wait_until="networkidle", timeout=45000)
                 page.mouse.wheel(0, 1500)       # trigger lazy-loaded banners
                 page.wait_for_timeout(2500)
+                if len(page.inner_text("body")) < 500:   # bot-check / stub page: retry once as desktop Chrome
+                    page.close()
+                    page = desktop.new_page()
+                    page.goto(url, wait_until="networkidle", timeout=45000)
+                    page.wait_for_timeout(2500)
                 cands = page.evaluate(_JS_CANDIDATES)
                 found = pick_banners(store, url, cands) or parse_banners(store, url, page.content())
                 print(f"{store}: title={page.title()!r} url={page.url} text={len(page.inner_text('body'))} "
@@ -136,8 +148,14 @@ def main() -> int:
     req = urllib.request.Request(
         f"{site}/api/admin/reader/live-banners", data=json.dumps({"banners": banners, "sales": sales}).encode(),
         headers={"Content-Type": "application/json", "x-admin-token": token}, method="POST")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        print(resp.read().decode())
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            print(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        hint = {403: "ADMIN_TOKEN does not match the server's ADMIN_TOKEN env var (or it is unset there)",
+                404: "the server has not deployed the live-banners endpoint yet"}.get(exc.code, "")
+        print(f"Push failed: HTTP {exc.code} {exc.read().decode()[:200]} {hint}", file=sys.stderr)
+        return 1
     return 0
 
 
