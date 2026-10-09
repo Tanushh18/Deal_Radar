@@ -90,3 +90,12 @@ services:
         value: "180"
       - key: LOG_LEVEL
         value: "INFO"
+
+      # --- load distribution: extra servers (copy this service, then set) ---
+      # On each EXTRA server only: ROLE=replica and PRIMARY_URL=<the main server>.
+      # Replicas skip ingest/Telegram/pushes and forward all writes to the primary.
+      # Every server must share the same SECRET_KEY, MONGODB_URI, TURSO_* values.
+      - key: ROLE
+        value: primary
+      - key: PRIMARY_URL
+        sync: false

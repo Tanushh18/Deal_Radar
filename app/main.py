@@ -31,7 +31,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import activity, growth, ingest, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, telegram, turso_backup
+from .services import activity, growth, ingest, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -67,7 +67,8 @@ async def lifespan(app: FastAPI):
         turso = await loop.run_in_executor(None, turso_backup.restore, settings.cache_days)
     except Exception as exc:  # noqa: BLE001
         log.warning("Turso restore failed: %s", exc)
-    turso_backup.start()
+    if not settings.is_replica:  # replicas only read Turso; the primary owns the write-back
+        turso_backup.start()
 
     # Each step gets its own try/except — a step failing (a transient Mongo
     # error, a network blip) must not also cost every step after it.
@@ -125,20 +126,25 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         log.warning("Quality sweep failed: %s", exc)
 
-    if settings.telegram_configured and settings.telegram_session:
-        _tasks.append(asyncio.create_task(public_reader.bootstrap()))
-    _tasks.append(asyncio.create_task(ingest.scheduler_loop()))
-    # Real-time: each new post from a followed channel is handled as it's
-    # published (and hot ones go straight to your Telegram channel).
-    _tasks.append(asyncio.create_task(live.run()))
-    _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
-    # Notification auto mode paces pushes on its own clock, not the ingest
-    # cycle's (idle unless the admin switched it on).
-    _tasks.append(asyncio.create_task(notify_auto.loop()))
-    # Once a night, if the admin switched it on: the model drafts new notification lines for review.
-    _tasks.append(asyncio.create_task(pitara_writer.loop()))
-    # Promotion counters (anonymous totals) are saved every few minutes.
-    _tasks.append(asyncio.create_task(growth.loop()))
+    if settings.is_replica:
+        log.info("Running as a read replica of %s — ingest, Telegram and pushes stay on the primary", settings.primary_url)
+        _tasks.append(asyncio.create_task(replica.refresh_loop()))
+        _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
+    else:
+        if settings.telegram_configured and settings.telegram_session:
+            _tasks.append(asyncio.create_task(public_reader.bootstrap()))
+        _tasks.append(asyncio.create_task(ingest.scheduler_loop()))
+        # Real-time: each new post from a followed channel is handled as it's
+        # published (and hot ones go straight to your Telegram channel).
+        _tasks.append(asyncio.create_task(live.run()))
+        _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
+        # Notification auto mode paces pushes on its own clock, not the ingest
+        # cycle's (idle unless the admin switched it on).
+        _tasks.append(asyncio.create_task(notify_auto.loop()))
+        # Once a night, if the admin switched it on: the model drafts new notification lines for review.
+        _tasks.append(asyncio.create_task(pitara_writer.loop()))
+        # Promotion counters (anonymous totals) are saved every few minutes.
+        _tasks.append(asyncio.create_task(growth.loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 
     try:
@@ -211,6 +217,13 @@ async def shell_cache_headers(request: Request, call_next):
         else:
             response.headers["Cache-Control"] = "no-cache"
     return response
+
+
+@app.middleware("http")
+async def replica_forward(request: Request, call_next):
+    if settings.is_replica and not replica.serves_locally(request):
+        return await replica.forward(request)
+    return await call_next(request)
 
 
 @app.exception_handler(Exception)

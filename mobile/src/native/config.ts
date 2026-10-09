@@ -108,7 +108,13 @@ let sessionHost: string | null = null;
  */
 export async function resolveHost(): Promise<string> {
   const explicit = await getBaseUrl();
-  return explicit ?? sessionHost ?? FALLBACK_HOSTS[0];
+  if (explicit) return explicit;
+  if (!sessionHost) {
+    // Spread installs across the registry's servers: each app run sticks to one
+    // random host (replicas forward writes to the primary), failing over in order.
+    sessionHost = FALLBACK_HOSTS[Math.floor(Math.random() * FALLBACK_HOSTS.length)];
+  }
+  return sessionHost;
 }
 
 /** True only when nothing was explicitly configured — i.e. the fallback chain may apply. */

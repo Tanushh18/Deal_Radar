@@ -125,6 +125,15 @@ class Settings:
         self.play_store_package: str = os.getenv("PLAY_STORE_PACKAGE", "com.tanush.dealradar").strip()
         self.play_store_url: str = os.getenv("PLAY_STORE_URL", "").strip()
 
+        # --- Load distribution ---
+        # ROLE=primary (default) runs everything: ingest, Telegram, pushes.
+        # ROLE=replica serves read-only deal browsing from its own cache (kept
+        # fresh from Turso) and forwards every other request to PRIMARY_URL, so
+        # extra servers share the traffic without duplicating the singletons.
+        self.role: str = os.getenv("ROLE", "primary").strip().lower()
+        self.primary_url: str = os.getenv("PRIMARY_URL", "").strip().rstrip("/")
+        self.replica_refresh_seconds: int = int(os.getenv("REPLICA_REFRESH_SECONDS", "300"))
+
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
         # Render sets RENDER_EXTERNAL_URL on every web service. Falling back to it
         # means notification images (which need an absolute URL) and the
@@ -193,6 +202,10 @@ class Settings:
         """32-byte urlsafe key derived from SECRET_KEY for session encryption."""
         digest = hashlib.sha256(self.secret_key.encode("utf-8")).digest()
         return base64.urlsafe_b64encode(digest)
+
+    @property
+    def is_replica(self) -> bool:
+        return self.role == "replica" and bool(self.primary_url)
 
     @property
     def telegram_configured(self) -> bool:
