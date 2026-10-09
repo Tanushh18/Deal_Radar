@@ -28,9 +28,11 @@ from .routers import growth as growth_router
 from .routers import pitara as pitara_router
 from .routers import devices as devices_router
 from .routers import lookup as lookup_router
+from .routers import telegram_bot as telegram_bot_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
+from .services import tg_linkbot
 from .services import activity, growth, ingest, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, telegram, turso_backup
 
 logging.basicConfig(
@@ -139,6 +141,8 @@ async def lifespan(app: FastAPI):
     _tasks.append(asyncio.create_task(pitara_writer.loop()))
     # Promotion counters (anonymous totals) are saved every few minutes.
     _tasks.append(asyncio.create_task(growth.loop()))
+    # Telegram link-generator bot: tell Telegram where to send messages (needs the Cuelinks key + PUBLIC_URL).
+    _tasks.append(asyncio.create_task(tg_linkbot.register_webhook()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 
     try:
@@ -191,6 +195,7 @@ app.include_router(price_alerts_router.router)
 app.include_router(sale_events_router.router)
 app.include_router(devices_router.router)
 app.include_router(lookup_router.router)
+app.include_router(telegram_bot_router.router)
 
 
 @app.middleware("http")
