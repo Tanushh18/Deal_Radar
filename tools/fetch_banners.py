@@ -50,11 +50,13 @@ STORES = {
         "home": "https://www.amazon.in/",
         "domains": ("amazon.in", "media-amazon.com"),
         "events": ["https://www.amazon.in/events/greatindianfestival"],
+        "event_label": "Amazon Great Indian Festival",     # names banners from the pages in "events"
     },
     "flipkart": {
         "home": "https://www.flipkart.com/",
         "domains": ("flipkart.com", "flixcart.com"),
         "events": ["https://www.flipkart.com/big-billion-days-store"],
+        "event_label": "Flipkart Big Billion Days",
     },
     "myntra": {
         "home": "https://www.myntra.com/",
@@ -174,14 +176,19 @@ def _hero(cands: list, store: str) -> dict | None:
             and c["w"] >= 300 and 2.2 <= c["w"] / c["h"] <= 7]   # a strip, like the app's banner card
     if not good:
         return None
-    # Big and high up wins; a full-width carousel slide beats a row of small tiles.
-    return max(good, key=lambda c: c["w"] * c["h"] / (1 + c["y"] / 900))
+    # Among the full-width strips (at least 60% as wide as the widest), the topmost
+    # one is the hero; mid-page promo strips sit lower.
+    widest = max(c["w"] for c in good)
+    return min((c for c in good if c["w"] >= 0.6 * widest), key=lambda c: c["y"])
 
 
 def _name_for(page, store: str, hero: dict, sale_names: dict) -> str:
     """Prefer the sale's calendar name; else the hero's alt text; else the page title."""
     if sale_names.get(store):
         return sale_names[store]
+    cfg = STORES[store]
+    if cfg.get("event_label") and any(page.url.split("?")[0].rstrip("/") == e.rstrip("/") for e in cfg["events"]):
+        return cfg["event_label"]
     alt = (hero.get("alt") or hero.get("label") or "").strip()
     if len(alt) > 5 and alt.lower() not in ("image", "banner"):
         return alt[:80]
