@@ -53,6 +53,14 @@ async def main():
     await affiliate.buy_url(deal, "web")
     check("repeat tap is served from cache", len(FakeClient.calls) == 1)
 
+    import logging
+    seen = []
+    class H(logging.Handler):
+        def emit(self, r): seen.append(r.getMessage())
+    affiliate.log.addHandler(H()); affiliate.log.setLevel(logging.INFO)
+    await affiliate.buy_url({"id": "d9", "url": "https://www.ajio.com/p/zzz"}, "telegram")
+    check("tap is logged in caps with its source", any("CUELINKS BUY TAP | SOURCE=TELEGRAM | AFFILIATED=YES" in m for m in seen))
+
     FakeClient.reply = (403, {"error": "forbidden"})
     out = await affiliate.buy_url({"id": "d2", "url": "https://www.myntra.com/shoes/12345678"}, "app")
     check("no approved campaign -> plain store link", out == "https://www.myntra.com/shoes/12345678")

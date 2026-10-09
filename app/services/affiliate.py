@@ -93,4 +93,9 @@ async def convert(url: str, subid: str = "") -> Optional[str]:
 async def buy_url(deal: Dict[str, Any], subid: str = "") -> str:
     """Where Buy should send the shopper: affiliate link if possible, else the plain store link."""
     plain = links.plain_url(deal)
-    return await convert(plain, subid) or plain
+    out = await convert(plain, subid)
+    # One greppable line per Buy tap, so web / app / telegram can each be tested from the Render logs.
+    log.info("CUELINKS BUY TAP | SOURCE=%s | AFFILIATED=%s | DEAL=%s | STORE=%s | LINK=%s",
+             (subid or "UNKNOWN").upper(), "YES" if out else "NO (PLAIN STORE LINK)", deal.get("id"),
+             (deal.get("store") or "?").upper(), out or plain)
+    return out or plain
