@@ -30,6 +30,6 @@ jobs:
           flag=""; [ "${{ inputs.force }}" = "true" ] && flag="--force"
           echo "needed=$(python tools/fetch_banners.py --check $flag)" >> "$GITHUB_OUTPUT"
       - if: steps.gate.outputs.needed == 'true'
-        run: pip install -r requirements.txt && python -m playwright install --with-deps chromium
+        run: pip install -r requirements.txt "playwright>=1.50" && python -m playwright install --with-deps chromium
       - if: steps.gate.outputs.needed == 'true'
         run: python tools/fetch_banners.py --force
