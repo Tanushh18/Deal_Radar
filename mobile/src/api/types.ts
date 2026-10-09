@@ -13,6 +13,9 @@ export type SaleEvent = {
   ends_at: number | null;
   approximate: boolean;
   hype: string;
+  /** Set for a store's own live banner (artwork shown as-is). */
+  image_url?: string;
+  url?: string;
 };
 
 export type AuthConfig = {

@@ -126,6 +126,21 @@ function fmtDate(ts: number | null): string {
 
 function SaleCard({ event, width, onDeals }: { event: SaleEvent; width: number; onDeals?: () => void }) {
   const t = useTheme();
+  if (event.image_url) {
+    return (
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={`Open ${event.name}`}
+        onPress={() => {
+          haptic.light();
+          openExternal(event.url || SALE_URL[(event.store || '').toLowerCase()] || 'https://www.google.com/');
+        }}
+        style={{ width, height: width * 0.45, borderRadius: t.r.lg, overflow: 'hidden' }}
+      >
+        <Image source={{ uri: event.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="disk" />
+      </Pressable>
+    );
+  }
   // Everything on the card comes from the store name typed in the admin panel:
   // known stores get their own look; any other name falls back to <name>.com.
   const key = (event.store || '').trim().toLowerCase();
