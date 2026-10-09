@@ -545,6 +545,7 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
         "currency": deal.get("currency") or "INR",
         "store": deal.get("store"),
         "url": links.plain_url(deal),   # store link only — no affiliate tags
+        "buy_path": f"/api/deals/{deal.get('id')}/go",   # affiliate redirect, resolved at click time
         "image_url": deal.get("image_url"),
         "coupon": deal.get("coupon"),
         "category": deal.get("category"),

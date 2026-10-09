@@ -1558,7 +1558,7 @@
           <div class="detail-cta">
             ${deal.price_history_url ? `<a class="btn btn-soft btn-block" id="btn-price-history" href="${escapeHtml(deal.price_history_url)}"
                target="_blank" rel="noopener noreferrer nofollow">${icon('trend', 'ico')} Price history &amp; stock</a>` : ''}
-            <a class="btn btn-primary btn-block" href="${escapeHtml(deal.url)}" target="_blank" rel="noopener noreferrer nofollow">
+            <a class="btn btn-primary btn-block" href="${escapeHtml(deal.buy_path ? deal.buy_path + '?src=web' : deal.url)}" target="_blank" rel="noopener noreferrer nofollow">
               Buy on ${escapeHtml(storeName(deal) || 'store')} ${icon('external', 'ico')}
             </a>
           </div>` : ''}

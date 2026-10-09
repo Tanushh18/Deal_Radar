@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { Linking } from 'react-native';
 
+import { api } from '../api';
 import { absoluteUrl, resolveServerUrl } from '../api/client';
 
 export const haptic = {
@@ -29,6 +30,17 @@ export async function openExternal(url: string | null | undefined): Promise<void
       /* nothing left to try */
     }
   }
+}
+
+/** Buy button: open the affiliate link the server makes; on any failure open the plain store link. */
+export async function openDealBuy(deal: { id: string; url?: string | null }): Promise<void> {
+  let url = deal.url;
+  try {
+    url = (await api.deals.buyLink(deal.id)).url || url;
+  } catch {
+    /* offline or server error: the plain link still works */
+  }
+  await openExternal(url);
 }
 
 export async function copyText(text: string): Promise<boolean> {
