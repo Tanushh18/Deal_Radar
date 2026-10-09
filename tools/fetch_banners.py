@@ -242,46 +242,59 @@ def scrape(sale_names: dict) -> tuple:
             for url in pages:
                 if len(found) >= MAX_PER_STORE:
                     break
-                page = _open([desktop, mobile], url)
-                if not page:
-                    continue
-                try:
-                    sales += extract_sales(page.inner_text("body"), year)
-                    cands = page.evaluate(_JS_CANDIDATES)
-                    if not _hero(cands, store):   # lazy images often arrive late: scroll, wait, look again
-                        for _ in range(2):
-                            page.mouse.wheel(0, 600)
-                            page.wait_for_timeout(2500)
-                            page.mouse.wheel(0, -2000)
-                            page.wait_for_timeout(1500)
-                            cands = page.evaluate(_JS_CANDIDATES)
-                            if _hero(cands, store):
-                                break
-                    slug = re.sub(r"[^a-z0-9]+", "-", urlparse(page.url).path.lower()).strip("-")[:40] or "home"
-                    page.screenshot(path=f"banner-debug/{store}-page-{slug}.jpg", type="jpeg", quality=55)
-                    hero = _hero(cands, store)
-                    print(f"   {page.url[:90]}: {len(cands)} wide images, hero="
-                          f"{(hero or {}).get('src', '')[:80] or None}", file=sys.stderr)
-                    if not hero or any(b["source_image"] == hero["src"] for b in found):
+                # Desktop view first; if it shows no banner (stores serve different markup per
+                # visit/device), look again as a phone before giving up on this page.
+                for ctx in (desktop, mobile):
+                    if len(found) >= MAX_PER_STORE:
+                        break
+                    page = _open([ctx], url)
+                    if not page:
                         continue
-                    shot = _capture(page, hero)
-                    if not shot:
-                        print("   hero screenshot unusable (blank or too large)", file=sys.stderr)
-                        continue
-                    n = len(found)
-                    with open(f"banner-debug/{store}-{n}.jpg", "wb") as fh:
-                        fh.write(shot)
-                    found.append({
-                        "store": store, "name": _name_for(page, store, hero, sale_names),
-                        "image_b64": base64.b64encode(shot).decode(),
-                        "url": page.url if _on_domain(page.url, cfg["domains"]) else cfg["home"],
-                        "source_image": hero["src"],
-                    })
-                    print(f"   captured {len(shot) // 1024} KB banner -> banner-debug/{store}-{n}.jpg", file=sys.stderr)
-                except Exception as exc:  # noqa: BLE001
-                    print(f"   {url}: capture error {exc.__class__.__name__}: {str(exc)[:140]}", file=sys.stderr)
-                finally:
-                    page.close()
+                    got_hero = False
+                    try:
+                        sales += extract_sales(page.inner_text("body"), year)
+                        cands = page.evaluate(_JS_CANDIDATES)
+                        if not _hero(cands, store):   # lazy images often arrive late: scroll, wait, look again
+                            for _ in range(2):
+                                page.mouse.wheel(0, 600)
+                                page.wait_for_timeout(2500)
+                                page.mouse.wheel(0, -2000)
+                                page.wait_for_timeout(1500)
+                                cands = page.evaluate(_JS_CANDIDATES)
+                                if _hero(cands, store):
+                                    break
+                        view = "desktop" if ctx is desktop else "mobile"
+                        slug = re.sub(r"[^a-z0-9]+", "-", urlparse(page.url).path.lower()).strip("-")[:40] or "home"
+                        page.screenshot(path=f"banner-debug/{store}-page-{slug}-{view}.jpg", type="jpeg", quality=55)
+                        hero = _hero(cands, store)
+                        print(f"   [{view}] {page.url[:80]}: {len(cands)} wide images, hero="
+                              f"{(hero or {}).get('src', '')[:80] or None}", file=sys.stderr)
+                        if not hero:
+                            continue
+                        got_hero = True
+                        if any(b["source_image"] == hero["src"] for b in found):
+                            break
+                        shot = _capture(page, hero)
+                        if not shot:
+                            print("   hero screenshot unusable (blank or too large)", file=sys.stderr)
+                            continue
+                        n = len(found)
+                        with open(f"banner-debug/{store}-{n}.jpg", "wb") as fh:
+                            fh.write(shot)
+                        found.append({
+                            "store": store, "name": _name_for(page, store, hero, sale_names),
+                            "image_b64": base64.b64encode(shot).decode(),
+                            "url": page.url if _on_domain(page.url, cfg["domains"]) else cfg["home"],
+                            "source_image": hero["src"],
+                        })
+                        print(f"   captured {len(shot) // 1024} KB banner -> banner-debug/{store}-{n}.jpg", file=sys.stderr)
+                        break
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"   {url}: capture error {exc.__class__.__name__}: {str(exc)[:140]}", file=sys.stderr)
+                    finally:
+                        page.close()
+                    if got_hero:
+                        break
             if not found:
                 print(f"   no banner for {store}; the app will show its calendar card", file=sys.stderr)
             banners += found
