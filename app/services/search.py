@@ -23,6 +23,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import OSA
 
 from .. import db
+from ..config import settings
 from . import links, taxonomy
 
 SORTS = {
@@ -528,6 +529,16 @@ def price_history_url(deal: Dict[str, Any]) -> str:
     return ""
 
 
+def _buy_link(deal: Dict[str, Any]) -> str:
+    """Buy link for clients. With Cuelinks configured it is our own /go redirect, which builds the
+    affiliate link when tapped — so old app builds earn too and a list never costs an API call each.
+    Otherwise (no key, or no public URL to point at) it is the plain store link."""
+    plain = links.plain_url(deal)
+    if settings.cuelinks_api_key and settings.public_url and deal.get("id") and links.is_store_site(plain):
+        return f"{settings.public_url}/api/deals/{deal['id']}/go?src=app"
+    return plain
+
+
 def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
     """Trim a DB row down to what the UI needs."""
     price = deal.get("price")
@@ -544,8 +555,9 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
         "discount_pct": deal.get("discount_pct") or 0,
         "currency": deal.get("currency") or "INR",
         "store": deal.get("store"),
-        "url": links.plain_url(deal),   # store link only — no affiliate tags
-        "buy_path": f"/api/deals/{deal.get('id')}/go",   # affiliate redirect, resolved at click time
+        "url": _buy_link(deal),   # what every client opens on Buy (affiliate redirect when configured)
+        "store_url": links.plain_url(deal),   # the store's own link — no affiliate tags
+        "buy_path": f"/api/deals/{deal.get('id')}/go",
         "image_url": deal.get("image_url"),
         "coupon": deal.get("coupon"),
         "category": deal.get("category"),
