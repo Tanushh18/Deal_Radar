@@ -55,6 +55,16 @@ _CALENDAR: List[Dict[str, Any]] = [
     {"key": "myntra-eors", "name": "Myntra End of Reason Sale", "store": "myntra", "month": 12, "day": 27, "duration_days": 5},
 ]
 _BY_KEY = {t["key"]: t for t in _CALENDAR}
+
+# Dates the stores have officially announced, keyed by (template key, year):
+# (month, day, duration_days), starting at midnight IST. Beat the approximate
+# slot above; the end is still an estimate until the store publishes one.
+# Amazon Great Indian Festival 2026 starts 8 Oct; Flipkart Big Billion Days
+# goes live for everyone 9 Oct 12 AM (Plus/Black early access from 8 Oct).
+_CONFIRMED: Dict[tuple, tuple] = {
+    ("amazon-gif", 2026): (10, 8, 10),
+    ("flipkart-bbd", 2026): (10, 9, 9),
+}
 # Kept for older callers/tests that counted the seed.
 _SEED_TEMPLATE = _CALENDAR
 
@@ -105,9 +115,11 @@ def _occurrence(tpl: Dict[str, Any], year: int) -> Dict[str, Any]:
     import calendar
     from datetime import datetime, timedelta, timezone
 
-    day = min(tpl["day"], calendar.monthrange(year, tpl["month"])[1])
-    start = datetime(year, tpl["month"], day, tzinfo=timezone.utc)
-    end = start + timedelta(days=tpl["duration_days"])
+    month, day, duration = _CONFIRMED.get((tpl["key"], year), (tpl["month"], tpl["day"], tpl["duration_days"]))
+    day = min(day, calendar.monthrange(year, month)[1])
+    tz = timezone(timedelta(hours=5, minutes=30)) if (tpl["key"], year) in _CONFIRMED else timezone.utc
+    start = datetime(year, month, day, tzinfo=tz)
+    end = start + timedelta(days=duration)
     return _clean({
         "id": _occurrence_id(tpl["key"], year), "template": tpl["key"], "year": year,
         "name": tpl["name"], "store": tpl["store"],
