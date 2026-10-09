@@ -182,6 +182,16 @@ def _hero(cands: list, store: str) -> dict | None:
     return min((c for c in good if c["w"] >= 0.6 * widest), key=lambda c: c["y"])
 
 
+def _landing_url(page_url: str, cfg: dict) -> str:
+    """Where tapping the banner goes: the store's main sale page when the banner came from
+    it or one of its sub-pages (not a long tracking URL), else the page itself, else home."""
+    base = page_url.split("?")[0].rstrip("/")
+    for event in cfg["events"]:
+        if base == event.rstrip("/") or base.startswith(event.rstrip("/") + "/"):
+            return event
+    return page_url.split("#")[0] if _on_domain(page_url, cfg["domains"]) else cfg["home"]
+
+
 def _name_for(page, store: str, hero: dict, sale_names: dict) -> str:
     """Prefer the sale's calendar name; else the hero's alt text; else the page title."""
     if sale_names.get(store):
@@ -284,7 +294,7 @@ def scrape(sale_names: dict) -> tuple:
                         found.append({
                             "store": store, "name": _name_for(page, store, hero, sale_names),
                             "image_b64": base64.b64encode(shot).decode(),
-                            "url": page.url if _on_domain(page.url, cfg["domains"]) else cfg["home"],
+                            "url": _landing_url(page.url, cfg),
                             "source_image": hero["src"],
                         })
                         print(f"   captured {len(shot) // 1024} KB banner -> banner-debug/{store}-{n}.jpg", file=sys.stderr)
