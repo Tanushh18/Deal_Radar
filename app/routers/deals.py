@@ -7,10 +7,11 @@ from collections import OrderedDict
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi.responses import RedirectResponse
 
 from .. import auth, db
 
-from ..services import buyhatke, offers, price_store, priority, ratelimit, search, store, taxonomy, telegram
+from ..services import affiliate, buyhatke, offers, price_store, priority, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -30,6 +31,7 @@ _limit_image = ratelimit.limit("deal-image", max_requests=90, window_seconds=60)
 # traffic spike into DB/CPU pressure before — cap each per IP so one bad
 # actor or a runaway retry loop can't do that again.
 _limit_search = ratelimit.limit("deal-search", max_requests=90, window_seconds=60)
+_limit_buy = ratelimit.limit("deal-buy", max_requests=60, window_seconds=60)
 _limit_sparklines = ratelimit.limit("deal-sparklines", max_requests=60, window_seconds=60)
 
 
@@ -350,3 +352,26 @@ async def deal_image(deal_id: str, request: Request):
 
     return Response(content=data, media_type="image/jpeg",
                     headers={"Cache-Control": "public, max-age=86400"})
+
+
+async def _buy_target(deal_id: str, src: str) -> str:
+    row = db.query_one("SELECT * FROM deals WHERE id = ?", (deal_id,))
+    deal = db.row_to_dict(row) if row else await price_store.remote_deal(deal_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found.")
+    return await affiliate.buy_url(deal, src or "web")
+
+
+@router.get("/{deal_id}/link")
+async def deal_link(deal_id: str, request: Request, src: str = Query("app", max_length=40)):
+    """The Buy URL as JSON — the mobile app opens it itself so the OS can hand it to the store's app."""
+    await _limit_buy(request)
+    return {"url": await _buy_target(deal_id, src)}
+
+
+@router.get("/{deal_id}/go", include_in_schema=False)
+async def deal_go(deal_id: str, request: Request, src: str = Query("web", max_length=40)):
+    """Redirect to the Buy URL — for web links and Telegram buttons."""
+    await _limit_buy(request)
+    return RedirectResponse(await _buy_target(deal_id, src), status_code=302,
+                            headers={"Cache-Control": "no-store"})

@@ -40,7 +40,7 @@ import httpx
 
 from .. import db
 from ..config import settings
-from . import taxonomy
+from . import affiliate, taxonomy
 
 log = logging.getLogger("dealradar.tg_post")
 
@@ -279,8 +279,8 @@ def format_post(deal: Dict[str, Any], v: Verdict) -> str:
     return "\n".join(x for x in lines if x is not None)[:CAPTION_LIMIT]
 
 
-def _buttons(deal: Dict[str, Any]) -> Dict[str, Any]:
-    buy = deal.get("resolved_url") or deal.get("clean_url") or deal.get("url")
+def _buttons(deal: Dict[str, Any], buy: Optional[str] = None) -> Dict[str, Any]:
+    buy = buy or deal.get("resolved_url") or deal.get("clean_url") or deal.get("url")
     row = [{"text": "🛒 Buy now", "url": buy}]
     if settings.public_url:
         row.append({"text": "📈 Price history", "url": f"{settings.public_url}/?deal={deal['id']}"})
@@ -358,7 +358,8 @@ async def maybe_publish(deal: Dict[str, Any], photo: Optional[PhotoLoader] = Non
             if _already_posted(deal, now) or _over_cap(v.audience, now):
                 return False
             caption = format_post(deal, v)
-            markup = _buttons(deal)
+            # Cuelinks affiliate link straight in the button (plain store link if it can't be made).
+            markup = _buttons(deal, await affiliate.buy_url(deal, "telegram") if affiliate.enabled() else None)
             result = None
             image = deal.get("image_url") or ""
             base = {"chat_id": settings.tg_post_channel, "caption": caption, "parse_mode": "HTML"}

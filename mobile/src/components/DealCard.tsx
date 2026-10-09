@@ -10,7 +10,7 @@ import { Sparkline } from './Charts';
 import { dealBadge, displayTitle, highlightParts, money, storeName, timeAgo, type BadgeKind } from './format';
 import { Icon } from './Icon';
 import { useDealActions } from './DealActions';
-import { openExternal, useImageUri } from './native';
+import { openDealBuy, useImageUri } from './native';
 import { recordDealSignal } from '../native/smartNotify';
 import { HeartButton } from './Saved';
 import { StoreLogo } from './StoreLogo';
@@ -292,7 +292,7 @@ export const DealCard = memo(function DealCard({ deal, layout, query = '', width
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={`Buy now on ${store || 'store'}`}
-            onPress={() => openExternal(deal.url)}
+            onPress={() => void openDealBuy(deal)}
             style={({ pressed }) => [s.buy, { opacity: pressed ? 0.85 : 1 }]}
           >
             <Text maxFontSizeMultiplier={1.3} style={s.buyText}>

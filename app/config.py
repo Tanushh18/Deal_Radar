@@ -83,6 +83,8 @@ class Settings:
         self.max_channels_per_user: int = int(os.getenv("MAX_CHANNELS_PER_USER", "40"))
         self.liveness_check_enabled: bool = _bool(os.getenv("LIVENESS_CHECK", "true"))
         self.liveness_batch: int = int(os.getenv("LIVENESS_BATCH", "40"))
+        # Cuelinks affiliate API key (services/affiliate.py). Empty = Buy links stay plain store links.
+        self.cuelinks_api_key: str = os.getenv("CUELINK_API", "").strip()
         # BuyHatke price history (services/buyhatke.py): public pages only,
         # cached in memory for 3 days, never stored. WARM_PER_CYCLE = how many
         # not-yet-opened live deals get fetched ahead of time each ingest cycle.

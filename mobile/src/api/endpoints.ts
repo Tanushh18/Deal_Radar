@@ -114,6 +114,9 @@ export const deals = {
   trending: (limit = 12, o: Sig = {}) =>
     request<{ results: Deal[] }>('/api/deals/trending', { query: { limit, interests: interestsParam() }, signal: o.signal }),
   get: (id: string, o: Sig = {}) => request<DealDetail>(`/api/deals/${enc(id)}`, o),
+  /** Buy URL — the Cuelinks affiliate link when the server can make one, else the plain store link. */
+  buyLink: (id: string, o: Sig = {}) =>
+    request<{ url: string }>(`/api/deals/${enc(id)}/link`, { query: { src: 'app' }, signal: o.signal, timeoutMs: 8_000 }),
   history: (id: string, o: Sig = {}) => request<DealHistory>(`/api/deals/${enc(id)}/history`, o),
   similar: (id: string, limit = 8, o: Sig = {}) =>
     request<{ results: Deal[] }>(`/api/deals/${enc(id)}/similar`, { query: { limit }, signal: o.signal }),

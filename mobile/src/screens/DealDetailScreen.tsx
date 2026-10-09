@@ -50,7 +50,7 @@ import {
   dealReasons,
   haptic,
   money,
-  openExternal,
+  openDealBuy,
   plural,
   scoreLabel,
   storeName,
@@ -454,7 +454,7 @@ export function DealDetailScreen() {
               onPress={() => {
                 haptic.light();
                 void recordDealSignal('buy', deal);
-                openExternal(deal.url);
+                void openDealBuy(deal);
               }}
               style={{ minHeight: 52, borderRadius: t.r.md }}
             />
