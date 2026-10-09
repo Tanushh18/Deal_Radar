@@ -76,52 +76,50 @@ def pick_banners(store: str, url: str, cands: list) -> list:
     return out
 
 
-def google_banner(sale: dict, key: str, cx: str) -> dict | None:
-    """A wide banner image for a sale from Google Programmable Search (image search).
-    Needs GOOGLE_CSE_KEY + GOOGLE_CSE_ID. Picks the first wide https result and
-    credits the site it came from."""
-    import urllib.parse
-    q = urllib.parse.urlencode({"key": key, "cx": cx, "searchType": "image", "num": 10, "imgSize": "xlarge",
-                                "safe": "active", "q": f"{sale['name']} {datetime.now().year} banner"})
-    try:
-        req = urllib.request.Request(f"https://www.googleapis.com/customsearch/v1?{q}", headers={"User-Agent": UA})
-        items = json.load(urllib.request.urlopen(req, timeout=30)).get("items") or []
-    except Exception as exc:  # noqa: BLE001
-        print(f"google image search failed for {sale['name']}: {exc}", file=sys.stderr)
-        return None
-    for it in items:
-        img, meta = it.get("link") or "", it.get("image") or {}
-        w, h = meta.get("width") or 0, meta.get("height") or 0
-        if img.startswith("https://") and w >= 600 and h and w / h >= 1.6:
-            return {"id": "", "name": sale["name"], "store": sale["store"], "image_url": img,
-                    "url": STORES_HOME.get(sale["store"], it.get("image", {}).get("contextLink") or ""),
-                    "credit": it.get("displayLink") or ""}
-    return None
+_OFFICIAL = {   # a store's own image servers: always preferred over blog pictures
+    "amazon": ("amazon.in", "media-amazon.com", "aboutamazon"),
+    "flipkart": ("flipkart.com", "flixcart.com"),
+    "myntra": ("myntra.com", "myntassets.com"),
+    "ajio": ("ajio.com",), "meesho": ("meesho.com",), "nykaa": ("nykaa.com",),
+}
+_OLD_IMAGE = re.compile(r"(?:/|[-_])(?:20(?:1\d|2[0-5])|img(?:1\d|2[0-5]))(?:/|[-_.]|$)", re.I)
 
 
 def ddg_banner(sale: dict) -> dict | None:
-    """Open-source, keyless fallback: DuckDuckGo image search via the `ddgs` package.
-    First wide, large https result; credits the site it came from."""
+    """The single image fallback: DuckDuckGo image search via the open-source `ddgs`
+    package (no key). Wide, large https images that are really about this sale,
+    skipping old-year pictures; the store's own image servers rank first.
+    Credits the site the image came from."""
+    from urllib.parse import urlparse
     try:
         try:
             from ddgs import DDGS
         except ImportError:
             from duckduckgo_search import DDGS
         results = DDGS().images(f"{sale['name']} {datetime.now().year} banner", region="in-en",
-                                safesearch="moderate", size="Large", layout="Wide", max_results=15) or []
+                                safesearch="moderate", size="Large", layout="Wide", max_results=20) or []
     except Exception as exc:  # noqa: BLE001
-        print(f"ddg image search failed for {sale['name']}: {exc}", file=sys.stderr)
+        print(f"{sale['store']}: image search failed: {exc}", file=sys.stderr)
         return None
-    name_words = [w for w in re.findall(r"[a-z]+", sale["name"].lower()) if len(w) > 3]
+    words = [w for w in re.findall(r"[a-z]+", sale["name"].lower()) if len(w) > 3]
+    good = []
     for r in results:
-        img, w, h = r.get("image") or "", r.get("width") or 0, r.get("height") or 0
+        img = r.get("image") or ""
+        try:
+            w, h = int(r.get("width") or 0), int(r.get("height") or 0)
+        except ValueError:
+            continue
         text = f"{r.get('title', '')} {r.get('url', '')}".lower()
-        if (img.startswith("https://") and w >= 600 and h and w / h >= 1.6
-                and sum(wd in text for wd in name_words) >= 2):   # must actually be about this sale
-            from urllib.parse import urlparse
-            return {"id": "", "name": sale["name"], "store": sale["store"], "image_url": img,
-                    "url": STORES_HOME.get(sale["store"], ""), "credit": urlparse(r.get("url") or img).netloc}
-    return None
+        if not (img.startswith("https://") and w >= 600 and h and w / h >= 1.6 and not _OLD_IMAGE.search(img)
+                and sum(wd in text for wd in words) >= 2):
+            continue
+        host = urlparse(img).netloc.lower() + " " + urlparse(r.get("url") or "").netloc.lower()
+        official = any(d in host for d in _OFFICIAL.get(sale["store"], ()))
+        good.append((not official, {"id": "", "name": sale["name"], "store": sale["store"], "image_url": img,
+                                    "url": STORES_HOME.get(sale["store"], ""),
+                                    "credit": urlparse(r.get("url") or img).netloc.removeprefix("www.")}))
+    print(f"{sale['store']}: image search -> {len(results)} results, {len(good)} usable", file=sys.stderr)
+    return sorted(good, key=lambda g: g[0])[0][1] if good else None
 
 
 STORES_HOME = {"amazon": "https://www.amazon.in/", "flipkart": "https://www.flipkart.com/",
@@ -187,7 +185,8 @@ def main() -> int:
         gate = urllib.request.Request(f"{site}/api/admin/reader/live-banners/needed", headers={"x-admin-token": token, "User-Agent": UA, "Accept": "application/json"})
         info = json.load(urllib.request.urlopen(gate, timeout=30))
         needed = args.force or info.get("needed")
-        active_sales = info.get("sales") or []
+        active_sales = info.get("sales") or [
+            {"name": n, "store": next((k for k in STORES_HOME if k in n.lower()), "")} for n in info.get("active") or []]
         if args.check:   # stdlib-only gate for CI: prints true/false, nothing installed yet
             print("true" if needed else "false")
             return 0
@@ -196,14 +195,13 @@ def main() -> int:
             return 0
     banners, sales = scrape()
     # Stores whose own page gave no banner (blocked, JS-built hero…): fall back to
-    # image search (Google if keyed, else DuckDuckGo) for each sale that's live or starting soon.
-    gkey, gcx = os.getenv("GOOGLE_CSE_KEY", ""), os.getenv("GOOGLE_CSE_ID", "")
+    # image search for each sale that's live or starting soon.
     if not args.dry_run:
         have = {b["store"] for b in banners}
         for sale in active_sales:
-            if sale["store"] in have:
+            if not sale["store"] or sale["store"] in have:
                 continue
-            b = (google_banner(sale, gkey, gcx) if gkey and gcx else None) or ddg_banner(sale)
+            b = ddg_banner(sale)
             if b:
                 b["id"] = f"live-{b['store']}-g{len(banners)}"
                 banners.append(b)
