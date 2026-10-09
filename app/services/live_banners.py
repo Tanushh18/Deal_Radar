@@ -287,6 +287,7 @@ def _pushed(now: float) -> List[Dict[str, Any]]:
 LOCAL_BANNERS = [
     ("amazon", "Amazon Great Indian Festival", "https://www.amazon.in/events/greatindianfestival"),
     ("flipkart", "Flipkart Big Billion Days", "https://www.flipkart.com/big-billion-days-store"),
+    ("myntra", "Myntra Big Fashion Festival", "https://www.myntra.com/"),
 ]
 
 
