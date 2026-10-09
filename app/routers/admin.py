@@ -546,3 +546,10 @@ async def post_sale_event_now(event_id: str):
     if not ok:
         raise HTTPException(status_code=400, detail="Telegram post failed — check the bot/channel setup.")
     return {"status": "ok"}
+
+
+@router.post("/live-banners")
+async def push_live_banners(payload: dict = Body(...)):
+    """Receives the stores' live sale banners scraped by tools/fetch_banners.py."""
+    from ..services import live_banners
+    return {"stored": live_banners.set_pushed(payload.get("banners") or [])}

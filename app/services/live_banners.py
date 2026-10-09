@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import html
+import json
 import logging
 import re
 import time
@@ -19,7 +20,12 @@ from urllib.parse import urljoin
 
 import httpx
 
+from .. import db
+
 log = logging.getLogger("dealradar.live_banners")
+
+PUSHED_KEY = "live_banners_pushed"
+PUSHED_TTL = 12 * 3600     # banners pushed by tools/fetch_banners.py stay valid this long
 
 CACHE_TTL = 30 * 60
 STALE_TTL = 6 * 3600       # keep serving the last good fetch this long if a refresh fails
@@ -90,9 +96,42 @@ async def refresh() -> List[Dict[str, Any]]:
     return [b for r in results for b in r]
 
 
+def set_pushed(banners: List[Dict[str, Any]], now: float | None = None) -> int:
+    """Store banners scraped elsewhere (a headless browser in CI) — the server
+    itself can't render the JavaScript-built home pages. Only https images."""
+    clean = []
+    for b in banners[:30]:
+        img, store = str(b.get("image_url") or ""), str(b.get("store") or "").lower()[:30]
+        name = str(b.get("name") or "").strip()[:80]
+        if not (img.startswith("https://") and store and name):
+            continue
+        url = str(b.get("url") or "")
+        clean.append({
+            "id": f"live-{store}-{len(clean)}", "name": name, "store": store,
+            "starts_at": None, "ends_at": None, "approximate": False, "hype": "",
+            "image_url": img[:500], "url": url[:500] if url.startswith("https://") else STORES.get(store, ""),
+            "live": True,
+        })
+    db.set_meta(PUSHED_KEY, json.dumps({"at": now or time.time(), "banners": clean}))
+    return len(clean)
+
+
+def _pushed(now: float) -> List[Dict[str, Any]]:
+    try:
+        data = json.loads(db.get_meta(PUSHED_KEY) or "{}")
+    except ValueError:
+        return []
+    if now - float(data.get("at") or 0) > PUSHED_TTL:
+        return []
+    return data.get("banners") or []
+
+
 async def get_live(now: float | None = None) -> List[Dict[str, Any]]:
     """Cached live banners; refreshes at most every CACHE_TTL."""
     now = now or time.time()
+    pushed = _pushed(now)
+    if pushed:
+        return pushed
     if _cache["events"] and now - _cache["at"] < CACHE_TTL:
         return _cache["events"]
     if not _cache["events"] and _cache["at"] and now - _cache["at"] < 300:
