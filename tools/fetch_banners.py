@@ -130,7 +130,7 @@ def main() -> int:
         if not (site and token):
             print("SITE_URL and ADMIN_TOKEN are required (or use --dry-run).", file=sys.stderr)
             return 2
-        gate = urllib.request.Request(f"{site}/api/admin/reader/live-banners/needed", headers={"x-admin-token": token})
+        gate = urllib.request.Request(f"{site}/api/admin/reader/live-banners/needed", headers={"x-admin-token": token, "User-Agent": UA, "Accept": "application/json"})
         needed = args.force or json.load(urllib.request.urlopen(gate, timeout=30)).get("needed")
         if args.check:   # stdlib-only gate for CI: prints true/false, nothing installed yet
             print("true" if needed else "false")
@@ -147,7 +147,7 @@ def main() -> int:
         return 0
     req = urllib.request.Request(
         f"{site}/api/admin/reader/live-banners", data=json.dumps({"banners": banners, "sales": sales}).encode(),
-        headers={"Content-Type": "application/json", "x-admin-token": token}, method="POST")
+        headers={"Content-Type": "application/json", "x-admin-token": token, "User-Agent": UA, "Accept": "application/json"}, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             print(resp.read().decode())
