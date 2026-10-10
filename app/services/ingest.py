@@ -729,6 +729,36 @@ def _rollup_price_history_daily() -> None:
     db.set_meta("price_history_rollup_day", today)
 
 
+async def user_housekeeping() -> None:
+    """Notification-sending chores that must run on exactly one server."""
+    try:
+        announced = await sale_events.run_heads_up_check()
+        if announced:
+            log.info("Sale-event heads-up posted: %d", announced)
+    except Exception as exc:  # noqa: BLE001 — never break the cycle over this
+        log.warning("Sale-event heads-up check failed: %s", exc)
+    from . import devices
+    devices.digest_tick()
+    devices.weekly_digest_tick()
+    devices.prune()
+    ratelimit.prune()
+
+
+async def user_loop() -> None:
+    """User node: no Telegram. Watchlist alerts and digests, on the poll cadence."""
+    await asyncio.sleep(60)  # let the first Turso refresh bring in the ingest nodes' deals
+    while True:
+        started = time.time()
+        try:
+            await run_watchlist_alerts()
+            await user_housekeeping()
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            log.warning("User-node chores failed: %s", exc)
+        await asyncio.sleep(max(30, poll_interval_seconds() - (time.time() - started)))
+
+
 async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
     if _cycle_lock.locked():
         return {"status": "already_running"}
@@ -748,6 +778,8 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 db.query("SELECT * FROM channels WHERE active = 1 ORDER BY last_fetched_at ASC")
             )
             for channel in channels:
+                if not settings.owns_channel(channel["tg_id"]):
+                    continue  # the other ingest server reads this one
                 result = await ingest_channel(channel)
                 totals["channels"] += 1
                 for key in ("fetched", "new", "merged", "skipped", "filtered", "resolved"):
@@ -773,7 +805,7 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             _warm_task = asyncio.get_running_loop().create_task(buyhatke.warm(settings.buyhatke_warm_per_cycle))
             _background.add(_warm_task)
             _warm_task.add_done_callback(_background.discard)
-            alerts = await run_watchlist_alerts()
+            alerts = await run_watchlist_alerts() if not settings.sharded else {}  # user node sends these
 
             # Plan this window's hot-deal pushes (PUSHES_PER_CYCLE of them, each
             # at a random moment before the next cycle starts — see hot_push.py).
@@ -796,17 +828,8 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             _purge_local_cache()
             push.prune_notifications()
             tg_post.prune()
-            try:
-                announced = await sale_events.run_heads_up_check()
-                if announced:
-                    log.info("Sale-event heads-up posted: %d", announced)
-            except Exception as exc:  # noqa: BLE001 — never break the cycle over this
-                log.warning("Sale-event heads-up check failed: %s", exc)
-            from . import devices
-            devices.digest_tick()
-            devices.weekly_digest_tick()
-            devices.prune()
-            ratelimit.prune()
+            if not settings.sharded:
+                await user_housekeeping()
 
             if new_deal_ids:
                 from . import ai_enrich

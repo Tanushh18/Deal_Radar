@@ -57,7 +57,7 @@ async def handle_message(client: Any, message: Any) -> Optional[str]:
     if not tg_id:
         return None
     channel = db.query_one("SELECT * FROM channels WHERE tg_id = ? AND active = 1", (tg_id,))
-    if not channel or _is_output_channel(channel, tg_id):
+    if not channel or _is_output_channel(channel, tg_id) or not settings.owns_channel(tg_id):
         return None
     _stats["received"] += 1
     text = with_hidden_links(message.message or getattr(message, "raw_text", "") or "", message)

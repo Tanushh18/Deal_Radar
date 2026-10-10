@@ -21,7 +21,7 @@ async def bootstrap() -> int:
     """Register the reader account and track every public channel. Returns channels tracked."""
     from ..routers.channels import _deactivate_orphans, _register_channel
 
-    client = telegram._new_client(settings.telegram_session)
+    client = telegram._new_client(settings.reader_session)
     try:
         await client.connect()
         if not await client.is_user_authorized():
@@ -37,7 +37,7 @@ async def bootstrap() -> int:
         "VALUES (?, ?, ?, '', ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET "
         "session_enc = excluded.session_enc, last_login_at = excluded.last_login_at",
         (me.id, me.username or "", me.first_name or "DealRadar reader",
-         telegram.encrypt_session(settings.telegram_session), now, now),
+         telegram.encrypt_session(settings.reader_session), now, now),
     )
     user_id = int(db.query_one("SELECT id FROM users WHERE telegram_id = ?", (me.id,))["id"])
     await telegram.drop_client(user_id)   # a stale cached client from an older session must not linger

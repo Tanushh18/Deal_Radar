@@ -157,7 +157,19 @@ async def lifespan(app: FastAPI):
         await telegram.shutdown_all()   # let go of the Telegram session for the new leader
 
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
-    if settings.is_replica:
+    if settings.sharded:
+        log.info("Node role %s (shard %s/%s)", settings.node_role, settings.ingest_shard, settings.ingest_shards)
+        if settings.is_ingest_node:
+            if settings.telegram_configured and settings.reader_session:
+                _single.append(asyncio.create_task(public_reader.bootstrap()))
+            _single.append(asyncio.create_task(ingest.scheduler_loop()))
+            _single.append(asyncio.create_task(live.run()))
+        else:
+            _single.append(asyncio.create_task(ingest.user_loop()))
+            _single.append(asyncio.create_task(notify_auto.loop()))
+            _single.append(asyncio.create_task(pitara_writer.loop()))
+            _single.append(asyncio.create_task(growth.loop()))
+    elif settings.is_replica:
         log.info("Running as a read replica of %s — ingest, Telegram and pushes stay on the primary", settings.primary_url)
     else:
         _tasks.append(asyncio.create_task(leader.run(gain, lose)))

@@ -33,6 +33,8 @@ def _same_origin(a: str, b: str) -> bool:
 def forwards() -> bool:
     if settings.is_replica:
         return True
+    if settings.sharded:
+        return settings.is_ingest_node and bool(settings.user_node_url)
     url = leader.leader_url()
     # Servers sharing one public domain all advertise that same URL, so "forward to the
     # leader" would just hit the load balancer and come straight back (508 Loop Detected).
@@ -42,6 +44,8 @@ def forwards() -> bool:
 
 
 def upstream_url() -> str:
+    if settings.sharded:
+        return settings.user_node_url
     return settings.primary_url if settings.is_replica else leader.leader_url()
 
 
@@ -84,7 +88,7 @@ async def refresh_loop() -> None:
     loop = asyncio.get_event_loop()
     while True:
         await asyncio.sleep(settings.replica_refresh_seconds)
-        if not forwards():
+        if not forwards() and not settings.sharded:
             continue  # the leader is the one writing deals — nothing to pull
         try:
             await loop.run_in_executor(None, turso_backup.restore, settings.cache_days)

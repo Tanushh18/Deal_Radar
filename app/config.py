@@ -132,6 +132,16 @@ class Settings:
         # extra servers share the traffic without duplicating the singletons.
         self.role: str = os.getenv("ROLE", "auto").strip().lower()
         self.primary_url: str = os.getenv("PRIMARY_URL", "").strip().rstrip("/")
+        # --- Fixed 3-server split (optional; leave NODE_ROLE unset for the leader-election setup) ---
+        # NODE_ROLE=ingest: reads Telegram (its own session, its share of the channels) and
+        #   forwards sign-in/devices/watchlists/admin to USER_NODE_URL.
+        # NODE_ROLE=user: no Telegram; owns user writes, watchlist alerts, digests and pushes.
+        # Every node serves deal browsing from its own cache (kept fresh from Turso).
+        self.node_role: str = os.getenv("NODE_ROLE", "").strip().lower()
+        self.user_node_url: str = os.getenv("USER_NODE_URL", "").strip().rstrip("/")
+        self.ingest_shard: int = int(os.getenv("INGEST_SHARD", "0") or 0)
+        self.ingest_shards: int = max(1, int(os.getenv("INGEST_SHARDS", "2") or 2))
+        self.telegram_session_2: str = os.getenv("TELEGRAM_SESSION_2", "").strip()
         self.replica_refresh_seconds: int = int(os.getenv("REPLICA_REFRESH_SECONDS", "300"))
 
         # --- Keepalive (Render free tier sleeps after ~15 min idle) ---
@@ -206,6 +216,33 @@ class Settings:
         """32-byte urlsafe key derived from SECRET_KEY for session encryption."""
         digest = hashlib.sha256(self.secret_key.encode("utf-8")).digest()
         return base64.urlsafe_b64encode(digest)
+
+    @property
+    def sharded(self) -> bool:
+        return self.node_role in ("ingest", "user")
+
+    @property
+    def is_ingest_node(self) -> bool:
+        return self.node_role == "ingest"
+
+    @property
+    def is_user_node(self) -> bool:
+        return self.node_role == "user"
+
+    @property
+    def reader_session(self) -> str:
+        """The Telegram session this server reads with (shard 1 has its own account)."""
+        if self.is_ingest_node and self.ingest_shard == 1 and self.telegram_session_2:
+            return self.telegram_session_2
+        return self.telegram_session
+
+    def owns_channel(self, tg_id: int) -> bool:
+        """Whether this server ingests the channel. Always true outside the ingest/user split."""
+        if not self.sharded:
+            return True
+        if not self.is_ingest_node:
+            return False
+        return int(tg_id) % self.ingest_shards == self.ingest_shard
 
     @property
     def is_replica(self) -> bool:
