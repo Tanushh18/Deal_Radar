@@ -729,6 +729,54 @@ def _rollup_price_history_daily() -> None:
     db.set_meta("price_history_rollup_day", today)
 
 
+async def validation_pass() -> tuple:
+    """Expiry, scoring and link liveness over stored deals. Returns (expired, liveness)."""
+    expired = store.expire_stale()
+    store.retire_imageless()
+    _rollup_price_history_daily()
+    store.rescore_all()
+    liveness = await verify_links(settings.liveness_batch)
+    # Background, never awaited: BuyHatke's 3s spacing would otherwise add ~30s to every pass.
+    from . import buyhatke
+    _warm_task = asyncio.get_running_loop().create_task(buyhatke.warm(settings.buyhatke_warm_per_cycle))
+    _background.add(_warm_task)
+    _warm_task.add_done_callback(_background.discard)
+    return expired, liveness
+
+
+async def cleanup_pass() -> List[str]:
+    """Short-link resolution and retention purges. Returns the purged deal ids."""
+    try:
+        if await links.resolve_stored():
+            log.info("Resolved previously unresolved short links")
+    except Exception as exc:  # noqa: BLE001 — never break the cycle over this
+        log.warning("Stored-link resolution failed: %s", exc)
+    purged_ids = store.purge_ancient()
+    offers.prune()
+    store.purge_housekeeping()
+    _purge_local_cache()
+    push.prune_notifications()
+    tg_post.prune()
+    return purged_ids
+
+
+async def validator_loop() -> None:
+    """Validator node: no Telegram. Checks stored deals and their links, then tidies up."""
+    await asyncio.sleep(90)  # let the first Turso refresh bring in what the ingest node saved
+    while True:
+        started = time.time()
+        try:
+            quality.sweep_stored()
+            expired, liveness = await validation_pass()
+            purged = await cleanup_pass()
+            log.info("Validation pass: expired=%s liveness=%s purged=%d", expired, liveness, len(purged))
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Validation pass failed: %s", exc)
+        await asyncio.sleep(max(60, poll_interval_seconds() - (time.time() - started)))
+
+
 async def user_housekeeping() -> None:
     """Notification-sending chores that must run on exactly one server."""
     try:
@@ -794,17 +842,9 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 new_deal_ids.extend(result["new_deal_ids"])
                 await asyncio.sleep(0.4)  # be polite to Telegram between channels
 
-            expired = store.expire_stale()
-            store.retire_imageless()
-            _rollup_price_history_daily()
-            store.rescore_all()
-            liveness = await verify_links(settings.liveness_batch)
-            # Background, never awaited: BuyHatke's 3s spacing would otherwise
-            # add ~30s to every cycle.
-            from . import buyhatke
-            _warm_task = asyncio.get_running_loop().create_task(buyhatke.warm(settings.buyhatke_warm_per_cycle))
-            _background.add(_warm_task)
-            _warm_task.add_done_callback(_background.discard)
+            expired, liveness = 0, {}
+            if not settings.sharded:  # in the 3-server split the validator node does this
+                expired, liveness = await validation_pass()
             alerts = await run_watchlist_alerts() if not settings.sharded else {}  # user node sends these
 
             # Plan this window's hot-deal pushes (PUSHES_PER_CYCLE of them, each
@@ -817,17 +857,9 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             except Exception as exc:  # noqa: BLE001 — never break the cycle over a notification
                 log.warning("Hot-push scheduling failed: %s", exc)
 
-            try:
-                if await links.resolve_stored():
-                    log.info("Resolved previously unresolved short links")
-            except Exception as exc:  # noqa: BLE001 — never break the cycle over this
-                log.warning("Stored-link resolution failed: %s", exc)
-            purged_ids = store.purge_ancient()
-            offers.prune()
-            store.purge_housekeeping()
-            _purge_local_cache()
-            push.prune_notifications()
-            tg_post.prune()
+            purged_ids: List[str] = []
+            if not settings.sharded:
+                purged_ids = await cleanup_pass()
             if not settings.sharded:
                 await user_housekeeping()
 

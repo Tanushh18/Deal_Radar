@@ -1,6 +1,7 @@
 # Render blueprint — fixed 3-server split (New > Blueprint > point at this repo).
-#   dealradar-ingest-1 / dealradar-ingest-2: each reads Telegram with its own account and half of
-#     the channels, and forwards sign-in/devices/watchlists/admin to the user server.
+#   dealradar-ingest-1: the only server that reads Telegram (one account, all channels); forwards
+#     sign-in/devices/watchlists/admin to the user server.
+#   dealradar-validator: no Telegram; expiry, scoring and link checks over the stored deals.
 #   dealradar-user: no Telegram; owns user writes, watchlist alerts, digests and notifications.
 # Every server serves deal browsing itself. Secrets are filled once in the dealradar-shared
 # group (Render dashboard > Environment Groups). Rename the services below to your existing
@@ -21,8 +22,6 @@ services:
       - fromGroup: dealradar-shared
       - key: NODE_ROLE
         value: ingest
-      - key: INGEST_SHARD
-        value: "0"
       - key: USER_NODE_URL
         sync: false             # the user server's own URL, e.g. https://dealradar-93do.onrender.com
       - key: TELEGRAM_SESSION
@@ -31,7 +30,7 @@ services:
         sync: false             # https://dealradar.ggnhome.com (or this server's own URL)
 
   - type: web
-    name: dealradar-ingest-2
+    name: dealradar-validator
     runtime: python
     plan: free
     region: singapore
@@ -44,13 +43,9 @@ services:
     envVars:
       - fromGroup: dealradar-shared
       - key: NODE_ROLE
-        value: ingest
-      - key: INGEST_SHARD
-        value: "1"
+        value: validator
       - key: USER_NODE_URL
         sync: false             # the user server's own URL, e.g. https://dealradar-93do.onrender.com
-      - key: TELEGRAM_SESSION_2
-        sync: false             # this server's Telegram account (tools/make_session.py)
       - key: PUBLIC_URL
         sync: false             # https://dealradar.ggnhome.com (or this server's own URL)
 

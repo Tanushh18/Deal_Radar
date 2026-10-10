@@ -135,12 +135,13 @@ class Settings:
         # --- Fixed 3-server split (optional; leave NODE_ROLE unset for the leader-election setup) ---
         # NODE_ROLE=ingest: reads Telegram (its own session, its share of the channels) and
         #   forwards sign-in/devices/watchlists/admin to USER_NODE_URL.
+        # NODE_ROLE=validator: no Telegram; expiry, scoring and link checks over stored deals.
         # NODE_ROLE=user: no Telegram; owns user writes, watchlist alerts, digests and pushes.
         # Every node serves deal browsing from its own cache (kept fresh from Turso).
         self.node_role: str = os.getenv("NODE_ROLE", "").strip().lower()
         self.user_node_url: str = os.getenv("USER_NODE_URL", "").strip().rstrip("/")
         self.ingest_shard: int = int(os.getenv("INGEST_SHARD", "0") or 0)
-        self.ingest_shards: int = max(1, int(os.getenv("INGEST_SHARDS", "2") or 2))
+        self.ingest_shards: int = max(1, int(os.getenv("INGEST_SHARDS", "1") or 1))
         self.telegram_session_2: str = os.getenv("TELEGRAM_SESSION_2", "").strip()
         self.replica_refresh_seconds: int = int(os.getenv("REPLICA_REFRESH_SECONDS", "300"))
 
@@ -219,11 +220,15 @@ class Settings:
 
     @property
     def sharded(self) -> bool:
-        return self.node_role in ("ingest", "user")
+        return self.node_role in ("ingest", "validator", "user")
 
     @property
     def is_ingest_node(self) -> bool:
         return self.node_role == "ingest"
+
+    @property
+    def is_validator_node(self) -> bool:
+        return self.node_role == "validator"
 
     @property
     def is_user_node(self) -> bool:
