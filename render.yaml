@@ -27,7 +27,7 @@ services:
       - key: TELEGRAM_SESSION
         sync: false             # this server's Telegram account (tools/make_session.py)
       - key: PUBLIC_URL
-        sync: false             # https://dealradar.ggnhome.com (or this server's own URL)
+        value: https://dealradar.ggnhome.com
 
   - type: web
     name: dealradar-validator
@@ -47,7 +47,7 @@ services:
       - key: USER_NODE_URL
         sync: false             # the user server's own URL, e.g. https://dealradar-93do.onrender.com
       - key: PUBLIC_URL
-        sync: false             # https://dealradar.ggnhome.com (or this server's own URL)
+        value: https://dealradar.ggnhome.com
 
   - type: web
     name: dealradar-user
@@ -65,7 +65,7 @@ services:
       - key: NODE_ROLE
         value: user
       - key: PUBLIC_URL
-        sync: false             # https://dealradar.ggnhome.com
+        value: https://dealradar.ggnhome.com
 
 envVarGroups:
   - name: dealradar-shared
@@ -85,14 +85,14 @@ envVarGroups:
         sync: false             # mongodb+srv://user:password@cluster.mongodb.net/ — durable store for
                                  # users, channels, watchlists and admin settings
       - key: TURSO_DATABASE_URL
-        sync: false             # libsql://<db>-<org>.turso.io — permanent store: deals, product summaries, alerts
+        value: libsql://deal-radardb-tanushhh18.aws-ap-south-1.turso.io
       - key: TURSO_AUTH_TOKEN
         sync: false
       # Optional second Turso database, just for price_points (every price
       # change ever seen — by far the fastest-growing table). Without these
       # two, price_points stays in the main Turso database above instead.
       - key: TURSO_DB_02
-        sync: false             # libsql://<db2>-<org>.turso.io — a second, separate Turso database
+        value: libsql://dealradarpricehistory-tanushhhh18.aws-ap-south-1.turso.io
       - key: TURSO_DB_02_AUTH_TOKEN
         sync: false
 
@@ -100,7 +100,7 @@ envVarGroups:
       - key: TG_BOT_TOKEN
         sync: false             # from @BotFather; the bot must be an admin of the channel
       - key: TG_POST_CHANNEL
-        sync: false             # "@yourchannel" or its numeric id "-100…"
+        value: dealradar18
       - key: TG_HOT_MIN_DISCOUNT
         value: "60"             # % off that counts as hot (all-time lows always do)
       - key: TG_HOT_MIN_REPOSTS
@@ -111,8 +111,14 @@ envVarGroups:
       # --- reader account: reads every channel it follows (block in /admin) ---
       # Optional: extra public channels to make the reader join, comma-separated.
       - key: PUBLIC_CHANNELS
-        sync: false
+        value: dealsvelocity,OMGDeals,CoolzTricks,idoffers,lootdealsapp,lootping,Lootunboxing,bestlootdeals07,desidime,turbotechplus1,PowerLoot,Techofferstoday,Online_Shopping_Offers_Live,realearnkaro,diyadeals,popcorndeal,takedealsofficialloots,extrape,couponbazi,GrabOnIndiaOfficial,bigtricksin,technicalfuture,lootalerts,techindiafirmofficial,lootstricks,WeTeach_loot,ajio_coupons,Loot_Offers_Dealss
 
+      - key: FCM_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: CUELINK_API
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
       # --- tuning ---
       - key: PYTHON_VERSION
         value: "3.11.9"
