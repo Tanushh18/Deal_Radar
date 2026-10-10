@@ -760,6 +760,9 @@ async def cleanup_pass() -> List[str]:
     return purged_ids
 
 
+validator_state: Dict[str, Any] = {"passes": 0, "last_at": None, "last_error": None}
+
+
 async def validator_loop() -> None:
     """Validator node: no Telegram. Checks stored deals and their links, then tidies up."""
     await asyncio.sleep(90)  # let the first Turso refresh bring in what the ingest node saved
@@ -769,10 +772,12 @@ async def validator_loop() -> None:
             quality.sweep_stored()
             expired, liveness = await validation_pass()
             purged = await cleanup_pass()
+            validator_state.update(passes=validator_state["passes"] + 1, last_at=time.time(), last_error=None)
             log.info("Validation pass: expired=%s liveness=%s purged=%d", expired, liveness, len(purged))
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # noqa: BLE001
+            validator_state["last_error"] = f"{type(exc).__name__}: {exc}"
             log.warning("Validation pass failed: %s", exc)
         await asyncio.sleep(max(60, poll_interval_seconds() - (time.time() - started)))
 
