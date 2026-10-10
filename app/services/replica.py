@@ -25,8 +25,19 @@ _HOP = {"connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgra
 _client: httpx.AsyncClient | None = None
 
 
+def _same_origin(a: str, b: str) -> bool:
+    return a.rstrip("/").lower() == b.rstrip("/").lower()
+
+
 def forwards() -> bool:
-    return settings.is_replica or (leader.enabled() and not leader.is_leader() and bool(leader.leader_url()))
+    if settings.is_replica:
+        return True
+    url = leader.leader_url()
+    # Servers sharing one public domain all advertise that same URL, so "forward to the
+    # leader" would just hit the load balancer and come straight back (508 Loop Detected).
+    # Only forward when the leader has an address of its own.
+    return (leader.enabled() and not leader.is_leader() and bool(url)
+            and not _same_origin(url, settings.public_url))
 
 
 def upstream_url() -> str:
@@ -50,6 +61,7 @@ async def forward(request: Request) -> Response:
         _client = httpx.AsyncClient(timeout=30.0, follow_redirects=False)
     url = upstream_url() + request.url.path + (f"?{request.url.query}" if request.url.query else "")
     headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP}
+    headers["x-dr-forwarded"] = "1"
     headers["x-forwarded-for"] = (request.headers.get("x-forwarded-for") or
                                   (request.client.host if request.client else ""))
     try:

@@ -240,7 +240,8 @@ async def shell_cache_headers(request: Request, call_next):
 
 @app.middleware("http")
 async def replica_forward(request: Request, call_next):
-    if replica.forwards() and not replica.serves_locally(request):
+    if (replica.forwards() and not request.headers.get("x-dr-forwarded")
+            and not replica.serves_locally(request)):
         return await replica.forward(request)
     return await call_next(request)
 
