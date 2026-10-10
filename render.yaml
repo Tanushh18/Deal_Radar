@@ -1,24 +1,85 @@
-# Render blueprint — deploy with: New > Blueprint > point at this repo.
-# Everything here fits the free tier (one web service, no paid disk, no Redis).
+# Render blueprint — fixed 3-server split (New > Blueprint > point at this repo).
+#   dealradar-ingest-1 / dealradar-ingest-2: each reads Telegram with its own account and half of
+#     the channels, and forwards sign-in/devices/watchlists/admin to the user server.
+#   dealradar-user: no Telegram; owns user writes, watchlist alerts, digests and notifications.
+# Every server serves deal browsing itself. Secrets are filled once in the dealradar-shared
+# group (Render dashboard > Environment Groups). Rename the services below to your existing
+# service names if you want Render to adopt them instead of creating new ones.
 services:
   - type: web
-    name: dealradar
+    name: dealradar-ingest-1
     runtime: python
     plan: free
-    region: singapore          # closest free region to India; change if you prefer
+    region: singapore
     branch: main
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    # One worker: Telethon holds stateful MTProto connections and the ingest
-    # scheduler must not run in duplicate. Do not raise this on the free tier.
+    # One worker: Telethon holds stateful MTProto connections. Do not raise this on the free tier.
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/ping
     autoDeploy: true
     envVars:
-      # --- generated for you ---
+      - fromGroup: dealradar-shared
+      - key: NODE_ROLE
+        value: ingest
+      - key: INGEST_SHARD
+        value: "0"
+      - key: USER_NODE_URL
+        sync: false             # the user server's own URL, e.g. https://dealradar-93do.onrender.com
+      - key: TELEGRAM_SESSION
+        sync: false             # this server's Telegram account (tools/make_session.py)
+      - key: PUBLIC_URL
+        sync: false             # https://dealradar.ggnhome.com (or this server's own URL)
+
+  - type: web
+    name: dealradar-ingest-2
+    runtime: python
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    # One worker: Telethon holds stateful MTProto connections. Do not raise this on the free tier.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/ping
+    autoDeploy: true
+    envVars:
+      - fromGroup: dealradar-shared
+      - key: NODE_ROLE
+        value: ingest
+      - key: INGEST_SHARD
+        value: "1"
+      - key: USER_NODE_URL
+        sync: false             # the user server's own URL, e.g. https://dealradar-93do.onrender.com
+      - key: TELEGRAM_SESSION_2
+        sync: false             # this server's Telegram account (tools/make_session.py)
+      - key: PUBLIC_URL
+        sync: false             # https://dealradar.ggnhome.com (or this server's own URL)
+
+  - type: web
+    name: dealradar-user
+    runtime: python
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    # One worker: Telethon holds stateful MTProto connections. Do not raise this on the free tier.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/ping
+    autoDeploy: true
+    envVars:
+      - fromGroup: dealradar-shared
+      - key: NODE_ROLE
+        value: user
+      - key: PUBLIC_URL
+        sync: false             # https://dealradar.ggnhome.com
+
+envVarGroups:
+  - name: dealradar-shared
+    envVars:
+      # --- secrets: identical on all three servers ---
       - key: SECRET_KEY
-        generateValue: true     # rotating this invalidates stored Telegram sessions AND all web logins
+        sync: false             # SAME on all three servers. Rotating it invalidates stored Telegram sessions AND all web logins
       - key: ADMIN_TOKEN
-        generateValue: true
+        sync: false
 
       # --- you must fill these in (Render dashboard > Environment) ---
       - key: TELEGRAM_API_ID
@@ -28,8 +89,6 @@ services:
       - key: MONGODB_URI
         sync: false             # mongodb+srv://user:password@cluster.mongodb.net/ — durable store for
                                  # users, channels, watchlists and admin settings
-      - key: PUBLIC_URL
-        sync: false             # e.g. https://dealradar.onrender.com — enables self-ping
       - key: TURSO_DATABASE_URL
         sync: false             # libsql://<db>-<org>.turso.io — permanent store: deals, product summaries, alerts
       - key: TURSO_AUTH_TOKEN
@@ -55,8 +114,6 @@ services:
         value: "20"
 
       # --- reader account: reads every channel it follows (block in /admin) ---
-      - key: TELEGRAM_SESSION
-        sync: false             # from /admin after logging in (secret — full account access)
       # Optional: extra public channels to make the reader join, comma-separated.
       - key: PUBLIC_CHANNELS
         sync: false
@@ -90,12 +147,3 @@ services:
         value: "180"
       - key: LOG_LEVEL
         value: "INFO"
-
-      # --- load distribution ---
-      # Run the same service on several Render instances with IDENTICAL env vars
-      # (same SECRET_KEY, MONGODB_URI, TURSO_*, TELEGRAM_*). ROLE defaults to
-      # "auto": the servers elect one leader through MongoDB that alone runs
-      # ingest/Telegram/pushes; the rest serve deal reads from their own cache
-      # and forward all other requests to the leader. Each needs its PUBLIC_URL
-      # (or Render's own RENDER_EXTERNAL_URL). Needs MONGODB_URI. Force a role
-      # with ROLE=primary, or ROLE=replica + PRIMARY_URL=<leader URL>.
