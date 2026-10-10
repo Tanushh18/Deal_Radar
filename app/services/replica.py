@@ -20,7 +20,7 @@ from . import leader, nodes, turso_backup
 
 log = logging.getLogger("dealradar.replica")
 
-_LOCAL_EXACT = {"/api/ping", "/api/health"}
+_LOCAL_EXACT = {"/api/ping", "/api/health", "/api/node-check"}  # node-check: temporary
 _HOP = {"connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgrade",
         "proxy-authenticate", "proxy-authorization", "host", "content-length", "content-encoding"}
 _RESP_HOP = _HOP - {"content-encoding"}  # we pass the upstream's raw bytes through, so its encoding header must stay
