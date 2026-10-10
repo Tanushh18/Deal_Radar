@@ -139,6 +139,10 @@ class Settings:
         # means notification images (which need an absolute URL) and the
         # keep-awake self-ping both work even when PUBLIC_URL was never set.
         self.public_url: str = (os.getenv("PUBLIC_URL", "") or os.getenv("RENDER_EXTERNAL_URL", "")).rstrip("/")
+        # This one server's own address (Render gives each service its own). The leader lease
+        # advertises it, so other servers forward to *this* server, not the shared domain.
+        self.self_url: str = (os.getenv("SELF_URL", "") or os.getenv("RENDER_EXTERNAL_URL", "")
+                              or os.getenv("PUBLIC_URL", "")).rstrip("/")
         self.keepalive_enabled: bool = _bool(os.getenv("KEEPALIVE_ENABLED", "true"))
         self.keepalive_seconds: int = int(os.getenv("KEEPALIVE_SECONDS", "600"))
 

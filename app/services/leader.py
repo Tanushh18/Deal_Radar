@@ -49,12 +49,12 @@ def _try_acquire() -> tuple[bool, str]:
     mongo_store.connect()
     coll = mongo_store._db()["leases"]
     now = time.time()
-    me = {"holder": _ME, "url": settings.public_url, "expires_at": now + LEASE_SECONDS}
+    me = {"holder": _ME, "url": settings.self_url, "expires_at": now + LEASE_SECONDS}
     try:
         coll.find_one_and_update(
             {"_id": "ingest", "$or": [{"holder": _ME}, {"expires_at": {"$lt": now}}]},
             {"$set": me}, upsert=True)
-        return True, settings.public_url
+        return True, settings.self_url
     except pe.DuplicateKeyError:           # live lease belongs to someone else
         doc = coll.find_one({"_id": "ingest"}) or {}
         return False, doc.get("url", "")

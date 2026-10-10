@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Optional
 
 import httpx
 from fastapi import Request, Response
@@ -37,7 +38,7 @@ def forwards() -> bool:
     # leader" would just hit the load balancer and come straight back (508 Loop Detected).
     # Only forward when the leader has an address of its own.
     return (leader.enabled() and not leader.is_leader() and bool(url)
-            and not _same_origin(url, settings.public_url))
+            and not _same_origin(url, settings.self_url))
 
 
 def upstream_url() -> str:
@@ -55,7 +56,7 @@ def serves_locally(request: Request) -> bool:
     return path.startswith("/api/deals") and not path.endswith("/go")
 
 
-async def forward(request: Request) -> Response:
+async def forward(request: Request) -> Optional[Response]:
     global _client
     if _client is None:
         _client = httpx.AsyncClient(timeout=30.0, follow_redirects=False)
@@ -68,7 +69,9 @@ async def forward(request: Request) -> Response:
         upstream = await _client.request(request.method, url, headers=headers, content=await request.body())
     except httpx.HTTPError as exc:
         log.warning("Primary unreachable for %s %s: %s", request.method, request.url.path, exc)
-        return Response('{"detail":"Server is busy, try again."}', status_code=502, media_type="application/json")
+        return None  # leader unreachable: serve it here rather than fail
+    if upstream.status_code in (404, 508):
+        return None  # the leader's address doesn't route to a live server (or loops back)
     out = Response(content=upstream.content, status_code=upstream.status_code)
     for k, v in upstream.headers.multi_items():
         if k.lower() not in _HOP:
