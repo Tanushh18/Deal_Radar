@@ -115,29 +115,3 @@ async def admin_backfill_channel_ids():
 @router.post("/admin/mongo/sync-meta", dependencies=[Depends(auth.require_admin)])
 async def admin_sync_meta():
     return {"channels": mongo_store.sync_channels(), "users": mongo_store.sync_users()}
-
-
-# TEMPORARY role check — removed again right after the 3-server rollout is verified.
-@router.get("/node-check")
-async def node_check():
-    from ..services import leader, live, replica
-    registry = []
-    try:
-        if mongo_store.is_enabled():
-            mongo_store.connect()
-            registry = [{"role": r.get("role"), "url": r.get("url"), "seen_ago_s": round(time.time() - r.get("seen_at", 0))}
-                        for r in mongo_store._db()["nodes"].find({})]
-    except Exception as exc:  # noqa: BLE001
-        registry = [{"error": type(exc).__name__}]
-    return {
-        "node": nodes.snapshot(),
-        "env_node_role": settings.node_role or None,
-        "sharded": settings.sharded,
-        "forwards_writes": replica.forwards(),
-        "reads_telegram": bool(settings.is_ingest_node or (not settings.sharded and leader.is_leader())),
-        "leader_election_active": leader.enabled() and not settings.sharded,
-        "ingest": {k: v for k, v in ingest.state().items() if k in ("cycles", "running", "last_run", "last_error")},
-        "validator": ingest.validator_state,
-        "live_listener": live.status(),
-        "registry": registry,
-    }
