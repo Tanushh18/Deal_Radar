@@ -23,6 +23,7 @@ log = logging.getLogger("dealradar.replica")
 _LOCAL_EXACT = {"/api/ping", "/api/health"}
 _HOP = {"connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgrade",
         "proxy-authenticate", "proxy-authorization", "host", "content-length", "content-encoding"}
+_RESP_HOP = _HOP - {"content-encoding"}  # we pass the upstream's raw bytes through, so its encoding header must stay
 _client: httpx.AsyncClient | None = None
 
 
@@ -78,7 +79,16 @@ async def forward(request: Request) -> Optional[Response]:
         tried.add(base)
         url = base + request.url.path + (f"?{request.url.query}" if request.url.query else "")
         try:
-            upstream = await _client.request(request.method, url, headers=headers, content=body)
+            req = _client.build_request(request.method, url, headers=headers, content=body)
+            upstream = await _client.send(req, stream=True)
+            try:
+                decoded = False
+                try:
+                    raw = b"".join([chunk async for chunk in upstream.aiter_raw()])  # undecoded, as sent
+                except httpx.StreamConsumed:
+                    raw, decoded = upstream.content, True  # already read (and decoded) by the transport
+            finally:
+                await upstream.aclose()
         except httpx.HTTPError as exc:
             log.warning("Upstream %s unreachable for %s %s: %s", base, request.method, request.url.path, exc)
             nodes.mark_failed(base)
@@ -86,9 +96,9 @@ async def forward(request: Request) -> Optional[Response]:
         if upstream.status_code in (404, 502, 503, 504, 508):
             nodes.mark_failed(base)  # that address isn't a live DealRadar server right now
             continue
-        out = Response(content=upstream.content, status_code=upstream.status_code)
+        out = Response(content=raw, status_code=upstream.status_code)
         for k, v in upstream.headers.multi_items():
-            if k.lower() not in _HOP:
+            if k.lower() not in (_HOP if decoded else _RESP_HOP):
                 out.headers.append(k, v)
         return out
     return None  # nothing reachable: serve it here rather than fail

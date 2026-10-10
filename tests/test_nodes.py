@@ -89,3 +89,21 @@ def test_forward_returns_none_when_every_node_is_down(monkeypatch):
     monkeypatch.setattr(replica, "_client",
                         httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(508))))
     assert asyncio.run(replica.forward(_request())) is None
+
+
+def test_forward_passes_compressed_bodies_through_untouched(monkeypatch):
+    import gzip
+    _as(monkeypatch, "ingest")
+    monkeypatch.setattr(nodes, "_cache", ["https://u.example"])
+    payload = gzip.compress(b'{"hello":"world"}')
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=payload, headers={"content-encoding": "gzip", "content-type": "application/json"})
+
+    monkeypatch.setattr(replica, "_client", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    out = asyncio.run(replica.forward(_request()))
+    # Whatever the transport did, body and encoding header must agree.
+    if "content-encoding" in out.headers:
+        assert gzip.decompress(out.body) == b'{"hello":"world"}'
+    else:
+        assert out.body == b'{"hello":"world"}'
