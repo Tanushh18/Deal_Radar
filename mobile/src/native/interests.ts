@@ -33,3 +33,8 @@ export async function saveInterests(keys: string[]): Promise<void> {
   cached = keys.length ? keys.join(',') : 'all';
   await AsyncStorage.setItem(KEY, cached).catch(() => {});
 }
+
+/** Keys currently chosen (empty for "all" or not asked yet). */
+export function selectedInterests(): string[] {
+  return cached && cached !== 'all' ? cached.split(',').filter(Boolean) : [];
+}
