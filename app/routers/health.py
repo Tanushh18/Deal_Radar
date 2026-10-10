@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Response
 
 from .. import auth, db
 from ..config import settings
-from ..services import buyhatke, ingest, mongo_store, store, turso_backup
+from ..services import buyhatke, ingest, mongo_store, nodes, store, turso_backup
 
 router = APIRouter(prefix="/api", tags=["system"])
 
@@ -41,6 +41,7 @@ async def ping():
         "last_ingest_at": last_run,
         "next_ingest_at": (last_run + interval) if last_run else None,
         "ingest_running": bool(ingest_state.get("running")),
+        "node": nodes.snapshot(),
     }
 
 

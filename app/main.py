@@ -31,7 +31,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import activity, growth, ingest, leader, live, mongo_store, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, telegram, turso_backup
+from .services import activity, growth, ingest, leader, live, mongo_store, nodes, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -177,6 +177,7 @@ async def lifespan(app: FastAPI):
         _tasks.append(asyncio.create_task(leader.run(gain, lose)))
     # Servers that aren't the leader keep their deal cache fresh from Turso (a no-op while leading).
     _tasks.append(asyncio.create_task(replica.refresh_loop()))
+    _tasks.append(asyncio.create_task(nodes.heartbeat_loop()))
     log.info("Ready. Polling every %ss, deal TTL %sh", settings.poll_interval_seconds, settings.deal_ttl_hours)
 
     try:

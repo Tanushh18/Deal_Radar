@@ -16,7 +16,7 @@ import httpx
 from fastapi import Request, Response
 
 from ..config import settings
-from . import leader, turso_backup
+from . import leader, nodes, turso_backup
 
 log = logging.getLogger("dealradar.replica")
 
@@ -34,7 +34,7 @@ def forwards() -> bool:
     if settings.is_replica:
         return True
     if settings.sharded:
-        return not settings.is_user_node and bool(settings.user_node_url)
+        return not settings.is_user_node and bool(nodes.user_urls())
     url = leader.leader_url()
     # Servers sharing one public domain all advertise that same URL, so "forward to the
     # leader" would just hit the load balancer and come straight back (508 Loop Detected).
@@ -45,7 +45,7 @@ def forwards() -> bool:
 
 def upstream_url() -> str:
     if settings.sharded:
-        return settings.user_node_url
+        return nodes.pick_user_url()
     return settings.primary_url if settings.is_replica else leader.leader_url()
 
 
@@ -61,26 +61,37 @@ def serves_locally(request: Request) -> bool:
 
 
 async def forward(request: Request) -> Optional[Response]:
+    """Send the request to a healthy upstream; try a second one before giving up."""
     global _client
     if _client is None:
         _client = httpx.AsyncClient(timeout=30.0, follow_redirects=False)
-    url = upstream_url() + request.url.path + (f"?{request.url.query}" if request.url.query else "")
     headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP}
     headers["x-dr-forwarded"] = "1"
     headers["x-forwarded-for"] = (request.headers.get("x-forwarded-for") or
                                   (request.client.host if request.client else ""))
-    try:
-        upstream = await _client.request(request.method, url, headers=headers, content=await request.body())
-    except httpx.HTTPError as exc:
-        log.warning("Primary unreachable for %s %s: %s", request.method, request.url.path, exc)
-        return None  # leader unreachable: serve it here rather than fail
-    if upstream.status_code in (404, 508):
-        return None  # the leader's address doesn't route to a live server (or loops back)
-    out = Response(content=upstream.content, status_code=upstream.status_code)
-    for k, v in upstream.headers.multi_items():
-        if k.lower() not in _HOP:
-            out.headers.append(k, v)
-    return out
+    body = await request.body()
+    tried: set = set()
+    for _ in range(2):
+        base = upstream_url()
+        if not base or base in tried:
+            break
+        tried.add(base)
+        url = base + request.url.path + (f"?{request.url.query}" if request.url.query else "")
+        try:
+            upstream = await _client.request(request.method, url, headers=headers, content=body)
+        except httpx.HTTPError as exc:
+            log.warning("Upstream %s unreachable for %s %s: %s", base, request.method, request.url.path, exc)
+            nodes.mark_failed(base)
+            continue
+        if upstream.status_code in (404, 502, 503, 504, 508):
+            nodes.mark_failed(base)  # that address isn't a live DealRadar server right now
+            continue
+        out = Response(content=upstream.content, status_code=upstream.status_code)
+        for k, v in upstream.headers.multi_items():
+            if k.lower() not in _HOP:
+                out.headers.append(k, v)
+        return out
+    return None  # nothing reachable: serve it here rather than fail
 
 
 async def refresh_loop() -> None:
