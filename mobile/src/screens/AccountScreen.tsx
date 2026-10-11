@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, Share, Switch, View } from 'react-native';
 import { Text } from '../components/Text';
 
-import { api, errorMessage, isNotFound, resolveServerUrl, type Follow, type FollowKind, type KeyCount, type User } from '../api';
+import { api, errorMessage, isNotFound, resolveServerUrl, type AppLinks, type Follow, type FollowKind, type KeyCount, type User } from '../api';
 import {
   Button,
   Card,
@@ -62,6 +62,7 @@ export function AccountScreen() {
   const [notif, setNotif] = useState<NotifState>('unknown');
   const [testing, setTesting] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [appLinks, setAppLinks] = useState<AppLinks | null>(null);
 
   const refreshPermission = useCallback(async () => {
     try {
@@ -84,6 +85,7 @@ export function AccountScreen() {
         })
         .catch(() => {});
       refreshPermission();
+      api.appLinks.get().then(setAppLinks).catch(() => {});
     }, [refreshPermission]),
   );
 
@@ -183,6 +185,29 @@ export function AccountScreen() {
             onPress={() => navigation.navigate('CheckPrice', {})}
           />
         </Group>
+
+        {appLinks?.show_account_promo ? (
+          <Card style={{ gap: 10 }}>
+            <Text style={{ color: t.c.text, fontSize: t.f.md, fontWeight: '700' }}>
+              {appLinks.promo_title || 'DealRadar'}
+            </Text>
+            <Text style={{ color: t.c.text2, fontSize: t.f.sm, lineHeight: 20 }}>
+              {appLinks.promo_body}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {appLinks.app_url ? (
+                <View style={{ flexGrow: 1, flexBasis: 150 }}>
+                  <Button title="Download app" icon="download" onPress={() => Linking.openURL(appLinks.app_url).catch(() => toast('Could not open the app download link.', 'err'))} />
+                </View>
+              ) : null}
+              {appLinks.website_url ? (
+                <View style={{ flexGrow: 1, flexBasis: 150 }}>
+                  <Button title="Open website" icon="globe" variant="soft" onPress={() => Linking.openURL(appLinks.website_url).catch(() => toast('Could not open the website link.', 'err'))} />
+                </View>
+              ) : null}
+            </View>
+          </Card>
+        ) : null}
 
         <Group title="Notifications">
           <Row

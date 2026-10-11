@@ -440,6 +440,30 @@
         <p class="muted help">Phone pushes and posts to your own Telegram channel.</p>
       </div>
 
+      <section class="card" id="app-links-card">
+        <div class="card-head">
+          <h2>Account section — app & website links</h2>
+          <span class="status-pill" id="app-links-pill">Loading…</span>
+        </div>
+        <p class="muted help">Configure the promotional card shown in the app's Account section. Changes are saved on the server, not in .env.</p>
+        <form id="app-links-form" style="display:grid;gap:12px">
+          <label class="field" style="margin:0"><span>Website URL</span>
+            <input class="input" id="app-links-website" type="url" maxlength="500" placeholder="https://your-website.example" /></label>
+          <label class="field" style="margin:0"><span>App download URL</span>
+            <input class="input" id="app-links-app" type="url" maxlength="500" placeholder="https://play.google.com/store/apps/details?id=…" /></label>
+          <label class="field" style="margin:0"><span>Card title</span>
+            <input class="input" id="app-links-title" maxlength="100" required /></label>
+          <label class="field" style="margin:0"><span>Card message</span>
+            <textarea class="input" id="app-links-body" rows="2" maxlength="300" required></textarea></label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:.9rem">
+            <input id="app-links-enabled" type="checkbox" checked /> Show this card in the app's Account section
+          </label>
+          <p class="muted help" style="margin:0">Leave a URL blank to hide its button. Use full http(s) URLs.</p>
+          <div class="row"><button class="btn btn-primary" id="app-links-save" type="submit">Save account links</button></div>
+        </form>
+        <div class="msg hidden" id="app-links-msg"></div>
+      </section>
+
       <section class="card" id="na-card">
         <div class="card-head">
           <h2>Automatic notifications</h2>

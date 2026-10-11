@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .. import auth, db
-from ..services import push
+from ..services import app_links, push
 
 router = APIRouter(prefix="/api", tags=["notifications"])
 
@@ -19,6 +19,12 @@ class RegisterPayload(BaseModel):
 
 class UnregisterPayload(BaseModel):
     token: str = Field(..., max_length=4096)
+
+
+@router.get("/app-links")
+async def public_app_links():
+    """Public configuration for the website/app buttons shown in Account."""
+    return app_links.get()
 
 
 @router.post("/push/register")

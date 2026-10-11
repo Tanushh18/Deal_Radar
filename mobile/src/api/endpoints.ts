@@ -192,6 +192,18 @@ export const watchlists = {
     request<{ status: string }>(`/api/watchlists/${id}/test`, { method: 'POST', timeoutMs: 40_000 }),
 };
 
+export type AppLinks = {
+  website_url: string;
+  app_url: string;
+  show_account_promo: boolean;
+  promo_title: string;
+  promo_body: string;
+};
+
+export const appLinks = {
+  get: (o: Sig = {}) => request<AppLinks>('/api/app-links', o),
+};
+
 export const notifications = {
   list: (since = 0, limit = 20, o: Sig = {}) =>
     request<{ notifications: AppNotification[]; now: number }>('/api/notifications', {

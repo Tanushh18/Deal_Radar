@@ -272,6 +272,44 @@
     loadPollInterval().catch(() => { /* transient — next tick retries */ });
   }, 30000);
 
+  /* ---------------- Account section links / promo ---------------- */
+  function renderAppLinks(r) {
+    $('#app-links-website').value = r.website_url || '';
+    $('#app-links-app').value = r.app_url || '';
+    $('#app-links-title').value = r.promo_title || '';
+    $('#app-links-body').value = r.promo_body || '';
+    $('#app-links-enabled').checked = !!r.show_account_promo;
+    $('#app-links-pill').textContent = '● Saved settings';
+    $('#app-links-pill').className = 'status-pill ok';
+  }
+
+  async function loadAppLinks() {
+    renderAppLinks(await api('/api/admin/reader/app-links'));
+  }
+
+  $('#app-links-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#app-links-save');
+    btn.disabled = true;
+    try {
+      const saved = await post('/api/admin/reader/app-links', {
+        website_url: $('#app-links-website').value.trim(),
+        app_url: $('#app-links-app').value.trim(),
+        promo_title: $('#app-links-title').value.trim(),
+        promo_body: $('#app-links-body').value.trim(),
+        show_account_promo: $('#app-links-enabled').checked,
+      });
+      renderAppLinks(saved);
+      show($('#app-links-msg'), 'Saved. The Account section will use these links when it next refreshes.', 'ok');
+    } catch (err) {
+      show($('#app-links-msg'), err.message, 'err');
+      $('#app-links-pill').textContent = '● Save failed';
+      $('#app-links-pill').className = 'status-pill bad';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   /* ---------------- tabs ---------------- */
   const TAB_KEY = 'dr-admin-tab';
   const TABS = ['overview', 'fetching', 'users', 'notifications', 'sources'];
@@ -285,7 +323,7 @@
     if (remember) { try { localStorage.setItem(TAB_KEY, name); } catch { /* storage blocked */ } }
     if (name === 'fetching' && !$('#panel').classList.contains('hidden')) loadPollInterval().catch(() => {});
     if (name === 'overview' && !$('#panel').classList.contains('hidden')) loadGrowth().catch(() => {});
-    if (name === 'notifications' && !$('#panel').classList.contains('hidden')) { loadNotifyAuto().catch(() => {}); loadPitara().catch(() => {}); }
+    if (name === 'notifications' && !$('#panel').classList.contains('hidden')) { loadNotifyAuto().catch(() => {}); loadPitara().catch(() => {}); loadAppLinks().catch((err) => show($('#app-links-msg'), err.message, 'err')); }
   }
   $('#admin-nav').addEventListener('click', (e) => {
     const b = e.target.closest('[data-tab]');

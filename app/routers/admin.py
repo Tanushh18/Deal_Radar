@@ -6,6 +6,7 @@ Every route needs the X-Admin-Token header (ADMIN_TOKEN).
 """
 from __future__ import annotations
 
+import json
 import time
 from typing import Any, Optional
 
@@ -14,7 +15,7 @@ from pydantic import BaseModel
 
 from .. import auth, db
 from ..config import settings
-from ..services import autopoll, ingest, live, mongo_store, notify_auto, priority, public_reader, sale_events, taxonomy, telegram, tg_post
+from ..services import app_links, autopoll, ingest, live, mongo_store, notify_auto, priority, public_reader, sale_events, taxonomy, telegram, tg_post
 from .channels import _deactivate_orphans, _register_channel
 
 router = APIRouter(prefix="/api/admin/reader", tags=["admin"], dependencies=[Depends(auth.require_admin)])
@@ -206,6 +207,26 @@ class BroadcastPayload(BaseModel):
     title: str
     body: str
     deal_id: Optional[str] = None
+
+
+@router.get("/app-links")
+async def get_app_links():
+    """Website/app destinations and the account-screen promotion card."""
+    return app_links.get()
+
+
+@router.post("/app-links")
+async def set_app_links(payload: Any = Body(None)):
+    """Save website/app destinations and account-screen promo copy."""
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Send a JSON object.")
+    try:
+        saved = app_links.update(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if mongo_store.is_enabled():
+        mongo_store.save_setting(app_links.META_KEY, json.dumps(saved, ensure_ascii=False))
+    return saved
 
 
 @router.post("/broadcast")
