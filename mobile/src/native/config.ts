@@ -3,12 +3,14 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const LIVE_HOST: string = 'https://dealradar.ggnhome.com';
-// The old Render URL, kept only so a phone that explicitly saved it (via the
-// Setup screen's "Live server" chip) migrates to the new domain automatically —
-// see getBaseUrl(). Render keeps this address alive, so it's a safe fallback,
-// but every fresh install and OTA now points at LIVE_HOST above.
-const RETIRED_HOST = 'https://dealradar-0oza.onrender.com';
+// Canonical API host is the user node. The other two Render services are also
+// valid API replicas and are kept in the default fallback pool below.
+export const LIVE_HOST: string = 'https://dealradar-t04t.onrender.com';
+export const SERVER_HOSTS: string[] = [
+  'https://dealradar-0oza.onrender.com', // Fetcher (ingest)
+  'https://dealradar-93do.onrender.com', // Validator
+  LIVE_HOST, // User server
+];
 export const EMULATOR_HOST = 'http://10.0.2.2:8765';
 
 export const COLORS = {
@@ -41,13 +43,6 @@ export async function getBaseUrl(): Promise<string | null> {
   try {
     const v = await AsyncStorage.getItem(KEYS.baseUrl);
     if (!v || !v.trim()) return null;
-    // Migration: a phone that explicitly saved the old Render URL would
-    // otherwise keep using it forever, since an explicit save always wins
-    // over LIVE_HOST. Retire it silently onto the new domain.
-    if (v.replace(/\/+$/, '') === RETIRED_HOST) {
-      await AsyncStorage.removeItem(KEYS.baseUrl).catch(() => {});
-      return null;
-    }
     // Older builds saved the default host as if it were a manual choice, which
     // would pin the app to it and ignore the server registry. A saved default
     // is not a choice, so treat it as unset.
@@ -71,14 +66,11 @@ export async function saveBaseUrl(url: string): Promise<string> {
  * Extra hosts worth trying, in order, if LIVE_HOST can't be reached at all —
  * some phones' DNS-level filtering or on-device ad/tracker blockers block
  * specific hostnames outright, and a second real host routes around that
- * without needing the user to do anything. RETIRED_HOST is deliberately NOT
- * here: its own routing was disabled once the custom domain took over, so it
- * now answers every request with a blanket 404 rather than failing to
- * connect — a "success" a naive retry would happily latch onto forever (see
- * the res.ok check in api/client.ts). Only list a host here once it's a real,
- * currently-serving backend.
+ * without needing the user to do anything. Keep all three confirmed Render
+ * nodes in the pool; each node serves reads and forwards user writes to the
+ * configured user node. The registry may add hosts, but cannot remove these.
  */
-export const FALLBACK_HOSTS: string[] = [LIVE_HOST];
+export const FALLBACK_HOSTS: string[] = [...SERVER_HOSTS];
 
 /**
  * Replace the host list with the one from the Stashr server registry (see
@@ -90,7 +82,7 @@ export function applyHostList(fresh: string[]): void {
     .map((h) => h.trim().replace(/\/+$/, ''))
     .filter((h) => /^https:\/\//i.test(h));
   if (cleaned.length === 0) return;
-  const list = [...cleaned, LIVE_HOST].filter((h, i, all) => all.indexOf(h) === i);
+  const list = [...cleaned, ...SERVER_HOSTS].filter((h, i, all) => all.indexOf(h) === i);
   FALLBACK_HOSTS.splice(0, FALLBACK_HOSTS.length, ...list);
   if (sessionHost && !FALLBACK_HOSTS.includes(sessionHost)) sessionHost = null;
 }
