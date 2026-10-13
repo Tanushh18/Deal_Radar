@@ -22,8 +22,10 @@ services:
       - fromGroup: dealradar-shared
       - key: NODE_ROLE
         value: ingest
+      - key: SELF_URL
+        value: https://dealradar-0oza.onrender.com
       - key: USER_NODE_URL
-        sync: false             # the user server's own URL, e.g. https://dealradar-93do.onrender.com
+        value: https://dealradar-t04t.onrender.com
       - key: TELEGRAM_SESSION
         sync: false             # this server's Telegram account (tools/make_session.py)
       - key: PUBLIC_URL
@@ -44,8 +46,10 @@ services:
       - fromGroup: dealradar-shared
       - key: NODE_ROLE
         value: validator
+      - key: SELF_URL
+        value: https://dealradar-93do.onrender.com
       - key: USER_NODE_URL
-        sync: false             # the user server's own URL, e.g. https://dealradar-93do.onrender.com
+        value: https://dealradar-t04t.onrender.com
       - key: PUBLIC_URL
         value: https://dealradar.ggnhome.com
 
@@ -64,6 +68,8 @@ services:
       - fromGroup: dealradar-shared
       - key: NODE_ROLE
         value: user
+      - key: SELF_URL
+        value: https://dealradar-t04t.onrender.com
       - key: PUBLIC_URL
         value: https://dealradar.ggnhome.com
 
