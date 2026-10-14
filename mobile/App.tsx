@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConnectingView, OfflineView } from './src/navigation/BootScreens';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef, type RootStackParamList } from './src/navigation/types';
-import { COLORS, FALLBACK_HOSTS, getBaseUrl, rememberWorkingHost } from './src/native/config';
+import { COLORS, getBaseUrl, hostsInRandomOrder, rememberWorkingHost } from './src/native/config';
 import { loadCachedHosts, refreshHosts } from './src/native/registry';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
 import { configureNotificationHandler, pollNotifications } from './src/native/notifications';
@@ -20,6 +20,7 @@ import { setPublicMode, startVisitorSession } from './src/native/session';
 import { useShareIntentRouting } from './src/native/shareIntent';
 import { checkForUpdateOnLaunch, stopImmediateUpdates } from './src/native/updates';
 import { AppProviders } from './src/components/AppProviders';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { TelegramInvite } from './src/components/TelegramInvite';
 import { InterestsPicker } from './src/components/InterestsPicker';
 import { loadInterests } from './src/native/interests';
@@ -75,9 +76,11 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg }}>
       <SafeAreaProvider style={{ backgroundColor: COLORS.bg }}>
-        <AppProviders>
-          <Root />
-        </AppProviders>
+        <ErrorBoundary>
+          <AppProviders>
+            <Root />
+          </AppProviders>
+        </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -125,7 +128,7 @@ function Root() {
       return false;
     };
 
-    let connected = await connect(explicit ? [explicit] : [...FALLBACK_HOSTS]);
+    let connected = await connect(explicit ? [explicit] : hostsInRandomOrder());
     if (!connected && !explicit) {
       const fresh = await refreshHosts();
       if (fresh) connected = await connect(fresh);

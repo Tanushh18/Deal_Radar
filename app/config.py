@@ -138,7 +138,12 @@ class Settings:
         # NODE_ROLE=validator: no Telegram; expiry, scoring and link checks over stored deals.
         # NODE_ROLE=user: no Telegram; owns user writes, watchlist alerts, digests and pushes.
         # Every node serves deal browsing from its own cache (kept fresh from Turso).
+        # NODE_ROLE=standby: a spare server. It serves deal browsing and stands in for whichever
+        #   of ingest / user / validator stops heartbeating (services/standby.py), handing the
+        #   role back when that server returns. Give it the ingest server's TELEGRAM_SESSION so
+        #   it can cover ingest too; the handoff never runs the session in two places at once.
         self.node_role: str = os.getenv("NODE_ROLE", "").strip().lower()
+        self.is_standby: bool = self.node_role == "standby"
         self.user_node_url: str = os.getenv("USER_NODE_URL", "").strip().rstrip("/")
         self.ingest_shard: int = int(os.getenv("INGEST_SHARD", "0") or 0)
         self.ingest_shards: int = max(1, int(os.getenv("INGEST_SHARDS", "1") or 1))
@@ -220,7 +225,7 @@ class Settings:
 
     @property
     def sharded(self) -> bool:
-        return self.node_role in ("ingest", "validator", "user")
+        return self.node_role in ("ingest", "validator", "user", "standby")
 
     @property
     def is_ingest_node(self) -> bool:

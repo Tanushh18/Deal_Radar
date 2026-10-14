@@ -1,8 +1,10 @@
-# Render blueprint — fixed 3-server split (New > Blueprint > point at this repo).
+# Render blueprint — fixed 3-server split plus one standby (New > Blueprint > point at this repo).
 #   dealradar-ingest-1: the only server that reads Telegram (one account, all channels); forwards
 #     sign-in/devices/watchlists/admin to the user server.
 #   dealradar-validator: no Telegram; expiry, scoring and link checks over the stored deals.
 #   dealradar-user: no Telegram; owns user writes, watchlist alerts, digests and notifications.
+#   dealradar-standby: serves deal browsing; takes over whichever of the three stops heartbeating
+#     and hands it back when it returns. If all three are down it stays up in lite mode.
 # Every server serves deal browsing itself. Secrets are filled once in the dealradar-shared
 # group (Render dashboard > Environment Groups). Rename the services below to your existing
 # service names if you want Render to adopt them instead of creating new ones.
@@ -25,11 +27,11 @@ services:
       - key: SELF_URL
         value: https://dealradar-0oza.onrender.com
       - key: USER_NODE_URL
-        value: https://dealradar-t04t.onrender.com
+        value: https://deal-radar-dn91.onrender.com
       - key: TELEGRAM_SESSION
         sync: false             # this server's Telegram account (tools/make_session.py)
       - key: PUBLIC_URL
-        value: https://dealradar.ggnhome.com
+        value: https://dealradar.tanush.qd.je
 
   - type: web
     name: dealradar-validator
@@ -47,11 +49,11 @@ services:
       - key: NODE_ROLE
         value: validator
       - key: SELF_URL
-        value: https://dealradar-93do.onrender.com
+        value: https://deal-radar-0q0d.onrender.com
       - key: USER_NODE_URL
-        value: https://dealradar-t04t.onrender.com
+        value: https://deal-radar-dn91.onrender.com
       - key: PUBLIC_URL
-        value: https://dealradar.ggnhome.com
+        value: https://dealradar.tanush.qd.je
 
   - type: web
     name: dealradar-user
@@ -69,16 +71,38 @@ services:
       - key: NODE_ROLE
         value: user
       - key: SELF_URL
-        value: https://dealradar-t04t.onrender.com
+        value: https://deal-radar-dn91.onrender.com
       - key: PUBLIC_URL
-        value: https://dealradar.ggnhome.com
+        value: https://dealradar.tanush.qd.je
+
+  - type: web
+    name: dealradar-standby
+    runtime: python
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    # One worker: Telethon holds stateful MTProto connections. Do not raise this on the free tier.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/ping
+    autoDeploy: true
+    envVars:
+      - fromGroup: dealradar-shared
+      - key: NODE_ROLE
+        value: standby
+      - key: SELF_URL
+        value: https://deal-radar-jl4z.onrender.com
+      - key: TELEGRAM_SESSION
+        sync: false             # same session as dealradar-ingest-1, so it can cover ingest
+      - key: PUBLIC_URL
+        value: https://dealradar.tanush.qd.je
 
 envVarGroups:
   - name: dealradar-shared
     envVars:
-      # --- secrets: identical on all three servers ---
+      # --- secrets: identical on all four servers ---
       - key: SECRET_KEY
-        sync: false             # SAME on all three servers. Rotating it invalidates stored Telegram sessions AND all web logins
+        sync: false             # SAME on all four servers. Rotating it invalidates stored Telegram sessions AND all web logins
       - key: ADMIN_TOKEN
         sync: false
 

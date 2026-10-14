@@ -55,6 +55,7 @@ const ICONS = {
     { circle: [18, 19, 3] },
     { d: 'M8.6 13.5l6.8 4M15.4 6.5l-6.8 4' },
   ],
+  download: [{ d: 'M12 3v12M7 10l5 5 5-5M5 21h14' }],
   copy: [{ rect: [9, 9, 13, 13, 2] }, { d: 'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1' }],
   trash: [{ d: 'M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6' }],
   globe: [{ circle: [12, 12, 9] }, { d: 'M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18' }],
@@ -88,7 +89,8 @@ export function Icon({
   color: string;
   strokeWidth?: number;
 }) {
-  const shapes: Shape[] = ICONS[name];
+  // An unknown name draws nothing rather than crashing the whole screen.
+  const shapes: Shape[] = ICONS[name] ?? [];
   return (
     <Svg
       width={size}

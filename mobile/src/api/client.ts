@@ -121,29 +121,55 @@ async function attempt(base: string, path: string, opts: RequestOptions): Promis
   }
 }
 
+/** A response that came from something other than a live DealRadar server. */
+function isDeadHost(res: Response): boolean {
+  if (res.status !== 403 && res.status !== 404 && res.status < 500) return false;
+  const type = res.headers.get('content-type') ?? '';
+  return !type.includes('application/json');
+}
+
 export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const base = await getServerUrl();
-  let res: Response;
+  let res: Response | null = null;
+  let failure: unknown = null;
   try {
     res = await attempt(base, path, opts);
   } catch (e) {
-    // A genuine "can't even connect" failure (DNS/adblock/firewall — not a
-    // timeout, not a cancel) on the default, unconfigured host: some phones'
-    // DNS filtering or ad/tracker blockers block one hostname outright, so
-    // try the other one this app answers to before giving up. Never kicks in
-    // for a base URL someone explicitly configured on the Setup screen.
-    const fallback = e instanceof ApiError && e.kind === 'network' && (await usingDefaultHost())
-      ? nextFallbackHost(base)
-      : null;
-    if (!fallback) throw e;
-    res = await attempt(fallback, path, opts);
-    // Only trust this host going forward if it actually answered for real —
-    // a fetch that "succeeds" with a blanket 404/5xx (e.g. a retired host
-    // whose routing was disabled but that still resolves and connects) must
-    // never get remembered, or every later request gets stuck failing
-    // against it for the rest of the session.
-    if (res.ok) rememberWorkingHost(fallback);
+    failure = e;
   }
+  // On the default, unconfigured host, walk the other servers when this one
+  // can't be reached at all (DNS/adblock/firewall) or is plainly down — a
+  // suspended/retired Render host still connects but answers 403/404/5xx with
+  // an HTML page instead of DealRadar JSON. Never kicks in for a base URL
+  // someone explicitly configured on the Setup screen, nor for timeouts or
+  // cancels (retrying those would only double the wait).
+  const canFail = (e: unknown) => e instanceof ApiError && e.kind === 'network';
+  if ((failure ? canFail(failure) : isDeadHost(res!)) && (await usingDefaultHost())) {
+    const tried = new Set([base.replace(/\/+$/, '')]);
+    let next = nextFallbackHost(base);
+    while (next && !tried.has(next)) {
+      tried.add(next);
+      try {
+        const r = await attempt(next, path, opts);
+        if (!isDeadHost(r)) {
+          res = r;
+          failure = null;
+          // Only trust a host that actually answered as DealRadar, or every
+          // later request gets stuck failing against it for the session.
+          rememberWorkingHost(next);
+          break;
+        }
+      } catch (e) {
+        if (!canFail(e)) {
+          failure = e;
+          break;
+        }
+      }
+      next = nextFallbackHost(next);
+    }
+  }
+  if (failure) throw failure;
+  if (!res) throw new ApiError("Couldn't reach the server. Check your connection and try again.", 0, 'network');
 
   let data: unknown = null;
   try {

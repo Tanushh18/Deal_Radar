@@ -33,8 +33,48 @@ def _beat() -> None:
     mongo_store.connect()
     mongo_store._db()[_COLL].update_one(
         {"_id": settings.self_url},
-        {"$set": {"role": settings.node_role, "url": settings.self_url, "seen_at": time.time()}},
+        {"$set": {"role": settings.node_role, "url": settings.self_url, "seen_at": time.time(),
+                  "standby": settings.is_standby}},
         upsert=True)
+
+
+def beat_now() -> None:
+    """Heartbeat immediately (after a role change), instead of waiting for the next tick."""
+    if settings.sharded and mongo_store.is_enabled() and settings.self_url:
+        _beat()
+
+
+def live_nodes() -> List[dict]:
+    """Every other server that heartbeated within ALIVE_SECONDS."""
+    mongo_store.connect()
+    cutoff = time.time() - ALIVE_SECONDS
+    rows = mongo_store._db()[_COLL].find({"seen_at": {"$gt": cutoff}})
+    me = settings.self_url.rstrip("/").lower()
+    return [r for r in rows if str(r.get("url", "")).rstrip("/").lower() != me]
+
+
+async def wait_for_standby_release(role: str, max_wait: float = 150.0) -> None:
+    """Before a returning server starts its role, wait until a standby covering it has let go.
+
+    Matters most for ingest: Telegram invalidates a session used from two places at
+    once. Our own heartbeat (already running) is what tells the standby to hand back.
+    """
+    if not (mongo_store.is_enabled() and settings.self_url) or settings.is_standby:
+        return
+    loop = asyncio.get_event_loop()
+    deadline = time.time() + max_wait
+    while time.time() < deadline:
+        try:
+            covering = [n for n in await loop.run_in_executor(None, live_nodes)
+                        if n.get("standby") and n.get("role") == role]
+        except Exception as exc:  # noqa: BLE001 — never block startup on a Mongo blip
+            log.warning("Standby check failed: %s", exc)
+            return
+        if not covering:
+            return
+        log.info("Standby %s is covering %s; waiting for it to hand back", covering[0].get("url"), role)
+        await asyncio.sleep(5)
+    log.warning("Standby did not release %s within %ss; starting anyway", role, int(max_wait))
 
 
 def _read_user_urls() -> List[str]:
@@ -85,5 +125,5 @@ def mark_failed(url: str) -> None:
 
 
 def snapshot() -> dict:
-    return {"role": settings.node_role or "auto", "self_url": settings.self_url,
+    return {"role": settings.node_role or "auto", "standby": settings.is_standby, "self_url": settings.self_url,
             "user_nodes": user_urls(), "penalised": [u for u, t in _penalty.items() if t > time.time()]}

@@ -31,7 +31,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import activity, growth, ingest, leader, live, mongo_store, nodes, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, telegram, turso_backup
+from .services import activity, growth, ingest, leader, live, mongo_store, nodes, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, standby, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -157,20 +157,36 @@ async def lifespan(app: FastAPI):
         await telegram.shutdown_all()   # let go of the Telegram session for the new leader
 
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
-    if settings.sharded:
-        log.info("Node role %s (shard %s/%s)", settings.node_role, settings.ingest_shard, settings.ingest_shards)
-        if settings.is_ingest_node:
+
+    def start_role(role: str) -> None:
+        """The background work of one role in the 3-server split."""
+        if role == "ingest":
             if settings.telegram_configured and settings.reader_session:
                 _single.append(asyncio.create_task(public_reader.bootstrap()))
             _single.append(asyncio.create_task(ingest.scheduler_loop()))
             _single.append(asyncio.create_task(live.run()))
-        elif settings.is_validator_node:
+        elif role == "validator":
             _single.append(asyncio.create_task(ingest.validator_loop()))
         else:
             _single.append(asyncio.create_task(ingest.user_loop()))
             _single.append(asyncio.create_task(notify_auto.loop()))
             _single.append(asyncio.create_task(pitara_writer.loop()))
             _single.append(asyncio.create_task(growth.loop()))
+
+    async def start_after_handoff(role: str) -> None:
+        # If the standby covered this role while we were down, let it hand back first.
+        await nodes.wait_for_standby_release(role)
+        start_role(role)
+
+    async def standby_start(role: str) -> None:
+        start_role(role)
+
+    if settings.sharded:
+        log.info("Node role %s (shard %s/%s)", settings.node_role, settings.ingest_shard, settings.ingest_shards)
+        if settings.is_standby:
+            _tasks.append(asyncio.create_task(standby.run(standby_start, lose)))
+        else:
+            _tasks.append(asyncio.create_task(start_after_handoff(settings.node_role)))
     elif settings.is_replica:
         log.info("Running as a read replica of %s — ingest, Telegram and pushes stay on the primary", settings.primary_url)
     else:

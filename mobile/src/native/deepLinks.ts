@@ -26,7 +26,14 @@ export type RouteTarget =
 // assetlinks.json and app.json's android.intentFilters — both need a native
 // build to take effect). The retired Render host is kept here too: harmless,
 // and covers anyone who taps an old share link cached from before the move.
-const LINK_HOSTS = new Set(['dealradar.ggnhome.com', 'dealradar-0oza.onrender.com']);
+const LINK_HOSTS = new Set([
+  'dealradar.tanush.qd.je',
+  'dealradar.ggnhome.com',
+  'dealradar-0oza.onrender.com',
+  'deal-radar-0q0d.onrender.com',
+  'deal-radar-dn91.onrender.com',
+  'deal-radar-jl4z.onrender.com',
+]);
 
 /** A tapped `dealradar://…` or `https://dealradar.ggnhome.com/…` link, as a RouteTarget. */
 export function parseExternalUrl(url: string | null | undefined): RouteTarget | null {

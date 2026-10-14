@@ -13,7 +13,7 @@ META_KEY = "account_app_links"
 
 def defaults() -> Dict[str, Any]:
     return {
-        "website_url": settings.public_url or "https://dealradar.ggnhome.com",
+        "website_url": settings.public_url or "https://dealradar.tanush.qd.je",
         "app_url": settings.play_store_url or (
             f"https://play.google.com/store/apps/details?id={settings.play_store_package}"
         ),

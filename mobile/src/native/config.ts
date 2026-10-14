@@ -3,14 +3,25 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Canonical API host is the user node. The other two Render services are also
-// valid API replicas and are kept in the default fallback pool below.
-export const LIVE_HOST: string = 'https://dealradar-t04t.onrender.com';
+// Canonical public address (custom domain in front of the ingest server).
+export const LIVE_HOST: string = 'https://dealradar.tanush.qd.je';
+// Every Render server serves deal browsing and forwards user writes to the
+// user server, so installs are spread across all of them (see resolveHost).
 export const SERVER_HOSTS: string[] = [
   'https://dealradar-0oza.onrender.com', // Fetcher (ingest)
-  'https://dealradar-93do.onrender.com', // Validator
-  LIVE_HOST, // User server
+  'https://deal-radar-0q0d.onrender.com', // Validator
+  'https://deal-radar-dn91.onrender.com', // User server
+  'https://deal-radar-jl4z.onrender.com', // Standby
 ];
+// Hosts that are gone for good. Dropped from the registry list and from a saved
+// manual choice, so a stale entry can never strand the app on a dead server.
+const RETIRED_HOSTS = new Set([
+  'https://dealradar.ggnhome.com',
+  'https://dealradar-93do.onrender.com',
+  'https://dealradar-t04t.onrender.com',
+]);
+const bareHost = (h: string): string => h.trim().replace(/\/+$/, '').toLowerCase();
+export const isRetiredHost = (h: string): boolean => RETIRED_HOSTS.has(bareHost(h));
 export const EMULATOR_HOST = 'http://10.0.2.2:8765';
 
 export const COLORS = {
@@ -46,7 +57,7 @@ export async function getBaseUrl(): Promise<string | null> {
     // Older builds saved the default host as if it were a manual choice, which
     // would pin the app to it and ignore the server registry. A saved default
     // is not a choice, so treat it as unset.
-    if (v.replace(/\/+$/, '') === LIVE_HOST) {
+    if (v.replace(/\/+$/, '') === LIVE_HOST || isRetiredHost(v)) {
       await AsyncStorage.removeItem(KEYS.baseUrl).catch(() => {});
       return null;
     }
@@ -66,11 +77,11 @@ export async function saveBaseUrl(url: string): Promise<string> {
  * Extra hosts worth trying, in order, if LIVE_HOST can't be reached at all —
  * some phones' DNS-level filtering or on-device ad/tracker blockers block
  * specific hostnames outright, and a second real host routes around that
- * without needing the user to do anything. Keep all three confirmed Render
- * nodes in the pool; each node serves reads and forwards user writes to the
+ * without needing the user to do anything. Keep all four Render nodes in
+ * the pool; each node serves reads and forwards user writes to the
  * configured user node. The registry may add hosts, but cannot remove these.
  */
-export const FALLBACK_HOSTS: string[] = [...SERVER_HOSTS];
+export const FALLBACK_HOSTS: string[] = [...SERVER_HOSTS, LIVE_HOST];
 
 /**
  * Replace the host list with the one from the Stashr server registry (see
@@ -80,9 +91,8 @@ export const FALLBACK_HOSTS: string[] = [...SERVER_HOSTS];
 export function applyHostList(fresh: string[]): void {
   const cleaned = fresh
     .map((h) => h.trim().replace(/\/+$/, ''))
-    .filter((h) => /^https:\/\//i.test(h));
-  if (cleaned.length === 0) return;
-  const list = [...cleaned, ...SERVER_HOSTS].filter((h, i, all) => all.indexOf(h) === i);
+    .filter((h) => /^https:\/\//i.test(h) && !isRetiredHost(h));
+  const list = [...cleaned, ...SERVER_HOSTS, LIVE_HOST].filter((h, i, all) => all.indexOf(h) === i);
   FALLBACK_HOSTS.splice(0, FALLBACK_HOSTS.length, ...list);
   if (sessionHost && !FALLBACK_HOSTS.includes(sessionHost)) sessionHost = null;
 }
@@ -104,9 +114,22 @@ export async function resolveHost(): Promise<string> {
   if (!sessionHost) {
     // Spread installs across the registry's servers: each app run sticks to one
     // random host (replicas forward writes to the primary), failing over in order.
-    sessionHost = FALLBACK_HOSTS[Math.floor(Math.random() * FALLBACK_HOSTS.length)];
+    sessionHost = hostsInRandomOrder()[0];
   }
   return sessionHost;
+}
+
+/**
+ * Every known host, starting at a random server so load is spread evenly.
+ * LIVE_HOST fronts the ingest server (already in the pool under its Render
+ * address), so it is only the last resort and never doubles that server's share.
+ */
+export function hostsInRandomOrder(): string[] {
+  const pool = FALLBACK_HOSTS.filter((h) => h !== LIVE_HOST);
+  const n = pool.length;
+  const start = Math.floor(Math.random() * n);
+  const rotated = Array.from({ length: n }, (_, i) => pool[(start + i) % n]);
+  return FALLBACK_HOSTS.includes(LIVE_HOST) ? [...rotated, LIVE_HOST] : rotated;
 }
 
 /** True only when nothing was explicitly configured — i.e. the fallback chain may apply. */
@@ -114,12 +137,13 @@ export async function usingDefaultHost(): Promise<boolean> {
   return (await getBaseUrl()) == null;
 }
 
-/** The next candidate after `failed`, or null once every fallback has been tried. */
+/** The next candidate after `failed` (wrapping round), or null if there is no other host. */
 export function nextFallbackHost(failed: string): string | null {
   const bare = failed.replace(/\/+$/, '');
   const i = FALLBACK_HOSTS.indexOf(bare);
   if (i < 0) return FALLBACK_HOSTS.find((h) => h !== bare) ?? null;
-  return i + 1 < FALLBACK_HOSTS.length ? FALLBACK_HOSTS[i + 1] : null;
+  const next = FALLBACK_HOSTS[(i + 1) % FALLBACK_HOSTS.length];
+  return next === bare ? null : next;
 }
 
 /** Call once a fallback host answers, so the rest of this session prefers it. */
