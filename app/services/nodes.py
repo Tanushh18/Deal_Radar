@@ -25,17 +25,22 @@ _COLL = "nodes"
 
 _cache: List[str] = []
 _cache_at = 0.0
+_ingest_last = 0.0       # newest ingest cycle reported by a live ingest server
 _penalty: Dict[str, float] = {}
 _rr = itertools.count()
 
 
 def _beat() -> None:
+    from . import ingest  # lazy: ingest is heavy and nodes is imported early
+
     mongo_store.connect()
-    mongo_store._db()[_COLL].update_one(
-        {"_id": settings.self_url},
-        {"$set": {"role": settings.node_role, "url": settings.self_url, "seen_at": time.time(),
-                  "standby": settings.is_standby}},
-        upsert=True)
+    doc = {"role": settings.node_role, "url": settings.self_url, "seen_at": time.time(),
+           "standby": settings.is_standby}
+    if settings.is_ingest_node:
+        # Only the ingest server knows when it last synced; share it so every
+        # node's /api/stats (served by the user server) shows the real time.
+        doc["last_ingest_at"] = ingest.state().get("last_run") or 0.0
+    mongo_store._db()[_COLL].update_one({"_id": settings.self_url}, {"$set": doc}, upsert=True)
 
 
 def beat_now() -> None:
@@ -77,23 +82,31 @@ async def wait_for_standby_release(role: str, max_wait: float = 150.0) -> None:
     log.warning("Standby did not release %s within %ss; starting anyway", role, int(max_wait))
 
 
-def _read_user_urls() -> List[str]:
+def _read_registry() -> tuple:
+    """(live user server URLs, newest ingest cycle time from a live ingest server)."""
     mongo_store.connect()
     cutoff = time.time() - ALIVE_SECONDS
-    rows = mongo_store._db()[_COLL].find({"role": "user", "seen_at": {"$gt": cutoff}})
-    return sorted(r["url"] for r in rows if r.get("url"))
+    rows = list(mongo_store._db()[_COLL].find({"seen_at": {"$gt": cutoff}}))
+    users = sorted(r["url"] for r in rows if r.get("role") == "user" and r.get("url"))
+    last = max([float(r.get("last_ingest_at") or 0) for r in rows if r.get("role") == "ingest"] or [0.0])
+    return users, last
+
+
+def ingest_last_run(local: float) -> float:
+    """This server's own last ingest cycle, or the ingest server's when this one doesn't ingest."""
+    return local or (_ingest_last if settings.sharded else 0.0)
 
 
 async def heartbeat_loop() -> None:
     """Announce this node and keep a fresh view of the user servers."""
-    global _cache, _cache_at
+    global _cache, _cache_at, _ingest_last
     if not (settings.sharded and mongo_store.is_enabled() and settings.self_url):
         return
     loop = asyncio.get_event_loop()
     while True:
         try:
             await loop.run_in_executor(None, _beat)
-            _cache = await loop.run_in_executor(None, _read_user_urls)
+            _cache, _ingest_last = await loop.run_in_executor(None, _read_registry)
             _cache_at = time.time()
         except asyncio.CancelledError:
             raise

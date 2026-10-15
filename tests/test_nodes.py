@@ -107,3 +107,12 @@ def test_forward_passes_compressed_bodies_through_untouched(monkeypatch):
         assert gzip.decompress(out.body) == b'{"hello":"world"}'
     else:
         assert out.body == b'{"hello":"world"}'
+
+
+def test_non_ingest_nodes_report_the_ingest_servers_last_sync(monkeypatch):
+    _as(monkeypatch, "user")
+    monkeypatch.setattr(nodes, "_ingest_last", 1234.0)
+    assert nodes.ingest_last_run(0.0) == 1234.0      # user server: shows ingest's time
+    assert nodes.ingest_last_run(99.0) == 99.0       # a server that synced itself keeps its own
+    _as(monkeypatch, "")                             # not split: nothing borrowed
+    assert nodes.ingest_last_run(0.0) == 0.0

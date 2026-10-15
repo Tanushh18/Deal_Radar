@@ -30,7 +30,7 @@ async def ping():
     stay cheap to poll: no dedicated endpoint, no extra load on a hot path.
     """
     ingest_state = ingest.state()
-    last_run = ingest_state.get("last_run") or None
+    last_run = nodes.ingest_last_run(ingest_state.get("last_run") or 0.0) or None
     interval = ingest.poll_interval_seconds()  # cached after the first call — see ingest.py
     return {
         "status": "ok",
@@ -91,7 +91,9 @@ async def health():
 @router.get("/stats")
 async def stats():
     data = db.stats()
-    data["ingest"] = ingest.state()
+    state = ingest.state()
+    # In the server split only the ingest server syncs; others report its last cycle.
+    data["ingest"] = {**state, "last_run": nodes.ingest_last_run(state.get("last_run") or 0.0)}
     data["poll_interval_seconds"] = ingest.poll_interval_seconds()
     data["deal_ttl_hours"] = settings.deal_ttl_hours
     return data
