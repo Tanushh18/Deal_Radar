@@ -322,7 +322,7 @@
     if (active && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = active.offsetLeft - 16;
     if (remember) { try { localStorage.setItem(TAB_KEY, name); } catch { /* storage blocked */ } }
     if (name === 'fetching' && !$('#panel').classList.contains('hidden')) loadPollInterval().catch(() => {});
-    if (name === 'overview' && !$('#panel').classList.contains('hidden')) loadGrowth().catch(() => {});
+    if (name === 'overview' && !$('#panel').classList.contains('hidden')) { loadGrowth().catch(() => {}); loadInstalls().catch(() => {}); }
     if (name === 'notifications' && !$('#panel').classList.contains('hidden')) { loadNotifyAuto().catch(() => {}); loadPitara().catch(() => {}); loadAppLinks().catch((err) => show($('#app-links-msg'), err.message, 'err')); }
   }
   $('#admin-nav').addEventListener('click', (e) => {
@@ -418,6 +418,7 @@
       await loadNotifyAuto().catch((err) => show($('#na-msg'), err.message, 'err'));
       await loadPitara().catch(() => {});
       await loadGrowth().catch(() => {});
+      await loadInstalls().catch(() => {});
       await loadSaleEvents().catch(() => {});
       $('#gate').classList.add('hidden');
       $('#panel').classList.remove('hidden');
@@ -911,6 +912,48 @@
       <td class="num">${n(r.deal_open)}</td><td class="num">${n(r.get_click)}</td><td class="num">${n(r.share)}</td>
       <td class="num">${n(r.invite)}</td></tr>`).join('')
       || '<tr><td colspan="5" class="muted">Nothing counted yet — share a link or use /get?src=… and check back.</td></tr>';
+  }
+
+  /* ---------------- App installs: totals and a per-day bar chart ---------------- */
+  function renderInstalls(g) {
+    $('#inst-missing').classList.add('hidden');
+    const n = (v) => Number(v || 0).toLocaleString('en-IN');
+    $('#inst-pill').textContent = `Last ${g.days} days`;
+    const plat = Object.entries(g.platforms || {}).map(([k, v]) => `${esc(k)} <b>${n(v)}</b>`);
+    $('#inst-totals').innerHTML = [
+      `Total installs <b>${n(g.total)}</b>`, `Today <b>${n(g.today)}</b>`, `Last 7 days <b>${n(g.last_7_days)}</b>`,
+      `Last 30 days <b>${n(g.last_30_days)}</b>`, `Opened in last 7 days <b>${n(g.active_7_days)}</b>`, ...plat,
+    ].map((x) => `<span class="stat-chip">${x}</span>`).join('');
+
+    const data = g.daily || [];
+    const max = Math.max(1, ...data.map((d) => d.installs));
+    const W = 640, H = 170, padL = 30, padB = 22, padT = 8, slot = (W - padL) / Math.max(1, data.length);
+    const bw = Math.max(2, slot * 0.7), plotH = H - padB - padT;
+    const y = (v) => padT + plotH - (v / max) * plotH;
+    const ticks = [0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i);
+    const label = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    const bars = data.map((d, i) => {
+      const x = padL + i * slot + (slot - bw) / 2, h = (d.installs / max) * plotH;
+      return `<rect x="${x.toFixed(1)}" y="${(padT + plotH - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, d.installs ? 1 : 0).toFixed(1)}"
+        rx="2" style="fill:var(--accent)"><title>${label(d.day)}: ${d.installs} install${d.installs === 1 ? '' : 's'}</title></rect>`;
+    }).join('');
+    const every = Math.ceil(data.length / 6);
+    const xLabels = data.map((d, i) => (i % every === 0 || i === data.length - 1)
+      ? `<text x="${(i === data.length - 1 ? W - 2 : padL + i * slot + slot / 2).toFixed(1)}" y="${H - 6}" text-anchor="${i === data.length - 1 ? 'end' : 'middle'}" font-size="10" style="fill:var(--text-3)">${label(d.day)}</text>` : '').join('');
+    const grid = ticks.map((v) => `<line x1="${padL}" x2="${W}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" style="stroke:var(--border)" stroke-width="1"/>
+      <text x="${padL - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end" font-size="10" style="fill:var(--text-3)">${v}</text>`).join('');
+    $('#inst-chart').innerHTML = data.some((d) => d.installs)
+      ? `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="New app installs per day" style="display:block;width:100%;height:auto;max-width:100%;stroke:none">${grid}${bars}${xLabels}</svg>`
+      : '<p class="muted">No installs recorded in this window yet.</p>';
+  }
+
+  async function loadInstalls() {
+    try {
+      renderInstalls(await api('/api/admin/reader/installs?days=30'));
+    } catch (err) {
+      if (err.status === 404) { $('#inst-missing').classList.remove('hidden'); $('#inst-pill').textContent = 'Not available'; return; }
+      throw err;
+    }
   }
 
   async function loadGrowth() {

@@ -238,6 +238,19 @@
           <span class="tile-label">Posting to Telegram</span><span class="tile-value" id="gl-tg">…</span>
           <span class="tile-help">Whether good deals are auto-posted to your own Telegram channel.</span></button>
       </div>
+      <section class="card" id="inst-card">
+        <div class="card-head">
+          <h2>App installs</h2>
+          <span class="status-pill" id="inst-pill">…</span>
+        </div>
+        <p class="muted help">New phones that opened the app for the first time, by day. This counts installs that were
+          opened at least once, so it runs a little below Play Console's download count (installs nobody opened are
+          missing), and reinstalling counts again. Website visitors are not included.</p>
+        <div class="alert alert-warn hidden" id="inst-missing" style="margin:0 0 12px">Needs the latest server update —
+          this card works once the new server is deployed.</div>
+        <div class="stat-row" id="inst-totals"></div>
+        <div id="inst-chart" style="margin-top:12px"></div>
+      </section>
       <section class="card" id="gr-card">
         <div class="card-head">
           <h2>Promotion — where visitors come from</h2>

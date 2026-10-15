@@ -292,6 +292,13 @@ async def preview_notify_auto():
     return notify_auto.preview()
 
 
+@router.get("/installs")
+async def get_installs(days: int = 30):
+    """New app installs per day and totals (from each phone's first app open)."""
+    from ..services import devices
+    return devices.install_stats(max(7, min(days, 180)))
+
+
 @router.get("/growth")
 async def get_growth(days: int = 30):
     """Promotion totals — shared links opened, get-the-app clicks, shares, invites — by source label.

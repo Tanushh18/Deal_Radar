@@ -189,6 +189,45 @@ def active_counts() -> Dict[str, Any]:
     }
 
 
+_IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def install_stats(days: int = 30, now: Optional[float] = None) -> Dict[str, Any]:
+    """App installs for the admin panel: a device counts from the first time its app opened
+    (that is when it registers), so this is "installs that were opened", not Play Store
+    downloads. Android/iOS only (the website never registers), counted from
+    ACTIVE_DEVICES_SINCE so test phones from before launch stay out. Days are IST."""
+    now = now or time.time()
+    since = settings.active_devices_since
+    rows = db.query(
+        "SELECT created_at, last_seen_at, platform FROM devices "
+        "WHERE platform IN ('android', 'ios') AND created_at >= ?", (since,))
+    today = datetime.fromtimestamp(now, _IST).date()
+    per_day = {today - timedelta(days=i): 0 for i in range(days - 1, -1, -1)}
+    platforms: Dict[str, int] = {}
+    new_7d = new_30d = active_7d = 0
+    for r in rows:
+        day = datetime.fromtimestamp(float(r["created_at"] or 0), _IST).date()
+        age = (today - day).days
+        if day in per_day:
+            per_day[day] += 1
+        new_7d += age < 7
+        new_30d += age < 30
+        active_7d += now - float(r["last_seen_at"] or 0) < 7 * 86400
+        platforms[r["platform"]] = platforms.get(r["platform"], 0) + 1
+    return {
+        "total": len(rows),
+        "today": per_day.get(today, 0),
+        "last_7_days": new_7d,
+        "last_30_days": new_30d,
+        "active_7_days": active_7d,
+        "platforms": platforms,
+        "since": since,
+        "days": days,
+        "daily": [{"day": d.isoformat(), "installs": n} for d, n in per_day.items()],
+    }
+
+
 def _all_tokens(include_smart: bool = True) -> List[str]:
     smart = "" if include_smart else " AND COALESCE(smart_schedule, 0) = 0"
     rows = db.query(f"SELECT push_token FROM devices WHERE COALESCE(push_token, '') != ''{smart}")
