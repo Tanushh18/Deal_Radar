@@ -145,8 +145,6 @@ envVarGroups:
 
       - key: FCM_SERVICE_ACCOUNT_JSON
         sync: false
-      - key: CUELINK_API
-        sync: false
       - key: GROQ_API_KEY
         sync: false
       # --- tuning ---

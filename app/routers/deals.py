@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse
 
 from .. import auth, db
 
-from ..services import affiliate, buyhatke, offers, price_store, priority, ratelimit, search, store, taxonomy, telegram
+from ..services import buyhatke, links, offers, price_store, priority, ratelimit, search, store, taxonomy, telegram
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -359,7 +359,7 @@ async def _buy_target(deal_id: str, src: str) -> str:
     deal = db.row_to_dict(row) if row else await price_store.remote_deal(deal_id)
     if not deal:
         raise HTTPException(status_code=404, detail="Deal not found.")
-    return await affiliate.buy_url(deal, src or "web")
+    return links.plain_url(deal)
 
 
 @router.get("/{deal_id}/link")
