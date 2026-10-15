@@ -13,7 +13,8 @@ import tempfile
 import time
 
 os.environ.setdefault("PRIORITY_AUDIENCE", "off")  # neutral ranking unless a test sets a rule
-os.environ.setdefault("AMAZON_SHARE", "0")  # pure score order: no Amazon-first mix
+os.environ.setdefault("AMAZON_SHARE", "0")  # pure score order: no store-first mix
+os.environ.setdefault("FLIPKART_SHARE", "0")
 os.environ.setdefault("DB_PATH", os.path.join(tempfile.mkdtemp(), "test_notifications.db"))
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 

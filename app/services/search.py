@@ -52,20 +52,27 @@ _PRIORITY_SORTS = ("relevance", "best", "newest", "discount", "price_low", "pric
 _PRIORITY_SORTS_WITH_QUERY = ("relevance", "best", "newest")
 
 
-# Default orders where Amazon cards are favoured while browsing (see _favour_amazon). An
-# explicit sort someone picked (cheapest, biggest discount, ending soon) and a typed search
+# Default orders where the stores we earn on are favoured while browsing (see _favour_stores).
+# An explicit sort someone picked (cheapest, biggest discount, ending soon) and a typed search
 # are left exactly as asked.
 _AMAZON_SORTS = ("relevance", "best", "newest", "for_you")
 
 
-def _favour_amazon(rows: List[Dict[str, Any]], key=lambda r: bool(r.get("priority"))) -> List[Dict[str, Any]]:
-    """Mix rows so about `amazon_share` of them are Amazon, each store keeping its own order.
+def _store_class(row: Dict[str, Any]) -> str:
+    store = (row.get("store") or "").lower()
+    return store if store in ("amazon", "flipkart") else "other"
 
-    Works within each run of equal `key` (pinned deals stay ahead of the rest), and
-    once one side runs out the other follows, so nothing is ever dropped.
+
+def _favour_stores(rows: List[Dict[str, Any]], key=lambda r: bool(r.get("priority"))) -> List[Dict[str, Any]]:
+    """Mix rows so Amazon and Flipkart get their configured share (the rest is other stores).
+
+    Each store keeps its own order. Works within each run of equal `key` (pinned deals stay
+    ahead of the rest). At every step the store furthest below its share goes next; a store
+    that runs out hands its place to the others, so nothing is ever dropped.
     """
-    share = settings.amazon_share
-    if share <= 0 or not rows:
+    shares = {"amazon": settings.amazon_share, "flipkart": settings.flipkart_share}
+    shares["other"] = max(0.0, 1.0 - sum(shares.values()))
+    if not rows or not (shares["amazon"] > 0 or shares["flipkart"] > 0):
         return rows
     out: List[Dict[str, Any]] = []
     i = 0
@@ -73,16 +80,16 @@ def _favour_amazon(rows: List[Dict[str, Any]], key=lambda r: bool(r.get("priorit
         j = i
         while j < len(rows) and key(rows[j]) == key(rows[i]):
             j += 1
-        run = rows[i:j]
-        amazon = [r for r in run if (r.get("store") or "").lower() == "amazon"]
-        other = [r for r in run if (r.get("store") or "").lower() != "amazon"]
-        a = o = 0
-        while a < len(amazon) and o < len(other):
-            if a < share * (a + o + 1):
-                out.append(amazon[a]); a += 1
-            else:
-                out.append(other[o]); o += 1
-        out.extend(amazon[a:]); out.extend(other[o:])
+        queues: Dict[str, List[Dict[str, Any]]] = {"amazon": [], "flipkart": [], "other": []}
+        for r in rows[i:j]:
+            queues[_store_class(r)].append(r)
+        taken = {c: 0 for c in queues}
+        for n in range(j - i):
+            live = [c for c in queues if taken[c] < len(queues[c])]
+            # Furthest behind its share first; a store with no share only fills what's left.
+            c = max(live, key=lambda c: (shares[c] > 0, shares[c] * (n + 1) - taken[c]))
+            out.append(queues[c][taken[c]])
+            taken[c] += 1
         i = j
     return out
 
@@ -507,7 +514,7 @@ def search(
 
     if sort in _AMAZON_SORTS and not store and not plan.tokens:
         # Browsing only: a typed search keeps its best match first, whatever the store.
-        rows = _favour_amazon(rows)
+        rows = _favour_stores(rows)
 
     categories = _counts(rows, "category", "name")
     if category:
@@ -518,8 +525,9 @@ def search(
     total = len(rows)
     page = _load(rows[offset: offset + limit])
     shaped = [shape(d) for d in page]
-    # Last line of defence: never return a card whose link is still someone's tracker.
-    shaped = [d for d in shaped if not links.is_tracker(d.get("url") or "")]
+    # Last line of defence: never return a card whose link is still someone's tracker. Judged on
+    # the plain store link, as Buy may now deliberately go through our own EarnKaro tracker.
+    shaped = [d for d in shaped if not links.is_tracker(d.get("store_url") or d.get("url") or "")]
     return {
         "total": total,
         "count": len(shaped),
@@ -569,7 +577,7 @@ def price_history_url(deal: Dict[str, Any]) -> str:
 
 
 def _buy_link(deal: Dict[str, Any]) -> str:
-    """Buy link for clients: the plain store link, with our Amazon Associates tag on Amazon."""
+    """Buy link for clients: the plain store link, tagged for Amazon and routed via EarnKaro for Flipkart."""
     return links.buy_url(deal)
 
 
@@ -581,6 +589,7 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
     if price and mrp and mrp > price:
         saving = round(mrp - price)
     buy, plain = _buy_link(deal), links.plain_url(deal)
+    amazon_tagged = links.with_amazon_tag(plain) != plain
     return {
         "id": deal.get("id"),
         "title": deal.get("title"),
@@ -593,7 +602,7 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
         "url": buy,   # what every client opens on Buy
         "store_url": plain,   # the store's own link — no tags at all
         # Buy carries our Amazon Associates tag: clients show the Amazon disclosure line.
-        "amazon_associate": buy != plain,
+        "amazon_associate": amazon_tagged,
         "buy_path": f"/api/deals/{deal.get('id')}/go",
         "image_url": deal.get("image_url"),
         "coupon": deal.get("coupon"),
@@ -670,5 +679,5 @@ def trending(channel_ids: Optional[List[int]] = None, limit: int = 12,
     rules = priority.interest_rules(interests) if interests is not None else None
     if interests is not None:  # the visitor's own picks lead (stable), not the admin's
         rows.sort(key=lambda d: not priority.matches_any(d, rules))
-    rows = _favour_amazon(rows, key=lambda d: priority.matches_any(d, rules))
+    rows = _favour_stores(rows, key=lambda d: priority.matches_any(d, rules))
     return [shape(d) for d in rows[:limit]]

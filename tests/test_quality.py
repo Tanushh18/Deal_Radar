@@ -12,6 +12,8 @@ import tempfile
 import time
 
 os.environ["PRIORITY_AUDIENCE"] = "women"
+os.environ.setdefault("AMAZON_SHARE", "0")  # pure score order: no store-first mix
+os.environ.setdefault("FLIPKART_SHARE", "0")
 os.environ["DB_PATH"] = os.path.join(tempfile.mkdtemp(), "test.db")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -48,19 +50,19 @@ KEEP = [
 DROP = {
     "Myntra : Upto 70% Off On Top Branded Shoes @299\nhttps://myntr.in/x": "roundup",
     "AJIO : T-shirts Starts @80.\nhttps://ajiio.co/x": "roundup",
-    "Handbags from at 132\nhttps://fkrt.cc/x": "roundup",
-    "Loot: Spykar & Pepe Jeans Under @799\nhttps://fkrt.cc/y": "roundup",
     "New Big Loot : Refer 6 Friends Get ₹25,000 Amazon Voucher\nhttps://bilty.co/z": "promo",
     "Swiggy Dineout Offer : CCD Coffee @ ₹49.\nhttps://swiggy.com/x": "promo",
     "Biggest Pre Sale Is Going To Live Today At Midnight @ ₹99\nhttps://amzn.to/p": "promo",
-    "Buy Max @ ₹82\nhttps://dl.flipkart.com/x": "vague",
     "Wooden handcrafted temple guys\nhttps://bilty.co/w": "no_price",
     "Boat Airdopes 141 @ ₹899\nhttps://t.me/somechannel": "no_link",
-    ("Kitchen deals\nBoat Airdopes 141 @ ₹899\nhttps://fkrt.cc/a\nhttps://fkrt.cc/b\nhttps://fkrt.cc/c"): "roundup",
+    ("Kitchen deals\nBoat Airdopes 141 @ ₹899\nhttps://ajiio.co/a\nhttps://ajiio.co/b\nhttps://ajiio.co/c"): "roundup",
 }
-# Amazon posts the text gate would call vague / a round-up: let through to the full gate,
-# which keeps them only if the link opens one Amazon product page.
+# Amazon / Flipkart posts the text gate would call vague / a round-up: let through to the full
+# gate, which keeps them only if the link opens one product page there.
 AMAZON_DEFERRED = {
+    "Handbags from at 132\nhttps://fkrt.cc/x": "roundup",
+    "Loot: Spykar & Pepe Jeans Under @799\nhttps://fkrt.cc/y": "roundup",
+    "Buy Max @ ₹82\nhttps://dl.flipkart.com/x": "vague",
     "Apply 12000 Coupon @ ₹1998\nhttps://amzn.to/q": "vague",
     ("Kitchen deals\nBoat Airdopes 141 @ ₹899\nhttps://amzn.to/a\nhttps://amzn.to/b\nhttps://fkrt.cc/c"): "roundup",
 }
@@ -121,11 +123,13 @@ def main() -> int:
     check("photo-less repost still counts as corroboration", store.save_deal(messy, gate=gate) == "merged")
     row = db.query_one("SELECT repost_count, image_url FROM deals WHERE id = ?", (first["id"],))
     check("repost count went up", row["repost_count"] == 2, str(row["repost_count"]))
-    noise = post("Buy Max @ ₹82\nhttps://www.flipkart.com/x/p/itmNOISE001", 12, 300)
+    noise = post("Buy Max @ ₹82\nhttps://www.myntra.com/kurtas/anouk/x/12345678/buy", 12, 300)
     check("noise never becomes a card", store.save_deal(noise, gate=gate) == "filtered")
     check("…and isn't stored at all", db.query_one("SELECT 1 FROM deals WHERE id = ?", (noise["id"],)) is None)
     lenient = post("Buy Max @ ₹82\nhttps://www.amazon.in/dp/B0NOISE001", 13, 301)
     check("the same wording linking one Amazon product is kept", store.save_deal(lenient, gate=gate) == "new")
+    lenient_fk = post("Buy Max @ ₹82\nhttps://www.flipkart.com/x/p/itmNOISE002?pid=NOISE002", 14, 302)
+    check("…and one Flipkart product", store.save_deal(lenient_fk, gate=gate) == "new")
 
     print("\n=== 4. PHOTOS FROM REPOSTS ===")
     bare = post("Prestige Omega Granite Kadai 240mm @ ₹749\nhttps://www.amazon.in/dp/B08XYZ1234", 20, 1, photo=False)

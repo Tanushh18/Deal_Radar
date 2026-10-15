@@ -100,12 +100,13 @@ def _shop_links(text: str) -> List[str]:
     return [u for u in urls if not links.is_social(u)]
 
 
-# Amazon is the store we earn on, so its posts get the benefit of the doubt: a post whose
-# link opens one Amazon product page is kept even when its wording reads like a round-up
-# ("Upto 70% off", "starting @99", 3+ links) or is too short to name the product — the
-# link itself names it. Promos, posts with no price and links to search/sale pages are
+# Amazon and Flipkart are the stores we earn on, so their posts get the benefit of the doubt:
+# a post whose link opens one product page there is kept even when its wording reads like a
+# round-up ("Upto 70% off", "starting @99", 3+ links) or is too short to name the product —
+# the link itself names it. Promos, posts with no price and links to search/sale pages are
 # still turned away: those can't make a working card.
 _AMAZON_LENIENT = {"roundup", "vague"}
+_EARNING_STORES = ("amazon", "flipkart")
 
 
 def _post_reason(deal: Dict[str, Any]) -> Optional[str]:
@@ -129,14 +130,14 @@ def _post_reason(deal: Dict[str, Any]) -> Optional[str]:
 
 
 def _links_to_amazon(deal: Dict[str, Any]) -> bool:
-    """The post's link goes to Amazon (before short links are opened)."""
-    return any(u and parser.detect_store(u) == "amazon" for u in (deal.get("resolved_url"), deal.get("url")))
+    """The post's link goes to Amazon or Flipkart (before short links are opened)."""
+    return any(u and parser.detect_store(u) in _EARNING_STORES for u in (deal.get("resolved_url"), deal.get("url")))
 
 
 def _amazon_product(deal: Dict[str, Any]) -> bool:
-    """The link, once opened, is one Amazon product page."""
+    """The link, once opened, is one Amazon or Flipkart product page."""
     destination = deal.get("resolved_url") or deal.get("url") or ""
-    return parser.detect_store(destination) == "amazon" and links.is_product_page(destination) is True
+    return parser.detect_store(destination) in _EARNING_STORES and links.is_product_page(destination) is True
 
 
 def text_reason(deal: Dict[str, Any]) -> Optional[str]:

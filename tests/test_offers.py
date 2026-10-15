@@ -120,7 +120,7 @@ def main() -> int:
             check("Amazon and Flipkart search links always follow (our tag on Amazon only)",
                   [(o["store"], o["url"]) for o in mp] == [
                       ("amazon", f"https://www.amazon.in/s?k=running+shoes&tag={settings.amazon_tag}"),
-                      ("flipkart", "https://www.flipkart.com/search?q=running+shoes")]
+                      ("flipkart", links.with_affiliate("https://www.flipkart.com/search?q=running+shoes"))]
                   and all(o["marketplace"] for o in mp), str(mp))
             check("promos/vouchers (non-spam) are kept for search",
                   offers.keep({"title": "Swiggy Dineout 50% Offer", "url": "https://x.in/a"}, "promo")

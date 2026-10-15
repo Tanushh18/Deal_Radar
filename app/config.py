@@ -125,9 +125,16 @@ class Settings:
         # Amazon Associates store ID, added as ?tag= to Amazon (amazon.in) Buy links only.
         # Set AMAZON_TAG to an empty value to turn it off.
         self.amazon_tag: str = os.getenv("AMAZON_TAG", "dealradar067-21").strip()
-        # Share of Amazon cards in the default lists (best / newest / for you / relevance,
-        # trending): 0.8 = about 4 in every 5. Other stores still show, just less. 0 = off.
-        self.amazon_share: float = min(1.0, max(0.0, float(os.getenv("AMAZON_SHARE", "0.8") or 0)))
+        # EarnKaro: Flipkart Buy links go through EarnKaro's tracker with our publisher ID so
+        # commission is credited to us. EARNKARO_ID empty = Flipkart links stay plain.
+        # The retailer number is EarnKaro's own ID for Flipkart.
+        self.earnkaro_id: str = os.getenv("EARNKARO_ID", "5701797").strip()
+        self.earnkaro_flipkart_retailer: str = os.getenv("EARNKARO_FLIPKART_RETAILER", "2276").strip()
+        # Mix of the two stores we earn on in the default lists (best / newest / for you /
+        # relevance with no search, trending): 0.6 / 0.3 = about 6 Amazon and 3 Flipkart in every
+        # 10 cards, the other stores filling the rest. Both 0 = no mixing.
+        self.amazon_share: float = min(1.0, max(0.0, float(os.getenv("AMAZON_SHARE", "0.6") or 0)))
+        self.flipkart_share: float = min(1.0, max(0.0, float(os.getenv("FLIPKART_SHARE", "0.3") or 0)))
 
         # --- Load distribution ---
         # ROLE=primary (default) runs everything: ingest, Telegram, pushes.

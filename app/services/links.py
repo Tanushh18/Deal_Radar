@@ -21,7 +21,7 @@ import re
 from collections import OrderedDict
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
-from urllib.parse import parse_qs, quote_plus, unquote, urlencode, urljoin, urlparse, urlunparse
+from urllib.parse import parse_qs, quote, quote_plus, unquote, urlencode, urljoin, urlparse, urlunparse
 
 import httpx
 
@@ -136,9 +136,27 @@ def with_amazon_tag(url: str) -> str:
     return urlunparse(parts._replace(query=urlencode(query)))
 
 
+def with_flipkart_affiliate(url: str) -> str:
+    """A flipkart.com link sent through EarnKaro's tracker with our publisher ID; others unchanged.
+
+    The tracker opens the same Flipkart page, with Flipkart's own affiliate parameters added so
+    the sale is credited to the EarnKaro account (`id`). Needs the plain link, not an already
+    wrapped one.
+    """
+    pid, retailer = settings.earnkaro_id, settings.earnkaro_flipkart_retailer
+    if not (pid and retailer and url) or not _on(_host(url), ("flipkart.com",)):
+        return url
+    return f"https://trackingv3.linkredirect.in/visitretailer/{retailer}?id={quote(pid, safe='')}&dl={quote(url, safe='')}"
+
+
+def with_affiliate(url: str) -> str:
+    """The plain store link with our affiliate tag/tracker for the store, if we earn on it."""
+    return with_flipkart_affiliate(with_amazon_tag(url))
+
+
 def buy_url(deal: Dict[str, Any]) -> str:
-    """Where Buy sends the shopper: the plain store link, with our Amazon tag on Amazon."""
-    return with_amazon_tag(plain_url(deal))
+    """Where Buy sends the shopper: the plain store link, tagged for Amazon and Flipkart."""
+    return with_affiliate(plain_url(deal))
 
 
 _LEAD_OFF_RE = re.compile(r"^[\W_]*\d{1,2}\s*%\s*(?:off)?\s*[:\-–|]*\s*", re.IGNORECASE)
