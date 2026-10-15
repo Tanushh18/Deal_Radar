@@ -2,16 +2,20 @@
 from __future__ import annotations
 
 import io
+import logging
 import time
 from collections import OrderedDict
 from typing import Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
 
 from .. import auth, db
+from ..config import settings
+from ..services import buyhatke, links, nodes, offers, price_store, priority, ratelimit, search, store, taxonomy, telegram
 
-from ..services import buyhatke, links, offers, price_store, priority, ratelimit, search, store, taxonomy, telegram
+log = logging.getLogger("dealradar.deals")
 
 router = APIRouter(prefix="/api/deals", tags=["deals"])
 
@@ -292,6 +296,37 @@ async def deal_history(deal_id: str):
     }
 
 
+def _remember_image(deal_id: str, data: bytes) -> None:
+    _image_cache[deal_id] = data
+    while len(_image_cache) > _IMAGE_CACHE_MAX:
+        _image_cache.popitem(last=False)
+
+
+_image_http: Optional[httpx.AsyncClient] = None
+
+
+async def _image_from_ingest(deal_id: str, request: Request) -> Optional[bytes]:
+    """The photo as served by an ingest server, or None if none could give it."""
+    global _image_http
+    if _image_http is None:
+        _image_http = httpx.AsyncClient(timeout=20.0)
+    # Pass the shopper's address on, so the ingest server rate-limits them, not us.
+    client_ip = request.headers.get("x-forwarded-for") or (request.client.host if request.client else "")
+    for base in nodes.ingest_urls()[:2]:
+        try:
+            resp = await _image_http.get(f"{base}/api/deals/{deal_id}/image",
+                                         params=dict(request.query_params),
+                                         headers={"x-forwarded-for": client_ip})
+        except httpx.HTTPError as exc:
+            log.warning("Image fetch from %s failed: %s", base, exc)
+            continue
+        if resp.status_code == 200 and resp.headers.get("content-type", "").startswith("image/"):
+            return resp.content
+        if resp.status_code == 404 and "json" in resp.headers.get("content-type", ""):
+            return None   # the ingest server answered: there is no photo
+    return None
+
+
 @router.get("/{deal_id}/image")
 async def deal_image(deal_id: str, request: Request):
     """Proxy the original Telegram photo, cached in memory.
@@ -307,6 +342,15 @@ async def deal_image(deal_id: str, request: Request):
     # Only the cache-miss path spends a real Telegram API call, so only it
     # needs throttling — a popular cached image shouldn't count against it.
     await _limit_image(request)
+
+    if settings.sharded and not settings.is_ingest_node:
+        # No Telegram on this server: fetch the photo from the ingest server.
+        data = await _image_from_ingest(deal_id, request)
+        if not data:
+            raise HTTPException(status_code=404, detail="Image unavailable.")
+        _remember_image(deal_id, data)
+        return Response(content=data, media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=86400"})
 
     row = db.query_one("SELECT channel_id, message_id, image_url FROM deals WHERE id = ?", (deal_id,))
     if not row or not row["image_url"]:
@@ -346,10 +390,7 @@ async def deal_image(deal_id: str, request: Request):
     if not data:
         raise HTTPException(status_code=404, detail="Image unavailable.")
 
-    _image_cache[deal_id] = data
-    while len(_image_cache) > _IMAGE_CACHE_MAX:
-        _image_cache.popitem(last=False)
-
+    _remember_image(deal_id, data)
     return Response(content=data, media_type="image/jpeg",
                     headers={"Cache-Control": "public, max-age=86400"})
 

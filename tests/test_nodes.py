@@ -116,3 +116,35 @@ def test_non_ingest_nodes_report_the_ingest_servers_last_sync(monkeypatch):
     assert nodes.ingest_last_run(99.0) == 99.0       # a server that synced itself keeps its own
     _as(monkeypatch, "")                             # not split: nothing borrowed
     assert nodes.ingest_last_run(0.0) == 0.0
+
+
+def test_ingest_urls_registry_first_then_public_domain_never_self(monkeypatch):
+    _as(monkeypatch, "user", self_url="https://me.example")
+    monkeypatch.setattr(settings, "public_url", "https://deals.example")
+    monkeypatch.setattr(nodes, "_ingest_urls", ["https://ing.example", "https://me.example"])
+    assert nodes.ingest_urls() == ["https://ing.example", "https://deals.example"]
+    monkeypatch.setattr(nodes, "_ingest_urls", [])
+    assert nodes.ingest_urls() == ["https://deals.example"]
+
+
+def test_image_on_a_non_ingest_node_comes_from_the_ingest_server(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.routers import deals
+
+    _as(monkeypatch, "user")
+    monkeypatch.setattr(nodes, "_ingest_urls", ["https://ing.example"])
+    monkeypatch.setattr(settings, "public_url", "")
+    seen = {}
+
+    def handler(req):
+        seen["url"], seen["xff"] = str(req.url), req.headers.get("x-forwarded-for")
+        return httpx.Response(200, content=b"JPEG", headers={"content-type": "image/jpeg"})
+
+    monkeypatch.setattr(deals, "_image_http", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(deals, "_image_cache", type(deals._image_cache)())
+    with TestClient(app) as c:
+        r = c.get("/api/deals/abc/image?src=1:2", headers={"x-forwarded-for": "9.9.9.9"})
+    assert r.status_code == 200 and r.content == b"JPEG"
+    assert seen["url"] == "https://ing.example/api/deals/abc/image?src=1%3A2"
+    assert seen["xff"] == "9.9.9.9"

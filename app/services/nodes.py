@@ -26,6 +26,7 @@ _COLL = "nodes"
 _cache: List[str] = []
 _cache_at = 0.0
 _ingest_last = 0.0       # newest ingest cycle reported by a live ingest server
+_ingest_urls: List[str] = []   # live ingest servers (the only ones that can reach Telegram)
 _penalty: Dict[str, float] = {}
 _rr = itertools.count()
 
@@ -83,13 +84,24 @@ async def wait_for_standby_release(role: str, max_wait: float = 150.0) -> None:
 
 
 def _read_registry() -> tuple:
-    """(live user server URLs, newest ingest cycle time from a live ingest server)."""
+    """(live user server URLs, newest ingest cycle time, live ingest server URLs)."""
     mongo_store.connect()
     cutoff = time.time() - ALIVE_SECONDS
     rows = list(mongo_store._db()[_COLL].find({"seen_at": {"$gt": cutoff}}))
     users = sorted(r["url"] for r in rows if r.get("role") == "user" and r.get("url"))
-    last = max([float(r.get("last_ingest_at") or 0) for r in rows if r.get("role") == "ingest"] or [0.0])
-    return users, last
+    ingest_rows = [r for r in rows if r.get("role") == "ingest"]
+    last = max([float(r.get("last_ingest_at") or 0) for r in ingest_rows] or [0.0])
+    return users, last, sorted(r["url"] for r in ingest_rows if r.get("url"))
+
+
+def ingest_urls() -> List[str]:
+    """Servers that can fetch from Telegram: live ingest servers, then the public domain
+    (which fronts the ingest server) as the static fallback. Never this server itself."""
+    me = settings.self_url.rstrip("/").lower()
+    urls = list(_ingest_urls)
+    if settings.public_url:
+        urls.append(settings.public_url.rstrip("/"))
+    return [u for i, u in enumerate(urls) if u.rstrip("/").lower() != me and u not in urls[:i]]
 
 
 def ingest_last_run(local: float) -> float:
@@ -99,14 +111,14 @@ def ingest_last_run(local: float) -> float:
 
 async def heartbeat_loop() -> None:
     """Announce this node and keep a fresh view of the user servers."""
-    global _cache, _cache_at, _ingest_last
+    global _cache, _cache_at, _ingest_last, _ingest_urls
     if not (settings.sharded and mongo_store.is_enabled() and settings.self_url):
         return
     loop = asyncio.get_event_loop()
     while True:
         try:
             await loop.run_in_executor(None, _beat)
-            _cache, _ingest_last = await loop.run_in_executor(None, _read_registry)
+            _cache, _ingest_last, _ingest_urls = await loop.run_in_executor(None, _read_registry)
             _cache_at = time.time()
         except asyncio.CancelledError:
             raise
