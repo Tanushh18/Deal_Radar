@@ -23,6 +23,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import OSA
 
 from .. import db
+from ..config import settings
 from . import links, taxonomy
 
 SORTS = {
@@ -49,6 +50,41 @@ _CANDIDATE_CAP = 5000
 _PRIORITY_SORTS = ("relevance", "best", "newest", "discount", "price_low", "price_high", "ending", "for_you")
 # With a typed query, an explicit sort (cheapest first…) is exactly what was asked for.
 _PRIORITY_SORTS_WITH_QUERY = ("relevance", "best", "newest")
+
+
+# Default orders where Amazon cards are favoured while browsing (see _favour_amazon). An
+# explicit sort someone picked (cheapest, biggest discount, ending soon) and a typed search
+# are left exactly as asked.
+_AMAZON_SORTS = ("relevance", "best", "newest", "for_you")
+
+
+def _favour_amazon(rows: List[Dict[str, Any]], key=lambda r: bool(r.get("priority"))) -> List[Dict[str, Any]]:
+    """Mix rows so about `amazon_share` of them are Amazon, each store keeping its own order.
+
+    Works within each run of equal `key` (pinned deals stay ahead of the rest), and
+    once one side runs out the other follows, so nothing is ever dropped.
+    """
+    share = settings.amazon_share
+    if share <= 0 or not rows:
+        return rows
+    out: List[Dict[str, Any]] = []
+    i = 0
+    while i < len(rows):
+        j = i
+        while j < len(rows) and key(rows[j]) == key(rows[i]):
+            j += 1
+        run = rows[i:j]
+        amazon = [r for r in run if (r.get("store") or "").lower() == "amazon"]
+        other = [r for r in run if (r.get("store") or "").lower() != "amazon"]
+        a = o = 0
+        while a < len(amazon) and o < len(other):
+            if a < share * (a + o + 1):
+                out.append(amazon[a]); a += 1
+            else:
+                out.append(other[o]); o += 1
+        out.extend(amazon[a:]); out.extend(other[o:])
+        i = j
+    return out
 
 
 def _priority_sql() -> str:
@@ -469,6 +505,10 @@ def search(
         if not (q or "").strip():
             rows.sort(key=lambda r: not r.get("priority"))  # stable: follow order kept within each group
 
+    if sort in _AMAZON_SORTS and not store and not plan.tokens:
+        # Browsing only: a typed search keeps its best match first, whatever the store.
+        rows = _favour_amazon(rows)
+
     categories = _counts(rows, "category", "name")
     if category:
         rows = [d for d in rows if d.get("category") == category]
@@ -626,8 +666,9 @@ def trending(channel_ids: Optional[List[int]] = None, limit: int = 12,
         f"ORDER BY {_priority_sql()} DESC, repost_count DESC, score DESC LIMIT ?",
         params + [limit * 3],
     ))
+    from . import priority
+    rules = priority.interest_rules(interests) if interests is not None else None
     if interests is not None:  # the visitor's own picks lead (stable), not the admin's
-        from . import priority
-        rules = priority.interest_rules(interests)
         rows.sort(key=lambda d: not priority.matches_any(d, rules))
+    rows = _favour_amazon(rows, key=lambda d: priority.matches_any(d, rules))
     return [shape(d) for d in rows[:limit]]

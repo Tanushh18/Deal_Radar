@@ -100,8 +100,16 @@ def _shop_links(text: str) -> List[str]:
     return [u for u in urls if not links.is_social(u)]
 
 
-def text_reason(deal: Dict[str, Any]) -> Optional[str]:
-    """Why the post itself isn't a single product deal, or None."""
+# Amazon is the store we earn on, so its posts get the benefit of the doubt: a post whose
+# link opens one Amazon product page is kept even when its wording reads like a round-up
+# ("Upto 70% off", "starting @99", 3+ links) or is too short to name the product — the
+# link itself names it. Promos, posts with no price and links to search/sale pages are
+# still turned away: those can't make a working card.
+_AMAZON_LENIENT = {"roundup", "vague"}
+
+
+def _post_reason(deal: Dict[str, Any]) -> Optional[str]:
+    """Why the post's text isn't a single product deal, or None (no store leniency)."""
     title, text = _title(deal), _text(deal)
     if _PROMO_TEXT_RE.search(text) or _PROMO_TITLE_RE.search(title):
         return "promo"
@@ -120,10 +128,34 @@ def text_reason(deal: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def _links_to_amazon(deal: Dict[str, Any]) -> bool:
+    """The post's link goes to Amazon (before short links are opened)."""
+    return any(u and parser.detect_store(u) == "amazon" for u in (deal.get("resolved_url"), deal.get("url")))
+
+
+def _amazon_product(deal: Dict[str, Any]) -> bool:
+    """The link, once opened, is one Amazon product page."""
+    destination = deal.get("resolved_url") or deal.get("url") or ""
+    return parser.detect_store(destination) == "amazon" and links.is_product_page(destination) is True
+
+
+def text_reason(deal: Dict[str, Any]) -> Optional[str]:
+    """Why the post itself isn't a single product deal, or None.
+
+    Cheap pre-check before any network work. An Amazon post it would only call a
+    round-up or vague is let through to reject_reason, which decides once the link
+    has been opened.
+    """
+    reason = _post_reason(deal)
+    if reason in _AMAZON_LENIENT and _links_to_amazon(deal):
+        return None
+    return reason
+
+
 def reject_reason(deal: Dict[str, Any]) -> Optional[str]:
     """The full gate for a new card: text, where the link leads, and a photo."""
-    reason = text_reason(deal)
-    if reason:
+    reason = _post_reason(deal)
+    if reason and not (reason in _AMAZON_LENIENT and _amazon_product(deal)):
         return reason
     destination = deal.get("resolved_url") or deal.get("url") or ""
     if links.is_product_page(destination) is False:

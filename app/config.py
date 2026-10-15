@@ -125,6 +125,9 @@ class Settings:
         # Amazon Associates store ID, added as ?tag= to Amazon (amazon.in) Buy links only.
         # Set AMAZON_TAG to an empty value to turn it off.
         self.amazon_tag: str = os.getenv("AMAZON_TAG", "dealradar067-21").strip()
+        # Share of Amazon cards in the default lists (best / newest / for you / relevance,
+        # trending): 0.8 = about 4 in every 5. Other stores still show, just less. 0 = off.
+        self.amazon_share: float = min(1.0, max(0.0, float(os.getenv("AMAZON_SHARE", "0.8") or 0)))
 
         # --- Load distribution ---
         # ROLE=primary (default) runs everything: ingest, Telegram, pushes.

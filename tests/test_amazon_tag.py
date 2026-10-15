@@ -22,3 +22,43 @@ def test_cards_flag_amazon_deals_for_the_disclosure(monkeypatch):
     assert amazon["amazon_associate"] is True
     flipkart = search.shape({"id": "f", "url": "https://www.flipkart.com/p/itm1", "store": "flipkart"})
     assert flipkart["url"] == flipkart["store_url"] and flipkart["amazon_associate"] is False
+
+
+def _rows(stores, pinned=()):
+    return [{"id": f"{s}{i}", "store": s, "priority": i in pinned} for i, s in enumerate(stores)]
+
+
+def test_lists_are_mostly_amazon_without_dropping_others(monkeypatch):
+    monkeypatch.setattr(settings, "amazon_share", 0.8)
+    rows = _rows(["flipkart"] * 5 + ["amazon"] * 20)
+    out = search._favour_amazon(rows)
+    assert sorted(r["id"] for r in out) == sorted(r["id"] for r in rows)
+    assert [r["store"] for r in out[:10]].count("amazon") == 8
+    # each store keeps its own order
+    assert [r["id"] for r in out if r["store"] == "flipkart"] == [f"flipkart{i}" for i in range(5)]
+
+
+def test_pinned_deals_stay_first_and_off_switch(monkeypatch):
+    monkeypatch.setattr(settings, "amazon_share", 0.8)
+    rows = _rows(["myntra", "amazon", "amazon"], pinned=(0,))
+    assert search._favour_amazon(rows)[0]["id"] == "myntra0"
+    monkeypatch.setattr(settings, "amazon_share", 0.0)
+    rows = _rows(["flipkart", "amazon"])
+    assert search._favour_amazon(rows) == rows
+
+
+def test_amazon_product_posts_are_kept_when_wording_looks_like_a_roundup():
+    from app.services import quality
+    base = {"price": 499, "image_url": "https://img.example/a.jpg"}
+    amazon = {**base, "title": "Upto 70% off Shoes", "raw_text": "Upto 70% off Shoes https://www.amazon.in/dp/B0ABCDEFGH",
+              "url": "https://www.amazon.in/dp/B0ABCDEFGH"}
+    assert quality.text_reason(amazon) is None and quality.reject_reason(amazon) is None
+    flipkart = {**base, "title": "Upto 70% off Shoes", "raw_text": "Upto 70% off Shoes https://www.flipkart.com/x/p/itm123",
+                "url": "https://www.flipkart.com/x/p/itm123"}
+    assert quality.reject_reason(flipkart) == "roundup"
+    # still turned away on Amazon: a search page, a promo, no price
+    search_page = {**amazon, "url": "https://www.amazon.in/s?k=shoes",
+                   "raw_text": "Upto 70% off Shoes https://www.amazon.in/s?k=shoes"}
+    assert quality.reject_reason(search_page) == "roundup"
+    assert quality.reject_reason({**amazon, "title": "Amazon Pay Gift Card Voucher"}) == "promo"
+    assert quality.reject_reason({**amazon, "price": None}) == "no_price"

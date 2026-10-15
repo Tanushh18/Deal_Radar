@@ -54,9 +54,14 @@ DROP = {
     "Swiggy Dineout Offer : CCD Coffee @ ₹49.\nhttps://swiggy.com/x": "promo",
     "Biggest Pre Sale Is Going To Live Today At Midnight @ ₹99\nhttps://amzn.to/p": "promo",
     "Buy Max @ ₹82\nhttps://dl.flipkart.com/x": "vague",
-    "Apply 12000 Coupon @ ₹1998\nhttps://amzn.to/q": "vague",
     "Wooden handcrafted temple guys\nhttps://bilty.co/w": "no_price",
     "Boat Airdopes 141 @ ₹899\nhttps://t.me/somechannel": "no_link",
+    ("Kitchen deals\nBoat Airdopes 141 @ ₹899\nhttps://fkrt.cc/a\nhttps://fkrt.cc/b\nhttps://fkrt.cc/c"): "roundup",
+}
+# Amazon posts the text gate would call vague / a round-up: let through to the full gate,
+# which keeps them only if the link opens one Amazon product page.
+AMAZON_DEFERRED = {
+    "Apply 12000 Coupon @ ₹1998\nhttps://amzn.to/q": "vague",
     ("Kitchen deals\nBoat Airdopes 141 @ ₹899\nhttps://amzn.to/a\nhttps://amzn.to/b\nhttps://fkrt.cc/c"): "roundup",
 }
 
@@ -73,6 +78,13 @@ def main() -> int:
         deal = parser.parse_message(text, channel_id=1, channel_title="c", message_id=1, posted_at=time.time())
         reason = quality.text_reason(deal) if deal else "unparsed"
         check(f"drops ({expected}): {text.splitlines()[0][:50]}", reason in (expected, "unparsed"), str(reason))
+    for text, expected in AMAZON_DEFERRED.items():
+        deal = parser.parse_message(text, channel_id=1, channel_title="c", message_id=1, posted_at=time.time())
+        check(f"amazon deferred: {text.splitlines()[0][:45]}", quality.text_reason(deal) is None,
+              str(quality.text_reason(deal)))
+        deal["image_url"] = "https://img.example/x.jpg"
+        check(f"…still dropped ({expected}) when the link isn't a product page",
+              quality.reject_reason(deal) == expected, str(quality.reject_reason(deal)))
 
     print("\n=== 2. WHERE THE LINK LEADS ===")
     check("product page recognised (amazon /dp/)", links.is_product_page("https://www.amazon.in/dp/B0DPL9C4FS") is True)
@@ -109,9 +121,11 @@ def main() -> int:
     check("photo-less repost still counts as corroboration", store.save_deal(messy, gate=gate) == "merged")
     row = db.query_one("SELECT repost_count, image_url FROM deals WHERE id = ?", (first["id"],))
     check("repost count went up", row["repost_count"] == 2, str(row["repost_count"]))
-    noise = post("Buy Max @ ₹82\nhttps://www.amazon.in/dp/B0NOISE001", 12, 300)
+    noise = post("Buy Max @ ₹82\nhttps://www.flipkart.com/x/p/itmNOISE001", 12, 300)
     check("noise never becomes a card", store.save_deal(noise, gate=gate) == "filtered")
     check("…and isn't stored at all", db.query_one("SELECT 1 FROM deals WHERE id = ?", (noise["id"],)) is None)
+    lenient = post("Buy Max @ ₹82\nhttps://www.amazon.in/dp/B0NOISE001", 13, 301)
+    check("the same wording linking one Amazon product is kept", store.save_deal(lenient, gate=gate) == "new")
 
     print("\n=== 4. PHOTOS FROM REPOSTS ===")
     bare = post("Prestige Omega Granite Kadai 240mm @ ₹749\nhttps://www.amazon.in/dp/B08XYZ1234", 20, 1, photo=False)
