@@ -131,10 +131,12 @@ class Settings:
         self.earnkaro_id: str = os.getenv("EARNKARO_ID", "5701797").strip()
         self.earnkaro_flipkart_retailer: str = os.getenv("EARNKARO_FLIPKART_RETAILER", "2276").strip()
         # Mix of the two stores we earn on in the default lists (best / newest / for you /
-        # relevance with no search, trending): 0.6 / 0.3 = about 6 Amazon and 3 Flipkart in every
-        # 10 cards, the other stores filling the rest. Both 0 = no mixing.
-        self.amazon_share: float = min(1.0, max(0.0, float(os.getenv("AMAZON_SHARE", "0.6") or 0)))
-        self.flipkart_share: float = min(1.0, max(0.0, float(os.getenv("FLIPKART_SHARE", "0.3") or 0)))
+        # relevance with no search, trending): 0.5 / 0.5 = every other card is Amazon, the rest
+        # Flipkart. What the two don't add up to (e.g. 0.45 / 0.45 = 10%) is left for the other
+        # stores; at 0.5 / 0.5 they only show once Amazon and Flipkart cards run out, or when
+        # filtered by store or searched. Both 0 = no mixing.
+        self.amazon_share: float = min(1.0, max(0.0, float(os.getenv("AMAZON_SHARE", "0.5") or 0)))
+        self.flipkart_share: float = min(1.0, max(0.0, float(os.getenv("FLIPKART_SHARE", "0.5") or 0)))
 
         # --- Load distribution ---
         # ROLE=primary (default) runs everything: ingest, Telegram, pushes.

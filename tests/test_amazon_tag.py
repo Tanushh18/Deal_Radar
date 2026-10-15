@@ -40,6 +40,13 @@ def test_lists_are_mostly_amazon_then_flipkart_without_dropping_others(monkeypat
     assert [r["id"] for r in out if r["store"] == "myntra"] == [f"myntra{i}" for i in range(10)]
 
 
+def test_default_is_half_amazon_half_flipkart(monkeypatch):
+    assert (settings.amazon_share, settings.flipkart_share) == (0.5, 0.5)
+    rows = _rows(["myntra"] * 5 + ["flipkart"] * 30 + ["amazon"] * 30)
+    first = [r["store"] for r in search._favour_stores(rows)[:20]]
+    assert first.count("amazon") == 10 and first.count("flipkart") == 10
+
+
 def test_pinned_deals_stay_first_and_off_switch(monkeypatch):
     monkeypatch.setattr(settings, "amazon_share", 0.6)
     monkeypatch.setattr(settings, "flipkart_share", 0.3)
