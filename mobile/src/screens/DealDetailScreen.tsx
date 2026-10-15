@@ -447,7 +447,7 @@ export function DealDetailScreen() {
           }}
         >
           <IconButton name="copy" label="Copy link" variant="soft" onPress={() => copy(deal.url ?? '', 'Link')} style={{ width: 52, height: 52, borderRadius: t.r.md }} />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, gap: 6 }}>
             <Button
               title={past ? `Check on ${store || 'store'}` : `Buy on ${store || 'store'}`}
               iconRight="external"
@@ -458,6 +458,11 @@ export function DealDetailScreen() {
               }}
               style={{ minHeight: 52, borderRadius: t.r.md }}
             />
+            {deal.amazon_associate ? (
+              <Text style={{ color: t.c.text3, fontSize: t.f.xs, textAlign: 'center' }}>
+                As an Amazon Associate, DealRadar earns from qualifying purchases.
+              </Text>
+            ) : null}
           </View>
         </View>
       ) : null}

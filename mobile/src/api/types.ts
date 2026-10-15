@@ -41,6 +41,8 @@ export type Deal = {
   currency: string;
   store: string | null;
   url: string | null;
+  /** Buy carries our Amazon Associates tag — show the Amazon disclosure line. */
+  amazon_associate?: boolean;
   image_url: string | null;
   coupon: string | null;
   category: string | null;

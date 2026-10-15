@@ -358,7 +358,7 @@ async def maybe_publish(deal: Dict[str, Any], photo: Optional[PhotoLoader] = Non
             if _already_posted(deal, now) or _over_cap(v.audience, now):
                 return False
             caption = format_post(deal, v)
-            markup = _buttons(deal, links.plain_url(deal))
+            markup = _buttons(deal, links.buy_url(deal))
             result = None
             image = deal.get("image_url") or ""
             base = {"chat_id": settings.tg_post_channel, "caption": caption, "parse_mode": "HTML"}

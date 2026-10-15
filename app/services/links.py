@@ -21,10 +21,11 @@ import re
 from collections import OrderedDict
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
-from urllib.parse import parse_qs, quote_plus, unquote, urljoin, urlparse
+from urllib.parse import parse_qs, quote_plus, unquote, urlencode, urljoin, urlparse, urlunparse
 
 import httpx
 
+from ..config import settings
 from . import parser, taxonomy
 
 MAX_HOPS = 6
@@ -118,6 +119,26 @@ def plain_url(deal: Dict[str, Any]) -> str:
                 return f"https://www.amazon.in/s?k={title}"
             return f"https://www.flipkart.com/search?q={title}"
     return url
+
+
+def with_amazon_tag(url: str) -> str:
+    """An amazon.in link with our Associates tag (replacing any other); other links unchanged."""
+    tag = settings.amazon_tag
+    if not tag or not url or not _on(_host(url), ("amazon.in",)):
+        return url
+    try:
+        parts = urlparse(url)
+    except ValueError:
+        return url
+    query = [(k, v) for k, vs in parse_qs(parts.query, keep_blank_values=True).items()
+             for v in vs if k.lower() != "tag"]
+    query.append(("tag", tag))
+    return urlunparse(parts._replace(query=urlencode(query)))
+
+
+def buy_url(deal: Dict[str, Any]) -> str:
+    """Where Buy sends the shopper: the plain store link, with our Amazon tag on Amazon."""
+    return with_amazon_tag(plain_url(deal))
 
 
 _LEAD_OFF_RE = re.compile(r"^[\W_]*\d{1,2}\s*%\s*(?:off)?\s*[:\-–|]*\s*", re.IGNORECASE)

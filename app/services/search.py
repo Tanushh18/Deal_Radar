@@ -529,8 +529,8 @@ def price_history_url(deal: Dict[str, Any]) -> str:
 
 
 def _buy_link(deal: Dict[str, Any]) -> str:
-    """Buy link for clients: the plain store link, with no affiliate tags."""
-    return links.plain_url(deal)
+    """Buy link for clients: the plain store link, with our Amazon Associates tag on Amazon."""
+    return links.buy_url(deal)
 
 
 def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
@@ -540,6 +540,7 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
     saving = None
     if price and mrp and mrp > price:
         saving = round(mrp - price)
+    buy, plain = _buy_link(deal), links.plain_url(deal)
     return {
         "id": deal.get("id"),
         "title": deal.get("title"),
@@ -549,8 +550,10 @@ def shape(deal: Dict[str, Any]) -> Dict[str, Any]:
         "discount_pct": deal.get("discount_pct") or 0,
         "currency": deal.get("currency") or "INR",
         "store": deal.get("store"),
-        "url": _buy_link(deal),   # what every client opens on Buy
-        "store_url": links.plain_url(deal),   # the store's own link — no affiliate tags
+        "url": buy,   # what every client opens on Buy
+        "store_url": plain,   # the store's own link — no tags at all
+        # Buy carries our Amazon Associates tag: clients show the Amazon disclosure line.
+        "amazon_associate": buy != plain,
         "buy_path": f"/api/deals/{deal.get('id')}/go",
         "image_url": deal.get("image_url"),
         "coupon": deal.get("coupon"),

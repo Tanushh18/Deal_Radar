@@ -400,7 +400,7 @@ async def _buy_target(deal_id: str, src: str) -> str:
     deal = db.row_to_dict(row) if row else await price_store.remote_deal(deal_id)
     if not deal:
         raise HTTPException(status_code=404, detail="Deal not found.")
-    return links.plain_url(deal)
+    return links.buy_url(deal)
 
 
 @router.get("/{deal_id}/link")

@@ -1561,6 +1561,7 @@
             <a class="btn btn-primary btn-block" href="${escapeHtml(deal.buy_path ? deal.buy_path + '?src=web' : deal.url)}" target="_blank" rel="noopener noreferrer nofollow">
               Buy on ${escapeHtml(storeName(deal) || 'store')} ${icon('external', 'ico')}
             </a>
+            ${deal.amazon_associate ? `<p class="muted small" style="text-align:center;margin:6px 0 0">As an Amazon Associate, DealRadar earns from qualifying purchases.</p>` : ''}
           </div>` : ''}
       `, { wide: true });
       const chartHost = document.getElementById(`price-chart-${id}`);

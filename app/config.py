@@ -122,6 +122,9 @@ class Settings:
         # overrides the page built from the package id. ---
         self.play_store_package: str = os.getenv("PLAY_STORE_PACKAGE", "com.tanush.dealradar").strip()
         self.play_store_url: str = os.getenv("PLAY_STORE_URL", "").strip()
+        # Amazon Associates store ID, added as ?tag= to Amazon (amazon.in) Buy links only.
+        # Set AMAZON_TAG to an empty value to turn it off.
+        self.amazon_tag: str = os.getenv("AMAZON_TAG", "dealradar067-21").strip()
 
         # --- Load distribution ---
         # ROLE=primary (default) runs everything: ingest, Telegram, pushes.

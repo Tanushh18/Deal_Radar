@@ -22,6 +22,7 @@ A comprehensive deal aggregation and search platform that transforms Telegram ma
 12. [Deployment](#deployment)
 13. [Troubleshooting](#troubleshooting)
 14. [Security & Limits](#security--limits)
+    - [Amazon Associates](#amazon-associates)
 15. [Contributing Guide](#contributing-guide)
 16. [Dependencies](#dependencies)
 17. [License](#license)
@@ -969,6 +970,34 @@ Account deletion (`DELETE /api/auth/account`):
 - **Defaults:** Deliberately conservative (40-min poll interval, limited channels, rate-limited)
 
 ---
+
+### Amazon Associates
+
+Buy links to **amazon.in** carry the DealRadar Associates store ID
+(`AMAZON_TAG`, default `dealradar067-21`) — on the website, in the app, in
+the Telegram channel's Buy button and on the Amazon search shortcut. Any
+other channel's `tag=` is replaced. Links to every other store (Flipkart,
+Myntra, …) stay plain, untagged. Set `AMAZON_TAG` to an empty value to
+turn tagging off.
+
+Cards whose Buy link is tagged come back with `"amazon_associate": true`,
+and only those show the disclosure under the Buy button:
+*"As an Amazon Associate, DealRadar earns from qualifying purchases."*
+
+Rules from the Amazon Associates Operating Agreement to keep in mind
+(re-read the current agreement; it changes):
+
+- **Disclosure:** the line above must be clearly visible wherever tagged
+  links appear.
+- **3 sales in 180 days:** an account with fewer than 3 qualifying sales in
+  its first 180 days is closed.
+- **Prices and images:** Amazon expects Amazon product prices and images to
+  come from its Product Advertising API (PA-API), with prices refreshed at
+  least every 24 hours. DealRadar currently takes prices from Telegram posts
+  and images from Amazon's CDN, which may be raised in an account review.
+  PA-API access opens after 3 sales; move Amazon prices/images to it then.
+- **No self-purchases:** buying through your own links does not earn
+  commission and can get the account flagged.
 
 ## Contributing Guide
 

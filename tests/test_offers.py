@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app import db  # noqa: E402
+from app.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services import ingest, links, offers, telegram  # noqa: E402
 
@@ -116,9 +117,9 @@ def main() -> int:
             check("unrelated words find nothing", found(c, "refrigerator") == [])
             check("one-letter or empty query returns nothing", found(c, "l") == [])
             mp = c.get("/api/deals/offers", params={"q": "running shoes"}).json()["results"][-2:]
-            check("Amazon and Flipkart search links always follow",
+            check("Amazon and Flipkart search links always follow (our tag on Amazon only)",
                   [(o["store"], o["url"]) for o in mp] == [
-                      ("amazon", "https://www.amazon.in/s?k=running+shoes"),
+                      ("amazon", f"https://www.amazon.in/s?k=running+shoes&tag={settings.amazon_tag}"),
                       ("flipkart", "https://www.flipkart.com/search?q=running+shoes")]
                   and all(o["marketplace"] for o in mp), str(mp))
             check("promos/vouchers (non-spam) are kept for search",

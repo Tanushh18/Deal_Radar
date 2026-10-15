@@ -68,7 +68,7 @@ def marketplace_links(q: str) -> List[Dict[str, Any]]:
         {"id": f"mp:{store}", "title": f"Search “{q.strip()}” on {name}", "price": None, "price_from": False,
          "store": store, "url": url, "posted_at": now, "marketplace": True}
         for store, name, url in (
-            ("amazon", "Amazon", f"https://www.amazon.in/s?k={term}"),
+            ("amazon", "Amazon", links.with_amazon_tag(f"https://www.amazon.in/s?k={term}")),
             ("flipkart", "Flipkart", f"https://www.flipkart.com/search?q={term}"),
         ) if term
     ]
@@ -181,7 +181,7 @@ def search(q: str, limit: int = 12, exclude_titles: Set[str] = frozenset()) -> L
             "price": row["price"],
             "price_from": bool(row.get("price_from")),
             "store": row["store"],
-            "url": url,
+            "url": links.with_amazon_tag(url),
             "posted_at": row["posted_at"],
         })
         if len(out) >= limit:
