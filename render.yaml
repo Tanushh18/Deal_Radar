@@ -28,6 +28,8 @@ services:
         value: https://dealradar-0oza.onrender.com
       - key: USER_NODE_URL
         value: https://deal-radar-dn91.onrender.com
+      - key: TELEGRAM_SESSION
+        sync: false             # existing ingest session; overrides the shared fallback value
       - key: PUBLIC_URL
         value: https://dealradar.tanush.qd.je
 
@@ -90,6 +92,8 @@ services:
         value: standby
       - key: SELF_URL
         value: https://deal-radar-jl4z.onrender.com
+      - key: TELEGRAM_SESSION
+        sync: false             # same Telegram session, used only after standby takes over ingest
       - key: PUBLIC_URL
         value: https://dealradar.tanush.qd.je
 
