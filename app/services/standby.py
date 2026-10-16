@@ -33,6 +33,7 @@ def _can_cover(role: str) -> bool:
 
 async def _set_role(role: str) -> None:
     settings.node_role = role
+    settings.is_standby = role == "standby"
     try:
         await asyncio.get_event_loop().run_in_executor(None, nodes.beat_now)
     except Exception as exc:  # noqa: BLE001
@@ -68,13 +69,19 @@ async def run(start: Callable[[str], Awaitable[None]], stop: Callable[[], Awaita
             misses[r] = 0 if r in up else misses[r] + 1
 
         try:
+            if covering == "all" and up:
+                await release("a peer server returned; resuming standby")
+                continue
             if covering and covering in up:
                 await release("its server is back")
                 continue
             if not up:
-                # Everything else is down: lightest mode, just keep serving.
-                if covering:
-                    await release("all servers down, staying in lite mode")
+                # No peers remain: use the spare as the full application, not a read-only shell.
+                if covering != "all" and _can_cover("ingest"):
+                    log.warning("No peer servers remain; standby switching to all-in-one mode")
+                    covering = "all"
+                    await _set_role("all")
+                    await start("all")
                 continue
             if covering:
                 continue
