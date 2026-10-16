@@ -238,19 +238,19 @@ class Settings:
 
     @property
     def sharded(self) -> bool:
-        return self.node_role in ("ingest", "validator", "user", "standby")
+        return self.node_role in ("ingest", "validator", "user", "standby", "all")
 
     @property
     def is_ingest_node(self) -> bool:
-        return self.node_role == "ingest"
+        return self.node_role in ("ingest", "all")
 
     @property
     def is_validator_node(self) -> bool:
-        return self.node_role == "validator"
+        return self.node_role in ("validator", "all")
 
     @property
     def is_user_node(self) -> bool:
-        return self.node_role == "user"
+        return self.node_role in ("user", "all")
 
     @property
     def reader_session(self) -> str:
@@ -262,6 +262,8 @@ class Settings:
     def owns_channel(self, tg_id: int) -> bool:
         """Whether this server ingests the channel. Always true outside the ingest/user split."""
         if not self.sharded:
+            return True
+        if self.node_role == "all":
             return True
         if not self.is_ingest_node:
             return False
