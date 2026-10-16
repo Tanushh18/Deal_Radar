@@ -848,9 +848,9 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 await asyncio.sleep(0.4)  # be polite to Telegram between channels
 
             expired, liveness = 0, {}
-            if not settings.sharded:  # in the 3-server split the validator node does this
+            if settings.is_validator_node and settings.node_role != "all":
                 expired, liveness = await validation_pass()
-            alerts = await run_watchlist_alerts() if not settings.sharded else {}  # user node sends these
+            alerts = await run_watchlist_alerts() if settings.is_user_node and settings.node_role != "all" else {}
 
             # Plan this window's hot-deal pushes (PUSHES_PER_CYCLE of them, each
             # at a random moment before the next cycle starts — see hot_push.py).
@@ -863,9 +863,9 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
                 log.warning("Hot-push scheduling failed: %s", exc)
 
             purged_ids: List[str] = []
-            if not settings.sharded:
+            if settings.is_validator_node and settings.node_role != "all":
                 purged_ids = await cleanup_pass()
-            if not settings.sharded:
+            if settings.is_user_node and settings.node_role != "all":
                 await user_housekeeping()
 
             if new_deal_ids:

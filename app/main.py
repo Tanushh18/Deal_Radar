@@ -159,16 +159,17 @@ async def lifespan(app: FastAPI):
     _tasks.append(asyncio.create_task(ingest.keepalive_loop()))
 
     def start_role(role: str) -> None:
-        """The background work of one role in the 3-server split."""
-        if role == "ingest":
+        """Start one role's background jobs, or the full pipeline in all-in-one mode."""
+        if role in ("ingest", "all"):
             if settings.telegram_configured and settings.reader_session:
                 _single.append(asyncio.create_task(public_reader.bootstrap()))
             _single.append(asyncio.create_task(ingest.scheduler_loop()))
             _single.append(asyncio.create_task(live.run()))
-        elif role == "validator":
+        if role in ("validator", "all"):
             _single.append(asyncio.create_task(ingest.validator_loop()))
-        else:
+        if role in ("user", "all"):
             _single.append(asyncio.create_task(ingest.user_loop()))
+        if role in ("user", "all"):
             _single.append(asyncio.create_task(notify_auto.loop()))
             _single.append(asyncio.create_task(pitara_writer.loop()))
             _single.append(asyncio.create_task(growth.loop()))
@@ -176,10 +177,48 @@ async def lifespan(app: FastAPI):
     async def start_after_handoff(role: str) -> None:
         # If the standby covered this role while we were down, let it hand back first.
         await nodes.wait_for_standby_release(role)
-        start_role(role)
+        if settings.node_role == role:
+            start_role(role)
+        else:
+            log.info("Skipping stale startup for %s; current runtime role is %s", role, settings.node_role)
 
     async def standby_start(role: str) -> None:
         start_role(role)
+
+    async def set_runtime_role(role: str) -> None:
+        previous = settings.node_role
+        for task in list(_single):
+            task.cancel()
+        if _single:
+            await asyncio.gather(*_single, return_exceptions=True)
+        _single.clear()
+        settings.node_role = role
+        settings.is_standby = role == "standby"
+        await asyncio.get_event_loop().run_in_executor(None, nodes.beat_now)
+        if role != "standby":
+            start_role(role)
+        log.warning("Runtime role changed: %s -> %s", previous, role)
+
+    async def single_server_fallback() -> None:
+        base_role = settings.node_role
+        while True:
+            await asyncio.sleep(20)
+            if settings.is_standby:
+                continue
+            try:
+                live = await asyncio.get_event_loop().run_in_executor(None, nodes.live_nodes)
+                # A standby waiting in reserve is not an active worker; don't let it
+                # prevent the only active node from consolidating all responsibilities.
+                live = [node for node in live if not node.get("standby")]
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Single-server fallback registry check failed: %s", exc)
+                continue
+            if not live and settings.node_role != "all":
+                await set_runtime_role("all")
+            elif live and settings.node_role == "all":
+                await set_runtime_role(base_role)
 
     if settings.sharded:
         log.info("Node role %s (shard %s/%s)", settings.node_role, settings.ingest_shard, settings.ingest_shards)
@@ -187,6 +226,7 @@ async def lifespan(app: FastAPI):
             _tasks.append(asyncio.create_task(standby.run(standby_start, lose)))
         else:
             _tasks.append(asyncio.create_task(start_after_handoff(settings.node_role)))
+            _tasks.append(asyncio.create_task(single_server_fallback()))
     elif settings.is_replica:
         log.info("Running as a read replica of %s — ingest, Telegram and pushes stay on the primary", settings.primary_url)
     else:

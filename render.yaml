@@ -3,8 +3,8 @@
 #     sign-in/devices/watchlists/admin to the user server.
 #   dealradar-validator: no Telegram; expiry, scoring and link checks over the stored deals.
 #   dealradar-user: no Telegram; owns user writes, watchlist alerts, digests and notifications.
-#   dealradar-standby: serves deal browsing; takes over whichever of the three stops heartbeating
-#     and hands it back when it returns. If all three are down it stays up in lite mode.
+#   dealradar-standby: serves browsing; takes over one missing role, or all roles if no active peer remains
+#     and hands it back when it returns. If no active peer remains, it switches to all-in-one mode.
 # Every server serves deal browsing itself. Secrets are filled once in the dealradar-shared
 # group (Render dashboard > Environment Groups). Rename the services below to your existing
 # service names if you want Render to adopt them instead of creating new ones.
@@ -29,7 +29,7 @@ services:
       - key: USER_NODE_URL
         value: https://deal-radar-dn91.onrender.com
       - key: TELEGRAM_SESSION
-        sync: false             # this server's Telegram account (tools/make_session.py)
+        sync: false             # existing ingest session; overrides the shared fallback value
       - key: PUBLIC_URL
         value: https://dealradar.tanush.qd.je
 
@@ -93,7 +93,7 @@ services:
       - key: SELF_URL
         value: https://deal-radar-jl4z.onrender.com
       - key: TELEGRAM_SESSION
-        sync: false             # same session as dealradar-ingest-1, so it can cover ingest
+        sync: false             # same Telegram session, used only after standby takes over ingest
       - key: PUBLIC_URL
         value: https://dealradar.tanush.qd.je
 
@@ -111,6 +111,8 @@ envVarGroups:
         sync: false
       - key: TELEGRAM_API_HASH
         sync: false
+      - key: TELEGRAM_SESSION
+        sync: false             # shared session; only the active ingest/all-in-one role may use it
       - key: MONGODB_URI
         sync: false             # mongodb+srv://user:password@cluster.mongodb.net/ — durable store for
                                  # users, channels, watchlists and admin settings
