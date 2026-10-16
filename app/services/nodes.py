@@ -88,8 +88,8 @@ def _read_registry() -> tuple:
     mongo_store.connect()
     cutoff = time.time() - ALIVE_SECONDS
     rows = list(mongo_store._db()[_COLL].find({"seen_at": {"$gt": cutoff}}))
-    users = sorted(r["url"] for r in rows if r.get("role") == "user" and r.get("url"))
-    ingest_rows = [r for r in rows if r.get("role") == "ingest"]
+    users = sorted(r["url"] for r in rows if r.get("role") in ("user", "all") and r.get("url"))
+    ingest_rows = [r for r in rows if r.get("role") in ("ingest", "all")]
     last = max([float(r.get("last_ingest_at") or 0) for r in ingest_rows] or [0.0])
     return users, last, sorted(r["url"] for r in ingest_rows if r.get("url"))
 
