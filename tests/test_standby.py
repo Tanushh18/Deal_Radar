@@ -65,8 +65,12 @@ def test_skips_ingest_without_a_telegram_session(monkeypatch):
     assert events == [("start", "user", "user")]
 
 
-def test_all_down_means_lite_mode(monkeypatch):
-    assert _drive(monkeypatch, [[]] * 6) == []
-    events = _drive(monkeypatch, [["validator"]] * 3 + [[]])
-    assert events == [("start", "ingest", "ingest"), ("stop", "ingest")]
+def test_all_down_switches_standby_to_all_in_one(monkeypatch):
+    events = _drive(monkeypatch, [[]] * 4)
+    assert events == [("start", "all", "all")]
+    assert settings.node_role == "all"
+
+def test_standby_hands_back_from_all_in_one_when_peer_returns(monkeypatch):
+    events = _drive(monkeypatch, [[]] * 3 + [["ingest"]])
+    assert events == [("start", "all", "all"), ("stop", "all")]
     assert settings.node_role == "standby"
