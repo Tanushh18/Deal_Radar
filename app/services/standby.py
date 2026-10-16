@@ -65,6 +65,8 @@ async def run(start: Callable[[str], Awaitable[None]], stop: Callable[[], Awaita
             log.warning("Standby registry read failed: %s", exc)
             continue
         up = {n.get("role") for n in live if not n.get("standby")}
+        if "all" in up:
+            up.update(PRIORITY)
         for r in PRIORITY:
             misses[r] = 0 if r in up else misses[r] + 1
 
