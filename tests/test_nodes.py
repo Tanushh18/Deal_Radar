@@ -148,3 +148,12 @@ def test_image_on_a_non_ingest_node_comes_from_the_ingest_server(monkeypatch):
     assert r.status_code == 200 and r.content == b"JPEG"
     assert seen["url"] == "https://ing.example/api/deals/abc/image?src=1%3A2"
     assert seen["xff"] == "9.9.9.9"
+
+
+def test_all_in_one_role_owns_every_responsibility(monkeypatch):
+    _as(monkeypatch, "all")
+    assert settings.sharded
+    assert settings.is_ingest_node
+    assert settings.is_validator_node
+    assert settings.is_user_node
+    assert settings.owns_channel(123)
