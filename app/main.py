@@ -177,7 +177,10 @@ async def lifespan(app: FastAPI):
     async def start_after_handoff(role: str) -> None:
         # If the standby covered this role while we were down, let it hand back first.
         await nodes.wait_for_standby_release(role)
-        start_role(role)
+        if settings.node_role == role:
+            start_role(role)
+        else:
+            log.info("Skipping stale startup for %s; current runtime role is %s", role, settings.node_role)
 
     async def standby_start(role: str) -> None:
         start_role(role)
