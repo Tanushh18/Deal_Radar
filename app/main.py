@@ -165,9 +165,9 @@ async def lifespan(app: FastAPI):
                 _single.append(asyncio.create_task(public_reader.bootstrap()))
             _single.append(asyncio.create_task(ingest.scheduler_loop()))
             _single.append(asyncio.create_task(live.run()))
-        if role == "validator":
+        if role in ("validator", "all"):
             _single.append(asyncio.create_task(ingest.validator_loop()))
-        if role == "user":
+        if role in ("user", "all"):
             _single.append(asyncio.create_task(ingest.user_loop()))
         if role in ("user", "all"):
             _single.append(asyncio.create_task(notify_auto.loop()))
