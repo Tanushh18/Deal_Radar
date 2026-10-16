@@ -204,6 +204,9 @@ async def lifespan(app: FastAPI):
                 continue
             try:
                 live = await asyncio.get_event_loop().run_in_executor(None, nodes.live_nodes)
+                # A standby waiting in reserve is not an active worker; don't let it
+                # prevent the only active node from consolidating all responsibilities.
+                live = [node for node in live if not node.get("standby")]
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # noqa: BLE001
