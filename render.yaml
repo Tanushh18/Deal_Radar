@@ -28,8 +28,6 @@ services:
         value: https://dealradar-0oza.onrender.com
       - key: USER_NODE_URL
         value: https://deal-radar-dn91.onrender.com
-      - key: TELEGRAM_SESSION
-        sync: false             # this server's Telegram account (tools/make_session.py)
       - key: PUBLIC_URL
         value: https://dealradar.tanush.qd.je
 
@@ -92,8 +90,6 @@ services:
         value: standby
       - key: SELF_URL
         value: https://deal-radar-jl4z.onrender.com
-      - key: TELEGRAM_SESSION
-        sync: false             # same session as dealradar-ingest-1, so it can cover ingest
       - key: PUBLIC_URL
         value: https://dealradar.tanush.qd.je
 
@@ -111,6 +107,8 @@ envVarGroups:
         sync: false
       - key: TELEGRAM_API_HASH
         sync: false
+      - key: TELEGRAM_SESSION
+        sync: false             # shared session; only the active ingest/all-in-one role may use it
       - key: MONGODB_URI
         sync: false             # mongodb+srv://user:password@cluster.mongodb.net/ — durable store for
                                  # users, channels, watchlists and admin settings
