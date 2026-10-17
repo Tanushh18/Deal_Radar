@@ -76,6 +76,7 @@ async def health():
         "last_duration": ingest_state.get("last_duration"),
         "last_error": ingest_state.get("last_error"),
         "stale": stale,
+        "local": ingest.local_state,
     }
 
     healthy = checks["database"] == "ok"

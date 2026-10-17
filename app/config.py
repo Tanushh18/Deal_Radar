@@ -73,6 +73,10 @@ class Settings:
 
         # --- Ingestion ---
         self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))  # 1 min
+        # Local-only upkeep (expiry, rescoring, quality sweep) runs this often,
+        # on its own loop: no Telegram or store requests, so it can be fast
+        # while POLL_INTERVAL_SECONDS paces the outside world.
+        self.local_work_seconds: int = max(1, int(os.getenv("LOCAL_WORK_SECONDS", "10")))
         self.deal_ttl_hours: int = int(os.getenv("DEAL_TTL_HOURS", "96"))  # 4 days
         # Local SQLite is a short-term cache; older data lives in Turso/Sheets.
         self.local_cache_days: float = float(os.getenv("LOCAL_CACHE_DAYS", "15"))

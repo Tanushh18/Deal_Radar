@@ -138,6 +138,7 @@ async def lifespan(app: FastAPI):
         if settings.telegram_configured and settings.telegram_session:
             _single.append(asyncio.create_task(public_reader.bootstrap()))
         _single.append(asyncio.create_task(ingest.scheduler_loop()))
+        _single.append(asyncio.create_task(ingest.local_loop()))
         # Real-time: each new post from a followed channel is handled as it's
         # published (and hot ones go straight to your Telegram channel).
         _single.append(asyncio.create_task(live.run()))
@@ -167,6 +168,7 @@ async def lifespan(app: FastAPI):
             _single.append(asyncio.create_task(live.run()))
         elif role == "validator":
             _single.append(asyncio.create_task(ingest.validator_loop()))
+            _single.append(asyncio.create_task(ingest.local_loop()))
         else:
             _single.append(asyncio.create_task(ingest.user_loop()))
             _single.append(asyncio.create_task(notify_auto.loop()))

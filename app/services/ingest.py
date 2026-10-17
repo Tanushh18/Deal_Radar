@@ -917,6 +917,39 @@ async def run_cycle(reason: str = "scheduled") -> Dict[str, Any]:
             _state["last_duration"] = round(time.time() - started, 2)
 
 
+local_state: Dict[str, Any] = {"passes": 0, "last_at": None, "last_duration": 0.0, "last_error": None}
+
+
+def local_pass() -> Dict[str, int]:
+    """Upkeep that only touches the local database — no Telegram, no store pages."""
+    quality.sweep_stored()  # no-op unless the rules changed
+    return {
+        "expired": store.expire_stale(),
+        "imageless": store.retire_imageless(),
+        "rescored": store.rescore_all(),
+    }
+
+
+async def local_loop() -> None:
+    """Keep the feed fresh every LOCAL_WORK_SECONDS: expired deals drop out and
+    scores decay within seconds, while Telegram and store checks stay on the
+    poll cadence (run_cycle)."""
+    await asyncio.sleep(20)  # let the app finish booting first
+    loop = asyncio.get_running_loop()
+    while True:
+        started = time.time()
+        try:
+            await loop.run_in_executor(None, local_pass)  # off the event loop: rescoring can be heavy
+            local_state.update(passes=local_state["passes"] + 1, last_at=time.time(),
+                               last_duration=round(time.time() - started, 2), last_error=None)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            local_state["last_error"] = f"{type(exc).__name__}: {exc}"
+            log.warning("Local pass failed: %s", exc)
+        await asyncio.sleep(max(1, settings.local_work_seconds - (time.time() - started)))
+
+
 async def scheduler_loop() -> None:
     """Background poller. Started on app startup, cancelled on shutdown."""
     await asyncio.sleep(15)  # let the app finish booting first

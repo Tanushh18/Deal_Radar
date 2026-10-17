@@ -514,6 +514,7 @@ make clean-data  # Delete local SQLite cache
 | Variable | Default | Notes |
 |----------|---------|-------|
 | `POLL_INTERVAL_SECONDS` | `60` | Seconds between ingest cycles (1 minute) |
+| `LOCAL_WORK_SECONDS` | `10` | Seconds between local-only upkeep passes (expiry, rescoring, quality sweep — no outside requests) |
 | `DEAL_TTL_HOURS` | `96` | 4 days; live links get extended beyond this |
 | `BACKFILL_LIMIT` | `120` | Messages fetched on first channel poll |
 | `INCREMENTAL_LIMIT` | `60` | Messages fetched per poll thereafter |
