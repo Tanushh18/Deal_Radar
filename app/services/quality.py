@@ -188,12 +188,28 @@ def sweep_stored() -> Dict[str, int]:
     """
     if db.get_meta("quality_version") == str(QUALITY_VERSION):
         return {"checked": 0, "removed": 0, "recategorised": 0, "images_cleared": 0}
+    stats = _apply_rules("SELECT * FROM deals WHERE status IN ('live', 'expired')")
+    db.set_meta("quality_version", str(QUALITY_VERSION))
+    log.info("Quality sweep: %s", stats)
+    return stats
 
+
+def recheck_live() -> Dict[str, int]:
+    """The same rules over every live deal, on every local pass (ingest.local_loop).
+
+    A deal passes the gate when it's saved, but it can stop qualifying later:
+    its short link resolves to a search or sale page, or its photo goes away.
+    This catches that within seconds instead of at the next rules change.
+    """
+    return _apply_rules("SELECT * FROM deals WHERE status = 'live'")
+
+
+def _apply_rules(sql: str) -> Dict[str, int]:
     from . import store  # local: store imports this module
 
     stats = {"checked": 0, "removed": 0, "recategorised": 0, "images_cleared": 0}
     updates = []
-    for row in db.query("SELECT * FROM deals WHERE status IN ('live', 'expired')"):
+    for row in db.query(sql):
         deal = dict(row)
         deal["flags"] = _flags(deal.get("flags"))
         stats["checked"] += 1
@@ -236,6 +252,4 @@ def sweep_stored() -> Dict[str, int]:
             "status = ?, flags = ?, dirty = 1 WHERE id = ?",
             updates,
         )
-    db.set_meta("quality_version", str(QUALITY_VERSION))
-    log.info("Quality sweep: %s", stats)
     return stats

@@ -924,6 +924,7 @@ def local_pass() -> Dict[str, int]:
     """Upkeep that only touches the local database — no Telegram, no store pages."""
     quality.sweep_stored()  # no-op unless the rules changed
     return {
+        "quality_removed": quality.recheck_live()["removed"],
         "expired": store.expire_stale(),
         "imageless": store.retire_imageless(),
         "rescored": store.rescore_all(),
