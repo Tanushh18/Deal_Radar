@@ -65,7 +65,7 @@ def main() -> int:
     with TestClient(app) as c:
         print("\n=== MANUAL RANGE: 1 MIN – 60 MIN ===")
         g = c.get("/api/admin/reader/poll-interval", headers=ADMIN).json()
-        check("range is 10..3600", g["min_seconds"] == 10 and g["max_seconds"] == 3600, str(g))
+        check("range is 60..3600", g["min_seconds"] == 60 and g["max_seconds"] == 3600, str(g))
         check("defaults to manual mode", g["mode"] == "manual", str(g))
         for ok_value in (60, 3600):
             r = c.post("/api/admin/reader/poll-interval", json={"seconds": ok_value}, headers=ADMIN)
@@ -73,7 +73,7 @@ def main() -> int:
                   r.text)
             check(f"{ok_value} is in effect", ingest.poll_interval_seconds() == ok_value,
                   str(ingest.poll_interval_seconds()))
-        for bad in (9, 3601):
+        for bad in (59, 3601):
             r = c.post("/api/admin/reader/poll-interval", json={"seconds": bad}, headers=ADMIN)
             check(f"rejects {bad}", r.status_code == 400, r.text)
         c.post("/api/admin/reader/poll-interval", json={"seconds": 60}, headers=ADMIN)
@@ -154,7 +154,7 @@ def main() -> int:
         check("smoothed: first step goes half-way, not all the way", 120 < steps[0] < 1800, str(steps))
         check("keeps rising", all(a <= b for a, b in zip(steps, steps[1:])), str(steps))
         check("ends at/near max", steps[-1] >= 1700, str(steps))
-        check("always on a 10 s grid", all(x % 10 == 0 for x in [low, *steps]), str(steps))
+        check("always on a 30 s grid", all(x % 30 == 0 for x in [low, *steps]), str(steps))
 
         print("\n=== TELEGRAM FLOOD WAIT ===")
         fresh_state()
@@ -186,7 +186,7 @@ def main() -> int:
         print("\n=== INVALID /poll-mode ===")
         fresh_state()
         for bad in ({"mode": "turbo"},
-                    {"mode": "auto", "auto_min_seconds": 9},
+                    {"mode": "auto", "auto_min_seconds": 59},
                     {"mode": "auto", "auto_max_seconds": 3601},
                     {"mode": "auto", "auto_min_seconds": 900, "auto_max_seconds": 600}):
             r = c.post("/api/admin/reader/poll-mode", json=bad, headers=ADMIN)

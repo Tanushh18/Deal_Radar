@@ -72,7 +72,7 @@ class Settings:
         self.turso2_auth_token: str = os.getenv("TURSO_DB_02_AUTH_TOKEN", "").strip()
 
         # --- Ingestion ---
-        self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "10"))  # every 10 s
+        self.poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))  # 1 min
         self.deal_ttl_hours: int = int(os.getenv("DEAL_TTL_HOURS", "96"))  # 4 days
         # Local SQLite is a short-term cache; older data lives in Turso/Sheets.
         self.local_cache_days: float = float(os.getenv("LOCAL_CACHE_DAYS", "15"))
