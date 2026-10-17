@@ -948,7 +948,10 @@ async def local_loop() -> None:
         except Exception as exc:  # noqa: BLE001
             local_state["last_error"] = f"{type(exc).__name__}: {exc}"
             log.warning("Local pass failed: %s", exc)
-        await asyncio.sleep(max(1, settings.local_work_seconds - (time.time() - started)))
+        # Never busier than ~1/5 of the time: on a small CPU share a slow pass
+        # pushes the next one out instead of pinning the server.
+        took = time.time() - started
+        await asyncio.sleep(max(1, settings.local_work_seconds - took, took * 4))
 
 
 async def scheduler_loop() -> None:

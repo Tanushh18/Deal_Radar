@@ -201,10 +201,10 @@ def recheck_live() -> Dict[str, int]:
     its short link resolves to a search or sale page, or its photo goes away.
     This catches that within seconds instead of at the next rules change.
     """
-    return _apply_rules("SELECT * FROM deals WHERE status = 'live'")
+    return _apply_rules("SELECT * FROM deals WHERE status = 'live'", full=False)
 
 
-def _apply_rules(sql: str) -> Dict[str, int]:
+def _apply_rules(sql: str, full: bool = True) -> Dict[str, int]:
     from . import store  # local: store imports this module
 
     stats = {"checked": 0, "removed": 0, "recategorised": 0, "images_cleared": 0}
@@ -215,19 +215,20 @@ def _apply_rules(sql: str) -> Dict[str, int]:
         stats["checked"] += 1
         changed = False
 
-        image = deal.get("image_url") or ""
-        fixed_image = store.rebase_image_url(image, deal["id"]) if image else ""
-        if fixed_image != image:
-            deal["image_url"] = fixed_image
-            stats["images_cleared"] += 1
-            changed = True
+        if full:  # a rules change only: the repairs below don't need repeating every few seconds
+            image = deal.get("image_url") or ""
+            fixed_image = store.rebase_image_url(image, deal["id"]) if image else ""
+            if fixed_image != image:
+                deal["image_url"] = fixed_image
+                stats["images_cleared"] += 1
+                changed = True
 
-        category, subcategory = taxonomy.classify(f"{deal.get('title') or ''} {(deal.get('raw_text') or '')[:400]}")
-        if (category, subcategory) != (deal.get("category"), deal.get("subcategory")):
-            deal["category"], deal["subcategory"] = category, subcategory
-            deal["search_blob"] = parser.build_search_blob(deal)
-            stats["recategorised"] += 1
-            changed = True
+            category, subcategory = taxonomy.classify(f"{deal.get('title') or ''} {(deal.get('raw_text') or '')[:400]}")
+            if (category, subcategory) != (deal.get("category"), deal.get("subcategory")):
+                deal["category"], deal["subcategory"] = category, subcategory
+                deal["search_blob"] = parser.build_search_blob(deal)
+                stats["recategorised"] += 1
+                changed = True
 
         reason = reject_reason(deal)
         if reason == "no_image":
