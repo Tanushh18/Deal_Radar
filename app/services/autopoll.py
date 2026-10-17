@@ -17,7 +17,7 @@ served now, not three cycles from now.
 
 Telegram flood-wait safety applies in BOTH modes: after Telegram tells the
 reader account to back off, we stay slow (>= 10 min, >= 2x the wait) for an
-hour. The owner may pick 1-minute polling by hand, but the reader account
+hour. The owner may pick 10-second polling by hand, but the reader account
 must never get locked for it.
 
 Everything is cached in memory after the first read so /api/ping stays
@@ -40,7 +40,7 @@ AUTO_MAX_META_KEY = "poll_auto_max_seconds"
 FLOOD_META_KEY = "poll_flood_wait"        # "<unix ts>:<seconds>" — survives a restart mid-cooldown
 
 MODES = ("manual", "auto")
-BOUND_MIN_SECONDS = 60                    # same range as manual (ingest.MIN/MAX_POLL_INTERVAL_SECONDS)
+BOUND_MIN_SECONDS = 10                    # same range as manual (ingest.MIN/MAX_POLL_INTERVAL_SECONDS)
 BOUND_MAX_SECONDS = 3600
 DEFAULT_AUTO_MIN_SECONDS = 120
 DEFAULT_AUTO_MAX_SECONDS = 1800
@@ -51,7 +51,7 @@ ACTIVE_WINDOW_SECONDS = 900               # "active user" = seen in the last 15 
 YIELD_FULL = 10                           # new deals per cycle that counts as "busy channels"
 YIELD_WEIGHT = 0.8                        # yield alone never pins us to the floor
 JUMP_PRESSURE = 0.8                       # at/above this, skip smoothing when speeding up
-ROUND_TO = 30
+ROUND_TO = 10
 
 FLOOD_GUARD_WINDOW = 3600                 # stay careful for an hour after a flood wait
 FLOOD_GUARD_FLOOR = 600                   # ...never faster than 10 min meanwhile

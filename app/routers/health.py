@@ -68,7 +68,7 @@ async def health():
 
     ingest_state = ingest.state()
     last_run = ingest_state.get("last_run") or 0
-    stale = bool(last_run) and (time.time() - last_run) > ingest.poll_interval_seconds() * 3
+    stale = bool(last_run) and (time.time() - last_run) > max(ingest.poll_interval_seconds() * 3, 300)
     checks["ingest"] = {
         "running": ingest_state.get("running"),
         "cycles": ingest_state.get("cycles"),

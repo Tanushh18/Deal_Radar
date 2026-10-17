@@ -79,7 +79,7 @@ def set_sync_paused(paused: bool) -> None:
 # That's "manual" mode. In "auto" mode autopoll.py picks the interval itself
 # from live data; either way autopoll's Telegram flood-wait guard applies.
 POLL_INTERVAL_META_KEY = "poll_interval_seconds_override"
-MIN_POLL_INTERVAL_SECONDS = 60       # 1 min floor — the owner asked for it; autopoll's flood guard keeps Telegram safe
+MIN_POLL_INTERVAL_SECONDS = 10       # 10 s floor — the owner asked for it; autopoll's flood guard keeps Telegram safe
 MAX_POLL_INTERVAL_SECONDS = 3600     # 1 h ceiling — slower than this and deals expire before we see them
 _poll_interval_cache: Optional[int] = None
 

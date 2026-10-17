@@ -2048,7 +2048,7 @@
     state.lastStats = stats;
     const last = stats.ingest && stats.ingest.last_run;
     const status = statusOverride || (last
-      ? `Updated ${timeAgo(last)} · scanning every ${Math.round(stats.poll_interval_seconds / 60)} min`
+      ? `Updated ${timeAgo(last)} · scanning every ${stats.poll_interval_seconds < 60 ? `${stats.poll_interval_seconds} s` : `${Math.round(stats.poll_interval_seconds / 60)} min`}`
       : 'Waiting for the first sync…');
 
     if (state.user?.guest) {
