@@ -11,7 +11,7 @@ import asyncio
 import itertools
 import logging
 import time
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from ..config import settings
 from . import mongo_store
@@ -28,6 +28,7 @@ _cache_at = 0.0
 _ingest_last = 0.0       # newest ingest cycle reported by a live ingest server
 _ingest_urls: List[str] = []   # live ingest servers (the only ones that can reach Telegram)
 _penalty: Dict[str, float] = {}
+covering: Set[str] = set()     # roles this server runs on top of its own (services/cover.py)
 _rr = itertools.count()
 
 
@@ -36,7 +37,7 @@ def _beat() -> None:
 
     mongo_store.connect()
     doc = {"role": settings.node_role, "url": settings.self_url, "seen_at": time.time(),
-           "standby": settings.is_standby}
+           "standby": settings.is_standby, "covers": sorted(covering)}
     if settings.is_ingest_node:
         # Only the ingest server knows when it last synced; share it so every
         # node's /api/stats (served by the user server) shows the real time.
@@ -88,7 +89,8 @@ def _read_registry() -> tuple:
     mongo_store.connect()
     cutoff = time.time() - ALIVE_SECONDS
     rows = list(mongo_store._db()[_COLL].find({"seen_at": {"$gt": cutoff}}))
-    users = sorted(r["url"] for r in rows if r.get("role") == "user" and r.get("url"))
+    users = sorted(r["url"] for r in rows
+                   if (r.get("role") == "user" or "user" in (r.get("covers") or [])) and r.get("url"))
     ingest_rows = [r for r in rows if r.get("role") == "ingest"]
     last = max([float(r.get("last_ingest_at") or 0) for r in ingest_rows] or [0.0])
     return users, last, sorted(r["url"] for r in ingest_rows if r.get("url"))
@@ -151,4 +153,5 @@ def mark_failed(url: str) -> None:
 
 def snapshot() -> dict:
     return {"role": settings.node_role or "auto", "standby": settings.is_standby, "self_url": settings.self_url,
+            "covers": sorted(covering),
             "user_nodes": user_urls(), "penalised": [u for u, t in _penalty.items() if t > time.time()]}

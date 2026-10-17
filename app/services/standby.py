@@ -64,6 +64,8 @@ async def run(start: Callable[[str], Awaitable[None]], stop: Callable[[], Awaita
             log.warning("Standby registry read failed: %s", exc)
             continue
         up = {n.get("role") for n in live if not n.get("standby")}
+        for n in live:  # roles the ingest server is covering (services/cover.py) count as up
+            up.update(n.get("covers") or [])
         for r in PRIORITY:
             misses[r] = 0 if r in up else misses[r] + 1
 

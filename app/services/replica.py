@@ -35,7 +35,7 @@ def forwards() -> bool:
     if settings.is_replica:
         return True
     if settings.sharded:
-        return not settings.is_user_node and bool(nodes.user_urls())
+        return not settings.is_user_node and "user" not in nodes.covering and bool(nodes.user_urls())
     url = leader.leader_url()
     # Servers sharing one public domain all advertise that same URL, so "forward to the
     # leader" would just hit the load balancer and come straight back (508 Loop Detected).
