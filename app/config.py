@@ -16,6 +16,12 @@ def _split(value: str) -> List[str]:
     return [item.strip() for item in value.replace("\n", ",").split(",") if item.strip()]
 
 
+def _chat_id(raw: str) -> str:
+    """A chat id as typed into a host's env form: quotes, spaces and a pasted "NAME=" prefix tolerated."""
+    value = raw.split("=", 1)[-1] if "TG_AFFILIATE_CHATS" in raw else raw
+    return value.strip().strip("\"'").replace(" ", "")
+
+
 class Settings:
     """Runtime settings. Everything has a sane default so the app boots bare."""
 
@@ -191,7 +197,7 @@ class Settings:
         # (services/affiliate_bot.py). Empty token = off. Chats: comma-separated ids it may
         # answer in (the group's "-100…" id); empty = every chat the bot is in.
         self.affiliate_bot_token: str = os.getenv("TG_AFFILIATE_BOT_TOKEN", "").strip()
-        self.affiliate_bot_chats: set = {c.strip() for c in os.getenv("TG_AFFILIATE_CHATS", "").split(",") if c.strip()}
+        self.affiliate_bot_chats: set = {c for c in (_chat_id(x) for x in os.getenv("TG_AFFILIATE_CHATS", "").split(",")) if c}
         # Real-time listener on the reader account (seconds, not the poll cycle).
         self.live_listener: bool = _bool(os.getenv("LIVE_LISTENER", "true"))
         # What's good enough to post (see tg_post.assess — fakes never are).

@@ -30,7 +30,7 @@ from . import links, parser, taxonomy
 log = logging.getLogger("dealradar.affiliate_bot")
 
 API = "https://api.telegram.org"
-VERSION = "v4"   # shown in the group at startup, so you can tell which build is live
+VERSION = "v5"   # shown in the group at startup, so you can tell which build is live
 POLL_TIMEOUT = 30            # seconds Telegram holds a getUpdates call open
 MAX_LINKS_PER_MESSAGE = 5    # a pasted list gets the first few answered, not a flood
 COPY_TEXT_MAX = 256          # Telegram's limit for a copy_text button
@@ -177,7 +177,7 @@ async def handle_message(message: Dict[str, Any], tg: httpx.AsyncClient, resolve
     if _from_other_bot(message):
         return   # never answer bots (including ourselves)
     if chat_id is None or not _allowed_chat(chat_id):
-        log.info("Affiliate bot: ignoring chat %s (not in TG_AFFILIATE_CHATS)", chat_id)
+        log.info("Affiliate bot: ignoring chat %s; TG_AFFILIATE_CHATS is %s — fix it or delete the variable", chat_id, sorted(settings.affiliate_bot_chats))
         return
     reply_to = {"message_id": message["message_id"], "allow_sending_without_reply": True}
     urls = [u for u in extract_urls(message) if store_of(u)][:MAX_LINKS_PER_MESSAGE]
