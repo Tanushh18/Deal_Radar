@@ -89,6 +89,22 @@ async def affiliate_link(url: str, client: httpx.AsyncClient) -> Optional[Tuple[
     return store, links.with_affiliate(plain)
 
 
+SHORTENERS = ("https://tinyurl.com/api-create.php", "https://is.gd/create.php?format=simple")
+
+
+async def shorten(link: str, client: httpx.AsyncClient) -> str:
+    """A short redirect to `link` (TinyURL, then is.gd); the long link itself if neither answers."""
+    for endpoint in SHORTENERS:
+        try:
+            resp = await client.get(endpoint, params={"url": link}, timeout=8)
+        except (httpx.HTTPError, asyncio.TimeoutError):
+            continue
+        short = resp.text.strip()
+        if resp.status_code == 200 and short.startswith("https://") and " " not in short and len(short) < len(link):
+            return short
+    return link
+
+
 def _keyboard(rows: List[Tuple[str, str]]) -> Dict[str, Any]:
     """One row of buttons per link: Copy (when it fits Telegram's limit) and Open."""
     keyboard = []
@@ -107,6 +123,8 @@ async def build_reply(message: Dict[str, Any], client: httpx.AsyncClient) -> Opt
     if not urls:
         return None
     results = await asyncio.gather(*(affiliate_link(u, client) for u in urls), return_exceptions=True)
+    shorts = await asyncio.gather(*(shorten(r[1], client) for r in results if isinstance(r, tuple)))
+    results = [(r[0], shorts.pop(0)) if isinstance(r, tuple) else r for r in results]
     lines: List[str] = []
     rows: List[Tuple[str, str]] = []
     failed = 0
@@ -117,7 +135,7 @@ async def build_reply(message: Dict[str, Any], client: httpx.AsyncClient) -> Opt
         store, link = result
         label = _STORE_LABEL[store]
         rows.append((label, link))
-        lines.append(f"<b>{label}</b> affiliate link (tap to copy):\n<code>{html.escape(link)}</code>")
+        lines.append(f"<b>{label}</b> short affiliate link (tap to copy):\n<code>{html.escape(link)}</code>")
     if failed:
         lines.append("⚠️ Couldn't open "
                      + ("a short link" if failed == 1 else f"{failed} short links")
