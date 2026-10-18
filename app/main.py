@@ -169,6 +169,9 @@ async def lifespan(app: FastAPI):
                 tasks.append(asyncio.create_task(public_reader.bootstrap()))
             tasks.append(asyncio.create_task(ingest.scheduler_loop()))
             tasks.append(asyncio.create_task(live.run()))
+            # Group bot (pasted Amazon / Flipkart links -> affiliate links): lives with ingest, so the
+            # standby picks it up when the ingest server stops (idle without a token).
+            tasks.append(asyncio.create_task(affiliate_bot.run()))
             # While the validator or user server is down, run its work here too.
             tasks.append(asyncio.create_task(cover.run(role_tasks)))
             return tasks
@@ -178,8 +181,7 @@ async def lifespan(app: FastAPI):
         return [asyncio.create_task(ingest.user_loop()),
                 asyncio.create_task(notify_auto.loop()),
                 asyncio.create_task(pitara_writer.loop()),
-                asyncio.create_task(growth.loop()),
-                asyncio.create_task(affiliate_bot.run())]
+                asyncio.create_task(growth.loop())]
 
     def start_role(role: str) -> None:
         _single.extend(role_tasks(role))
