@@ -19,6 +19,7 @@ import asyncio
 import html
 import logging
 import re
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
@@ -142,19 +143,75 @@ def _allowed_chat(chat_id: Any) -> bool:
     return not allowed or str(chat_id) in allowed
 
 
-async def handle_message(message: Dict[str, Any], tg: httpx.AsyncClient, resolver: httpx.AsyncClient) -> None:
-    if (message.get("from") or {}).get("is_bot"):
-        return   # never answer bots (including ourselves)
-    chat_id = (message.get("chat") or {}).get("id")
-    if chat_id is None or not _allowed_chat(chat_id):
-        return
-    payload = await build_reply(message, resolver)
-    if not payload:
-        return
-    payload.update(chat_id=chat_id, reply_parameters={"message_id": message["message_id"], "allow_sending_without_reply": True})
-    resp = await tg.post("sendMessage", json=payload)
+# Telegram posts an admin's "anonymous" and a channel's messages as these service bots: they are people.
+_PEOPLE_BOT_IDS = {1087968824, 136817688}
+HELP_TEXT = ("👋 Paste any <b>Amazon</b> or <b>Flipkart</b> product link here and I'll reply with your "
+             "affiliate link and a copy button.")
+TICK_SECONDS = 2.0       # how often the "working" message is refreshed
+BUILD_TIMEOUT = 25.0     # give up on a link that takes longer than this
+
+
+def _from_other_bot(message: Dict[str, Any]) -> bool:
+    sender = message.get("from") or {}
+    if not sender.get("is_bot"):
+        return False
+    return sender.get("id") not in _PEOPLE_BOT_IDS and not message.get("sender_chat")
+
+
+def _is_command(message: Dict[str, Any], *names: str) -> bool:
+    first = (message.get("text") or "").split(maxsplit=1)[:1]
+    return bool(first) and first[0].split("@", 1)[0].lower() in names
+
+
+async def _send(tg: httpx.AsyncClient, method: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    resp = await tg.post(method, json=payload)
     if resp.status_code != 200:
-        log.warning("sendMessage to %s failed: %s %s", chat_id, resp.status_code, resp.text[:200])
+        log.warning("%s failed: %s %s", method, resp.status_code, resp.text[:200])
+        return None
+    return resp.json().get("result")
+
+
+async def handle_message(message: Dict[str, Any], tg: httpx.AsyncClient, resolver: httpx.AsyncClient) -> None:
+    chat_id = (message.get("chat") or {}).get("id")
+    if _from_other_bot(message):
+        return   # never answer bots (including ourselves)
+    if chat_id is None or not _allowed_chat(chat_id):
+        log.info("Affiliate bot: ignoring chat %s (not in TG_AFFILIATE_CHATS)", chat_id)
+        return
+    reply_to = {"message_id": message["message_id"], "allow_sending_without_reply": True}
+    urls = [u for u in extract_urls(message) if store_of(u)][:MAX_LINKS_PER_MESSAGE]
+    log.info("Affiliate bot: message %s in chat %s, %d Amazon/Flipkart link(s)", message.get("message_id"), chat_id, len(urls))
+    if not urls:
+        if _is_command(message, "/start", "/help"):
+            await _send(tg, "sendMessage", {"chat_id": chat_id, "text": HELP_TEXT, "parse_mode": "HTML", "reply_parameters": reply_to})
+        return
+
+    # Answer at once with a progress message, refreshed while the link is being made, then edit in the result.
+    started = time.monotonic()
+    progress = await _send(tg, "sendMessage", {"chat_id": chat_id, "reply_parameters": reply_to,
+                                               "text": "⏳ Creating your affiliate link… 0s"})
+    work = asyncio.ensure_future(build_reply(message, resolver))
+    try:
+        while True:
+            done, _ = await asyncio.wait({work}, timeout=TICK_SECONDS)
+            elapsed = time.monotonic() - started
+            if done or elapsed > BUILD_TIMEOUT:
+                break
+            if progress:
+                await _send(tg, "editMessageText", {"chat_id": chat_id, "message_id": progress["message_id"],
+                                                    "text": f"⏳ Creating your affiliate link… {int(elapsed)}s"})
+        payload = work.result() if work.done() else None
+    finally:
+        if not work.done():
+            work.cancel()
+
+    if payload is None:
+        payload = {"text": "⚠️ Couldn't create a link for that — try the full amazon.in / flipkart.com product link."}
+    if progress and await _send(tg, "editMessageText", {**payload, "chat_id": chat_id, "message_id": progress["message_id"]}):
+        return
+    if progress:   # the edit was refused: replace the progress message with a fresh one
+        await _send(tg, "deleteMessage", {"chat_id": chat_id, "message_id": progress["message_id"]})
+    await _send(tg, "sendMessage", {**payload, "chat_id": chat_id, "reply_parameters": reply_to})
 
 
 async def run() -> None:
@@ -163,13 +220,23 @@ async def run() -> None:
     if not token:
         return
     offset = 0
+    pending: set = set()   # messages being answered; a slow link must not hold up the next message
+
+    async def answer(message: Dict[str, Any]) -> None:
+        try:
+            await handle_message(message, tg, resolver)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Affiliate bot: message %s failed: %s", message.get("message_id"), exc)
+
     async with httpx.AsyncClient(base_url=f"{API}/bot{token}/", timeout=POLL_TIMEOUT + 15) as tg, \
             httpx.AsyncClient(follow_redirects=False, timeout=links.HOP_TIMEOUT, headers=_RESOLVE_HEADERS) as resolver:
         try:
             await tg.post("deleteWebhook")   # a webhook would block getUpdates
         except httpx.HTTPError as exc:
             log.warning("Affiliate bot: deleteWebhook failed: %s", exc)
-        log.info("Affiliate bot polling")
+        me = await tg.post("getMe")
+        log.info("Affiliate bot polling as %s (chats: %s)", (me.json().get("result") or {}).get("username", "?") if me.status_code == 200 else "?",
+                 ", ".join(sorted(settings.affiliate_bot_chats)) or "any")
         while True:
             try:
                 resp = await tg.post("getUpdates", json={"offset": offset, "timeout": POLL_TIMEOUT,
@@ -187,10 +254,9 @@ async def run() -> None:
                     message = update.get("message") or update.get("channel_post")
                     if not message:
                         continue
-                    try:
-                        await handle_message(message, tg, resolver)
-                    except Exception as exc:  # noqa: BLE001
-                        log.warning("Affiliate bot: message %s failed: %s", message.get("message_id"), exc)
+                    task = asyncio.create_task(answer(message))
+                    pending.add(task)
+                    task.add_done_callback(pending.discard)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # noqa: BLE001

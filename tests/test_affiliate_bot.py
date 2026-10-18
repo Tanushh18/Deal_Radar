@@ -95,22 +95,66 @@ def test_no_reply_without_store_links():
     assert _run(bot.build_reply({"text": "hello https://example.com"}, _client())) is None
 
 
-def test_handle_message_replies_to_the_message_and_skips_bots(monkeypatch):
+def test_handle_message_shows_progress_then_the_link(monkeypatch):
     monkeypatch.setattr(settings, "affiliate_bot_chats", set())
-    sent = []
+    calls = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        sent.append(json.loads(request.content))
-        return httpx.Response(200, json={"ok": True})
+        calls.append((request.url.path.rsplit("/", 1)[-1], json.loads(request.content)))
+        return httpx.Response(200, json={"ok": True, "result": {"message_id": 99}})
 
     async def go():
         tg = httpx.AsyncClient(base_url="https://api.telegram.org/botT/", transport=httpx.MockTransport(handler))
         msg = {"message_id": 7, "chat": {"id": -100123}, "from": {"is_bot": False},
                "text": "https://www.amazon.in/dp/B0ABCDEFGH"}
         await bot.handle_message(msg, tg, _client())
-        await bot.handle_message({**msg, "from": {"is_bot": True}}, tg, _client())
+        n = len(calls)
+        await bot.handle_message({**msg, "from": {"is_bot": True, "id": 5}}, tg, _client())   # another bot
+        await bot.handle_message({**msg, "from": {"is_bot": True, "id": 1087968824}}, tg, _client())   # anonymous admin
         monkeypatch.setattr(settings, "affiliate_bot_chats", {"-999"})
         await bot.handle_message(msg, tg, _client())
+        return n
+    first = _run(go())
+    assert first == 2
+    (m1, p1), (m2, p2) = calls[:2]
+    assert m1 == "sendMessage" and "Creating your affiliate link" in p1["text"] and p1["reply_parameters"]["message_id"] == 7
+    assert m2 == "editMessageText" and p2["message_id"] == 99 and "reply_markup" in p2 and "B0ABCDEFGH" in p2["text"]
+    assert len(calls) == 4   # the anonymous admin was answered too; the other bot and the wrong chat were not
+
+
+def test_progress_ticks_while_a_link_is_slow(monkeypatch):
+    monkeypatch.setattr(bot, "TICK_SECONDS", 0.05)
+    monkeypatch.setattr(settings, "affiliate_bot_chats", set())
+    edits = []
+
+    async def slow(message, client):
+        await asyncio.sleep(0.3)
+        return {"text": "done"}
+    monkeypatch.setattr(bot, "build_reply", slow)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        if request.url.path.endswith("editMessageText"):
+            edits.append(body["text"])
+        return httpx.Response(200, json={"ok": True, "result": {"message_id": 1}})
+
+    async def go():
+        tg = httpx.AsyncClient(base_url="https://api.telegram.org/botT/", transport=httpx.MockTransport(handler))
+        await bot.handle_message({"message_id": 1, "chat": {"id": 1}, "text": "https://amzn.to/x"}, tg, _client())
     _run(go())
-    assert len(sent) == 1
-    assert sent[0]["chat_id"] == -100123 and sent[0]["reply_parameters"]["message_id"] == 7
+    assert len(edits) >= 3 and edits[-1] == "done" and all("Creating" in e for e in edits[:-1])
+
+
+def test_start_command_gets_a_help_reply(monkeypatch):
+    monkeypatch.setattr(settings, "affiliate_bot_chats", set())
+    sent = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, json={"ok": True, "result": {}})
+
+    async def go():
+        tg = httpx.AsyncClient(base_url="https://api.telegram.org/botT/", transport=httpx.MockTransport(handler))
+        await bot.handle_message({"message_id": 1, "chat": {"id": 1}, "text": "/start@Affiliate_DealRadar_Bot"}, tg, _client())
+    _run(go())
+    assert len(sent) == 1 and "Amazon" in sent[0]["text"]
