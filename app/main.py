@@ -31,7 +31,7 @@ from .routers import lookup as lookup_router
 from .routers import price_alerts as price_alerts_router
 from .routers import sale_events as sale_events_router
 from .routers import watchlists as watchlists_router
-from .services import activity, cover, growth, ingest, leader, live, mongo_store, nodes, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, standby, telegram, turso_backup
+from .services import activity, affiliate_bot, cover, growth, ingest, leader, live, mongo_store, nodes, notify_auto, pitara, pitara_writer, public_reader, quality, store, replica, standby, telegram, turso_backup
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level, logging.INFO),
@@ -149,6 +149,8 @@ async def lifespan(app: FastAPI):
         _single.append(asyncio.create_task(pitara_writer.loop()))
         # Promotion counters (anonymous totals) are saved every few minutes.
         _single.append(asyncio.create_task(growth.loop()))
+        # Group bot: pasted Amazon / Flipkart links get our affiliate link back (idle without a token).
+        _single.append(asyncio.create_task(affiliate_bot.run()))
 
     async def lose() -> None:
         for t in _single:
@@ -176,7 +178,8 @@ async def lifespan(app: FastAPI):
         return [asyncio.create_task(ingest.user_loop()),
                 asyncio.create_task(notify_auto.loop()),
                 asyncio.create_task(pitara_writer.loop()),
-                asyncio.create_task(growth.loop())]
+                asyncio.create_task(growth.loop()),
+                asyncio.create_task(affiliate_bot.run())]
 
     def start_role(role: str) -> None:
         _single.extend(role_tasks(role))

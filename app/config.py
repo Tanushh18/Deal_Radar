@@ -187,6 +187,11 @@ class Settings:
         # Link the app/website popup opens. Optional for a public channel (built
         # from @username); needed for a private one (its t.me/+invite link).
         self.tg_channel_url: str = os.getenv("TG_CHANNEL_URL", "").strip()
+        # Group bot that answers pasted Amazon / Flipkart links with our affiliate link
+        # (services/affiliate_bot.py). Empty token = off. Chats: comma-separated ids it may
+        # answer in (the group's "-100…" id); empty = every chat the bot is in.
+        self.affiliate_bot_token: str = os.getenv("TG_AFFILIATE_BOT_TOKEN", "").strip()
+        self.affiliate_bot_chats: set = {c.strip() for c in os.getenv("TG_AFFILIATE_CHATS", "").split(",") if c.strip()}
         # Real-time listener on the reader account (seconds, not the poll cycle).
         self.live_listener: bool = _bool(os.getenv("LIVE_LISTENER", "true"))
         # What's good enough to post (see tg_post.assess — fakes never are).
