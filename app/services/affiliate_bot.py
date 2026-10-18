@@ -30,6 +30,7 @@ from . import links, parser, taxonomy
 log = logging.getLogger("dealradar.affiliate_bot")
 
 API = "https://api.telegram.org"
+VERSION = "v4"   # shown in the group at startup, so you can tell which build is live
 POLL_TIMEOUT = 30            # seconds Telegram holds a getUpdates call open
 MAX_LINKS_PER_MESSAGE = 5    # a pasted list gets the first few answered, not a flood
 COPY_TEXT_MAX = 256          # Telegram's limit for a copy_text button
@@ -226,7 +227,10 @@ async def run() -> None:
         try:
             await handle_message(message, tg, resolver)
         except Exception as exc:  # noqa: BLE001
-            log.warning("Affiliate bot: message %s failed: %s", message.get("message_id"), exc)
+            log.warning("Affiliate bot: message %s failed: %s", message.get("message_id"), exc, exc_info=True)
+            chat_id = (message.get("chat") or {}).get("id")
+            if chat_id is not None and _allowed_chat(chat_id):
+                await _send(tg, "sendMessage", {"chat_id": chat_id, "text": f"⚠️ Bot error ({VERSION}): {type(exc).__name__}: {str(exc)[:200]}"})
 
     async with httpx.AsyncClient(base_url=f"{API}/bot{token}/", timeout=POLL_TIMEOUT + 15) as tg, \
             httpx.AsyncClient(follow_redirects=False, timeout=links.HOP_TIMEOUT, headers=_RESOLVE_HEADERS) as resolver:
@@ -237,6 +241,8 @@ async def run() -> None:
         me = await tg.post("getMe")
         log.info("Affiliate bot polling as %s (chats: %s)", (me.json().get("result") or {}).get("username", "?") if me.status_code == 200 else "?",
                  ", ".join(sorted(settings.affiliate_bot_chats)) or "any")
+        for chat in sorted(settings.affiliate_bot_chats):   # tell the group which build just started
+            await _send(tg, "sendMessage", {"chat_id": chat, "text": f"✅ Affiliate bot {VERSION} online. Paste an Amazon or Flipkart link."})
         while True:
             try:
                 resp = await tg.post("getUpdates", json={"offset": offset, "timeout": POLL_TIMEOUT,
