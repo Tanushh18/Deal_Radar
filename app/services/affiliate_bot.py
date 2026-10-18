@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from ..config import settings
-from . import links, parser, taxonomy
+from . import links, parser, shortlinks, taxonomy
 
 log = logging.getLogger("dealradar.affiliate_bot")
 
@@ -71,8 +71,9 @@ def store_of(url: str) -> Optional[str]:
 
 
 async def affiliate_link(url: str, client: httpx.AsyncClient) -> Optional[Tuple[str, str]]:
-    """(store, our affiliate link) for an Amazon / Flipkart link; None for anything else or when a
-    short link could not be opened."""
+    """(store, our short affiliate link) for an Amazon / Flipkart link; None for anything else or
+    when a short link could not be opened. The short link is on our own domain (services/shortlinks.py);
+    the full affiliate link is used when there is no public URL or the product has no id in its link."""
     if not store_of(url):
         return None
     store_page = url if links.is_store_site(url) else None
@@ -86,23 +87,7 @@ async def affiliate_link(url: str, client: httpx.AsyncClient) -> Optional[Tuple[
         return None   # the Associates tag is for amazon.in only
     if store not in _STORE_LABEL:
         return None
-    return store, links.with_affiliate(plain)
-
-
-SHORTENERS = ("https://tinyurl.com/api-create.php", "https://is.gd/create.php?format=simple")
-
-
-async def shorten(link: str, client: httpx.AsyncClient) -> str:
-    """A short redirect to `link` (TinyURL, then is.gd); the long link itself if neither answers."""
-    for endpoint in SHORTENERS:
-        try:
-            resp = await client.get(endpoint, params={"url": link}, timeout=8)
-        except (httpx.HTTPError, asyncio.TimeoutError):
-            continue
-        short = resp.text.strip()
-        if resp.status_code == 200 and short.startswith("https://") and " " not in short and len(short) < len(link):
-            return short
-    return link
+    return store, shortlinks.short_url(store, plain) or links.with_affiliate(plain)
 
 
 def _keyboard(rows: List[Tuple[str, str]]) -> Dict[str, Any]:
@@ -123,8 +108,6 @@ async def build_reply(message: Dict[str, Any], client: httpx.AsyncClient) -> Opt
     if not urls:
         return None
     results = await asyncio.gather(*(affiliate_link(u, client) for u in urls), return_exceptions=True)
-    shorts = await asyncio.gather(*(shorten(r[1], client) for r in results if isinstance(r, tuple)))
-    results = [(r[0], shorts.pop(0)) if isinstance(r, tuple) else r for r in results]
     lines: List[str] = []
     rows: List[Tuple[str, str]] = []
     failed = 0
@@ -135,7 +118,7 @@ async def build_reply(message: Dict[str, Any], client: httpx.AsyncClient) -> Opt
         store, link = result
         label = _STORE_LABEL[store]
         rows.append((label, link))
-        lines.append(f"<b>{label}</b> short affiliate link (tap to copy):\n<code>{html.escape(link)}</code>")
+        lines.append(f"<b>{label}</b> affiliate link (tap to copy):\n<code>{html.escape(link)}</code>")
     if failed:
         lines.append("⚠️ Couldn't open "
                      + ("a short link" if failed == 1 else f"{failed} short links")

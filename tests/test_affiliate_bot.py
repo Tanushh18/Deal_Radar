@@ -72,14 +72,7 @@ def test_other_stores_and_unopenable_short_links_are_ignored(monkeypatch):
     assert _run(bot.affiliate_link("https://fkrt.cc/blocked", _client())) is None
 
 
-def _no_shortener(monkeypatch):
-    async def same(link, client):
-        return link
-    monkeypatch.setattr(bot, "shorten", same)
-
-
 def test_reply_has_copy_and_open_buttons(monkeypatch):
-    _no_shortener(monkeypatch)
     monkeypatch.setattr(settings, "amazon_tag", "ours-21")
     payload = _run(bot.build_reply({"text": "https://www.amazon.in/dp/B0ABCDEFGH nothing https://www.myntra.com/a/12345678/buy"}, _client()))
     link = "https://www.amazon.in/dp/B0ABCDEFGH?tag=ours-21"
@@ -89,7 +82,6 @@ def test_reply_has_copy_and_open_buttons(monkeypatch):
 
 
 def test_long_link_drops_copy_button_but_stays_in_text(monkeypatch):
-    _no_shortener(monkeypatch)
     monkeypatch.setattr(settings, "earnkaro_id", "42")
     url = "https://www.flipkart.com/" + "a" * 250 + "/p/itm1?pid=P1"
     payload = _run(bot.build_reply({"text": url}, _client()))
@@ -98,25 +90,31 @@ def test_long_link_drops_copy_button_but_stays_in_text(monkeypatch):
     assert "<code>" in payload["text"]
 
 
-def test_reply_uses_the_short_link(monkeypatch):
-    async def short(link, client):
-        return "https://tinyurl.com/abc"
-    monkeypatch.setattr(bot, "shorten", short)
+def test_reply_uses_our_short_link(monkeypatch):
+    monkeypatch.setattr(settings, "public_url", "https://dealradar.example")
     monkeypatch.setattr(settings, "earnkaro_id", "42")
-    payload = _run(bot.build_reply({"text": "https://www.flipkart.com/x/p/itm1?pid=P1"}, _client()))
-    assert "https://tinyurl.com/abc" in payload["text"] and "linkredirect" not in payload["text"]
-    (copy_btn, open_btn), = payload["reply_markup"]["inline_keyboard"]
-    assert copy_btn["copy_text"]["text"] == open_btn["url"] == "https://tinyurl.com/abc"
+    payload = _run(bot.build_reply({"text": "https://www.flipkart.com/x/p/itm1?pid=MOBABC123 https://www.amazon.in/a/dp/B0ABCDEFGH"}, _client()))
+    assert "https://dealradar.example/f/MOBABC123" in payload["text"] and "linkredirect" not in payload["text"]
+    (fk_copy, _), (az_copy, _) = payload["reply_markup"]["inline_keyboard"]
+    assert fk_copy["copy_text"]["text"] == "https://dealradar.example/f/MOBABC123"
+    assert az_copy["copy_text"]["text"] == "https://dealradar.example/a/B0ABCDEFGH"
 
 
-def test_shorten_falls_back_to_the_long_link():
-    def down(request):
-        return httpx.Response(500)
-    def ok(request):
-        return httpx.Response(200, text="https://tinyurl.com/xyz")
-    long_link = "https://trackingv3.linkredirect.in/visitretailer/2276?id=42&dl=abc"
-    assert _run(bot.shorten(long_link, httpx.AsyncClient(transport=httpx.MockTransport(down)))) == long_link
-    assert _run(bot.shorten(long_link, httpx.AsyncClient(transport=httpx.MockTransport(ok)))) == "https://tinyurl.com/xyz"
+def test_short_links_redirect_to_the_affiliate_link(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.routers import shortlinks as router
+    monkeypatch.setattr(settings, "amazon_tag", "ours-21")
+    monkeypatch.setattr(settings, "earnkaro_id", "42")
+    api = FastAPI()
+    api.include_router(router.router)
+    c = TestClient(api, follow_redirects=False)
+    r = c.get("/a/b0abcdefgh")
+    assert r.status_code == 302 and r.headers["location"] == "https://www.amazon.in/dp/B0ABCDEFGH?tag=ours-21"
+    r = c.get("/f/MOBABC123")
+    assert r.status_code == 302 and r.headers["location"].startswith("https://trackingv3.linkredirect.in/visitretailer/")
+    assert "pid%3DMOBABC123" in r.headers["location"]
+    assert c.get("/a/short").status_code == 404 and c.get("/f/x;evil").status_code == 404
 
 
 def test_no_reply_without_store_links():

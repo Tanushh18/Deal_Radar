@@ -25,6 +25,7 @@ from .routers import deals as deals_router
 from .routers import health as health_router
 from .routers import notifications as notifications_router
 from .routers import growth as growth_router
+from .routers import shortlinks as shortlinks_router
 from .routers import pitara as pitara_router
 from .routers import devices as devices_router
 from .routers import lookup as lookup_router
@@ -258,6 +259,7 @@ app.include_router(price_alerts_router.router)
 app.include_router(sale_events_router.router)
 app.include_router(devices_router.router)
 app.include_router(lookup_router.router)
+app.include_router(shortlinks_router.router)
 
 
 @app.middleware("http")
