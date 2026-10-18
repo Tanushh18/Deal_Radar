@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from ..config import settings
-from . import links, parser, shortlinks, taxonomy
+from . import links, parser, taxonomy
 
 log = logging.getLogger("dealradar.affiliate_bot")
 
@@ -71,9 +71,10 @@ def store_of(url: str) -> Optional[str]:
 
 
 async def affiliate_link(url: str, client: httpx.AsyncClient) -> Optional[Tuple[str, str]]:
-    """(store, our short affiliate link) for an Amazon / Flipkart link; None for anything else or
-    when a short link could not be opened. The short link is on our own domain (services/shortlinks.py);
-    the full affiliate link is used when there is no public URL or the product has no id in its link."""
+    """(store, our affiliate link) for an Amazon / Flipkart link; None for anything else or
+    when a short link could not be opened. The link is cut down to the product itself first, so it
+    stays as short as an affiliate link can be: amazon.in/dp/<ASIN>?tag=…, and for Flipkart the
+    EarnKaro tracker around flipkart.com/product/p/itme?pid=<pid>."""
     if not store_of(url):
         return None
     store_page = url if links.is_store_site(url) else None
@@ -87,7 +88,11 @@ async def affiliate_link(url: str, client: httpx.AsyncClient) -> Optional[Tuple[
         return None   # the Associates tag is for amazon.in only
     if store not in _STORE_LABEL:
         return None
-    return store, shortlinks.short_url(store, plain) or links.with_affiliate(plain)
+    if store == "flipkart":
+        pid = parser.FK_PID_RE.search(plain)
+        if pid:
+            plain = f"https://www.flipkart.com/product/p/itme?pid={pid.group(1).upper()}"
+    return store, links.with_affiliate(plain)
 
 
 def _keyboard(rows: List[Tuple[str, str]]) -> Dict[str, Any]:

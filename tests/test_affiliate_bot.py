@@ -51,7 +51,8 @@ def test_flipkart_link_goes_through_earnkaro(monkeypatch):
     store, link = _run(bot.affiliate_link("https://www.flipkart.com/x/p/itm123?pid=MOBABC&lid=LST1&utm_source=a", _client()))
     assert store == "flipkart"
     assert link.startswith("https://trackingv3.linkredirect.in/visitretailer/2276?id=42&dl=")
-    assert "pid%3DMOBABC" in link and "utm_source" not in link and "lid" not in link
+    assert link.endswith("dl=https%3A%2F%2Fwww.flipkart.com%2Fproduct%2Fp%2Fitme%3Fpid%3DMOBABC")
+    assert len(link) < 150
 
 
 def test_short_link_is_resolved_first(monkeypatch):
@@ -83,38 +84,11 @@ def test_reply_has_copy_and_open_buttons(monkeypatch):
 
 def test_long_link_drops_copy_button_but_stays_in_text(monkeypatch):
     monkeypatch.setattr(settings, "earnkaro_id", "42")
-    url = "https://www.flipkart.com/" + "a" * 250 + "/p/itm1?pid=P1"
+    url = "https://www.flipkart.com/" + "a" * 250 + "/p/itm1"
     payload = _run(bot.build_reply({"text": url}, _client()))
     (only,), = payload["reply_markup"]["inline_keyboard"]
     assert "url" in only and "copy_text" not in only
     assert "<code>" in payload["text"]
-
-
-def test_reply_uses_our_short_link(monkeypatch):
-    monkeypatch.setattr(settings, "public_url", "https://dealradar.example")
-    monkeypatch.setattr(settings, "earnkaro_id", "42")
-    payload = _run(bot.build_reply({"text": "https://www.flipkart.com/x/p/itm1?pid=MOBABC123 https://www.amazon.in/a/dp/B0ABCDEFGH"}, _client()))
-    assert "https://dealradar.example/f/MOBABC123" in payload["text"] and "linkredirect" not in payload["text"]
-    (fk_copy, _), (az_copy, _) = payload["reply_markup"]["inline_keyboard"]
-    assert fk_copy["copy_text"]["text"] == "https://dealradar.example/f/MOBABC123"
-    assert az_copy["copy_text"]["text"] == "https://dealradar.example/a/B0ABCDEFGH"
-
-
-def test_short_links_redirect_to_the_affiliate_link(monkeypatch):
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
-    from app.routers import shortlinks as router
-    monkeypatch.setattr(settings, "amazon_tag", "ours-21")
-    monkeypatch.setattr(settings, "earnkaro_id", "42")
-    api = FastAPI()
-    api.include_router(router.router)
-    c = TestClient(api, follow_redirects=False)
-    r = c.get("/a/b0abcdefgh")
-    assert r.status_code == 302 and r.headers["location"] == "https://www.amazon.in/dp/B0ABCDEFGH?tag=ours-21"
-    r = c.get("/f/MOBABC123")
-    assert r.status_code == 302 and r.headers["location"].startswith("https://trackingv3.linkredirect.in/visitretailer/")
-    assert "pid%3DMOBABC123" in r.headers["location"]
-    assert c.get("/a/short").status_code == 404 and c.get("/f/x;evil").status_code == 404
 
 
 def test_no_reply_without_store_links():
