@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Get the DealRadar app</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <style>
+    body { display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 24px 16px; text-align: center; }
+    .card { max-width: 360px; }
+    .card img { width: 96px; height: 96px; border-radius: 22px; margin-bottom: 16px; }
+    .card p { color: var(--text-2); margin: 8px 0 20px; }
+    .btn { display: inline-block; padding: 12px 24px; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="/assets/icons/icon-192.png" alt="DealRadar" />
+    <h1>DealRadar</h1>
+    <p>Opening Google Play&hellip;</p>
+    <a id="go" class="btn" href="https://play.google.com/store/apps/details?id=com.tanush.dealradar">Download on Google Play</a>
+  </div>
+  <script>
+    (function () {
+      var url = 'https://play.google.com/store/apps/details?id=com.tanush.dealradar';
+      // Pass Meta ad params (utm_*, fbclid, ...) to Play as the install referrer.
+      var q = location.search.replace(/^\?/, '');
+      if (q) url += '&referrer=' + encodeURIComponent(q);
+      document.getElementById('go').href = url;
+      setTimeout(function () { location.replace(url); }, 300);
+    })();
+  </script>
+  <noscript><meta http-equiv="refresh" content="0;url=https://play.google.com/store/apps/details?id=com.tanush.dealradar" /></noscript>
+</body>
+</html>

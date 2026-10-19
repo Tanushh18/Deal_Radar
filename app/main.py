@@ -379,6 +379,12 @@ if os.path.isdir(STATIC_DIR):
     async def admin_page():
         return FileResponse(os.path.join(STATIC_DIR, "admin.html"))
 
+    @app.get("/get-app", include_in_schema=False)
+    @app.get("/download", include_in_schema=False)
+    async def get_app_page():
+        """Meta-ads landing: opens briefly, then redirects to the Play Store listing."""
+        return FileResponse(os.path.join(STATIC_DIR, "get-app.html"), headers={"Cache-Control": "no-store"})
+
     @app.get("/privacy", include_in_schema=False)
     async def privacy_page():
         return FileResponse(os.path.join(STATIC_DIR, "privacy.html"))
