@@ -402,3 +402,8 @@ if os.path.isdir(STATIC_DIR):
         if candidate.startswith(STATIC_DIR) and os.path.isfile(candidate):
             return FileResponse(candidate)
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+# Health check for uptime monitors (added by Stashr)
+@app.get("/health")
+def stashr_health():
+    return {"status": "ok"}
