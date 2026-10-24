@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import db
@@ -392,6 +392,11 @@ if os.path.isdir(STATIC_DIR):
     @app.get("/terms", include_in_schema=False)
     async def terms_page():
         return FileResponse(os.path.join(STATIC_DIR, "terms.html"))
+
+    @app.get("/loaderio-6fc9d649-bce4-4cc5-98a8-88f6e45d82e1.txt", include_in_schema=False)
+    async def loaderio_verification():
+        """loader.io host-ownership token: plain text only, never the SPA shell."""
+        return PlainTextResponse("loaderio-6fc9d649-bce4-4cc5-98a8-88f6e45d82e1")
 
     @app.get("/{path:path}", include_in_schema=False)
     async def spa_fallback(path: str):
