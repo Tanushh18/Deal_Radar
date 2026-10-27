@@ -9,17 +9,7 @@ import { applyHostList, FALLBACK_HOSTS } from './config';
 
 const APP = 'dealradar';
 const CACHE_KEY = 'dr.registry';
-const STANDBY_KEY = 'dr.registry.standby';
 const REGISTRY_HOST = 'https://password-manager-server-xxdr.onrender.com';
-
-/** Hosts the registry marks as standby (the optional `servers` list carries each URL's role). */
-function standbyOf(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((s): s is { url: string; role?: string } => !!s && typeof (s as { url?: unknown }).url === 'string')
-    .filter((s) => s.role === 'standby')
-    .map((s) => s.url.trim().replace(/\/+$/, ''));
-}
 
 function cleanList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -33,8 +23,7 @@ function cleanList(value: unknown): string[] {
 export async function loadCachedHosts(): Promise<void> {
   try {
     const saved = await AsyncStorage.getItem(CACHE_KEY);
-    const standby = await AsyncStorage.getItem(STANDBY_KEY);
-    if (saved !== null) applyHostList(cleanList(JSON.parse(saved)), standby ? cleanList(JSON.parse(standby)) : []); // "[]" = switched off
+    if (saved !== null) applyHostList(cleanList(JSON.parse(saved))); // "[]" = switched off
   } catch {
     /* no cache yet */
   }
@@ -51,12 +40,9 @@ export async function refreshHosts(): Promise<string[] | null> {
       signal: controller.signal,
     });
     if (!res.ok) return null;
-    const body = (await res.json()) as { urls?: unknown; servers?: unknown };
-    const urls = cleanList(body.urls);
-    const standby = standbyOf(body.servers);
-    applyHostList(urls, standby);
+    const urls = cleanList(((await res.json()) as { urls?: unknown }).urls);
+    applyHostList(urls);
     AsyncStorage.setItem(CACHE_KEY, JSON.stringify(urls)).catch(() => {});
-    AsyncStorage.setItem(STANDBY_KEY, JSON.stringify(standby)).catch(() => {});
     return [...FALLBACK_HOSTS];
   } catch {
     return null;
