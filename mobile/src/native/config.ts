@@ -80,13 +80,17 @@ export const FALLBACK_HOSTS: string[] = [];
  * Replace the host list with the one from the Stashr server registry (see registry.ts). Edited in place so
  * existing imports stay valid. An empty list is valid: it means the servers are switched off.
  */
-export function applyHostList(fresh: string[]): void {
-  const cleaned = fresh
-    .map((h) => h.trim().replace(/\/+$/, ''))
-    .filter((h) => /^https:\/\//i.test(h));
+export function applyHostList(fresh: string[], standby: string[] = []): void {
+  const clean = (h: string) => h.trim().replace(/\/+$/, '');
+  const cleaned = fresh.map(clean).filter((h) => /^https:\/\//i.test(h));
   FALLBACK_HOSTS.splice(0, FALLBACK_HOSTS.length, ...cleaned.filter((h, i, all) => all.indexOf(h) === i));
+  STANDBY_HOSTS.clear();
+  standby.map(clean).filter((h) => FALLBACK_HOSTS.includes(h)).forEach((h) => STANDBY_HOSTS.add(h));
   if (sessionHost && !FALLBACK_HOSTS.includes(sessionHost)) sessionHost = null;
 }
+
+/** Registry servers marked "standby": tried only after every other server has failed. */
+const STANDBY_HOSTS = new Set<string>();
 
 // Remembered only for this run of the app (never persisted): once a fallback
 // host is found to work, later requests try it first instead of eating the
@@ -110,13 +114,15 @@ export async function resolveHost(): Promise<string> {
   return sessionHost ?? NO_SERVER;
 }
 
-/** Every host the registry lists, starting at a random server so load is spread evenly. */
+/**
+ * Every host the registry lists. The working servers (fetcher, validator, user server, main) share the load, starting
+ * at a random one; standby servers come last, so they only see traffic when the others are down.
+ */
 export function hostsInRandomOrder(): string[] {
-  const pool = [...FALLBACK_HOSTS];
+  const pool = FALLBACK_HOSTS.filter((h) => !STANDBY_HOSTS.has(h));
   const n = pool.length;
-  if (n === 0) return [];
-  const start = Math.floor(Math.random() * n);
-  return Array.from({ length: n }, (_, i) => pool[(start + i) % n]);
+  const rotated = n === 0 ? [] : Array.from({ length: n }, (_, i) => pool[(Math.floor(Math.random() * n) + i) % n]);
+  return [...rotated, ...FALLBACK_HOSTS.filter((h) => STANDBY_HOSTS.has(h))];
 }
 
 /** True only when nothing was explicitly configured — i.e. the fallback chain may apply. */
