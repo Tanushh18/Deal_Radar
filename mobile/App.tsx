@@ -99,8 +99,8 @@ function Root() {
 
   const boot = useCallback(async () => {
     // Real users never see a server address: the app points at the DealRadar
-    // hosts listed in the Stashr server registry (cached on the device, with
-    // LIVE_HOST as the built-in fallback). Setup only reappears via the hidden
+    // hosts listed in the Stashr server registry (cached on the device; there is
+    // no built-in server). Setup only reappears via the hidden
     // gesture in Settings (dev/testing use), which saves a *different* URL.
     const explicit = await getBaseUrl();
     await loadCachedHosts();
