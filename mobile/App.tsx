@@ -7,11 +7,17 @@ import * as SystemUI from 'expo-system-ui';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ConnectingView, OfflineView } from './src/navigation/BootScreens';
+import { ConnectingView, OfflineView, ServerOffView } from './src/navigation/BootScreens';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef, type RootStackParamList } from './src/navigation/types';
 import { COLORS, getBaseUrl, hostsInRandomOrder, rememberWorkingHost } from './src/native/config';
-import { loadCachedHosts, refreshHosts } from './src/native/registry';
+import {
+  getRegistryStatus,
+  loadCachedHosts,
+  refreshHosts,
+  startRegistryWatch,
+  subscribeRegistryStatus,
+} from './src/native/registry';
 import { setRoutingReady, startNotificationRouting } from './src/native/deepLinks';
 import { configureNotificationHandler, pollNotifications } from './src/native/notifications';
 import { recordOpen } from './src/native/smartNotify';
@@ -97,6 +103,10 @@ function Root() {
   }, []);
   const lastBack = useRef(0);
 
+  // Stashr switched the servers off: block the whole app (also while it is open) and reopen it when they are back.
+  const [serverOff, setServerOff] = useState(getRegistryStatus() === 'off');
+  const wasOff = useRef(serverOff);
+
   const boot = useCallback(async () => {
     // Real users never see a server address: the app points at the DealRadar
     // hosts listed in the Stashr server registry (cached on the device; there is
@@ -105,6 +115,13 @@ function Root() {
     const explicit = await getBaseUrl();
     await loadCachedHosts();
     setPhase({ kind: 'connecting' });
+
+    // Ask Stashr first (up to 8 s; slower or unreachable falls back to the cached list) so a list that was switched
+    // off there stops the app before it connects to anything.
+    if (!explicit) {
+      await Promise.race([refreshHosts(8_000), new Promise((resolve) => setTimeout(resolve, 8_000))]);
+      if (getRegistryStatus() === 'off') return;
+    }
 
     // Reachability check only: visitors never sign in — the server reads the
     // channels with its own account, so the app opens straight to the deals.
@@ -149,6 +166,19 @@ function Root() {
 
   useEffect(() => {
     boot();
+  }, [boot]);
+
+  useEffect(() => {
+    startRegistryWatch();
+    return subscribeRegistryStatus((next) => {
+      setServerOff(next === 'off');
+      if (next === 'off') {
+        wasOff.current = true;
+      } else if (wasOff.current) {
+        wasOff.current = false;
+        void boot(); // the servers are back: connect again
+      }
+    });
   }, [boot]);
 
   useEffect(() => {
@@ -198,6 +228,7 @@ function Root() {
   let body: React.ReactNode = null;
   // Nothing renders text until the fonts have loaded (or definitely failed), so no screen mixes typefaces.
   if (!fontsSettled) body = null;
+  else if (serverOff) body = <ServerOffView />;
   else if (phase.kind === 'connecting') body = <ConnectingView />;
   else if (phase.kind === 'offline') body = <OfflineView onRetry={boot} />;
   else if (phase.kind === 'ready' && interests === undefined) body = null;

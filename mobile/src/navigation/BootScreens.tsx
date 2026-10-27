@@ -31,6 +31,17 @@ export function OfflineView({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+/** Shown instead of the whole app while the servers are switched off on Stashr. */
+export function ServerOffView() {
+  const styles = useStyles();
+  return (
+    <View style={styles.root}>
+      <Text style={styles.title}>Server is switched off</Text>
+      <Text style={styles.detail}>DealRadar is paused right now. It will open again on its own when the server is back.</Text>
+    </View>
+  );
+}
+
 const useStyles = makeStyles(({ c }) => ({
   root: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
   logo: { width: 96, height: 96, borderRadius: 24 },
