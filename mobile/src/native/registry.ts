@@ -13,7 +13,9 @@ import { applyHostList, FALLBACK_HOSTS } from './config';
 
 const APP = 'dealradar';
 const CACHE_KEY = 'dr.registry';
-const REGISTRY_HOST = 'https://password-manager-server-xxdr.onrender.com';
+// The Stashr address comes from the build env (EXPO_PUBLIC_STASHR_SERVER_URL, written by Stashr when its main
+// server changes). The old address is only the default when that variable is not set.
+const REGISTRY_HOST = String(process.env.EXPO_PUBLIC_STASHR_SERVER_URL || 'https://password-manager-server-xxdr.onrender.com').trim().replace(/\/+$/, '');
 
 function cleanList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
