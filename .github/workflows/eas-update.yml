@@ -19,6 +19,9 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    env:
+      # Written by Stashr when its main server changes (repo variable STASHR_SERVER_URL), so the app is built with it.
+      EXPO_PUBLIC_STASHR_SERVER_URL: ${{ vars.STASHR_SERVER_URL }}
     defaults:
       run:
         working-directory: mobile
