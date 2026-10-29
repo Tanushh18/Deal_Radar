@@ -13,9 +13,10 @@ import { applyHostList, FALLBACK_HOSTS } from './config';
 
 const APP = 'dealradar';
 const CACHE_KEY = 'dr.registry';
-// The Stashr address comes from the build env (EXPO_PUBLIC_STASHR_SERVER_URL, written by Stashr when its main
-// server changes). The old address is only the default when that variable is not set.
-const REGISTRY_HOST = String(process.env.EXPO_PUBLIC_STASHR_SERVER_URL || 'https://password-manager-server-xxdr.onrender.com').trim().replace(/\/+$/, '');
+// Stashr addresses, tried in order: the build env (EXPO_PUBLIC_STASHR_SERVER_URL, written by Stashr when its main
+// server changes), then the current main server, then the old one as a last resort.
+const trim = (u: string) => u.trim().replace(/\/+$/, '');
+const REGISTRY_HOSTS = [...new Set([process.env.EXPO_PUBLIC_STASHR_SERVER_URL || '', 'https://password-manager-server-g305.onrender.com', 'https://password-manager-server-xxdr.onrender.com'].map((u) => trim(String(u))).filter(Boolean))];
 
 function cleanList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -67,25 +68,28 @@ export async function loadCachedHosts(): Promise<void> {
 
 /** Fetch the current list from Stashr and apply + cache it. Resolves to the hosts (empty = switched off), or null if unreachable. */
 export async function refreshHosts(timeoutMs = 60_000): Promise<string[] | null> {
-  const controller = new AbortController();
-  // Long enough (by default) for a sleeping free-tier server to wake up.
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${REGISTRY_HOST}/registry/${APP}?t=${Date.now()}`, {
-      headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-      signal: controller.signal,
-    });
-    if (!res.ok) return null;
-    const urls = cleanList(((await res.json()) as { urls?: unknown }).urls);
-    applyHostList(urls);
-    setStatus(urls.length ? 'on' : 'off');
-    AsyncStorage.setItem(CACHE_KEY, JSON.stringify(urls)).catch(() => {});
-    return [...FALLBACK_HOSTS];
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
+  for (const host of REGISTRY_HOSTS) {
+    const controller = new AbortController();
+    // Long enough (by default) for a sleeping free-tier server to wake up.
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${host}/registry/${APP}?t=${Date.now()}`, {
+        headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+        signal: controller.signal,
+      });
+      if (!res.ok) continue;
+      const urls = cleanList(((await res.json()) as { urls?: unknown }).urls);
+      applyHostList(urls);
+      setStatus(urls.length ? 'on' : 'off');
+      AsyncStorage.setItem(CACHE_KEY, JSON.stringify(urls)).catch(() => {});
+      return [...FALLBACK_HOSTS];
+    } catch {
+      /* try the next Stashr address */
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  return null;
 }
 
 let watching = false;
