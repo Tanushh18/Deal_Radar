@@ -2,7 +2,7 @@
 
 A comprehensive deal aggregation and search platform that transforms Telegram marketplace channels into a centralized, searchable catalog with intelligent deduplication, price tracking, and real-time notifications.
 
-**Live Demo:** [dealradar.ggnhome.com](https://dealradar.ggnhome.com) | **Android App:** [DealRadar on Google Play](https://play.google.com/store/apps/details?id=com.tanush.dealradar)
+**Android App:** [DealRadar on Google Play](https://play.google.com/store/apps/details?id=com.tanush.dealradar)
 
 ---
 

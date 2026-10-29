@@ -11,11 +11,7 @@ export const LIVE_HOST: string = 'https://dealradar.tanush.qd.je';
 // at once instead of going to some other server.
 export const NO_SERVER = 'https://stashr-no-server.invalid';
 // Hosts that are gone for good. Dropped from a saved manual choice, so a stale entry can never strand the app on a dead server.
-const RETIRED_HOSTS = new Set([
-  'https://dealradar.ggnhome.com',
-  'https://dealradar-93do.onrender.com',
-  'https://dealradar-t04t.onrender.com',
-]);
+const RETIRED_HOSTS = new Set<string>();
 const bareHost = (h: string): string => h.trim().replace(/\/+$/, '').toLowerCase();
 export const isRetiredHost = (h: string): boolean => RETIRED_HOSTS.has(bareHost(h));
 export const EMULATOR_HOST = 'http://10.0.2.2:8765';

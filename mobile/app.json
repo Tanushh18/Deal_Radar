@@ -128,7 +128,6 @@
       "./plugins/withAbiFilter"
     ],
     "extra": {
-      "defaultServerUrl": "https://dealradar.ggnhome.com",
       "expo-navigation-bar": {
         "enforceContrast": false,
         "style": "light"
