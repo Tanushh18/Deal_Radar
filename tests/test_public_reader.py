@@ -82,6 +82,12 @@ def main() -> int:
     patch()
     settings.public_channels = ["alpha", "beta"]
 
+    print("Auto-join off (default): nothing is joined")
+    settings.public_auto_join = False
+    run_bootstrap()
+    check("no channel joined when PUBLIC_AUTO_JOIN is off", joined == [], f"joined={joined}")
+
+    settings.public_auto_join = True
     print("First boot seeds the list once")
     run_bootstrap()
     check("joins both seeded channels", joined == ["alpha", "beta"], f"joined={joined}")

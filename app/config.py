@@ -38,6 +38,11 @@ class Settings:
             for c in _split(os.getenv("PUBLIC_CHANNELS", ""))
         ]
 
+        # The server never joins channels on its own unless this is on. The reader
+        # account's own Telegram follows decide what is read, so a channel you left
+        # is never joined again.
+        self.public_auto_join: bool = _bool(os.getenv("PUBLIC_AUTO_JOIN", "false"))
+
         # --- Ranking: this audience's deals lead browsing (empty = neutral) ---
         self.priority_audience: str = os.getenv("PRIORITY_AUDIENCE", "women").strip().lower()
 

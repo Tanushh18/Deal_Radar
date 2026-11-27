@@ -44,7 +44,10 @@ async def bootstrap() -> int:
     db.set_meta("reader_user_id", str(user_id))
 
     tracked = 0
-    for username in settings.public_channels:
+    if not settings.public_auto_join:
+        log.info("Auto-join is off (PUBLIC_AUTO_JOIN): not joining any PUBLIC_CHANNELS; "
+                 "reading only what the reader account already follows")
+    for username in (settings.public_channels if settings.public_auto_join else []):
         # PUBLIC_CHANNELS is a one-time seed list. Once a channel has been seeded,
         # the reader account's own Telegram membership (sync_followed) is the source
         # of truth: a channel the account left must not be joined again on restart.
