@@ -45,13 +45,22 @@ async def bootstrap() -> int:
 
     tracked = 0
     for username in settings.public_channels:
+        # PUBLIC_CHANNELS is a one-time seed list. Once a channel has been seeded,
+        # the reader account's own Telegram membership (sync_followed) is the source
+        # of truth: a channel the account left must not be joined again on restart.
+        seeded_key = f"public_seeded:{username.lower()}"
+        if db.get_meta(seeded_key):
+            continue
+        # Any existing row counts, enabled or not: an admin block (enabled=0) must
+        # never be overridden by re-joining the channel.
         known = db.query_one(
-            "SELECT c.id FROM channels c JOIN user_channels uc ON uc.channel_id = c.id "
-            "WHERE LOWER(c.username) = LOWER(?) AND uc.user_id = ? AND uc.enabled = 1",
+            "SELECT c.id, uc.enabled FROM channels c JOIN user_channels uc ON uc.channel_id = c.id "
+            "WHERE LOWER(c.username) = LOWER(?) AND uc.user_id = ?",
             (username, user_id),
         )
         if known:
-            tracked += 1
+            db.set_meta(seeded_key, "1")
+            tracked += 1 if known["enabled"] else 0
             continue
         try:
             info = await telegram.resolve_public_channel(user_id, username)
@@ -61,9 +70,10 @@ async def bootstrap() -> int:
         channel_id = _register_channel(info, user_id)
         db.execute(
             "INSERT INTO user_channels (user_id, channel_id, enabled, added_at) VALUES (?, ?, 1, ?) "
-            "ON CONFLICT(user_id, channel_id) DO UPDATE SET enabled = 1",
+            "ON CONFLICT(user_id, channel_id) DO NOTHING",
             (user_id, channel_id, now),
         )
+        db.set_meta(seeded_key, "1")
         tracked += 1
         await asyncio.sleep(2)   # joining channels back-to-back invites a Telegram flood-wait
     _deactivate_orphans()
